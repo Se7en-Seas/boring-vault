@@ -6,11 +6,15 @@ import {BoringVault} from "src/base/BoringVault.sol";
 import {AccessControlDefaultAdminRules} from
     "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     using FixedPointMathLib for uint256;
+    using SafeTransferLib for ERC20;
 
     BoringVault public immutable vault;
+    BalancerVault public immutable balancer_vault;
 
     // A tree where the leafs are the keccak256 hash of the target address, function selector.
     bytes32 public allowed_targets_root;
@@ -24,6 +28,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     {
         vault = BoringVault(_vault);
         _grantRole(MERKLE_MANAGER_ROLE, _manager);
+        _grantRole(MERKLE_MANAGER_ROLE, address(this)); // So that this contract can make a callback to itself during balancer flash loans.
         _grantRole(ROOT_MANAGER_ROLE, _root_manager);
     }
 
@@ -41,15 +46,16 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         // TODO event
     }
 
-    // TODO this setup will not let me do flashloans because the bytes data input is padded with function selector bytes, and is abi encoded.
     // TODO could I handle falsh loans in a custom contract?
+    // TODO so we would not allow list contracts and functions that accept bytes and bytes[] parameters where the bytes values are encoded with selectors.
+    // Unless there is some way for this code to know, oh hey I am doing a flash loan with this data, remove the bytes selector
     function manageVaultWithMerkleVerification(
         bytes32[][] calldata targets_proofs,
         bytes32[][] calldata address_arguments_proofs,
         address[] calldata targets,
         bytes[] calldata data,
         uint256[] calldata values
-    ) external onlyRole(MERKLE_MANAGER_ROLE) {
+    ) public onlyRole(MERKLE_MANAGER_ROLE) {
         uint256 targets_length = targets.length;
         require(targets_length == targets_proofs.length, "Invalid proof length");
         require(targets_length == data.length, "Invalid data length");
@@ -75,6 +81,51 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         }
     }
 
+    function manageVaultWithBalancerFlashLoan(
+        address[] calldata tokens,
+        uint256[] calldata amounts,
+        bytes calldata userData
+    ) external onlyRole(MERKLE_MANAGER_ROLE) {
+        // Allow the manager to make balancer flash loans without verifying input.
+        balancer_vault.flashLoan(tokens, amounts, userData);
+    }
+
+    function receiveFlashLoan(
+        address[] calldata tokens,
+        uint256[] calldata amounts,
+        uint256[] calldata feeAmounts,
+        bytes calldata userData
+    ) external {
+        // TODO verify this is a legitimate flashloan.
+
+        // Transfer tokens to vault.
+        for (uint256 i = 0; i < amounts.length; ++i) {
+            ERC20(tokens[i]).safeTransfer(address(vault), amounts[i]);
+        }
+
+        {
+            (
+                bytes32[][] memory targets_proofs,
+                bytes32[][] memory address_arguments_proofs,
+                address[] memory targets,
+                bytes[] memory data,
+                uint256[] memory values
+            ) = abi.decode(userData, (bytes32[][], bytes32[][], address[], bytes[], uint256[]));
+
+            ManagerWithMerkleVerification(address(this)).manageVaultWithMerkleVerification(
+                targets_proofs, address_arguments_proofs, targets, data, values
+            );
+        }
+
+        // Transfer tokens back to balancer.
+        // Have vault transfer amount + fees back to balancer
+        for (uint256 i; i < amounts.length; ++i) {
+            bytes memory transfer_data =
+                abi.encodeWithSelector(ERC20.transfer.selector, address(balancer_vault), (amounts[i] + feeAmounts[i]));
+            vault.manage(tokens[i], transfer_data, 0);
+        }
+    }
+
     function _verifyTargetsProof(bytes32[] calldata proof, address target, bytes4 selector)
         internal
         view
@@ -88,4 +139,8 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         bytes32 leaf = keccak256(abi.encodePacked(argument));
         return MerkleProof.verifyCalldata(proof, allowed_address_arguments_root, leaf);
     }
+}
+
+interface BalancerVault {
+    function flashLoan(address[] memory tokens, uint256[] memory amounts, bytes calldata userData) external;
 }

@@ -62,4 +62,6 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder {
     }
 
     // Add flash loan capability. Could use fallback functions to do it?
+
+    // TODO make this payable
 }
