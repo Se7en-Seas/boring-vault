@@ -149,7 +149,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         view
         returns (address[] memory decoded_addresses, uint256 unknown_encoded_length)
     {
-        // console.log("Value type", value_type);
+        console.log("Value type", value_type);
         bytes32 hashed_value_type = keccak256(bytes(value_type));
 
         // Start by handling no types.

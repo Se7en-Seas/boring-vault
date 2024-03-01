@@ -32,7 +32,7 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder {
         address _minter,
         address _burner
     ) ERC20(_name, _symbol, _decimals) AccessControlDefaultAdminRules(3 days, _owner) {
-        _grantRole(MANAGER_ROLE, _manager);
+        if (_manager != address(0)) _grantRole(MANAGER_ROLE, _manager);
         _grantRole(MINTER_ROLE, _minter);
         _grantRole(BURNER_ROLE, _burner);
     }
