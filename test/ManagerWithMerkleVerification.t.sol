@@ -31,7 +31,8 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         boring_vault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
-        manager = new ManagerWithMerkleVerification(address(this), address(this), address(this), address(boring_vault));
+        manager =
+            new ManagerWithMerkleVerification(address(this), address(this), address(this), address(boring_vault), vault);
 
         addressDecoder = address(new AddressDecoder());
 
