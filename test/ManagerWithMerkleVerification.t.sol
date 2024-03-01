@@ -26,8 +26,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         uint256 blockNumber = 16571863;
         _startFork(rpcKey, blockNumber);
 
-        boring_vault =
-            new BoringVault(address(this), "Boring Vault", "BV", 18, address(0), address(this), address(this));
+        boring_vault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
         manager = new ManagerWithMerkleVerification(address(this), address(this), address(this), address(boring_vault));
 
@@ -43,41 +42,14 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         address allowed_address_0 = vm.addr(0xDEAD);
         address allowed_address_1 = vm.addr(0xDEAD1);
-        bytes32 leaf_c = keccak256(abi.encodePacked(allowed_address_0));
-        bytes32 leaf_d = keccak256(abi.encodePacked(allowed_address_1));
-        bytes32 allowed_address_arguments_root = _hashPair(leaf_c, leaf_d);
 
         manager.setAllowedTargetsRoot(allowed_targets_and_selectors_root);
-        manager.setAllowedAddressArgumentsRoot(allowed_address_arguments_root);
 
         bytes32[][] memory target_proofs = new bytes32[][](2);
         target_proofs[0] = new bytes32[](1);
         target_proofs[0][0] = leaf_b;
         target_proofs[1] = new bytes32[](1);
         target_proofs[1][0] = leaf_a;
-        bytes32[][][] memory address_arguments_proofs = new bytes32[][][](2);
-        address_arguments_proofs[0] = new bytes32[][](1);
-        address_arguments_proofs[0][0] = new bytes32[](1);
-        address_arguments_proofs[0][0][0] = leaf_d;
-        address_arguments_proofs[1] = new bytes32[][](1);
-        address_arguments_proofs[1][0] = new bytes32[](1);
-        address_arguments_proofs[1][0][0] = leaf_c;
-        string[][] memory function_strings = new string[][](2);
-        function_strings[0] = new string[](6);
-        function_strings[0][0] = "approve";
-        function_strings[0][1] = "(";
-        function_strings[0][2] = "address";
-        function_strings[0][3] = ",";
-        function_strings[0][4] = "uint256";
-        function_strings[0][5] = ")";
-
-        function_strings[1] = new string[](6);
-        function_strings[1][0] = "transfer";
-        function_strings[1][1] = "(";
-        function_strings[1][2] = "address";
-        function_strings[1][3] = ",";
-        function_strings[1][4] = "uint256";
-        function_strings[1][5] = ")";
 
         address[] memory targets = new address[](2);
         targets[0] = address(USDC);
@@ -90,88 +62,9 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         deal(address(USDT), address(boring_vault), 777);
 
-        manager.manageVaultWithMerkleVerification(
-            target_proofs, address_arguments_proofs, function_strings, targets, target_data, values
-        );
+        manager.manageVaultWithMerkleVerification(target_proofs, targets, target_data, values);
 
         assertEq(USDT.balanceOf(allowed_address_1), 777, "USDT should have been transfered");
-    }
-
-    struct ComplexStruct {
-        address a;
-        bytes b;
-        bool c;
-        address d;
-    }
-
-    function doComplexThing(address a, bytes calldata b, bool c, address d) external pure returns (bool) {
-        return c;
-    }
-
-    function testComplexStructAddressParsing() external {
-        bytes32 allowed_targets_and_selectors_root =
-            keccak256(abi.encodePacked(address(this), ManagerWithMerkleVerificationTest.doComplexThing.selector));
-
-        address allowed_address_0 = vm.addr(0xDEAD);
-        address allowed_address_1 = vm.addr(0xDEAD1);
-        bytes32 leaf_c = keccak256(abi.encodePacked(allowed_address_0));
-        bytes32 leaf_d = keccak256(abi.encodePacked(allowed_address_1));
-        bytes32 allowed_address_arguments_root = _hashPair(leaf_c, leaf_d);
-
-        manager.setAllowedTargetsRoot(allowed_targets_and_selectors_root);
-        manager.setAllowedAddressArgumentsRoot(allowed_address_arguments_root);
-
-        bytes32[][] memory target_proofs = new bytes32[][](1);
-        bytes32[][][] memory address_arguments_proofs = new bytes32[][][](1);
-        address_arguments_proofs[0] = new bytes32[][](2);
-        address_arguments_proofs[0][0] = new bytes32[](1);
-        address_arguments_proofs[0][0][0] = leaf_d;
-        address_arguments_proofs[0][1] = new bytes32[](1);
-        address_arguments_proofs[0][1][0] = leaf_c;
-        string[][] memory function_strings = new string[][](1);
-        function_strings[0] = new string[](10);
-        function_strings[0][0] = "doComplexThing";
-        function_strings[0][1] = "(";
-        function_strings[0][2] = "address";
-        function_strings[0][3] = ",";
-        function_strings[0][4] = "bytes";
-        function_strings[0][5] = ",";
-        function_strings[0][6] = "bool";
-        function_strings[0][7] = ",";
-        function_strings[0][8] = "address";
-        function_strings[0][9] = ")";
-
-        address[] memory targets = new address[](1);
-        targets[0] = address(this);
-        bytes[] memory target_data = new bytes[](1);
-        ComplexStruct memory s = ComplexStruct({
-            a: allowed_address_0,
-            b: hex"DEADDEADDEADDEADDEADDEADDEADDEADDEAD",
-            c: true,
-            d: allowed_address_1
-        });
-        target_data[0] = abi.encodeWithSelector(
-            ManagerWithMerkleVerificationTest.doComplexThing.selector,
-            allowed_address_0,
-            hex"DEADDEADDEADDEADDEADDEADDEADDEADDEAD",
-            true,
-            allowed_address_1
-        );
-
-        uint256[] memory values = new uint256[](1);
-
-        manager.manageVaultWithMerkleVerification(
-            target_proofs, address_arguments_proofs, function_strings, targets, target_data, values
-        );
-
-        // This is how complex data breaks down.
-        // 0000000000000000000000000000000000000000000000000000000000000020 // I think this is an indicator that there is some complex data in this argument
-        // 0000000000000000000000007b1afe2745533d852d6fd5a677f14c074210d896
-        // 0000000000000000000000000000000000000000000000000000000000000080
-        // 0000000000000000000000000000000000000000000000000000000000000001
-        // 0000000000000000000000007b1afe2745533d852d6fd5a677f14c074210d896
-        // 0000000000000000000000000000000000000000000000000000000000000012 // The number of bytes in b
-        // deaddeaddeaddeaddeaddeaddeaddeaddead0000000000000000000000000000
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

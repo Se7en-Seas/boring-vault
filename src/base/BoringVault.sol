@@ -23,19 +23,10 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder {
     // Role needed to withdraw form vault.
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
-    constructor(
-        address _owner,
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        address _manager,
-        address _minter,
-        address _burner
-    ) ERC20(_name, _symbol, _decimals) AccessControlDefaultAdminRules(3 days, _owner) {
-        if (_manager != address(0)) _grantRole(MANAGER_ROLE, _manager);
-        _grantRole(MINTER_ROLE, _minter);
-        _grantRole(BURNER_ROLE, _burner);
-    }
+    constructor(address _owner, string memory _name, string memory _symbol, uint8 _decimals)
+        ERC20(_name, _symbol, _decimals)
+        AccessControlDefaultAdminRules(3 days, _owner)
+    {}
 
     function manage(address target, bytes calldata data, uint256 value) external onlyRole(MANAGER_ROLE) {
         target.functionCallWithValue(data, value);
@@ -51,14 +42,28 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder {
         }
     }
 
-    function mint(address to, uint256 amount) external onlyRole(MINTER_ROLE) {
+    // TODO think about if the accountant logic should be in here, or if the exchange rate stuff should be handled
+    // in the Teller. This approach right now is the simplest approach though, so most upgradeable.
+    function enter(address from, ERC20 asset, uint256 asset_amount, address to, uint256 share_amount)
+        external
+        onlyRole(MINTER_ROLE)
+    {
+        // Transfer assets in
+        if (asset_amount > 0) asset.safeTransferFrom(from, to, asset_amount);
+
         // Mint shares.
-        _mint(to, amount);
+        _mint(to, share_amount);
     }
 
-    function burn(address from, uint256 amount) external onlyRole(BURNER_ROLE) {
+    function exit(address to, ERC20 asset, uint256 asset_amount, address from, uint256 share_amount)
+        external
+        onlyRole(BURNER_ROLE)
+    {
         // Burn shares.
-        _burn(from, amount);
+        _burn(from, share_amount);
+
+        // Transfer assets out.
+        if (asset_amount > 0) asset.safeTransfer(to, asset_amount);
     }
 
     // Add flash loan capability. Could use fallback functions to do it?
