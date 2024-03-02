@@ -125,10 +125,13 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
         ) {
             state.is_paused = true;
         }
-        state.exchange_rate = _new_exchange_rate;
         state.last_update_timestamp = current_time;
         // TODO emit an event
     }
 
     // TODO Add in fee logic
+
+    function claimFees() external {
+        // safe transfer from caller, send the money to multiple
+    }
 }

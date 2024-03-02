@@ -21,33 +21,14 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules {
     // an entity that can do bulk deposit and withdraws with no waiting period, Atomic Queue solver.
 
     // normal depsits
-    // normal withdraws but with a waiting period
-
-    struct WithdrawRequest {
-        bool is_finalized;
-        address asset_out;
-        uint256 amount;
-        uint256 exchange_rate;
-        uint256 minimum_exchange_rate;
-    }
-
     bool public is_paused;
 
     // For user functions add min share out values
-    function deposit() external {
+    function deposit(ERC20 deposit_asset) external {
         require(!is_paused, "paused");
+        // TODO support eth
     }
 
-    function makeWithdrawRequest() external {
-        require(!is_paused, "paused");
-    }
-
-    function withdraw() external {
-        require(!is_paused, "paused");
-    }
-
-    function bulkDeposit() external onlyRole(ON_RAMP_ROLE) {}
-    function bulkWithdraw() external onlyRole(OFF_RAMP_ROLE) {}
-
-    function mint() external onlyRole(MANAGER_ROLE) {}
+    function bulkDeposit(ERC20 deposit_asset) external onlyRole(ON_RAMP_ROLE) {}
+    function bulkWithdraw(ERC20 withdraw_asset) external onlyRole(OFF_RAMP_ROLE) {}
 }
