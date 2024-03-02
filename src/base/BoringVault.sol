@@ -42,8 +42,6 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder {
         }
     }
 
-    // TODO think about if the accountant logic should be in here, or if the exchange rate stuff should be handled
-    // in the Teller. This approach right now is the simplest approach though, so most upgradeable.
     function enter(address from, ERC20 asset, uint256 asset_amount, address to, uint256 share_amount)
         external
         onlyRole(MINTER_ROLE)
@@ -65,10 +63,6 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder {
         // Transfer assets out.
         if (asset_amount > 0) asset.safeTransfer(to, asset_amount);
     }
-
-    // Add flash loan capability. Could use fallback functions to do it?
-
-    // TODO make this payable
 
     receive() external payable {}
 }

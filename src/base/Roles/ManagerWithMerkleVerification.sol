@@ -34,6 +34,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     bool internal ongoing_manage;
 
     bytes32 public constant MERKLE_MANAGER_ROLE = keccak256("MERKLE_MANAGER_ROLE");
+    // TODO could rename this to admin role.
     bytes32 public constant ROOT_MANAGER_ROLE = keccak256("ROOT_MANAGER_ROLE");
 
     constructor(address _owner, address _manager, address _root_manager, address _vault, address _balancer_vault)
