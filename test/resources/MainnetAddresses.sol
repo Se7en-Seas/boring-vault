@@ -64,6 +64,9 @@ contract MainnetAddresses {
     ERC20 public RSETH = ERC20(0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7);
     ERC20 public OSETH = ERC20(0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38);
 
+    // Rate providers
+    address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
+
     // Chainlink Datafeeds
     address public WETH_USD_FEED = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
     address public USDC_USD_FEED = 0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6;
@@ -342,7 +345,7 @@ contract MainnetAddresses {
     address public staderConfig = 0x4ABEF2263d5A5ED582FC9A9789a41D85b68d69DB;
 
     // Etherfi
-    address public liquidityPool = 0x308861A430be4cce5502d0A12724771Fc6DaF216;
+    address public EETH_LIQUIDITY_POOL = 0x308861A430be4cce5502d0A12724771Fc6DaF216;
     address public withdrawalRequestNft = 0x7d5706f6ef3F89B3951E23e557CDFBC3239D4E2c;
 
     // Renzo

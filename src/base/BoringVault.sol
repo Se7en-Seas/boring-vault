@@ -3,6 +3,7 @@ pragma solidity 0.8.21;
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
@@ -10,10 +11,13 @@ import {AccessControlDefaultAdminRules} from
     "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 
 // TODO add ERC1155 holder.
-contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder {
+contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC1155Holder {
     using Address for address;
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
+
+    event Enter(address from, address asset, uint256 amount, address to, uint256 shares);
+    event Exit(address to, address asset, uint256 amount, address from, uint256 shares);
 
     // Role needed to rebalance the vault.
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
@@ -48,10 +52,12 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder {
         onlyRole(MINTER_ROLE)
     {
         // Transfer assets in
-        if (asset_amount > 0) asset.safeTransferFrom(from, to, asset_amount);
+        if (asset_amount > 0) asset.safeTransferFrom(from, address(this), asset_amount);
 
         // Mint shares.
         _mint(to, share_amount);
+
+        emit Enter(from, address(asset), asset_amount, to, share_amount);
     }
 
     function exit(address to, ERC20 asset, uint256 asset_amount, address from, uint256 share_amount)
@@ -63,7 +69,22 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder {
 
         // Transfer assets out.
         if (asset_amount > 0) asset.safeTransfer(to, asset_amount);
+
+        emit Exit(to, address(asset), asset_amount, from, share_amount);
     }
 
     receive() external payable {}
+
+    /**
+     * @notice Override this here, so that we only report supporting ERC1155, and not the AccessControl interface.
+     */
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC1155Holder, AccessControlDefaultAdminRules)
+        returns (bool)
+    {
+        return ERC1155Holder.supportsInterface(interfaceId);
+    }
 }

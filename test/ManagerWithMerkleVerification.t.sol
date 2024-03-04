@@ -98,6 +98,26 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         assertEq(USDT.balanceOf(allowed_address_arguments[1]), 777, "USDT should have been transfered");
     }
 
+    // TODO flash loan test.
+
+    // TODO add happy paths, revert tests, and full function coverage for every contract. Then create a integration test contract that uses them all together, and rebalances vault into LP positions.
+
+    // struct ComplexData {
+    //     address a;
+    //     address b;
+    //     uint256 c;
+    // }
+
+    // function doThing(ComplexData memory data) public {}
+
+    // function testHunch() external {
+    //     console.logBytes4(this.doThing.selector);
+
+    //     bytes4 derived_selector = bytes4(keccak256(abi.encodePacked("doThing((address,address,uint256))")));
+
+    //     console.logBytes4(bytes4(derived_selector));
+    // }
+
     // ========================================= HELPER FUNCTIONS =========================================
 
     function _generateProof(bytes32 leaf, bytes32[][] memory tree) internal pure returns (bytes32[] memory proof) {
