@@ -34,34 +34,30 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     bool internal ongoing_manage;
 
     bytes32 public constant MERKLE_MANAGER_ROLE = keccak256("MERKLE_MANAGER_ROLE");
-    // TODO could rename this to admin role.
-    bytes32 public constant ROOT_MANAGER_ROLE = keccak256("ROOT_MANAGER_ROLE");
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
-    constructor(address _owner, address _manager, address _root_manager, address _vault, address _balancer_vault)
+    constructor(address _owner, address _manager, address _admin, address _vault, address _balancer_vault)
         AccessControlDefaultAdminRules(3 days, _owner)
     {
         vault = BoringVault(payable(_vault));
         _grantRole(MERKLE_MANAGER_ROLE, _manager);
-        _grantRole(ROOT_MANAGER_ROLE, _root_manager);
+        _grantRole(ADMIN_ROLE, _admin);
         balancer_vault = BalancerVault(_balancer_vault);
     }
 
     // This could be sommelier to start, then the multisig of the BoringVault can change the depositor.
     // TODO I could have the contents of the merkle tree passed in as call data, then we derive the merkle root on chain? That is more gas intensive, but allows people to easily verify what is in it.
-    function setAllowedTargetSelectorRoot(bytes32 _allowed_target_selector_root) external onlyRole(ROOT_MANAGER_ROLE) {
+    function setAllowedTargetSelectorRoot(bytes32 _allowed_target_selector_root) external onlyRole(ADMIN_ROLE) {
         allowed_target_selector_root = _allowed_target_selector_root;
         // TODO event
     }
 
-    function setAllowedAddressArgumentRoot(bytes32 _allowed_address_argument_root)
-        external
-        onlyRole(ROOT_MANAGER_ROLE)
-    {
+    function setAllowedAddressArgumentRoot(bytes32 _allowed_address_argument_root) external onlyRole(ADMIN_ROLE) {
         allowed_address_argument_root = _allowed_address_argument_root;
         // TODO event
     }
 
-    function setAddressDecoder(address _address_decoder) external onlyRole(ROOT_MANAGER_ROLE) {
+    function setAddressDecoder(address _address_decoder) external onlyRole(ADMIN_ROLE) {
         address_decoder = AddressDecoder(_address_decoder);
     }
 
@@ -79,7 +75,9 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         ongoing_manage = true;
 
         // uint256 targets_length = targets.length;
-        require(targets.length == target_proofs.length, "Invalid proof length");
+        require(targets.length == target_proofs.length, "Invalid target proof length");
+        require(targets.length == arguments_proofs.length, "Invalid argument proof length");
+        require(targets.length == function_signatures.length, "Invalid function signatures length");
         require(targets.length == target_data.length, "Invalid data length");
         require(targets.length == values.length, "Invalid values length");
 
@@ -106,6 +104,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         uint256[] calldata feeAmounts,
         bytes calldata userData
     ) external {
+        // console.log("Here");
         require(msg.sender == address(balancer_vault), "Wrong caller");
         require(ongoing_manage, "Not being managed");
         // Transfer tokens to vault.

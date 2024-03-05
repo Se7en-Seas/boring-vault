@@ -19,8 +19,8 @@ contract AddressDecoder {
     bytes32 internal constant HASHED_ARGUMENTS_ADDRESS_UINT256_UINT256 = keccak256("(address,uint256,uint256)");
     bytes32 internal constant HASHED_ARGUMENTS_ADDRESS_ADDRESS_ARRAY_UINT256_ARRAY_UINT256_ARRAY_ADDRESS_BYTES_UINT16 =
         keccak256("(address,address[],uint256[],uint256[],address,bytes,uint16)");
-    bytes32 internal constant HASHED_ARGUMENTS_ADDRESS_ARRAY_UINT256_ARRAY_BYTES =
-        keccak256("(address[],uint256[],bytes)");
+    bytes32 internal constant HASHED_ARGUMENTS_ADDRESS_ADDRESS_ARRAY_UINT256_ARRAY_BYTES =
+        keccak256("(address,address[],uint256[],bytes)");
 
     // MORPHO
 
@@ -59,8 +59,13 @@ contract AddressDecoder {
         } else if (hashed_arguments == HASHED_ARGUMENTS_UINT256_ADDRESS) {
             addresses_found = new address[](1);
             (, addresses_found[0]) = abi.decode(raw_data, (uint256, address));
-        } else if (hashed_arguments == HASHED_ARGUMENTS_ADDRESS_ARRAY_UINT256_ARRAY_BYTES) {
-            addresses_found = abi.decode(raw_data, (address[]));
+        } else if (hashed_arguments == HASHED_ARGUMENTS_ADDRESS_ADDRESS_ARRAY_UINT256_ARRAY_BYTES) {
+            (address first, address[] memory second) = abi.decode(raw_data, (address, address[]));
+            addresses_found = new address[](second.length + 1);
+            addresses_found[0] = first;
+            for (uint256 i; i < second.length; ++i) {
+                addresses_found[i + 1] = second[i];
+            }
         }
     }
 }

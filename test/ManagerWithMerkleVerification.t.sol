@@ -8,6 +8,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {AddressDecoder} from "src/base/AddressDecoder.sol";
+import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -98,27 +99,126 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         assertEq(USDT.balanceOf(allowed_address_arguments[1]), 777, "USDT should have been transfered");
     }
 
-    // TODO flash loan test.
+    function testFlashLoan() external {
+        address[] memory allowed_address_arguments = new address[](4);
+        allowed_address_arguments[0] = address(USDC);
+        allowed_address_arguments[1] = address(this);
+        allowed_address_arguments[2] = address(manager);
+        allowed_address_arguments[3] = address(0);
 
-    // TODO add happy paths, revert tests, and full function coverage for every contract. Then create a integration test contract that uses them all together, and rebalances vault into LP positions.
+        address[] memory allowed_targets = new address[](4);
+        allowed_targets[0] = address(vault);
+        allowed_targets[1] = address(this);
+        allowed_targets[2] = address(USDC);
+        allowed_targets[3] = address(0);
+        bytes4[] memory allowed_selectors = new bytes4[](4);
+        allowed_selectors[0] = BalancerVault.flashLoan.selector;
+        allowed_selectors[1] = this.doSomethingWithFlashLoan.selector;
+        allowed_selectors[2] = ERC20.approve.selector;
+        allowed_selectors[3] = bytes4(0);
 
-    // struct ComplexData {
-    //     address a;
-    //     address b;
-    //     uint256 c;
-    // }
+        (bytes32[][] memory allowed_targets_and_selectors_tree, bytes32[][] memory allowed_address_argument_tree) =
+            _generateMerkleTrees(allowed_targets, allowed_selectors, allowed_address_arguments);
 
-    // function doThing(ComplexData memory data) public {}
+        manager.setAllowedTargetSelectorRoot(allowed_targets_and_selectors_tree[2][0]);
+        manager.setAllowedAddressArgumentRoot(allowed_address_argument_tree[2][0]);
 
-    // function testHunch() external {
-    //     console.logBytes4(this.doThing.selector);
+        bytes memory userData;
+        {
+            uint256 flash_loan_amount = 1_000_000e6;
+            // Build flashLoan data.
+            address[] memory targets = new address[](2);
+            targets[0] = address(USDC);
+            targets[1] = address(this);
+            bytes[] memory target_data = new bytes[](2);
+            target_data[0] = abi.encodeWithSelector(ERC20.approve.selector, address(this), flash_loan_amount);
+            target_data[1] =
+                abi.encodeWithSelector(this.doSomethingWithFlashLoan.selector, address(USDC), flash_loan_amount);
+            address[][] memory address_arguments = new address[][](2);
+            address_arguments[0] = new address[](1);
+            address_arguments[0][0] = address(this);
+            address_arguments[1] = new address[](1);
+            address_arguments[1][0] = address(USDC);
 
-    //     bytes4 derived_selector = bytes4(keccak256(abi.encodePacked("doThing((address,address,uint256))")));
+            (bytes32[][] memory target_proofs, bytes32[][][] memory arguments_proofs) = _getProofsUsingTrees(
+                targets,
+                target_data,
+                address_arguments,
+                allowed_targets_and_selectors_tree,
+                allowed_address_argument_tree
+            );
 
-    //     console.logBytes4(bytes4(derived_selector));
-    // }
+            string[] memory function_signatures = new string[](2);
+            function_signatures[0] = "approve(address,uint256)";
+            function_signatures[1] = "doSomethingWithFlashLoan(address,uint256)";
+
+            uint256[] memory values = new uint256[](2);
+
+            userData = abi.encode(target_proofs, arguments_proofs, function_signatures, targets, target_data, values);
+        }
+        {
+            address[] memory targets = new address[](1);
+            targets[0] = address(vault);
+
+            address[] memory tokens_to_borrow = new address[](1);
+            tokens_to_borrow[0] = address(USDC);
+            uint256[] memory amounts_to_borrow = new uint256[](1);
+            amounts_to_borrow[0] = 1_000_000e6;
+            bytes[] memory target_data = new bytes[](1);
+            target_data[0] = abi.encodeWithSelector(
+                BalancerVault.flashLoan.selector, address(manager), tokens_to_borrow, amounts_to_borrow, userData
+            );
+
+            address[][] memory address_arguments = new address[][](1);
+            address_arguments[0] = new address[](2);
+            address_arguments[0][0] = address(manager);
+            address_arguments[0][1] = address(USDC);
+
+            (bytes32[][] memory target_proofs, bytes32[][][] memory arguments_proofs) = _getProofsUsingTrees(
+                targets,
+                target_data,
+                address_arguments,
+                allowed_targets_and_selectors_tree,
+                allowed_address_argument_tree
+            );
+
+            string[] memory function_signatures = new string[](1);
+            function_signatures[0] = "flashLoan(address,address[],uint256[],bytes)";
+
+            uint256[] memory values = new uint256[](1);
+
+            manager.manageVaultWithMerkleVerification(
+                target_proofs, arguments_proofs, function_signatures, targets, target_data, values
+            );
+
+            assertTrue(i_did_something == true, "Should have called doSomethingWithFlashLoan");
+        }
+    }
+
+    function testReverts() external {
+        bytes32[][] memory target_proofs;
+        target_proofs = new bytes32[][](1);
+        bytes32[][][] memory arguments_proofs;
+        string[] memory function_signatures;
+        address[] memory targets;
+        bytes[] memory target_data;
+        uint256[] memory values;
+
+        vm.expectRevert(bytes("Invalid target proof length"));
+        manager.manageVaultWithMerkleVerification(
+            target_proofs, arguments_proofs, function_signatures, targets, target_data, values
+        );
+        // TODO
+    }
 
     // ========================================= HELPER FUNCTIONS =========================================
+    bool i_did_something = false;
+
+    function doSomethingWithFlashLoan(ERC20 token, uint256 amount) external {
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        token.safeTransfer(msg.sender, amount);
+        i_did_something = true;
+    }
 
     function _generateProof(bytes32 leaf, bytes32[][] memory tree) internal pure returns (bytes32[] memory proof) {
         // The length of each proof is the height of the tree - 1.
