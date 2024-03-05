@@ -105,8 +105,8 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         bytes calldata userData
     ) external {
         // console.log("Here");
-        require(msg.sender == address(balancer_vault), "Wrong caller");
-        require(ongoing_manage, "Not being managed");
+        require(msg.sender == address(balancer_vault), "wrong caller");
+        require(ongoing_manage, "not being managed");
         // Transfer tokens to vault.
         for (uint256 i = 0; i < amounts.length; ++i) {
             ERC20(tokens[i]).safeTransfer(address(vault), amounts[i]);
@@ -129,11 +129,13 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
         // Transfer tokens back to balancer.
         // Have vault transfer amount + fees back to balancer
+        bytes[] memory transfer_data = new bytes[](amounts.length);
         for (uint256 i; i < amounts.length; ++i) {
-            bytes memory transfer_data =
+            transfer_data[i] =
                 abi.encodeWithSelector(ERC20.transfer.selector, address(balancer_vault), (amounts[i] + feeAmounts[i]));
-            vault.manage(tokens[i], transfer_data, 0);
         }
+        // Values is always zero, just pass in an array of zeroes.
+        vault.manage(tokens, transfer_data, new uint256[](amounts.length));
     }
 
     // ========================================= INTERNAL HELPER FUNCTIONS =========================================

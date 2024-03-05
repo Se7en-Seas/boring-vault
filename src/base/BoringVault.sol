@@ -10,7 +10,6 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {AccessControlDefaultAdminRules} from
     "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 
-// TODO add ERC1155 holder.
 contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC1155Holder {
     using Address for address;
     using SafeTransferLib for ERC20;

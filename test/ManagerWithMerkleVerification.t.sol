@@ -197,10 +197,10 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
     function testReverts() external {
         bytes32[][] memory target_proofs;
-        target_proofs = new bytes32[][](1);
         bytes32[][][] memory arguments_proofs;
         string[] memory function_signatures;
         address[] memory targets;
+        targets = new address[](1);
         bytes[] memory target_data;
         uint256[] memory values;
 
@@ -208,7 +208,83 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         manager.manageVaultWithMerkleVerification(
             target_proofs, arguments_proofs, function_signatures, targets, target_data, values
         );
-        // TODO
+        target_proofs = new bytes32[][](1);
+
+        vm.expectRevert(bytes("Invalid argument proof length"));
+        manager.manageVaultWithMerkleVerification(
+            target_proofs, arguments_proofs, function_signatures, targets, target_data, values
+        );
+        arguments_proofs = new bytes32[][][](1);
+
+        vm.expectRevert(bytes("Invalid function signatures length"));
+        manager.manageVaultWithMerkleVerification(
+            target_proofs, arguments_proofs, function_signatures, targets, target_data, values
+        );
+        function_signatures = new string[](1);
+
+        vm.expectRevert(bytes("Invalid data length"));
+        manager.manageVaultWithMerkleVerification(
+            target_proofs, arguments_proofs, function_signatures, targets, target_data, values
+        );
+        target_data = new bytes[](1);
+
+        vm.expectRevert(bytes("Invalid values length"));
+        manager.manageVaultWithMerkleVerification(
+            target_proofs, arguments_proofs, function_signatures, targets, target_data, values
+        );
+        values = new uint256[](1);
+
+        targets[0] = address(USDC);
+        target_data[0] = abi.encodeWithSelector(ERC20.approve.selector, address(this), 1_000);
+
+        vm.expectRevert(bytes("Failed to verify target"));
+        manager.manageVaultWithMerkleVerification(
+            target_proofs, arguments_proofs, function_signatures, targets, target_data, values
+        );
+
+        // Set the target selector root to be the leaf of the USDC approve function
+        bytes32 target_selector_root = keccak256(abi.encodePacked(targets[0], bytes4(target_data[0])));
+        manager.setAllowedTargetSelectorRoot(target_selector_root);
+
+        vm.expectRevert(bytes("Function Selector Mismatch"));
+        manager.manageVaultWithMerkleVerification(
+            target_proofs, arguments_proofs, function_signatures, targets, target_data, values
+        );
+        function_signatures[0] = "approve(address,uint256)";
+
+        vm.expectRevert(bytes("Arguments proof length differs from found address length"));
+        manager.manageVaultWithMerkleVerification(
+            target_proofs, arguments_proofs, function_signatures, targets, target_data, values
+        );
+
+        arguments_proofs[0] = new bytes32[][](1);
+
+        vm.expectRevert(bytes("Failed to verify address"));
+        manager.manageVaultWithMerkleVerification(
+            target_proofs, arguments_proofs, function_signatures, targets, target_data, values
+        );
+
+        bytes32 address_argument_root = keccak256(abi.encodePacked(address(this)));
+        manager.setAllowedAddressArgumentRoot(address_argument_root);
+
+        // Call now works.
+        manager.manageVaultWithMerkleVerification(
+            target_proofs, arguments_proofs, function_signatures, targets, target_data, values
+        );
+
+        // Check `receiveFlashLoan`
+        address[] memory tokens;
+        uint256[] memory amounts;
+        uint256[] memory feeAmounts;
+
+        vm.expectRevert(bytes("wrong caller"));
+        manager.receiveFlashLoan(tokens, amounts, feeAmounts, abi.encode(0));
+
+        // Someone else initiated a flash loan
+        vm.startPrank(vault);
+        vm.expectRevert(bytes("not being managed"));
+        manager.receiveFlashLoan(tokens, amounts, feeAmounts, abi.encode(0));
+        vm.stopPrank();
     }
 
     // ========================================= HELPER FUNCTIONS =========================================
