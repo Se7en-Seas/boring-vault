@@ -11,6 +11,7 @@ contract AddressDecoder {
     // AAVE
     bytes32 internal constant HASHED_ARGUMENTS_ADDRESS_ADDRESS = keccak256("(address,address)");
     bytes32 internal constant HASHED_ARGUMENTS_UINT8 = keccak256("(uint8)");
+    bytes32 internal constant HASHED_ARGUMENTS_UINT256 = keccak256("(uint256)");
     bytes32 internal constant HASHED_ARGUMENTS_ADDRESS_BOOL = keccak256("(address,bool)");
     bytes32 internal constant HASHED_ARGUMENTS_ADDRESS_UINT256_UINT256_UINT16_ADDRESS =
         keccak256("(address,uint256,uint256,uint16,address)");
@@ -21,6 +22,10 @@ contract AddressDecoder {
         keccak256("(address,address[],uint256[],uint256[],address,bytes,uint16)");
     bytes32 internal constant HASHED_ARGUMENTS_ADDRESS_ADDRESS_ARRAY_UINT256_ARRAY_BYTES =
         keccak256("(address,address[],uint256[],bytes)");
+    bytes32 internal constant HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_ADDRESS_BYTES =
+        keccak256("((address,address,address,address,uint256),uint256,address,bytes)");
+    bytes32 internal constant HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_UINT256_ADDRESS_ADDRESS =
+        keccak256("((address,address,address,address,uint256),uint256,uint256,address,address)");
 
     // MORPHO
 
@@ -66,6 +71,27 @@ contract AddressDecoder {
             for (uint256 i; i < second.length; ++i) {
                 addresses_found[i + 1] = second[i];
             }
-        }
+        } else if (hashed_arguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_ADDRESS_BYTES) {
+            // This is decoding a tuple, but since all elements in the tuple are static type,
+            // we can just decode it as if there was no tuple of elements.
+            addresses_found = new address[](5);
+            (addresses_found[0], addresses_found[1], addresses_found[2], addresses_found[3],,, addresses_found[4],) =
+                abi.decode(raw_data, (address, address, address, address, uint256, uint256, address, bytes));
+        } else if (hashed_arguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_UINT256_ADDRESS_ADDRESS) {
+            // This is decoding a tuple, but since all elements in the tuple are static type,
+            // we can just decode it as if there was no tuple of elements.
+            addresses_found = new address[](6);
+            (
+                addresses_found[0],
+                addresses_found[1],
+                addresses_found[2],
+                addresses_found[3],
+                ,
+                ,
+                ,
+                addresses_found[4],
+                addresses_found[5]
+            ) = abi.decode(raw_data, (address, address, address, address, uint256, uint256, uint256, address, address));
+        } else if (hashed_arguments == HASHED_ARGUMENTS_UINT256) {} // nothing to do
     }
 }

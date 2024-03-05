@@ -6,10 +6,10 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 contract MainnetAddresses {
     // Sommelier
     address public gravityBridgeAddress = 0x69592e6f9d21989a043646fE8225da2600e5A0f7;
-    address public strategist = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A;
+    // address public strategist = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A;
     address public devStrategist = 0xeeF7b7205CAF2Bcd71437D9acDE3874C3388c138;
     address public cosmos = address(0xCAAA);
-    address public multisig = 0x7340D1FeCD4B64A4ac34f826B21c945d44d7407F;
+    // address public multisig = 0x7340D1FeCD4B64A4ac34f826B21c945d44d7407F;
     address public ryusdRegistry = 0x2Cbd27E034FEE53f79b607430dA7771B22050741;
     address public ryusdRegistryOwner = 0xaDa78a5E01325B91Bc7879a63c309F7D54d42950;
     address public deployerAddress = 0xdAFAe2FfB48F1b5b710DD71FBaf8E6C7a67aBF89;
@@ -358,5 +358,7 @@ contract MainnetAddresses {
     address public cWETHV3 = 0xA17581A9E3356d9A858b789D68B4d866e593aE94;
     address public cometRewards = 0x1B0e765F6224C21223AeA2af16c1C46E38885a40;
     // Morpho Blue
-    address public _morphoBlue = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb;
+    address public morphoBlue = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb;
+
+    address public uniswapV3PositionManager = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
 }

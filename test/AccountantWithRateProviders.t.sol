@@ -279,6 +279,8 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         vm.stopPrank();
     }
 
+    // TODO a more thorough test of fee logic
+
     function testRates() external {
         // getRate and getRate in quote should work.
         uint256 rate = accountant.getRate();
