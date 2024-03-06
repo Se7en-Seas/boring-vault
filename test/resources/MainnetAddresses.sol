@@ -6,10 +6,10 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 contract MainnetAddresses {
     // Sommelier
     address public gravityBridgeAddress = 0x69592e6f9d21989a043646fE8225da2600e5A0f7;
-    address public strategist = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A;
+    // address public strategist = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A;
     address public devStrategist = 0xeeF7b7205CAF2Bcd71437D9acDE3874C3388c138;
     address public cosmos = address(0xCAAA);
-    address public multisig = 0x7340D1FeCD4B64A4ac34f826B21c945d44d7407F;
+    // address public multisig = 0x7340D1FeCD4B64A4ac34f826B21c945d44d7407F;
     address public ryusdRegistry = 0x2Cbd27E034FEE53f79b607430dA7771B22050741;
     address public ryusdRegistryOwner = 0xaDa78a5E01325B91Bc7879a63c309F7D54d42950;
     address public deployerAddress = 0xdAFAe2FfB48F1b5b710DD71FBaf8E6C7a67aBF89;
@@ -63,6 +63,9 @@ contract MainnetAddresses {
     ERC20 public EZETH = ERC20(0xbf5495Efe5DB9ce00f80364C8B423567e58d2110);
     ERC20 public RSETH = ERC20(0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7);
     ERC20 public OSETH = ERC20(0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38);
+
+    // Rate providers
+    address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
 
     // Chainlink Datafeeds
     address public WETH_USD_FEED = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
@@ -342,7 +345,7 @@ contract MainnetAddresses {
     address public staderConfig = 0x4ABEF2263d5A5ED582FC9A9789a41D85b68d69DB;
 
     // Etherfi
-    address public liquidityPool = 0x308861A430be4cce5502d0A12724771Fc6DaF216;
+    address public EETH_LIQUIDITY_POOL = 0x308861A430be4cce5502d0A12724771Fc6DaF216;
     address public withdrawalRequestNft = 0x7d5706f6ef3F89B3951E23e557CDFBC3239D4E2c;
 
     // Renzo
@@ -355,5 +358,7 @@ contract MainnetAddresses {
     address public cWETHV3 = 0xA17581A9E3356d9A858b789D68B4d866e593aE94;
     address public cometRewards = 0x1B0e765F6224C21223AeA2af16c1C46E38885a40;
     // Morpho Blue
-    address public _morphoBlue = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb;
+    address public morphoBlue = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb;
+
+    address public uniswapV3PositionManager = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
 }
