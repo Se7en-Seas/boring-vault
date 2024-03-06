@@ -19,83 +19,68 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     using Address for address;
 
     struct VerifyData {
-        bytes32 current_target_selector_root;
-        bytes32 current_address_argument_root;
-        AddressDecoder current_address_decoder;
+        bytes32 currentTargetSelectorRoot;
+        AddressDecoder currentAddressDecoder;
     }
 
     BoringVault public immutable vault;
-    BalancerVault public immutable balancer_vault;
+    BalancerVault public immutable balancerVault;
 
     // A tree where the leafs are the keccak256 hash of the target address, function selector.
-    bytes32 public allowed_target_selector_root;
-    bytes32 public allowed_address_argument_root;
-    AddressDecoder public address_decoder;
-    bool internal ongoing_manage;
+    bytes32 public manageRoot;
+    AddressDecoder public addressDecoder;
+    bool internal ongoingManage;
 
     bytes32 public constant MERKLE_MANAGER_ROLE = keccak256("MERKLE_MANAGER_ROLE");
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
-    constructor(address _owner, address _manager, address _admin, address _vault, address _balancer_vault)
+    constructor(address _owner, address _manager, address _admin, address _vault, address _balancerVault)
         AccessControlDefaultAdminRules(3 days, _owner)
     {
         vault = BoringVault(payable(_vault));
         _grantRole(MERKLE_MANAGER_ROLE, _manager);
         _grantRole(ADMIN_ROLE, _admin);
-        balancer_vault = BalancerVault(_balancer_vault);
+        balancerVault = BalancerVault(_balancerVault);
     }
 
     // This could be sommelier to start, then the multisig of the BoringVault can change the depositor.
     // TODO I could have the contents of the merkle tree passed in as call data, then we derive the merkle root on chain? That is more gas intensive, but allows people to easily verify what is in it.
-    function setAllowedTargetSelectorRoot(bytes32 _allowed_target_selector_root) external onlyRole(ADMIN_ROLE) {
-        allowed_target_selector_root = _allowed_target_selector_root;
+    function setManageRoot(bytes32 _manageRoot) external onlyRole(ADMIN_ROLE) {
+        manageRoot = _manageRoot;
         // TODO event
     }
 
-    function setAllowedAddressArgumentRoot(bytes32 _allowed_address_argument_root) external onlyRole(ADMIN_ROLE) {
-        allowed_address_argument_root = _allowed_address_argument_root;
-        // TODO event
-    }
-
-    function setAddressDecoder(address _address_decoder) external onlyRole(ADMIN_ROLE) {
-        address_decoder = AddressDecoder(_address_decoder);
+    function setAddressDecoder(address _addressDecoder) external onlyRole(ADMIN_ROLE) {
+        addressDecoder = AddressDecoder(_addressDecoder);
     }
 
     function manageVaultWithMerkleVerification(
-        bytes32[][] calldata target_proofs,
-        bytes32[][][] calldata arguments_proofs,
-        string[] calldata function_signatures,
+        bytes32[][] calldata manageProofs,
+        string[] calldata functionSignatures,
         address[] calldata targets,
-        bytes[] calldata target_data,
+        bytes[] calldata targetData,
         uint256[] calldata values
     ) public {
-        if (!ongoing_manage) _checkRole(MERKLE_MANAGER_ROLE);
+        if (!ongoingManage) _checkRole(MERKLE_MANAGER_ROLE);
 
-        // TODO might be able to optimize further if targets.length is stored in mem.
-        ongoing_manage = true;
+        ongoingManage = true;
 
-        // uint256 targets_length = targets.length;
-        require(targets.length == target_proofs.length, "Invalid target proof length");
-        require(targets.length == arguments_proofs.length, "Invalid argument proof length");
-        require(targets.length == function_signatures.length, "Invalid function signatures length");
-        require(targets.length == target_data.length, "Invalid data length");
-        require(targets.length == values.length, "Invalid values length");
+        uint256 targetsLength = targets.length;
+        require(targetsLength == manageProofs.length, "Invalid target proof length");
+        require(targetsLength == functionSignatures.length, "Invalid function signatures length");
+        require(targetsLength == targetData.length, "Invalid data length");
+        require(targetsLength == values.length, "Invalid values length");
 
         // Read state and save it in memory.
-        VerifyData memory vd = VerifyData({
-            current_target_selector_root: allowed_target_selector_root,
-            current_address_argument_root: allowed_address_argument_root,
-            current_address_decoder: address_decoder
-        });
+        VerifyData memory vd =
+            VerifyData({currentTargetSelectorRoot: manageRoot, currentAddressDecoder: addressDecoder});
 
-        for (uint256 i; i < targets.length; ++i) {
-            _verifyCallData(
-                vd, target_proofs[i], arguments_proofs[i], function_signatures[i], targets[i], target_data[i]
-            );
-            vault.manage(targets[i], target_data[i], values[i]);
+        for (uint256 i; i < targetsLength; ++i) {
+            _verifyCallData(vd, manageProofs[i], functionSignatures[i], targets[i], targetData[i]);
+            vault.manage(targets[i], targetData[i], values[i]);
         }
 
-        ongoing_manage = false;
+        ongoingManage = false;
     }
 
     function receiveFlashLoan(
@@ -105,8 +90,8 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         bytes calldata userData
     ) external {
         // console.log("Here");
-        require(msg.sender == address(balancer_vault), "wrong caller");
-        require(ongoing_manage, "not being managed");
+        require(msg.sender == address(balancerVault), "wrong caller");
+        require(ongoingManage, "not being managed");
         // Transfer tokens to vault.
         for (uint256 i = 0; i < amounts.length; ++i) {
             ERC20(tokens[i]).safeTransfer(address(vault), amounts[i]);
@@ -114,90 +99,68 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
         {
             (
-                bytes32[][] memory targets_proofs,
-                bytes32[][][] memory arguments_proofs,
-                string[] memory function_signatures,
+                bytes32[][] memory manageProofs,
+                string[] memory functionSignatures,
                 address[] memory targets,
                 bytes[] memory data,
                 uint256[] memory values
-            ) = abi.decode(userData, (bytes32[][], bytes32[][][], string[], address[], bytes[], uint256[]));
+            ) = abi.decode(userData, (bytes32[][], string[], address[], bytes[], uint256[]));
 
             ManagerWithMerkleVerification(address(this)).manageVaultWithMerkleVerification(
-                targets_proofs, arguments_proofs, function_signatures, targets, data, values
+                manageProofs, functionSignatures, targets, data, values
             );
         }
 
         // Transfer tokens back to balancer.
         // Have vault transfer amount + fees back to balancer
-        bytes[] memory transfer_data = new bytes[](amounts.length);
+        bytes[] memory transferData = new bytes[](amounts.length);
         for (uint256 i; i < amounts.length; ++i) {
-            transfer_data[i] =
-                abi.encodeWithSelector(ERC20.transfer.selector, address(balancer_vault), (amounts[i] + feeAmounts[i]));
+            transferData[i] =
+                abi.encodeWithSelector(ERC20.transfer.selector, address(balancerVault), (amounts[i] + feeAmounts[i]));
         }
         // Values is always zero, just pass in an array of zeroes.
-        vault.manage(tokens, transfer_data, new uint256[](amounts.length));
+        vault.manage(tokens, transferData, new uint256[](amounts.length));
     }
 
     // ========================================= INTERNAL HELPER FUNCTIONS =========================================
 
     function _verifyCallData(
         VerifyData memory vd,
-        bytes32[] calldata target_proof,
-        bytes32[][] calldata arguments_proofs,
-        string calldata function_signature,
+        bytes32[] calldata manageProof,
+        string calldata functionSignature,
         address target,
-        bytes calldata target_data
+        bytes calldata targetData
     ) internal pure {
-        // Verify we can even call this target with selector, and that function_signature is correct.
-        {
-            bytes4 provided_selector = bytes4(target_data);
-            require(
-                _verifyTargetsProof(vd.current_target_selector_root, target_proof, target, provided_selector),
-                "Failed to verify target"
-            );
+        // Verify we can even call this target with selector, and that functionSignature is correct.
+        bytes4 providedSelector = bytes4(targetData);
 
-            // Derive the function selector to verify function_signature is legitimate.
-            bytes4 derived_selector = bytes4(keccak256(abi.encodePacked(function_signature)));
+        // Derive the function selector to verify functionSignature is legitimate.
+        bytes4 derivedSelector = bytes4(keccak256(abi.encodePacked(functionSignature)));
 
-            // Verify provided and derived selectors match.
-            require(provided_selector == derived_selector, "Function Selector Mismatch");
-        }
+        // Verify provided and derived selectors match.
+        require(providedSelector == derivedSelector, "Function Selector Mismatch");
 
         // Use address decoder to get addresses in call data.
-        address[] memory decoded_addresses = vd.current_address_decoder.decode(function_signature, target_data[4:]); // Slice 4 bytes away to remove function selector.
-        uint256 decoded_addresses_length = decoded_addresses.length;
+        address[] memory argumentAddresses = vd.currentAddressDecoder.decode(functionSignature, targetData[4:]); // Slice 4 bytes away to remove function selector.
         require(
-            arguments_proofs.length == decoded_addresses_length,
-            "Arguments proof length differs from found address length"
+            _verifyManageProof(vd.currentTargetSelectorRoot, manageProof, target, providedSelector, argumentAddresses),
+            "Failed to verify manage call"
         );
-        uint256 address_count;
-        for (uint256 i; i < decoded_addresses_length; ++i) {
-            require(
-                _verifyArgumentsProof(
-                    vd.current_address_argument_root, arguments_proofs[address_count], decoded_addresses[i]
-                ),
-                "Failed to verify address"
-            );
-            address_count += 1;
-        }
     }
 
-    function _verifyTargetsProof(
-        bytes32 _allowed_target_selector_root,
+    function _verifyManageProof(
+        bytes32 root,
         bytes32[] calldata proof,
         address target,
-        bytes4 selector
+        bytes4 selector,
+        address[] memory argumentAddresses
     ) internal pure returns (bool) {
-        bytes32 leaf = keccak256(abi.encodePacked(target, selector));
-        return MerkleProof.verifyCalldata(proof, _allowed_target_selector_root, leaf);
-    }
-
-    function _verifyArgumentsProof(bytes32 _allowed_address_argument_root, bytes32[] calldata proof, address argument)
-        internal
-        pure
-        returns (bool)
-    {
-        bytes32 leaf = keccak256(abi.encodePacked(argument));
-        return MerkleProof.verifyCalldata(proof, _allowed_address_argument_root, leaf);
+        bytes memory rawDigest = abi.encodePacked(target, selector);
+        uint256 argumentAddressesLength = argumentAddresses.length;
+        for (uint256 i; i < argumentAddressesLength; ++i) {
+            rawDigest = abi.encodePacked(rawDigest, argumentAddresses[i]);
+        }
+        bytes32 leaf = keccak256(rawDigest);
+        return MerkleProof.verifyCalldata(proof, root, leaf);
     }
 }
