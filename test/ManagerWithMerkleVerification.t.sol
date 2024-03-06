@@ -7,7 +7,7 @@ import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVer
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {AddressDecoder} from "src/base/AddressDecoder.sol";
+import {RawDataDecoderAndSanitizer} from "src/base/RawDataDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
@@ -19,7 +19,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
     ManagerWithMerkleVerification public manager;
     BoringVault public boring_vault;
-    address public addressDecoder;
+    address public rawDataDecoderAndSanitizer;
 
     function setUp() external {
         // Setup forked environment.
@@ -32,11 +32,11 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         manager =
             new ManagerWithMerkleVerification(address(this), address(this), address(this), address(boring_vault), vault);
 
-        addressDecoder = address(new AddressDecoder());
+        rawDataDecoderAndSanitizer = address(new RawDataDecoderAndSanitizer(uniswapV3NonFungiblePositionManager));
 
         boring_vault.grantRole(boring_vault.MANAGER_ROLE(), address(manager));
 
-        manager.setAddressDecoder(address(addressDecoder));
+        manager.setRawDataDecoderAndSanitizer(address(rawDataDecoderAndSanitizer));
     }
 
     function testManagerMerkleVerificationHappyPath() external {

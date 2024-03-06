@@ -297,6 +297,7 @@ contract MainnetAddresses {
     address public WSTETH_WETH_100 = 0x109830a1AAaD605BbF02a9dFA7B0B92EC2FB7dAa;
     address public WSTETH_WETH_500 = 0xD340B57AAcDD10F96FC1CF10e15921936F41E29c;
     address public DAI_USDC_100 = 0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168;
+    address public uniswapV3NonFungiblePositionManager = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
 
     // Redstone
     address public swEthAdapter = 0x68ba9602B2AeE30847412109D2eE89063bf08Ec2;

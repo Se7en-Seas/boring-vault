@@ -7,7 +7,7 @@ import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVer
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {AddressDecoder} from "src/base/AddressDecoder.sol";
+import {RawDataDecoderAndSanitizer} from "src/base/RawDataDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
@@ -31,7 +31,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
     AccountantWithRateProviders public accountant;
     AtomicQueue public atomic_queue;
     AtomicSolver public atomic_solver;
-    address public addressDecoder;
+    address public rawDataDecoderAndSanitizer;
 
     address public multisig = vm.addr(123456789);
     address public strategist = vm.addr(987654321);
@@ -71,7 +71,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
 
         teller = new TellerWithMultiAssetSupport(multisig, address(boringVault), address(accountant), address(WETH));
 
-        addressDecoder = address(new AddressDecoder());
+        rawDataDecoderAndSanitizer = address(new RawDataDecoderAndSanitizer(uniswapV3NonFungiblePositionManager));
 
         // Deploy queue.
         atomic_queue = new AtomicQueue();
@@ -81,7 +81,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         boringVault.grantRole(boringVault.MINTER_ROLE(), address(teller));
         boringVault.grantRole(boringVault.BURNER_ROLE(), address(teller));
         boringVault.grantRole(boringVault.MANAGER_ROLE(), address(manager));
-        manager.setAddressDecoder(address(addressDecoder));
+        manager.setRawDataDecoderAndSanitizer(address(rawDataDecoderAndSanitizer));
         accountant.setRateProviderData(EETH, true, address(0));
         accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
         teller.grantRole(teller.ADMIN_ROLE(), multisig);
@@ -116,6 +116,21 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         WEETH.safeApprove(address(boringVault), weETH_amount);
         teller.deposit(WEETH, weETH_amount, 0, weeth_user);
         vm.stopPrank();
+    }
+
+    enum r {
+        VAL
+    }
+
+    struct MyStruct {
+        r a;
+    }
+
+    function doStuff(MyStruct memory s) external pure {}
+
+    function testHunch() external {
+        console.logBytes4(this.doStuff.selector);
+        console.logBytes4(bytes4(keccak256("doStuff((uint8))")));
     }
 
     function testWithdraw() external {}
@@ -284,17 +299,17 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
 
         manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
-        vm.startPrank(strategist);
-        uint256 gas = gasleft();
-        manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
-        console.log("Gas For Rebalance", gas - gasleft());
-        vm.stopPrank();
-
         // take all eETH and wrap it.
         // balancer flashloan 90 weth
         // - unwrap, then mint EETH
         // - wrap EETH
         // - use 200 weETH as collateral on morpho blue, and borrow 90 weth to repay loan.
+
+        vm.startPrank(strategist);
+        uint256 gas = gasleft();
+        manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+        console.log("Gas For Rebalance", gas - gasleft());
+        vm.stopPrank();
 
         // take 250 weETH and 250 wETH to join Uniswap V3 5 bps pool
         // take 250 weETH and 250 wETH to join the Curve pool

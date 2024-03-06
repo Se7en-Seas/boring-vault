@@ -7,7 +7,7 @@ import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVer
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {AddressDecoder} from "src/base/AddressDecoder.sol";
+import {RawDataDecoderAndSanitizer} from "src/base/RawDataDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
@@ -28,7 +28,7 @@ contract ArbitrumMerkleMakerTest is Test, MainnetAddresses {
         _startFork(rpcKey, blockNumber);
     }
 
-    function testHunch() external {
+    function testHunch() external view {
         address[] memory allowed_address_arguments = new address[](2);
         allowed_address_arguments[0] = 0x552acA1343A6383aF32ce1B7c7B1b47959F7ad90;
         allowed_address_arguments[1] = 0xeeF7b7205CAF2Bcd71437D9acDE3874C3388c138;

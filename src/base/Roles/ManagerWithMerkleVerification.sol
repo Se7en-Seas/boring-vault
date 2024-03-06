@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {AddressDecoder} from "src/base/AddressDecoder.sol";
+import {RawDataDecoderAndSanitizer} from "src/base/RawDataDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {console} from "@forge-std/Test.sol"; //TODO remove
 
@@ -20,7 +20,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
     struct VerifyData {
         bytes32 currentTargetSelectorRoot;
-        AddressDecoder currentAddressDecoder;
+        RawDataDecoderAndSanitizer currentRawDataDecoderAndSanitizer;
     }
 
     BoringVault public immutable vault;
@@ -28,7 +28,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
     // A tree where the leafs are the keccak256 hash of the target address, function selector.
     bytes32 public manageRoot;
-    AddressDecoder public addressDecoder;
+    RawDataDecoderAndSanitizer public rawDataDecoderAndSanitizer;
     bool internal ongoingManage;
 
     bytes32 public constant MERKLE_MANAGER_ROLE = keccak256("MERKLE_MANAGER_ROLE");
@@ -50,8 +50,8 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         // TODO event
     }
 
-    function setAddressDecoder(address _addressDecoder) external onlyRole(ADMIN_ROLE) {
-        addressDecoder = AddressDecoder(_addressDecoder);
+    function setRawDataDecoderAndSanitizer(address _rawDataDecoderAndSanitizer) external onlyRole(ADMIN_ROLE) {
+        rawDataDecoderAndSanitizer = RawDataDecoderAndSanitizer(_rawDataDecoderAndSanitizer);
     }
 
     function manageVaultWithMerkleVerification(
@@ -72,8 +72,10 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         require(targetsLength == values.length, "Invalid values length");
 
         // Read state and save it in memory.
-        VerifyData memory vd =
-            VerifyData({currentTargetSelectorRoot: manageRoot, currentAddressDecoder: addressDecoder});
+        VerifyData memory vd = VerifyData({
+            currentTargetSelectorRoot: manageRoot,
+            currentRawDataDecoderAndSanitizer: rawDataDecoderAndSanitizer
+        });
 
         for (uint256 i; i < targetsLength; ++i) {
             _verifyCallData(vd, manageProofs[i], functionSignatures[i], targets[i], targetData[i]);
@@ -130,7 +132,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         string calldata functionSignature,
         address target,
         bytes calldata targetData
-    ) internal pure {
+    ) internal view {
         // Verify we can even call this target with selector, and that functionSignature is correct.
         bytes4 providedSelector = bytes4(targetData);
 
@@ -141,7 +143,9 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         require(providedSelector == derivedSelector, "Function Selector Mismatch");
 
         // Use address decoder to get addresses in call data.
-        address[] memory argumentAddresses = vd.currentAddressDecoder.decode(functionSignature, targetData[4:]); // Slice 4 bytes away to remove function selector.
+        address[] memory argumentAddresses = vd.currentRawDataDecoderAndSanitizer.decodeAndSanitizeRawData(
+            address(vault), functionSignature, targetData[4:]
+        ); // Slice 4 bytes away to remove function selector.
         require(
             _verifyManageProof(vd.currentTargetSelectorRoot, manageProof, target, providedSelector, argumentAddresses),
             "Failed to verify manage call"

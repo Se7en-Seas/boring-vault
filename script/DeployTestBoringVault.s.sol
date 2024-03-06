@@ -7,7 +7,7 @@ import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVer
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {AddressDecoder} from "src/base/AddressDecoder.sol";
+import {RawDataDecoderAndSanitizer} from "src/base/RawDataDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 
 import "forge-std/Script.sol";
@@ -22,7 +22,7 @@ contract DeployTestBoringVaultScript is Script {
 
     ManagerWithMerkleVerification public manager;
     BoringVault public boring_vault;
-    address public addressDecoder;
+    address public rawDataDecoderAndSanitizer;
 
     address public managerAddress = 0xeeF7b7205CAF2Bcd71437D9acDE3874C3388c138;
     address public owner = 0x552acA1343A6383aF32ce1B7c7B1b47959F7ad90;
@@ -40,14 +40,14 @@ contract DeployTestBoringVaultScript is Script {
 
         manager = new ManagerWithMerkleVerification(owner, managerAddress, owner, address(boring_vault), balancerVault);
 
-        addressDecoder = address(new AddressDecoder());
+        rawDataDecoderAndSanitizer = address(new RawDataDecoderAndSanitizer(0xC36442b4a4522E871399CD717aBDD847Ab11FE88));
 
         boring_vault.grantRole(boring_vault.MANAGER_ROLE(), address(manager));
         boring_vault.grantRole(boring_vault.MINTER_ROLE(), managerAddress);
         boring_vault.grantRole(boring_vault.BURNER_ROLE(), managerAddress);
         manager.grantRole(manager.ADMIN_ROLE(), managerAddress);
 
-        manager.setAddressDecoder(address(addressDecoder));
+        manager.setRawDataDecoderAndSanitizer(rawDataDecoderAndSanitizer);
 
         vm.stopBroadcast();
     }
