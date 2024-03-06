@@ -65,7 +65,6 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
             1.001e4,
             0.999e4,
             1,
-            0.2e4,
             0.01e4
         );
 

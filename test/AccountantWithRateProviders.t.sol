@@ -39,7 +39,6 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
             1.001e4,
             0.999e4,
             1,
-            0,
             0
         );
 
@@ -55,12 +54,12 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     function testPause() external {
         accountant.pause();
 
-        (,,,,,,,, bool is_paused,,,) = accountant.accountantState();
+        (,,,,,,, bool is_paused,,) = accountant.accountantState();
         assertTrue(is_paused == true, "Accountant should be paused");
 
         accountant.unpause();
 
-        (,,,,,,,, is_paused,,,) = accountant.accountantState();
+        (,,,,,,, is_paused,,) = accountant.accountantState();
 
         assertTrue(is_paused == false, "Accountant should be unpaused");
     }
@@ -68,73 +67,41 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     function testUpdateDelay() external {
         accountant.updateDelay(2);
 
-        (,,,,,,,,, uint8 delay_in_hours,,) = accountant.accountantState();
+        (,,,,,,,, uint8 delay_in_hours,) = accountant.accountantState();
 
         assertEq(delay_in_hours, 2, "Delay should be 2 hours");
     }
 
     function testUpdateUpper() external {
         accountant.updateUpper(1.002e4);
-        (,,,,, uint16 upper_bound,,,,,,) = accountant.accountantState();
+        (,,,, uint16 upper_bound,,,,,) = accountant.accountantState();
 
         assertEq(upper_bound, 1.002e4, "Upper bound should be 1.002e4");
     }
 
     function testUpdateLower() external {
         accountant.updateLower(0.998e4);
-        (,,,,,, uint16 lower_bound,,,,,) = accountant.accountantState();
+        (,,,,, uint16 lower_bound,,,,) = accountant.accountantState();
 
         assertEq(lower_bound, 0.998e4, "Lower bound should be 0.9980e4");
     }
 
-    function testUpdatePerformanceFee() external {
-        accountant.updatePerformanceFee(0.2e4);
-        (,,,,,,,,,, uint16 performance_fee,) = accountant.accountantState();
-
-        assertEq(performance_fee, 0.2e4, "Performance Fee should be 0.2e4");
-    }
-
     function testUpdateManagementFee() external {
         accountant.updateManagementFee(0.2e4);
-        (,,,,,,,,,,, uint16 management_fee) = accountant.accountantState();
+        (,,,,,,,,, uint16 management_fee) = accountant.accountantState();
 
         assertEq(management_fee, 0.2e4, "Management Fee should be 0.2e4");
     }
 
     function testUpdatePayoutAddress() external {
-        (address payout,,,,,,,,,,,) = accountant.accountantState();
+        (address payout,,,,,,,,,) = accountant.accountantState();
         assertEq(payout, payout_address, "Payout address should be the same");
 
         address new_payout_address = vm.addr(8888888);
         accountant.updatePayoutAddress(new_payout_address);
 
-        (payout,,,,,,,,,,,) = accountant.accountantState();
+        (payout,,,,,,,,,) = accountant.accountantState();
         assertEq(payout, new_payout_address, "Payout address should be the same");
-    }
-
-    function testResetHighWatermark() external {
-        accountant.updatePerformanceFee(0.2e4);
-        accountant.updateManagementFee(0.01e4);
-
-        skip(1 days / 24);
-        // Increase exchange rate by 5 bps.
-        uint96 new_exchange_rate = uint96(1.0005e18);
-        accountant.updateExchangeRate(new_exchange_rate);
-
-        (,, uint128 fees_owed,,,,,,,,,) = accountant.accountantState();
-        assertEq(fees_owed, 0, "Fees owed should be 0");
-
-        skip(1 days / 24);
-        // Decrease exchange rate by 5 bps.
-        new_exchange_rate = uint96(1e18);
-        accountant.updateExchangeRate(new_exchange_rate);
-
-        accountant.resetHighWatermark();
-
-        uint96 hwm;
-        (, hwm, fees_owed,,,,,,,,,) = accountant.accountantState();
-        assertEq(hwm, new_exchange_rate, "High Watermak should have been updated");
-        assertEq(fees_owed, 0, "Fees owed should be 0");
     }
 
     function testUpdateRateProvider() external {
@@ -144,7 +111,6 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     }
 
     function testUpdateExchangeRateAndFeeLogic() external {
-        accountant.updatePerformanceFee(0.2e4);
         accountant.updateManagementFee(0.01e4);
 
         skip(1 days / 24);
@@ -154,7 +120,6 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
 
         (
             ,
-            uint96 hwm,
             uint128 fees_owed,
             uint128 total_shares,
             uint96 current_exchange_rate,
@@ -163,9 +128,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
             uint64 last_update_timestamp,
             bool is_paused,
             ,
-            ,
         ) = accountant.accountantState();
-        assertEq(hwm, new_exchange_rate, "High Watermak should have been updated");
         assertEq(fees_owed, 0, "Fees owed should be 0");
         assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
         assertEq(current_exchange_rate, new_exchange_rate, "Current exchange rate should be updated");
@@ -178,11 +141,10 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         accountant.updateExchangeRate(new_exchange_rate);
 
         uint256 expected_fees_owed =
-            0.1e18 + uint256(0.01e4).mulDivDown(uint256(1 days / 24).mulDivDown(1_000.5e18, 365 days), 1e4);
+            uint256(0.01e4).mulDivDown(uint256(1 days / 24).mulDivDown(1_000.5e18, 365 days), 1e4);
 
-        (, hwm, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,,) =
+        (, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,) =
             accountant.accountantState();
-        assertEq(hwm, new_exchange_rate, "High Watermak should have been updated");
         assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
         assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
         assertEq(current_exchange_rate, new_exchange_rate, "Current exchange rate should be updated");
@@ -191,15 +153,13 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
 
         skip(1 days / 24);
         // Decrease exchange rate by 5 bps.
-        uint96 old_exchange_rate = new_exchange_rate;
         new_exchange_rate = uint96(1.0005e18);
         accountant.updateExchangeRate(new_exchange_rate);
 
         expected_fees_owed += uint256(0.01e4).mulDivDown(uint256(1 days / 24).mulDivDown(1_000.5e18, 365 days), 1e4);
 
-        (, hwm, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,,) =
+        (, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,) =
             accountant.accountantState();
-        assertEq(hwm, old_exchange_rate, "High Watermak should not have been updated");
         assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
         assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
         assertEq(current_exchange_rate, new_exchange_rate, "Current exchange rate should be updated");
@@ -211,9 +171,8 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         new_exchange_rate = uint96(1.0e18);
         accountant.updateExchangeRate(new_exchange_rate);
 
-        (, hwm, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,,) =
+        (, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,) =
             accountant.accountantState();
-        assertEq(hwm, old_exchange_rate, "High Watermak should not have been updated");
         assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
         assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
         assertEq(current_exchange_rate, new_exchange_rate, "Current exchange rate should be updated");
@@ -227,9 +186,8 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         new_exchange_rate = uint96(10.0e18);
         accountant.updateExchangeRate(new_exchange_rate);
 
-        (, hwm, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,,) =
+        (, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,) =
             accountant.accountantState();
-        assertEq(hwm, old_exchange_rate, "High Watermak should not have been updated");
         assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
         assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
         assertEq(current_exchange_rate, new_exchange_rate, "Current exchange rate should be updated");
@@ -238,7 +196,6 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     }
 
     function testClaimFees() external {
-        accountant.updatePerformanceFee(0.2e4);
         accountant.updateManagementFee(0.01e4);
 
         skip(1 days / 24);
@@ -246,7 +203,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         uint96 new_exchange_rate = uint96(1.0005e18);
         accountant.updateExchangeRate(new_exchange_rate);
 
-        (,, uint128 fees_owed,,,,,,,,,) = accountant.accountantState();
+        (, uint128 fees_owed,,,,,,,,) = accountant.accountantState();
         assertEq(fees_owed, 0, "Fees owed should be 0");
 
         skip(1 days / 24);
@@ -255,9 +212,9 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         accountant.updateExchangeRate(new_exchange_rate);
 
         uint256 expected_fees_owed =
-            0.1e18 + uint256(0.01e4).mulDivDown(uint256(1 days / 24).mulDivDown(1_000.5e18, 365 days), 1e4);
+            uint256(0.01e4).mulDivDown(uint256(1 days / 24).mulDivDown(1_000.5e18, 365 days), 1e4);
 
-        (,, fees_owed,,,,,,,,,) = accountant.accountantState();
+        (, fees_owed,,,,,,,,) = accountant.accountantState();
         assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
 
         vm.startPrank(address(boring_vault));
@@ -278,8 +235,6 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         accountant.claimFees(WEETH);
         vm.stopPrank();
     }
-
-    // TODO a more thorough test of fee logic
 
     function testRates() external {
         // getRate and getRate in quote should work.

@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
-import {console} from "@forge-std/Test.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {INonFungiblePositionManager} from "src/interfaces/RawDataDecoderAndSanitizerInterfaces.sol";
 
 contract RawDataDecoderAndSanitizer {
+    /**
+     * @notice The networks uniswapV3 nonfungible position manager.
+     */
     INonFungiblePositionManager internal immutable uniswapV3NonFungiblePositionManager;
 
     constructor(address _uniswapV3NonFungiblePositionManager) {
@@ -98,6 +100,9 @@ contract RawDataDecoderAndSanitizer {
      * @notice This function both decodes, and sanitizes raw contract data.
      * @dev Decoding is needed to find any addresses in the contract data, and return them to the caller.
      * @dev Sanitizing is performing logical checks on non address arguments in the contract data.
+     * @param boringVault the BoringVault that will be making a call using rawData
+     * @param functionSignature the function signature for the call
+     * @param rawData the raw call data with the bytes4 selector removed
      */
     function decodeAndSanitizeRawData(address boringVault, string calldata functionSignature, bytes calldata rawData)
         external
@@ -305,6 +310,9 @@ contract RawDataDecoderAndSanitizer {
         }
     }
 
+    /**
+     * @notice Internal helper function that converts poolIds to pool addresses.
+     */
     function _getPoolAddressFromPoolId(bytes32 poolId) internal pure returns (address) {
         return address(uint160(uint256(poolId >> 96)));
     }

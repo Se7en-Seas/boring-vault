@@ -32,7 +32,6 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
 
     struct AccountantState {
         address payout_address;
-        uint96 exchange_rate_high_watermark;
         uint128 fees_owed_in_base;
         uint128 total_shares_last_update;
         uint96 exchange_rate;
@@ -41,16 +40,8 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
         uint64 last_update_timestamp;
         bool is_paused;
         uint8 minimum_update_delay_in_hours;
-        uint16 performance_fee;
         uint16 management_fee;
     }
-
-    address public payout_address;
-    uint96 public exchange_rate_high_watermark;
-    uint128 public fees_owed_in_base;
-    uint128 public total_shares_last_update;
-    uint16 public performance_fee;
-    uint16 public management_fee;
 
     AccountantState public accountantState;
 
@@ -72,7 +63,6 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
         uint16 _allowed_exchange_rate_change_upper,
         uint16 _allowed_exchange_rate_change_lower,
         uint8 _minimum_update_delay_in_hours,
-        uint16 _performance_fee,
         uint16 _management_fee
     ) AccessControlDefaultAdminRules(3 days, _owner) {
         _grantRole(EXCHANGE_RATE_UPDATER_ROLE, _updater);
@@ -83,7 +73,6 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
         ONE_SHARE = 10 ** vault.decimals();
         accountantState = AccountantState({
             payout_address: _payout_address,
-            exchange_rate_high_watermark: _starting_exchange_rate,
             fees_owed_in_base: 0,
             total_shares_last_update: uint128(vault.totalSupply()),
             exchange_rate: _starting_exchange_rate,
@@ -92,7 +81,6 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
             last_update_timestamp: uint64(block.timestamp),
             is_paused: false,
             minimum_update_delay_in_hours: _minimum_update_delay_in_hours,
-            performance_fee: _performance_fee,
             management_fee: _management_fee
         });
     }
@@ -120,22 +108,12 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
         accountantState.allowed_exchange_rate_change_lower = _allowed_exchange_rate_change_lower;
     }
 
-    function updatePerformanceFee(uint16 _performance_fee) external onlyRole(ADMIN_ROLE) {
-        accountantState.performance_fee = _performance_fee;
-    }
-
     function updateManagementFee(uint16 _management_fee) external onlyRole(ADMIN_ROLE) {
         accountantState.management_fee = _management_fee;
     }
 
     function updatePayoutAddress(address _payout_address) external onlyRole(ADMIN_ROLE) {
         accountantState.payout_address = _payout_address;
-    }
-
-    function resetHighWatermark() external onlyRole(ADMIN_ROLE) {
-        accountantState.exchange_rate_high_watermark = accountantState.exchange_rate;
-        // Also reset fees owed.
-        accountantState.fees_owed_in_base = 0;
     }
 
     // Rate providers must return rates in terms of `base` and they must use the same decimals as `base`.
@@ -166,28 +144,19 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
         } else {
             // Only update fees adn hwm if we are not paused.
             // Update fee accounting.
-            uint256 new_fees_owed_in_base = 0;
             uint256 share_supply_to_use = current_total_shares;
             // Use the minimum between current total supply and total supply for last update.
             if (state.total_shares_last_update < share_supply_to_use) {
                 share_supply_to_use = state.total_shares_last_update;
             }
 
-            if (_new_exchange_rate > state.exchange_rate_high_watermark) {
-                // Determine performance fees owned.
-                uint256 asset_delta = share_supply_to_use.mulDivDown(_new_exchange_rate, ONE_SHARE);
-                asset_delta -= share_supply_to_use.mulDivDown(state.exchange_rate_high_watermark, ONE_SHARE);
-                new_fees_owed_in_base = asset_delta.mulDivDown(state.performance_fee, 1e4);
-                // Update high watermark.
-                state.exchange_rate_high_watermark = _new_exchange_rate;
-            }
             // Determine management fees owned.
             uint256 time_delta = current_time - state.last_update_timestamp;
             uint256 minimum_assets = _new_exchange_rate > current_exchange_rate
                 ? share_supply_to_use.mulDivDown(current_exchange_rate, ONE_SHARE)
                 : share_supply_to_use.mulDivDown(_new_exchange_rate, ONE_SHARE);
             uint256 management_fees_annual = minimum_assets.mulDivDown(state.management_fee, 1e4);
-            new_fees_owed_in_base += management_fees_annual.mulDivDown(time_delta, 365 days);
+            uint256 new_fees_owed_in_base = management_fees_annual.mulDivDown(time_delta, 365 days);
 
             state.fees_owed_in_base += uint128(new_fees_owed_in_base);
         }
