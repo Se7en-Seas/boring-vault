@@ -63,6 +63,19 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         manager.setAllowedTargetSelectorRoot(allowed_targets_and_selectors_tree[1][0]);
         manager.setAllowedAddressArgumentRoot(allowed_address_argument_tree[1][0]);
 
+        console.log("Allowed address root");
+        console.logBytes32(allowed_address_argument_tree[1][0]);
+        console.log("Leaf A");
+        console.logBytes32(allowed_address_argument_tree[0][0]);
+
+        console.log("Leaf B");
+        console.logBytes32(allowed_address_argument_tree[0][1]);
+
+        console.log("Hash");
+        console.logBytes32(keccak256(abi.encodePacked(uint32(0x0000000b))));
+
+        console.logBytes(abi.encodePacked(uint32(0x0000000b)));
+
         address[] memory targets = new address[](2);
         targets[0] = address(USDC);
         targets[1] = address(USDT);

@@ -99,6 +99,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
 
     // ========================================= ADMIN FUNCTIONS =========================================
     // TODO add logical limits, and events.
+    // TODO make a new role
     function pause() external onlyRole(ADMIN_ROLE) {
         accountantState.is_paused = true;
     }
