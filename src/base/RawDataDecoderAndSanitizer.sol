@@ -84,17 +84,15 @@ contract RawDataDecoderAndSanitizer {
     // supplyCollateral
     bytes32 internal constant HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_ADDRESS_BYTES =
         keccak256("((address,address,address,address,uint256),uint256,address,bytes)");
-    // borrow
+    // borrow, withdraw
     bytes32 internal constant HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_UINT256_ADDRESS_ADDRESS =
         keccak256("((address,address,address,address,uint256),uint256,uint256,address,address)");
     // withdraw collateral
     bytes32 internal constant HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_ADDRESS_ADDRESS =
         keccak256("((address,address,address,address,uint256),uint256,address,address)");
-    // repay
+    // repay, supply
     bytes32 internal constant HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_UINT256_ADDRESS_BYTES =
         keccak256("((address,address,address,address,uint256),uint256,uint256,address,bytes)");
-
-    // TODO technically do not have support for just normal supplying and withdrawing
 
     /**
      * @notice This function both decodes, and sanitizes raw contract data.

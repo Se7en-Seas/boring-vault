@@ -118,21 +118,6 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         vm.stopPrank();
     }
 
-    enum r {
-        VAL
-    }
-
-    struct MyStruct {
-        r a;
-    }
-
-    function doStuff(MyStruct memory s) external pure {}
-
-    function testHunch() external {
-        console.logBytes4(this.doStuff.selector);
-        console.logBytes4(bytes4(keccak256("doStuff((uint8))")));
-    }
-
     function testWithdraw() external {}
 
     function testComplexStrategy() external {
