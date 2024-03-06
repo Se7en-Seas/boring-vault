@@ -87,7 +87,20 @@ contract RawDataDecoderAndSanitizer {
     // borrow
     bytes32 internal constant HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_UINT256_ADDRESS_ADDRESS =
         keccak256("((address,address,address,address,uint256),uint256,uint256,address,address)");
+    // withdraw collateral
+    bytes32 internal constant HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_ADDRESS_ADDRESS =
+        keccak256("((address,address,address,address,uint256),uint256,address,address)");
+    // repay
+    bytes32 internal constant HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_UINT256_ADDRESS_BYTES =
+        keccak256("((address,address,address,address,uint256),uint256,uint256,address,bytes)");
 
+    // TODO technically do not have support for just normal supplying and withdrawing
+
+    /**
+     * @notice This function both decodes, and sanitizes raw contract data.
+     * @dev Decoding is needed to find any addresses in the contract data, and return them to the caller.
+     * @dev Sanitizing is performing logical checks on non address arguments in the contract data.
+     */
     function decodeAndSanitizeRawData(address boringVault, string calldata functionSignature, bytes calldata rawData)
         external
         view
@@ -241,28 +254,56 @@ contract RawDataDecoderAndSanitizer {
             }
             addressesFound[pathAddressLength] = params.recipient;
         } else if (hashedArguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_ADDRESS_BYTES) {
-            // This is decoding a tuple, but since all elements in the tuple are static type,
-            // we can just decode it as if there was no tuple of elements.
+            (DecoderCustomTypes.MarketParams memory params,, address onBehalf, bytes memory callbackData) =
+                abi.decode(rawData, (DecoderCustomTypes.MarketParams, uint256, address, bytes));
+            // Sanitize raw data
+            require(callbackData.length == 0, "callback not supported");
+            // Return addresses found
             addressesFound = new address[](5);
-            (addressesFound[0], addressesFound[1], addressesFound[2], addressesFound[3],,, addressesFound[4],) =
-                abi.decode(rawData, (address, address, address, address, uint256, uint256, address, bytes));
+            addressesFound[0] = params.loanToken;
+            addressesFound[1] = params.collateralToken;
+            addressesFound[2] = params.oracle;
+            addressesFound[3] = params.irm;
+            addressesFound[4] = onBehalf;
         } else if (hashedArguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_UINT256_ADDRESS_ADDRESS) {
-            // This is decoding a tuple, but since all elements in the tuple are static type,
-            // we can just decode it as if there was no tuple of elements.
+            (DecoderCustomTypes.MarketParams memory params,,, address onBehalf, address receiver) =
+                abi.decode(rawData, (DecoderCustomTypes.MarketParams, uint256, uint256, address, address));
+            // Nothing to sanitize
+            // Return addresses found
             addressesFound = new address[](6);
-            (
-                addressesFound[0],
-                addressesFound[1],
-                addressesFound[2],
-                addressesFound[3],
-                ,
-                ,
-                ,
-                addressesFound[4],
-                addressesFound[5]
-            ) = abi.decode(rawData, (address, address, address, address, uint256, uint256, uint256, address, address));
+            addressesFound[0] = params.loanToken;
+            addressesFound[1] = params.collateralToken;
+            addressesFound[2] = params.oracle;
+            addressesFound[3] = params.irm;
+            addressesFound[4] = onBehalf;
+            addressesFound[5] = receiver;
+        } else if (hashedArguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_ADDRESS_ADDRESS) {
+            (DecoderCustomTypes.MarketParams memory params,, address onBehalf, address receiver) =
+                abi.decode(rawData, (DecoderCustomTypes.MarketParams, uint256, address, address));
+            // Nothing to sanitize
+            // Return addresses found
+            addressesFound = new address[](6);
+            addressesFound[0] = params.loanToken;
+            addressesFound[1] = params.collateralToken;
+            addressesFound[2] = params.oracle;
+            addressesFound[3] = params.irm;
+            addressesFound[4] = onBehalf;
+            addressesFound[5] = receiver;
+        } else if (hashedArguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_UINT256_ADDRESS_BYTES) {
+            (DecoderCustomTypes.MarketParams memory params,,, address onBehalf, bytes memory callbackData) =
+                abi.decode(rawData, (DecoderCustomTypes.MarketParams, uint256, uint256, address, bytes));
+            // Sanitize raw data
+            require(callbackData.length == 0, "callback not supported");
+            // Return addresses found
+            addressesFound = new address[](5);
+            addressesFound[0] = params.loanToken;
+            addressesFound[1] = params.collateralToken;
+            addressesFound[2] = params.oracle;
+            addressesFound[3] = params.irm;
+            addressesFound[4] = onBehalf;
         } else {
-            revert("unkown hash");
+            // We do not know how to safely decode and sanitize this data, so revert.
+            revert("unknown hash");
         }
     }
 

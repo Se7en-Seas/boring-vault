@@ -78,4 +78,14 @@ contract DecoderCustomTypes {
         uint256 amountIn;
         uint256 amountOutMinimum;
     }
+
+    // ========================================= MORPHO BLUE =========================================
+
+    struct MarketParams {
+        address loanToken;
+        address collateralToken;
+        address oracle;
+        address irm;
+        uint256 lltv;
+    }
 }
