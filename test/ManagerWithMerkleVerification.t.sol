@@ -7,8 +7,9 @@ import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVer
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {RawDataDecoderAndSanitizer} from "src/base/RawDataDecoderAndSanitizer.sol";
+import {RawDataDecoderAndSanitizer, DecoderCustomTypes} from "src/base/RawDataDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
+import {IUniswapV3Router} from "src/interfaces/IUniswapV3Router.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -18,7 +19,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
     using stdStorage for StdStorage;
 
     ManagerWithMerkleVerification public manager;
-    BoringVault public boring_vault;
+    BoringVault public boringVault;
     address public rawDataDecoderAndSanitizer;
 
     function setUp() external {
@@ -27,14 +28,14 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         uint256 blockNumber = 19369928;
         _startFork(rpcKey, blockNumber);
 
-        boring_vault = new BoringVault(address(this), "Boring Vault", "BV", 18);
+        boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
         manager =
-            new ManagerWithMerkleVerification(address(this), address(this), address(this), address(boring_vault), vault);
+            new ManagerWithMerkleVerification(address(this), address(this), address(this), address(boringVault), vault);
 
         rawDataDecoderAndSanitizer = address(new RawDataDecoderAndSanitizer(uniswapV3NonFungiblePositionManager));
 
-        boring_vault.grantRole(boring_vault.MANAGER_ROLE(), address(manager));
+        boringVault.grantRole(boringVault.MANAGER_ROLE(), address(manager));
 
         manager.setRawDataDecoderAndSanitizer(address(rawDataDecoderAndSanitizer));
     }
@@ -70,11 +71,11 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         uint256[] memory values = new uint256[](2);
 
-        deal(address(USDT), address(boring_vault), 777);
+        deal(address(USDT), address(boringVault), 777);
 
         manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
 
-        assertEq(USDC.allowance(address(boring_vault), usdcSpender), 777, "USDC should have an allowance");
+        assertEq(USDC.allowance(address(boringVault), usdcSpender), 777, "USDC should have an allowance");
         assertEq(USDT.balanceOf(usdtTo), 777, "USDT should have been transfered");
     }
 
@@ -146,6 +147,135 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
             assertTrue(iDidSomething == true, "Should have called doSomethingWithFlashLoan");
         }
+    }
+
+    // TODO add uniswap revert test checks
+    function testUniswapV3Integration() external {
+        deal(address(WETH), address(boringVault), 100e18);
+        deal(address(WEETH), address(boringVault), 100e18);
+        // Make sure the vault can
+        // swap wETH -> rETH
+        // create a new position rETH/weETH
+        // add to an existing position rETH/weETH
+        // pull from an existing position rETH/weETH
+        // collect from a position rETH/weETH
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        leafs[0] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = uniV3Router;
+        leafs[1] = ManageLeaf(uniV3Router, "exactInput((bytes,address,uint256,uint256,uint256))", new address[](3));
+        leafs[1].argumentAddresses[0] = address(WETH);
+        leafs[1].argumentAddresses[1] = address(RETH);
+        leafs[1].argumentAddresses[2] = address(boringVault);
+        leafs[2] = ManageLeaf(address(RETH), "approve(address,uint256)", new address[](1));
+        leafs[2].argumentAddresses[0] = uniswapV3NonFungiblePositionManager;
+        leafs[3] = ManageLeaf(address(WEETH), "approve(address,uint256)", new address[](1));
+        leafs[3].argumentAddresses[0] = uniswapV3NonFungiblePositionManager;
+        leafs[4] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager,
+            "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
+            new address[](3)
+        );
+        leafs[4].argumentAddresses[0] = address(RETH);
+        leafs[4].argumentAddresses[1] = address(WEETH);
+        leafs[4].argumentAddresses[2] = address(boringVault);
+        leafs[5] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager,
+            "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+            new address[](0)
+        );
+        leafs[6] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager,
+            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
+            new address[](0)
+        );
+        leafs[7] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager, "collect((uint256,address,uint128,uint128))", new address[](1)
+        );
+        leafs[7].argumentAddresses[0] = address(boringVault);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](8);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+        manageLeafs[5] = leafs[5];
+        manageLeafs[6] = leafs[6];
+        manageLeafs[7] = leafs[7];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        string[] memory functionSignatures = new string[](8);
+        functionSignatures[0] = "approve(address,uint256)";
+        functionSignatures[1] = "exactInput((bytes,address,uint256,uint256,uint256))";
+        functionSignatures[2] = "approve(address,uint256)";
+        functionSignatures[3] = "approve(address,uint256)";
+        functionSignatures[4] =
+            "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))";
+        functionSignatures[5] = "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))";
+        functionSignatures[6] = "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))";
+        functionSignatures[7] = "collect((uint256,address,uint128,uint128))";
+
+        address[] memory targets = new address[](8);
+        targets[0] = address(WETH);
+        targets[1] = uniV3Router;
+        targets[2] = address(RETH);
+        targets[3] = address(WEETH);
+        targets[4] = uniswapV3NonFungiblePositionManager;
+        targets[5] = uniswapV3NonFungiblePositionManager;
+        targets[6] = uniswapV3NonFungiblePositionManager;
+        targets[7] = uniswapV3NonFungiblePositionManager;
+        bytes[] memory targetData = new bytes[](8);
+        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", uniV3Router, type(uint256).max);
+        DecoderCustomTypes.ExactInputParams memory exactInputParams = DecoderCustomTypes.ExactInputParams(
+            abi.encodePacked(WETH, uint24(100), RETH), address(boringVault), block.timestamp, 100e18, 0
+        );
+        targetData[1] = abi.encodeWithSignature("exactInput((bytes,address,uint256,uint256,uint256))", exactInputParams);
+        targetData[2] =
+            abi.encodeWithSignature("approve(address,uint256)", uniswapV3NonFungiblePositionManager, type(uint256).max);
+        targetData[3] =
+            abi.encodeWithSignature("approve(address,uint256)", uniswapV3NonFungiblePositionManager, type(uint256).max);
+
+        DecoderCustomTypes.MintParams memory mintParams = DecoderCustomTypes.MintParams(
+            address(RETH),
+            address(WEETH),
+            uint24(100),
+            int24(600), // lower tick
+            int24(700), // upper tick
+            45e18,
+            45e18,
+            0,
+            0,
+            address(boringVault),
+            block.timestamp
+        );
+        targetData[4] = abi.encodeWithSignature(
+            "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))", mintParams
+        );
+        uint256 expectedTokenId = 688183;
+        DecoderCustomTypes.IncreaseLiquidityParams memory increaseLiquidityParams =
+            DecoderCustomTypes.IncreaseLiquidityParams(expectedTokenId, 45e18, 45e18, 0, 0, block.timestamp);
+        targetData[5] = abi.encodeWithSignature(
+            "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))", increaseLiquidityParams
+        );
+        uint128 expectedLiquidity = 17435811346020121907400;
+        DecoderCustomTypes.DecreaseLiquidityParams memory decreaseLiquidityParams =
+            DecoderCustomTypes.DecreaseLiquidityParams(expectedTokenId, expectedLiquidity, 0, 0, block.timestamp);
+        targetData[6] = abi.encodeWithSignature(
+            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))", decreaseLiquidityParams
+        );
+
+        DecoderCustomTypes.CollectParams memory collectParams = DecoderCustomTypes.CollectParams(
+            expectedTokenId, address(boringVault), type(uint128).max, type(uint128).max
+        );
+        targetData[7] = abi.encodeWithSignature("collect((uint256,address,uint128,uint128))", collectParams);
+
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, functionSignatures, targets, targetData, new uint256[](8)
+        );
     }
 
     function testReverts() external {

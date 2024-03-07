@@ -3,6 +3,7 @@ pragma solidity 0.8.21;
 
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {INonFungiblePositionManager} from "src/interfaces/RawDataDecoderAndSanitizerInterfaces.sol";
+import {console} from "@forge-std/Test.sol"; // TODO remove
 
 contract RawDataDecoderAndSanitizer {
     // ========================================= CONSTANTS =========================================
@@ -255,7 +256,7 @@ contract RawDataDecoderAndSanitizer {
             for (uint256 i; i < pathAddressLength; ++i) {
                 bytes20 rawAddress;
                 for (uint256 j; j < 20; ++j) {
-                    rawAddress = rawAddress | params.path[pathIndex + j] << (19 - j) * 8;
+                    rawAddress |= bytes20(params.path[pathIndex + j]) >> (j * 8);
                 }
                 addressesFound[i] = address(rawAddress);
                 pathIndex += chunkSize;
