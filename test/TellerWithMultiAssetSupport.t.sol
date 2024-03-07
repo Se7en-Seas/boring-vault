@@ -46,7 +46,6 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
             1.001e4,
             0.999e4,
             1,
-            0,
             0
         );
 
@@ -179,23 +178,23 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
     function testPausing() external {
         teller.pause();
 
-        assertTrue(teller.is_paused() == true, "Teller should be paused");
+        assertTrue(teller.isPaused() == true, "Teller should be paused");
 
         teller.unpause();
 
-        assertTrue(teller.is_paused() == false, "Teller should be unpaused");
+        assertTrue(teller.isPaused() == false, "Teller should be unpaused");
     }
 
     function testAssetIsSupported() external {
-        assertTrue(teller.is_supported(WETH) == true, "WETH should be supported");
+        assertTrue(teller.isSupported(WETH) == true, "WETH should be supported");
 
         teller.removeAsset(WETH);
 
-        assertTrue(teller.is_supported(WETH) == false, "WETH should not be supported");
+        assertTrue(teller.isSupported(WETH) == false, "WETH should not be supported");
 
         teller.addAsset(WETH);
 
-        assertTrue(teller.is_supported(WETH) == true, "WETH should be supported");
+        assertTrue(teller.isSupported(WETH) == true, "WETH should be supported");
     }
 
     function testReverts() external {
@@ -219,27 +218,27 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         vm.expectRevert(bytes("dual deposit"));
         teller.deposit{value: 1}(WETH, 1, 0, address(this));
 
-        vm.expectRevert(bytes("minimum_mint"));
+        vm.expectRevert(bytes("minimumMint"));
         teller.deposit(WETH, 1, type(uint256).max, address(this));
 
         vm.expectRevert(bytes("zero deposit"));
         teller.deposit(NATIVE_ERC20, 0, 0, address(this));
 
-        vm.expectRevert(bytes("minimum_mint"));
+        vm.expectRevert(bytes("minimumMint"));
         teller.deposit{value: 1}(NATIVE_ERC20, 1, type(uint256).max, address(this));
 
         // bulkDeposit reverts
         vm.expectRevert(bytes("zero deposit"));
         teller.bulkDeposit(WETH, 0, 0, address(this));
 
-        vm.expectRevert(bytes("minimum_mint"));
+        vm.expectRevert(bytes("minimumMint"));
         teller.bulkDeposit(WETH, 1, type(uint256).max, address(this));
 
         // bulkWithdraw reverts
         vm.expectRevert(bytes("zero withdraw"));
         teller.bulkWithdraw(WETH, 0, 0, address(this));
 
-        vm.expectRevert(bytes("minimum_assets"));
+        vm.expectRevert(bytes("minimumAssets"));
         teller.bulkWithdraw(WETH, 1, type(uint256).max, address(this));
     }
 

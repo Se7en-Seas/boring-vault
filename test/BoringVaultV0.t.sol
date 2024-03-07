@@ -7,7 +7,7 @@ import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVer
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {AddressDecoder} from "src/base/AddressDecoder.sol";
+import {RawDataDecoderAndSanitizer} from "src/base/RawDataDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
@@ -25,13 +25,13 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
 
-    BoringVault public boring_vault;
+    BoringVault public boringVault;
     ManagerWithMerkleVerification public manager;
     TellerWithMultiAssetSupport public teller;
     AccountantWithRateProviders public accountant;
     AtomicQueue public atomic_queue;
     AtomicSolver public atomic_solver;
-    address public addressDecoder;
+    address public rawDataDecoderAndSanitizer;
 
     address public multisig = vm.addr(123456789);
     address public strategist = vm.addr(987654321);
@@ -41,8 +41,8 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
     address public weeth_user = vm.addr(1111);
     ERC20 internal constant NATIVE_ERC20 = ERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     address public balancer_vault = vault;
-    address public weEth_oracle = 0x3fa58b74e9a8eA8768eb33c8453e9C2Ed089A40a;
-    address public weEth_irm = 0x870aC11D48B15DB9a138Cf899d20F13F79Ba00BC;
+    address public weEthOracle = 0x3fa58b74e9a8eA8768eb33c8453e9C2Ed089A40a;
+    address public weEthIrm = 0x870aC11D48B15DB9a138Cf899d20F13F79Ba00BC;
 
     function setUp() external {
         // Setup forked environment.
@@ -50,38 +50,37 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         uint256 blockNumber = 19369928;
         _startFork(rpcKey, blockNumber);
 
-        boring_vault = new BoringVault(multisig, "Boring Vault", "BV", 18);
+        boringVault = new BoringVault(multisig, "Boring Vault", "BV", 18);
 
-        manager = new ManagerWithMerkleVerification(multisig, strategist, multisig, address(boring_vault), vault);
+        manager = new ManagerWithMerkleVerification(multisig, strategist, multisig, address(boringVault), vault);
 
         accountant = new AccountantWithRateProviders(
             multisig,
             strategist,
             multisig,
-            address(boring_vault),
+            address(boringVault),
             payout_address,
             1e18,
             address(WETH),
             1.001e4,
             0.999e4,
             1,
-            0.2e4,
             0.01e4
         );
 
-        teller = new TellerWithMultiAssetSupport(multisig, address(boring_vault), address(accountant), address(WETH));
+        teller = new TellerWithMultiAssetSupport(multisig, address(boringVault), address(accountant), address(WETH));
 
-        addressDecoder = address(new AddressDecoder());
+        rawDataDecoderAndSanitizer = address(new RawDataDecoderAndSanitizer(uniswapV3NonFungiblePositionManager));
 
         // Deploy queue.
         atomic_queue = new AtomicQueue();
         atomic_solver = new AtomicSolver(address(this), vault);
 
         vm.startPrank(multisig);
-        boring_vault.grantRole(boring_vault.MINTER_ROLE(), address(teller));
-        boring_vault.grantRole(boring_vault.BURNER_ROLE(), address(teller));
-        boring_vault.grantRole(boring_vault.MANAGER_ROLE(), address(manager));
-        manager.setAddressDecoder(address(addressDecoder));
+        boringVault.grantRole(boringVault.MINTER_ROLE(), address(teller));
+        boringVault.grantRole(boringVault.BURNER_ROLE(), address(teller));
+        boringVault.grantRole(boringVault.MANAGER_ROLE(), address(manager));
+        manager.setRawDataDecoderAndSanitizer(address(rawDataDecoderAndSanitizer));
         accountant.setRateProviderData(EETH, true, address(0));
         accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
         teller.grantRole(teller.ADMIN_ROLE(), multisig);
@@ -103,17 +102,17 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         deal(address(WEETH), weeth_user, weETH_amount);
 
         vm.startPrank(weth_user);
-        WETH.safeApprove(address(boring_vault), wETH_amount);
+        WETH.safeApprove(address(boringVault), wETH_amount);
         teller.deposit(WETH, wETH_amount, 0, weth_user);
         vm.stopPrank();
 
         vm.startPrank(eeth_user);
-        EETH.safeApprove(address(boring_vault), eETH_amount);
+        EETH.safeApprove(address(boringVault), eETH_amount);
         teller.deposit(EETH, eETH_amount, 0, eeth_user);
         vm.stopPrank();
 
         vm.startPrank(weeth_user);
-        WEETH.safeApprove(address(boring_vault), weETH_amount);
+        WEETH.safeApprove(address(boringVault), weETH_amount);
         teller.deposit(WEETH, weETH_amount, 0, weeth_user);
         vm.stopPrank();
     }
@@ -121,54 +120,59 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
     function testWithdraw() external {}
 
     function testComplexStrategy() external {
-        address[] memory allowed_address_arguments = new address[](16);
-        allowed_address_arguments[0] = address(manager); // Flash loan recipient
-        allowed_address_arguments[1] = address(WETH); // Flash loan borrow token, and for supply collateral loan token
-        allowed_address_arguments[2] = address(boring_vault); // For on behalf of in morpho blue supplyCollateral
-        allowed_address_arguments[3] = address(WEETH); // for supplyCollateral collateral token, and approve WEETH to spend our EETH
-        allowed_address_arguments[4] = weEth_oracle; // The oracle needed for morpho blue market
-        allowed_address_arguments[5] = weEth_irm; // The irm needed for morpho blue market
-        allowed_address_arguments[6] = morphoBlue; // so we can approve it to spend WEETH.
-        allowed_address_arguments[7] = uniswapV3PositionManager; // so we can approve it to spend WEETH.
-
-        TargetSignature[] memory allowed_targets_selectors = new TargetSignature[](16);
-        allowed_targets_selectors[0] = TargetSignature(address(WEETH), "wrap(uint256)");
-        allowed_targets_selectors[1] = TargetSignature(balancer_vault, "flashLoan(address,address[],uint256[],bytes)");
-        allowed_targets_selectors[2] = TargetSignature(address(WETH), "withdraw(uint256)");
-        allowed_targets_selectors[3] = TargetSignature(EETH_LIQUIDITY_POOL, "deposit()");
-        allowed_targets_selectors[4] = TargetSignature(
-            morphoBlue, "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)"
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        leafs[0] = ManageLeaf(address(EETH), "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = address(WEETH);
+        leafs[1] = ManageLeaf(address(WEETH), "approve(address,uint256)", new address[](1));
+        leafs[1].argumentAddresses[0] = morphoBlue;
+        leafs[2] = ManageLeaf(address(WEETH), "wrap(uint256)", new address[](0));
+        leafs[3] = ManageLeaf(address(WEETH), "unwrap(uint256)", new address[](0));
+        leafs[4] = ManageLeaf(vault, "flashLoan(address,address[],uint256[],bytes)", new address[](2));
+        leafs[4].argumentAddresses[0] = address(manager);
+        leafs[4].argumentAddresses[1] = address(WETH);
+        leafs[5] = ManageLeaf(address(WETH), "withdraw(uint256)", new address[](0));
+        leafs[6] = ManageLeaf(address(EETH_LIQUIDITY_POOL), "deposit()", new address[](0));
+        leafs[7] = ManageLeaf(
+            morphoBlue,
+            "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)",
+            new address[](5)
         );
-        allowed_targets_selectors[5] = TargetSignature(
-            morphoBlue, "borrow((address,address,address,address,uint256),uint256,uint256,address,address)"
+        leafs[7].argumentAddresses[0] = address(WETH);
+        leafs[7].argumentAddresses[1] = address(WEETH);
+        leafs[7].argumentAddresses[2] = weEthOracle;
+        leafs[7].argumentAddresses[3] = weEthIrm;
+        leafs[7].argumentAddresses[4] = address(boringVault);
+        leafs[8] = ManageLeaf(
+            morphoBlue,
+            "borrow((address,address,address,address,uint256),uint256,uint256,address,address)",
+            new address[](6)
         );
-        allowed_targets_selectors[6] = TargetSignature(address(EETH), "approve(address,uint256)");
-        allowed_targets_selectors[7] = TargetSignature(address(WEETH), "approve(address,uint256)");
-        allowed_targets_selectors[8] = TargetSignature(address(WETH), "approve(address,uint256)");
+        leafs[8].argumentAddresses[0] = address(WETH);
+        leafs[8].argumentAddresses[1] = address(WEETH);
+        leafs[8].argumentAddresses[2] = weEthOracle;
+        leafs[8].argumentAddresses[3] = weEthIrm;
+        leafs[8].argumentAddresses[4] = address(boringVault);
+        leafs[8].argumentAddresses[5] = address(boringVault);
+        leafs[9] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
+        leafs[9].argumentAddresses[0] = uniswapV3PositionManager;
+        leafs[10] = ManageLeaf(address(WEETH), "approve(address,uint256)", new address[](1));
+        leafs[10].argumentAddresses[0] = uniswapV3PositionManager;
 
-        (bytes32[][] memory allowed_targets_and_selectors_tree, bytes32[][] memory allowed_address_argument_tree) =
-            _generateMerkleTrees(allowed_targets_selectors, allowed_address_arguments);
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         vm.startPrank(multisig);
-        manager.setAllowedTargetSelectorRoot(
-            allowed_targets_and_selectors_tree[allowed_targets_and_selectors_tree.length - 1][0]
-        );
-        manager.setAllowedAddressArgumentRoot(
-            allowed_address_argument_tree[allowed_address_argument_tree.length - 1][0]
-        );
+        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
         vm.stopPrank();
 
-        bytes32[][] memory target_proofs;
-        bytes32[][][] memory arguments_proofs;
+        bytes32[][] memory manageProofs;
         address[] memory targets;
-        bytes[] memory target_data;
-        address[][] memory address_arguments;
-        bytes memory flash_loan_data;
+        bytes[] memory targetData;
+        bytes memory flashLoanData;
         {
             uint256 wEthToBorrow = 90e18 + 1;
 
-            uint256[] memory values_in_flashloan = new uint256[](7);
-            values_in_flashloan[1] = wEthToBorrow;
+            uint256[] memory valuesInFlashloan = new uint256[](7);
+            valuesInFlashloan[1] = wEthToBorrow;
 
             targets = new address[](7);
             targets[0] = address(WETH);
@@ -179,92 +183,68 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
             targets[5] = morphoBlue;
             targets[6] = morphoBlue;
 
-            string[] memory function_signatures_in_flashloan = new string[](7);
-            function_signatures_in_flashloan[0] = "withdraw(uint256)";
-            function_signatures_in_flashloan[1] = "deposit()";
-            function_signatures_in_flashloan[2] = "approve(address,uint256)";
-            function_signatures_in_flashloan[3] = "wrap(uint256)";
-            function_signatures_in_flashloan[4] = "approve(address,uint256)";
-            function_signatures_in_flashloan[5] =
+            string[] memory functionSignaturesInFlashLoan = new string[](7);
+            functionSignaturesInFlashLoan[0] = "withdraw(uint256)";
+            functionSignaturesInFlashLoan[1] = "deposit()";
+            functionSignaturesInFlashLoan[2] = "approve(address,uint256)";
+            functionSignaturesInFlashLoan[3] = "wrap(uint256)";
+            functionSignaturesInFlashLoan[4] = "approve(address,uint256)";
+            functionSignaturesInFlashLoan[5] =
                 "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)";
-            function_signatures_in_flashloan[6] =
+            functionSignaturesInFlashLoan[6] =
                 "borrow((address,address,address,address,uint256),uint256,uint256,address,address)";
 
-            target_data = new bytes[](7);
-            target_data[0] = abi.encodeWithSignature("withdraw(uint256)", wEthToBorrow); // Unwrap ETH
-            target_data[1] = abi.encodeWithSignature("deposit()"); // convert ETH to eETH
-            target_data[2] = abi.encodeWithSignature("approve(address,uint256)", address(WEETH), wEthToBorrow - 1); // approve weETH to spend eETH
-            target_data[3] = abi.encodeWithSignature("wrap(uint256)", wEthToBorrow - 1); // wrap eETH for weETH
-            target_data[4] = abi.encodeWithSignature("approve(address,uint256)", morphoBlue, type(uint256).max); // approve morpho blue to spend weETH
-            target_data[5] = abi.encodeWithSignature(
+            targetData = new bytes[](7);
+            targetData[0] = abi.encodeWithSignature("withdraw(uint256)", wEthToBorrow); // Unwrap ETH
+            targetData[1] = abi.encodeWithSignature("deposit()"); // convert ETH to eETH
+            targetData[2] = abi.encodeWithSignature("approve(address,uint256)", address(WEETH), wEthToBorrow - 1); // approve weETH to spend eETH
+            targetData[3] = abi.encodeWithSignature("wrap(uint256)", wEthToBorrow - 1); // wrap eETH for weETH
+            targetData[4] = abi.encodeWithSignature("approve(address,uint256)", morphoBlue, type(uint256).max); // approve morpho blue to spend weETH
+            targetData[5] = abi.encodeWithSignature(
                 "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)",
                 WETH,
                 WEETH,
-                weEth_oracle,
-                weEth_irm,
+                weEthOracle,
+                weEthIrm,
                 0.86e18,
                 200e18,
-                address(boring_vault),
+                address(boringVault),
                 hex""
             ); // supply 100 weETH as collateral
-            target_data[6] = abi.encodeWithSignature(
+            targetData[6] = abi.encodeWithSignature(
                 "borrow((address,address,address,address,uint256),uint256,uint256,address,address)",
                 WETH,
                 WEETH,
-                weEth_oracle,
-                weEth_irm,
+                weEthOracle,
+                weEthIrm,
                 0.86e18,
                 wEthToBorrow,
                 0,
-                address(boring_vault),
-                address(boring_vault)
+                address(boringVault),
+                address(boringVault)
             ); // Borrow wETH to repay loan
 
-            address_arguments = new address[][](7);
-            address_arguments[2] = new address[](1);
-            address_arguments[2][0] = address(WEETH);
+            ManageLeaf[] memory flashLoanLeafs = new ManageLeaf[](7);
+            flashLoanLeafs[0] = leafs[5];
+            flashLoanLeafs[1] = leafs[6];
+            flashLoanLeafs[2] = leafs[0];
+            flashLoanLeafs[3] = leafs[2];
+            flashLoanLeafs[4] = leafs[1];
+            flashLoanLeafs[5] = leafs[7];
+            flashLoanLeafs[6] = leafs[8];
 
-            address_arguments[4] = new address[](1);
-            address_arguments[4][0] = address(morphoBlue);
+            manageProofs = _getProofsUsingTree(flashLoanLeafs, manageTree);
 
-            address_arguments[5] = new address[](5);
-            address_arguments[5][0] = address(WETH);
-            address_arguments[5][1] = address(WEETH);
-            address_arguments[5][2] = address(weEth_oracle);
-            address_arguments[5][3] = address(weEth_irm);
-            address_arguments[5][4] = address(boring_vault);
-            address_arguments[6] = new address[](6);
-            address_arguments[6][0] = address(WETH);
-            address_arguments[6][1] = address(WEETH);
-            address_arguments[6][2] = address(weEth_oracle);
-            address_arguments[6][3] = address(weEth_irm);
-            address_arguments[6][4] = address(boring_vault);
-            address_arguments[6][5] = address(boring_vault);
-
-            (target_proofs, arguments_proofs) = _getProofsUsingTrees(
-                targets,
-                target_data,
-                address_arguments,
-                allowed_targets_and_selectors_tree,
-                allowed_address_argument_tree
-            );
-
-            flash_loan_data = abi.encode(
-                target_proofs,
-                arguments_proofs,
-                function_signatures_in_flashloan,
-                targets,
-                target_data,
-                values_in_flashloan
-            );
+            flashLoanData =
+                abi.encode(manageProofs, functionSignaturesInFlashLoan, targets, targetData, valuesInFlashloan);
         }
 
-        string[] memory function_signatures = new string[](5);
-        function_signatures[0] = "approve(address,uint256)";
-        function_signatures[1] = "wrap(uint256)";
-        function_signatures[2] = "flashLoan(address,address[],uint256[],bytes)";
-        function_signatures[3] = "approve(address,uint256)";
-        function_signatures[4] = "approve(address,uint256)";
+        string[] memory functionSignatures = new string[](5);
+        functionSignatures[0] = "approve(address,uint256)";
+        functionSignatures[1] = "wrap(uint256)";
+        functionSignatures[2] = "flashLoan(address,address[],uint256[],bytes)";
+        functionSignatures[3] = "approve(address,uint256)";
+        functionSignatures[4] = "approve(address,uint256)";
 
         uint256[] memory values = new uint256[](5);
 
@@ -275,53 +255,45 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         targets[3] = address(WETH);
         targets[4] = address(WEETH);
 
-        address[] memory tokens_to_borrow = new address[](1);
-        tokens_to_borrow[0] = address(WETH);
+        address[] memory tokensToBorrow = new address[](1);
+        tokensToBorrow[0] = address(WETH);
 
-        uint256[] memory amounts_to_borrow = new uint256[](1);
-        amounts_to_borrow[0] = 90e18 + 1;
+        uint256[] memory amountsToBorrow = new uint256[](1);
+        amountsToBorrow[0] = 90e18 + 1;
 
-        target_data = new bytes[](5);
-        target_data[0] = abi.encodeWithSignature("approve(address,uint256)", address(WEETH), 500e18); // approve weETH to spend eETH
-        target_data[1] = abi.encodeWithSignature("wrap(uint256)", 500e18); // Wrap eETH for weETH.
-        target_data[2] = abi.encodeWithSignature(
+        targetData = new bytes[](5);
+        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", address(WEETH), 500e18); // approve weETH to spend eETH
+        targetData[1] = abi.encodeWithSignature("wrap(uint256)", 500e18); // Wrap eETH for weETH.
+        targetData[2] = abi.encodeWithSignature(
             "flashLoan(address,address[],uint256[],bytes)",
             address(manager),
-            tokens_to_borrow,
-            amounts_to_borrow,
-            flash_loan_data
+            tokensToBorrow,
+            amountsToBorrow,
+            flashLoanData
         ); // Perform flash loan
-        target_data[3] = abi.encodeWithSignature("approve(address,uint256)", uniswapV3PositionManager, 100e18); // approve uniswap positions to spend wETH
-        target_data[4] = abi.encodeWithSignature("approve(address,uint256)", uniswapV3PositionManager, 100e18); // approve uniswap positions to spend weETH
+        targetData[3] = abi.encodeWithSignature("approve(address,uint256)", uniswapV3PositionManager, 100e18); // approve uniswap positions to spend wETH
+        targetData[4] = abi.encodeWithSignature("approve(address,uint256)", uniswapV3PositionManager, 100e18); // approve uniswap positions to spend weETH
 
-        address_arguments = new address[][](5);
-        address_arguments[0] = new address[](1);
-        address_arguments[0][0] = address(WEETH);
-        address_arguments[2] = new address[](2);
-        address_arguments[2][0] = address(manager);
-        address_arguments[2][1] = address(WETH);
-        address_arguments[3] = new address[](1);
-        address_arguments[3][0] = uniswapV3PositionManager;
-        address_arguments[4] = new address[](1);
-        address_arguments[4][0] = uniswapV3PositionManager;
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](5);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[2];
+        manageLeafs[2] = leafs[4];
+        manageLeafs[3] = leafs[9];
+        manageLeafs[4] = leafs[10];
 
-        (target_proofs, arguments_proofs) = _getProofsUsingTrees(
-            targets, target_data, address_arguments, allowed_targets_and_selectors_tree, allowed_address_argument_tree
-        );
-
-        vm.startPrank(strategist);
-        uint256 gas = gasleft();
-        manager.manageVaultWithMerkleVerification(
-            target_proofs, arguments_proofs, function_signatures, targets, target_data, values
-        );
-        console.log("Gas For Rebalance", gas - gasleft());
-        vm.stopPrank();
+        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         // take all eETH and wrap it.
         // balancer flashloan 90 weth
         // - unwrap, then mint EETH
         // - wrap EETH
         // - use 200 weETH as collateral on morpho blue, and borrow 90 weth to repay loan.
+
+        vm.startPrank(strategist);
+        uint256 gas = gasleft();
+        manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+        console.log("Gas For Rebalance", gas - gasleft());
+        vm.stopPrank();
 
         // take 250 weETH and 250 wETH to join Uniswap V3 5 bps pool
         // take 250 weETH and 250 wETH to join the Curve pool
@@ -364,43 +336,36 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         }
     }
 
-    function _getProofsUsingTrees(
-        address[] memory targets,
-        bytes[] memory target_data,
-        address[][] memory address_arguments,
-        bytes32[][] memory target_tree,
-        bytes32[][] memory argument_tree
-    ) internal pure returns (bytes32[][] memory target_proofs, bytes32[][][] memory argument_proofs) {
-        target_proofs = new bytes32[][](targets.length);
-        argument_proofs = new bytes32[][][](targets.length);
-        for (uint256 i; i < targets.length; ++i) {
-            // First generate target proof.
-            bytes32 target_leaf = keccak256(abi.encodePacked(targets[i], bytes4(target_data[i])));
-            target_proofs[i] = _generateProof(target_leaf, target_tree);
-            // Iterate through address arguments for target and generate argument proofs.
-            argument_proofs[i] = new bytes32[][](address_arguments[i].length);
-            for (uint256 j; j < address_arguments[i].length; ++j) {
-                bytes32 argument_leaf = keccak256(abi.encodePacked(address_arguments[i][j]));
-                argument_proofs[i][j] = _generateProof(argument_leaf, argument_tree);
+    function _getProofsUsingTree(ManageLeaf[] memory manageLeafs, bytes32[][] memory tree)
+        internal
+        pure
+        returns (bytes32[][] memory proofs)
+    {
+        proofs = new bytes32[][](manageLeafs.length);
+        for (uint256 i; i < manageLeafs.length; ++i) {
+            // Generate manage proof.
+            bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
+            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, selector);
+            uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
+            for (uint256 j; j < argumentAddressesLength; ++j) {
+                rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
             }
+            bytes32 leaf = keccak256(rawDigest);
+            proofs[i] = _generateProof(leaf, tree);
         }
     }
 
-    function _buildTrees(bytes32[][] memory merkle_tree_in)
-        internal
-        pure
-        returns (bytes32[][] memory merkle_tree_out)
-    {
-        // We are adding another row to the merkle tree, so make merkle_tree_out be 1 longer.
-        uint256 merkle_tree_in_length = merkle_tree_in.length;
-        merkle_tree_out = new bytes32[][](merkle_tree_in_length + 1);
+    function _buildTrees(bytes32[][] memory merkleTreeIn) internal pure returns (bytes32[][] memory merkleTreeOut) {
+        // We are adding another row to the merkle tree, so make merkleTreeOut be 1 longer.
+        uint256 merkleTreeIn_length = merkleTreeIn.length;
+        merkleTreeOut = new bytes32[][](merkleTreeIn_length + 1);
         uint256 layer_length;
-        // Iterate through merkle_tree_in to copy over data.
-        for (uint256 i; i < merkle_tree_in_length; ++i) {
-            layer_length = merkle_tree_in[i].length;
-            merkle_tree_out[i] = new bytes32[](layer_length);
+        // Iterate through merkleTreeIn to copy over data.
+        for (uint256 i; i < merkleTreeIn_length; ++i) {
+            layer_length = merkleTreeIn[i].length;
+            merkleTreeOut[i] = new bytes32[](layer_length);
             for (uint256 j; j < layer_length; ++j) {
-                merkle_tree_out[i][j] = merkle_tree_in[i][j];
+                merkleTreeOut[i][j] = merkleTreeIn[i][j];
             }
         }
 
@@ -410,53 +375,40 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         } else {
             next_layer_length = layer_length / 2;
         }
-        merkle_tree_out[merkle_tree_in_length] = new bytes32[](next_layer_length);
+        merkleTreeOut[merkleTreeIn_length] = new bytes32[](next_layer_length);
         uint256 count;
         for (uint256 i; i < layer_length; i += 2) {
-            merkle_tree_out[merkle_tree_in_length][count] = _hashPair(
-                merkle_tree_in[merkle_tree_in_length - 1][i], merkle_tree_in[merkle_tree_in_length - 1][i + 1]
-            );
+            merkleTreeOut[merkleTreeIn_length][count] =
+                _hashPair(merkleTreeIn[merkleTreeIn_length - 1][i], merkleTreeIn[merkleTreeIn_length - 1][i + 1]);
             count++;
         }
 
         if (next_layer_length > 1) {
             // We need to process the next layer of leaves.
-            merkle_tree_out = _buildTrees(merkle_tree_out);
+            merkleTreeOut = _buildTrees(merkleTreeOut);
         }
     }
 
-    struct TargetSignature {
+    struct ManageLeaf {
         address target;
         string signature;
+        address[] argumentAddresses;
     }
 
-    function _generateMerkleTrees(TargetSignature[] memory targets_signatures, address[] memory address_arguments)
-        internal
-        pure
-        returns (bytes32[][] memory target_selector_tree, bytes32[][] memory address_arguments_tree)
-    {
-        // Handle target selector first
-        {
-            uint256 targets_length = targets_signatures.length;
-            bytes32[][] memory leafs = new bytes32[][](1);
-            leafs[0] = new bytes32[](targets_length);
-            for (uint256 i; i < targets_length; ++i) {
-                bytes4 selector = bytes4(keccak256(abi.encodePacked(targets_signatures[i].signature)));
-                leafs[0][i] = keccak256(abi.encodePacked(targets_signatures[i].target, selector));
+    function _generateMerkleTree(ManageLeaf[] memory manageLeafs) internal pure returns (bytes32[][] memory tree) {
+        uint256 leafsLength = manageLeafs.length;
+        bytes32[][] memory leafs = new bytes32[][](1);
+        leafs[0] = new bytes32[](leafsLength);
+        for (uint256 i; i < leafsLength; ++i) {
+            bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
+            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, selector);
+            uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
+            for (uint256 j; j < argumentAddressesLength; ++j) {
+                rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
             }
-            target_selector_tree = _buildTrees(leafs);
+            leafs[0][i] = keccak256(rawDigest);
         }
-
-        // Handle address arguments
-        {
-            uint256 arguments_length = address_arguments.length;
-            bytes32[][] memory leafs = new bytes32[][](1);
-            leafs[0] = new bytes32[](arguments_length);
-            for (uint256 i; i < arguments_length; ++i) {
-                leafs[0][i] = keccak256(abi.encodePacked(address_arguments[i]));
-            }
-            address_arguments_tree = _buildTrees(leafs);
-        }
+        tree = _buildTrees(leafs);
     }
 
     function _hashPair(bytes32 a, bytes32 b) private pure returns (bytes32) {
