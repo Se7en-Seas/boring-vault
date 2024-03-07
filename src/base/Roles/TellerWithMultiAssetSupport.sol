@@ -13,18 +13,73 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
-    // This contract will be in charge of mint and redeem
-    // Somm governance will have nothing to do with this one.
+    using SafeTransferLib for WETH;
 
-    bytes32 public constant ON_RAMP_ROLE = keccak256("ON_RAMP_ROLE"); // bulk user deposits
+    // ========================================= CONSTANTS =========================================
+
+    /**
+     * @notice Accounts with this role are allowed to call `bulkDeposit`.
+     */
+    bytes32 public constant ON_RAMP_ROLE = keccak256("ON_RAMP_ROLE");
+
+    /**
+     * @notice Accounts with this role are allowed to call `bulkWithdraw`.
+     */
     bytes32 public constant OFF_RAMP_ROLE = keccak256("OFF_RAMP_ROLE"); // bulk user withdraws with no waiting period.
+
+    /**
+     * @notice Accounts with this role are allowed to call admin functions.
+     */
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE"); // can turn off normal user deposits and withdraws
+
+    /**
+     * @notice Native address used to tell the contract to handle native asset deposits.
+     */
     address internal constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
+    // ========================================= STATE =========================================
+
+    /**
+     * @notice Mapping ERC20s to an isSupported bool.
+     */
+    mapping(ERC20 => bool) public isSupported;
+
+    /**
+     * @notice Used to pause normal user deposits.
+     */
+    bool public isPaused;
+
+    //============================== EVENTS ===============================
+
+    event Paused();
+    event Unpaused();
+    event AssetAdded(address asset);
+    event AssetRemoved(address asset);
+    event Deposit(address asset, uint256 amount);
+    event BulkDeposit(address asset, uint256 depositAmount);
+    event BulkWithdraw(address asset, uint256 shareAmount);
+
+    //============================== IMMUTABLES ===============================
+
+    /**
+     * @notice The BoringVault this contract is working with.
+     */
     BoringVault public immutable vault;
+
+    /**
+     * @notice The AccountantWithRateProviders this contract is working with.
+     */
     AccountantWithRateProviders public immutable accountant;
+
+    /**
+     * @notice One share of the BoringVault.
+     */
     uint256 internal immutable ONE_SHARE;
-    WETH public immutable native_wrapper;
+
+    /**
+     * @notice The native wrapper contract.
+     */
+    WETH public immutable nativeWrapper;
 
     constructor(address _owner, address _vault, address _accountant, address _weth)
         AccessControlDefaultAdminRules(3 days, _owner)
@@ -32,87 +87,110 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules {
         vault = BoringVault(payable(_vault));
         ONE_SHARE = 10 ** vault.decimals();
         accountant = AccountantWithRateProviders(_accountant);
-        native_wrapper = WETH(payable(_weth));
+        nativeWrapper = WETH(payable(_weth));
     }
 
-    // Roles
-    // a strategist that can turn off normal user deposits and withdraws, and finalize user withdraws
-    // an entity that can do bulk deposit and withdraws with no waiting period, Atomic Queue solver.
+    // ========================================= ADMIN FUNCTIONS =========================================
 
-    mapping(ERC20 => bool) public is_supported;
-
-    // normal depsits
-    bool public is_paused;
-
+    /**
+     * @notice Pause this contract, which prevents future calls to `deposit`.
+     */
     function pause() external onlyRole(ADMIN_ROLE) {
-        is_paused = true;
+        isPaused = true;
+        emit Paused();
     }
 
+    /**
+     * @notice Unpause this contract, which allows future calls to `deposit`.
+     */
     function unpause() external onlyRole(ADMIN_ROLE) {
-        is_paused = false;
+        isPaused = false;
+        emit Unpaused();
     }
 
+    /**
+     * @notice Adds this asset as a deposit asset.
+     * @dev The accountant must also support pricing this asset, else the `deposit` call will revert.
+     */
     function addAsset(ERC20 asset) external onlyRole(ADMIN_ROLE) {
-        is_supported[asset] = true;
+        isSupported[asset] = true;
+        emit AssetAdded(address(asset));
     }
 
+    /**
+     * @notice Removes this asset as a deposit asset.
+     */
     function removeAsset(ERC20 asset) external onlyRole(ADMIN_ROLE) {
-        is_supported[asset] = false;
+        isSupported[asset] = false;
+        emit AssetRemoved(address(asset));
     }
 
-    // For user functions add min share out values
-    function deposit(ERC20 deposit_asset, uint256 deposit_amount, uint256 minimum_mint, address to)
+    // ========================================= USER FUNCTIONS =========================================
+
+    /**
+     * @notice Allows users to deposit into the BoringVault, if this contract is not paused.
+     */
+    function deposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint, address to)
         public
         payable
         returns (uint256 shares)
     {
-        require(!is_paused, "paused");
-        require(is_supported[deposit_asset], "asset not supported");
+        require(!isPaused, "paused");
+        require(isSupported[depositAsset], "asset not supported");
 
-        if (address(deposit_asset) == NATIVE) {
+        if (address(depositAsset) == NATIVE) {
             require(msg.value > 0, "zero deposit");
-            native_wrapper.deposit{value: msg.value}();
-            deposit_amount = msg.value;
-            shares = deposit_amount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(native_wrapper));
-            require(shares > minimum_mint, "minimum_mint");
+            nativeWrapper.deposit{value: msg.value}();
+            depositAmount = msg.value;
+            shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(nativeWrapper));
+            require(shares > minimumMint, "minimumMint");
             // `from` is this address since user already sent value.
-            ERC20(address(native_wrapper)).safeApprove(address(vault), deposit_amount);
-            vault.enter(address(this), native_wrapper, deposit_amount, to, shares);
+            nativeWrapper.safeApprove(address(vault), depositAmount);
+            vault.enter(address(this), nativeWrapper, depositAmount, to, shares);
         } else {
-            require(deposit_amount > 0, "zero deposit");
+            require(depositAmount > 0, "zero deposit");
             require(msg.value == 0, "dual deposit");
-            shares = deposit_amount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(deposit_asset));
-            require(shares > minimum_mint, "minimum_mint");
-            vault.enter(msg.sender, deposit_asset, deposit_amount, to, shares);
+            shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(depositAsset));
+            require(shares > minimumMint, "minimumMint");
+            vault.enter(msg.sender, depositAsset, depositAmount, to, shares);
         }
+        emit Deposit(address(depositAsset), depositAmount);
     }
 
     /**
-     * @notice Does NOT support native deposits.
+     * @notice Allows on ramp role to deposit into this contract.
+     * @dev Does NOT support native deposits.
      */
-    function bulkDeposit(ERC20 deposit_asset, uint256 deposit_amount, uint256 minimum_mint, address to)
+    function bulkDeposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint, address to)
         external
         onlyRole(ON_RAMP_ROLE)
         returns (uint256 shares)
     {
-        require(deposit_amount > 0, "zero deposit");
-        shares = deposit_amount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(deposit_asset));
-        require(shares > minimum_mint, "minimum_mint");
-        vault.enter(msg.sender, deposit_asset, deposit_amount, to, shares);
+        require(depositAmount > 0, "zero deposit");
+        shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(depositAsset));
+        require(shares > minimumMint, "minimumMint");
+        vault.enter(msg.sender, depositAsset, depositAmount, to, shares);
+        emit BulkDeposit(address(depositAsset), depositAmount);
     }
 
-    function bulkWithdraw(ERC20 withdraw_asset, uint256 share_amount, uint256 minimum_assets, address to)
+    /**
+     * @notice Allows off ramp role to withdraw from this contract.
+     */
+    function bulkWithdraw(ERC20 withdrawAsset, uint256 shareAmount, uint256 minimumAssets, address to)
         external
         onlyRole(OFF_RAMP_ROLE)
-        returns (uint256 assets_out)
+        returns (uint256 assetsOut)
     {
-        require(share_amount > 0, "zero withdraw");
-        assets_out = share_amount.mulDivDown(accountant.getRateInQuoteSafe(withdraw_asset), ONE_SHARE);
-        require(assets_out > minimum_assets, "minimum_assets");
-        vault.exit(to, withdraw_asset, assets_out, msg.sender, share_amount);
+        require(shareAmount > 0, "zero withdraw");
+        assetsOut = shareAmount.mulDivDown(accountant.getRateInQuoteSafe(withdrawAsset), ONE_SHARE);
+        require(assetsOut > minimumAssets, "minimumAssets");
+        vault.exit(to, withdrawAsset, assetsOut, msg.sender, shareAmount);
+        emit BulkWithdraw(address(withdrawAsset), shareAmount);
     }
 
-    // WARNING depositing this way means users can not set a min value out.
+    /**
+     * @dev Depositing this way means users can not set a min value out.
+     */
     receive() external payable {
         deposit(ERC20(NATIVE), msg.value, 0, msg.sender);
     }

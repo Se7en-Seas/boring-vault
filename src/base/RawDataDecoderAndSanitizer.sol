@@ -5,14 +5,8 @@ import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {INonFungiblePositionManager} from "src/interfaces/RawDataDecoderAndSanitizerInterfaces.sol";
 
 contract RawDataDecoderAndSanitizer {
-    /**
-     * @notice The networks uniswapV3 nonfungible position manager.
-     */
-    INonFungiblePositionManager internal immutable uniswapV3NonFungiblePositionManager;
+    // ========================================= CONSTANTS =========================================
 
-    constructor(address _uniswapV3NonFungiblePositionManager) {
-        uniswapV3NonFungiblePositionManager = INonFungiblePositionManager(_uniswapV3NonFungiblePositionManager);
-    }
     // ========================================= ERC20 =========================================
     // approve, transfer
 
@@ -96,6 +90,17 @@ contract RawDataDecoderAndSanitizer {
     bytes32 internal constant HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_UINT256_ADDRESS_BYTES =
         keccak256("((address,address,address,address,uint256),uint256,uint256,address,bytes)");
 
+    //============================== IMMUTABLES ===============================
+
+    /**
+     * @notice The networks uniswapV3 nonfungible position manager.
+     */
+    INonFungiblePositionManager internal immutable uniswapV3NonFungiblePositionManager;
+
+    constructor(address _uniswapV3NonFungiblePositionManager) {
+        uniswapV3NonFungiblePositionManager = INonFungiblePositionManager(_uniswapV3NonFungiblePositionManager);
+    }
+
     /**
      * @notice This function both decodes, and sanitizes raw contract data.
      * @dev Decoding is needed to find any addresses in the contract data, and return them to the caller.
@@ -124,7 +129,7 @@ contract RawDataDecoderAndSanitizer {
             }
             if (hashedArguments == bytes32(0)) revert("Failed to find arguments");
         }
-
+        // TODO should these verify the length of the raw data? So we know that we aren't trying to pass extra arguments in the msg.data?
         if (hashedArguments == HASHED_ARGUMENTS_ADDRESS_UINT256) {
             addressesFound = new address[](1);
             addressesFound[0] = abi.decode(rawData, (address));
@@ -309,6 +314,8 @@ contract RawDataDecoderAndSanitizer {
             revert("unknown hash");
         }
     }
+
+    // ========================================= INTERNAL HELPER FUNCTIONS =========================================
 
     /**
      * @notice Internal helper function that converts poolIds to pool addresses.

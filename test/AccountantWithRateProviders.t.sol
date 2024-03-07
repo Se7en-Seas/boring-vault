@@ -87,10 +87,10 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     }
 
     function testUpdateManagementFee() external {
-        accountant.updateManagementFee(0.2e4);
+        accountant.updateManagementFee(0.09e4);
         (,,,,,,,,, uint16 management_fee) = accountant.accountantState();
 
-        assertEq(management_fee, 0.2e4, "Management Fee should be 0.2e4");
+        assertEq(management_fee, 0.09e4, "Management Fee should be 0.09e4");
     }
 
     function testUpdatePayoutAddress() external {

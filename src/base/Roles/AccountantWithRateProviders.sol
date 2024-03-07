@@ -16,6 +16,19 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
     // ========================================= STRUCTS =========================================
 
     // TODO is this really packed right?
+    /**
+     * @param payoutAddress the address `claimFees` sends fees to
+     * @param feesOwedInBase total pending fees owed in terms of base
+     * @param totalSharesLastUpdate total amount of shares the last exchange rate update
+     * @param exchangeRate the current exchange rate in terms of base
+     * @param allowedExchangeRateChangeUpper the max allowed change to exchange rate from an update
+     * @param allowedExchangeRateChangeLower the min allowed change to exchange rate from an update
+     * @param lastUpdateTimestamp the block timestamp of the last exchange rate update
+     * @param isPaused whether or not this contract is paused
+     * @param minimumUpdateDelayInHours the minimum amount of time that must pass between
+     *        exchange rate updates, such that the update won't trigger the contract to be paused
+     * @param managementFee the management fee
+     */
     struct AccountantState {
         address payoutAddress;
         uint128 feesOwedInBase;
@@ -29,6 +42,10 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
         uint16 managementFee;
     }
 
+    /**
+     * @param isPeggedToBase whether or not the asset is 1:1 with the base asset
+     * @param rateProvider the rate provider for this asset if `isPeggedToBase` is false
+     */
     struct RateProviderData {
         bool isPeggedToBase;
         IRateProvider rateProvider;
@@ -81,6 +98,8 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
     event RateProviderUpdated(address asset, bool isPegged, address rateProvider);
     event ExchangeRateUpdated(uint96 oldRate, uint96 newRate, uint64 currentTime);
     event FeesClaimed(address feeAsset, uint256 amount);
+
+    //============================== IMMUTABLES ===============================
 
     /**
      * @notice The base asset rates are provided in.
