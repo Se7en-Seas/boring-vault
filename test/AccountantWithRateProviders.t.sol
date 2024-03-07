@@ -105,7 +105,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     }
 
     function testUpdateRateProvider() external {
-        (bool is_pegged_to_base, IRateProvider rate_provider) = accountant.rate_provider_data(WEETH);
+        (bool is_pegged_to_base, IRateProvider rate_provider) = accountant.rateProviderData(WEETH);
         assertTrue(is_pegged_to_base == false, "WEETH should not be pegged to base");
         assertEq(address(rate_provider), WEETH_RATE_PROVIDER, "WEETH rate provider should be set");
     }

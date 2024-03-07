@@ -8,214 +8,337 @@ import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {BoringVault} from "src/base/BoringVault.sol";
-import {console} from "@forge-std/Test.sol"; //TODO remove this
 
-// TODO for tests, check quote rate stuff for things that should be pegged 1:1 like eETH and even steth
-// base would be wETH.
 contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRateProvider {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
-    // a trusted 3rd party will write the exchange rate here, that the Teller will use for servicing user deposits and withdraws.
-    // I think this contract could use multiple RATE contracts to convert between the base and the asset? Or maybe it should just assume a 1:1
-    // Could use rates though, and jsut use a 1:1 rate for eETH and wETH, then use an actual rate for ETHx.
 
-    bytes32 public constant EXCHANGE_RATE_UPDATER_ROLE = keccak256("EXCHANGE_RATE_UPDATER_ROLE");
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    // ========================================= STRUCTS =========================================
 
-    // The base assets rates are provided in.
-    ERC20 public immutable base;
-    uint8 public immutable decimals;
-    BoringVault public immutable vault;
-    uint256 internal immutable ONE_SHARE;
-
-    uint256 internal constant ONE_HOUR = 3_600;
-
+    // TODO is this really packed right?
     struct AccountantState {
-        address payout_address;
-        uint128 fees_owed_in_base;
-        uint128 total_shares_last_update;
-        uint96 exchange_rate;
-        uint16 allowed_exchange_rate_change_upper;
-        uint16 allowed_exchange_rate_change_lower;
-        uint64 last_update_timestamp;
-        bool is_paused;
-        uint8 minimum_update_delay_in_hours;
-        uint16 management_fee;
+        address payoutAddress;
+        uint128 feesOwedInBase;
+        uint128 totalSharesLastUpdate;
+        uint96 exchangeRate;
+        uint16 allowedExchangeRateChangeUpper;
+        uint16 allowedExchangeRateChangeLower;
+        uint64 lastUpdateTimestamp;
+        bool isPaused;
+        uint8 minimumUpdateDelayInHours;
+        uint16 managementFee;
     }
-
-    AccountantState public accountantState;
 
     struct RateProviderData {
-        bool is_pegged_to_base;
-        IRateProvider rate_provider;
+        bool isPeggedToBase;
+        IRateProvider rateProvider;
     }
 
-    mapping(ERC20 => RateProviderData) public rate_provider_data; //admin can update this too.
+    // ========================================= CONSTANTS =========================================
+
+    /**
+     * @notice 1 hour.
+     */
+    uint256 internal constant ONE_HOUR = 3_600;
+
+    /**
+     * @notice Accounts with this role are allowed to call `updateExchangeRate`.
+     */
+    bytes32 public constant EXCHANGE_RATE_UPDATER_ROLE = keccak256("EXCHANGE_RATE_UPDATER_ROLE");
+
+    /**
+     * @notice Accounts with this role are able to interact with every admin function, except `pause`.
+     *         However the constructor will give the `_admin` account both the ADMIN and PAUSE roles.
+     */
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+
+    /**
+     * @notice Accounts with this role are allowed to call `pause`.
+     */
+    bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
+
+    // ========================================= STATE =========================================
+
+    /**
+     * @notice Store the accountant state in 3 packed slots.
+     */
+    AccountantState public accountantState;
+
+    /**
+     * @notice Maps ERC20s to their RateProviderData.
+     */
+    mapping(ERC20 => RateProviderData) public rateProviderData;
+
+    //============================== EVENTS ===============================
+
+    event Paused();
+    event Unpaused();
+    event DelayInHoursUpdated(uint8 oldDelay, uint8 newDelay);
+    event UpperBoundUpdated(uint16 oldBound, uint16 newBound);
+    event LowerBoundUpdated(uint16 oldBound, uint16 newBound);
+    event ManagementFeeUpdated(uint16 oldFee, uint16 newFee);
+    event PayoutAddressUpdated(address oldPayout, address newPayout);
+    event RateProviderUpdated(address asset, bool isPegged, address rateProvider);
+    event ExchangeRateUpdated(uint96 oldRate, uint96 newRate, uint64 currentTime);
+    event FeesClaimed(address feeAsset, uint256 amount);
+
+    /**
+     * @notice The base asset rates are provided in.
+     */
+    ERC20 public immutable base;
+
+    /**
+     * @notice The decimals rates are provided in.
+     */
+    uint8 public immutable decimals;
+
+    /**
+     * @notice The BoringVault this accountant is working with.
+     *         Used to determine share supply for fee calculation.
+     */
+    BoringVault public immutable vault;
+
+    /**
+     * @notice One share of the BoringVault.
+     */
+    uint256 internal immutable ONE_SHARE;
 
     constructor(
         address _owner,
         address _updater,
         address _admin,
         address _vault,
-        address _payout_address,
-        uint96 _starting_exchange_rate,
+        address payoutAddress,
+        uint96 startingExchangeRate,
         address _base,
-        uint16 _allowed_exchange_rate_change_upper,
-        uint16 _allowed_exchange_rate_change_lower,
-        uint8 _minimum_update_delay_in_hours,
-        uint16 _management_fee
+        uint16 allowedExchangeRateChangeUpper,
+        uint16 allowedExchangeRateChangeLower,
+        uint8 minimumUpdateDelayInHours,
+        uint16 managementFee
     ) AccessControlDefaultAdminRules(3 days, _owner) {
         _grantRole(EXCHANGE_RATE_UPDATER_ROLE, _updater);
         _grantRole(ADMIN_ROLE, _admin);
+        _grantRole(PAUSE_ROLE, _admin);
         base = ERC20(_base);
         decimals = ERC20(_base).decimals();
         vault = BoringVault(payable(_vault));
         ONE_SHARE = 10 ** vault.decimals();
         accountantState = AccountantState({
-            payout_address: _payout_address,
-            fees_owed_in_base: 0,
-            total_shares_last_update: uint128(vault.totalSupply()),
-            exchange_rate: _starting_exchange_rate,
-            allowed_exchange_rate_change_upper: _allowed_exchange_rate_change_upper,
-            allowed_exchange_rate_change_lower: _allowed_exchange_rate_change_lower,
-            last_update_timestamp: uint64(block.timestamp),
-            is_paused: false,
-            minimum_update_delay_in_hours: _minimum_update_delay_in_hours,
-            management_fee: _management_fee
+            payoutAddress: payoutAddress,
+            feesOwedInBase: 0,
+            totalSharesLastUpdate: uint128(vault.totalSupply()),
+            exchangeRate: startingExchangeRate,
+            allowedExchangeRateChangeUpper: allowedExchangeRateChangeUpper,
+            allowedExchangeRateChangeLower: allowedExchangeRateChangeLower,
+            lastUpdateTimestamp: uint64(block.timestamp),
+            isPaused: false,
+            minimumUpdateDelayInHours: minimumUpdateDelayInHours,
+            managementFee: managementFee
         });
     }
 
     // ========================================= ADMIN FUNCTIONS =========================================
-    // TODO add logical limits, and events.
-    // TODO make a new role
-    function pause() external onlyRole(ADMIN_ROLE) {
-        accountantState.is_paused = true;
+    /**
+     * @notice Pause this contract, which prevents future calls to `updateExchangeRate`, and any safe rate
+     *         calls will revert.
+     */
+    function pause() external onlyRole(PAUSE_ROLE) {
+        accountantState.isPaused = true;
+        emit Paused();
     }
 
+    /**
+     * @notice Unpause this contract, which allows future calls to `updateExchangeRate`, and any safe rate
+     *         calls will stop reverting.
+     */
     function unpause() external onlyRole(ADMIN_ROLE) {
-        accountantState.is_paused = false;
+        accountantState.isPaused = false;
+        emit Unpaused();
     }
 
-    function updateDelay(uint8 _minimum_update_delay_in_hours) external onlyRole(ADMIN_ROLE) {
-        accountantState.minimum_update_delay_in_hours = _minimum_update_delay_in_hours;
+    /**
+     * @notice Update the minimum time delay between `updateExchangeRate` calls.
+     * @dev There are no input requirements, as it is possible the admin would want
+     *      the exchange rate updated as frequently as needed.
+     */
+    function updateDelay(uint8 minimumUpdateDelayInHours) external onlyRole(ADMIN_ROLE) {
+        uint8 oldDelay = accountantState.minimumUpdateDelayInHours;
+        accountantState.minimumUpdateDelayInHours = minimumUpdateDelayInHours;
+        emit DelayInHoursUpdated(oldDelay, minimumUpdateDelayInHours);
     }
 
-    function updateUpper(uint16 _allowed_exchange_rate_change_upper) external onlyRole(ADMIN_ROLE) {
-        accountantState.allowed_exchange_rate_change_upper = _allowed_exchange_rate_change_upper;
+    /**
+     * @notice Update the allowed upper bound change of exchange rate between `updateExchangeRateCalls`.
+     */
+    function updateUpper(uint16 allowedExchangeRateChangeUpper) external onlyRole(ADMIN_ROLE) {
+        require(allowedExchangeRateChangeUpper > 1e4, "upper bound too small");
+        uint16 oldBound = accountantState.allowedExchangeRateChangeUpper;
+        accountantState.allowedExchangeRateChangeUpper = allowedExchangeRateChangeUpper;
+        emit UpperBoundUpdated(oldBound, allowedExchangeRateChangeUpper);
     }
 
-    function updateLower(uint16 _allowed_exchange_rate_change_lower) external onlyRole(ADMIN_ROLE) {
-        accountantState.allowed_exchange_rate_change_lower = _allowed_exchange_rate_change_lower;
+    /**
+     * @notice Update the allowed lower bound change of exchange rate between `updateExchangeRateCalls`.
+     */
+    function updateLower(uint16 allowedExchangeRateChangeLower) external onlyRole(ADMIN_ROLE) {
+        require(allowedExchangeRateChangeLower < 1e4, "lower bound too large");
+        uint16 oldBound = accountantState.allowedExchangeRateChangeLower;
+        accountantState.allowedExchangeRateChangeLower = allowedExchangeRateChangeLower;
+        emit LowerBoundUpdated(oldBound, allowedExchangeRateChangeLower);
     }
 
-    function updateManagementFee(uint16 _management_fee) external onlyRole(ADMIN_ROLE) {
-        accountantState.management_fee = _management_fee;
+    /**
+     * @notice Update the management fee to a new value.
+     */
+    function updateManagementFee(uint16 managementFee) external onlyRole(ADMIN_ROLE) {
+        require(managementFee < 0.2e4, "management fee too large");
+        uint16 oldFee = accountantState.managementFee;
+        accountantState.managementFee = managementFee;
+        emit ManagementFeeUpdated(oldFee, managementFee);
     }
 
-    function updatePayoutAddress(address _payout_address) external onlyRole(ADMIN_ROLE) {
-        accountantState.payout_address = _payout_address;
+    /**
+     * @notice Update the payout address fees are sent to.
+     */
+    function updatePayoutAddress(address payoutAddress) external onlyRole(ADMIN_ROLE) {
+        address oldPayout = accountantState.payoutAddress;
+        accountantState.payoutAddress = payoutAddress;
+        emit PayoutAddressUpdated(oldPayout, payoutAddress);
     }
 
-    // Rate providers must return rates in terms of `base` and they must use the same decimals as `base`.
-    function setRateProviderData(ERC20 _asset, bool _is_pegged_to_base, address _rate_provider)
+    /**
+     * @notice Update the rate provider data for a specific `asset`.
+     * @dev Rate providers must return rates in terms of `base` and
+     *      they must use the same decimals as `base`.
+     */
+    function setRateProviderData(ERC20 asset, bool isPeggedToBase, address rateProvider)
         external
         onlyRole(ADMIN_ROLE)
     {
-        rate_provider_data[_asset] =
-            RateProviderData({is_pegged_to_base: _is_pegged_to_base, rate_provider: IRateProvider(_rate_provider)});
+        rateProviderData[asset] =
+            RateProviderData({isPeggedToBase: isPeggedToBase, rateProvider: IRateProvider(rateProvider)});
+        emit RateProviderUpdated(address(asset), isPeggedToBase, rateProvider);
     }
 
     // ========================================= UPDATE EXCHANGE RATE/FEES FUNCTIONS =========================================
 
-    function updateExchangeRate(uint96 _new_exchange_rate) external onlyRole(EXCHANGE_RATE_UPDATER_ROLE) {
+    /**
+     * @notice Updates this contract exchangeRate.
+     * @dev If new exchange rate is outside of accepted bounds, or if not enough time has passed, this
+     *      will pause the contract, and this function will NOT calculate fees owed.
+     */
+    function updateExchangeRate(uint96 newExchangeRate) external onlyRole(EXCHANGE_RATE_UPDATER_ROLE) {
         AccountantState storage state = accountantState;
-        if (state.is_paused) revert("paused");
-        uint64 current_time = uint64(block.timestamp);
-        uint256 current_exchange_rate = state.exchange_rate;
-        uint256 current_total_shares = vault.totalSupply();
+        if (state.isPaused) revert("paused");
+        uint64 currentTime = uint64(block.timestamp);
+        uint256 currentExchangeRate = state.exchangeRate;
+        uint256 currentTotalShares = vault.totalSupply();
         if (
-            current_time < state.last_update_timestamp + (state.minimum_update_delay_in_hours * ONE_HOUR)
-                || _new_exchange_rate > current_exchange_rate.mulDivDown(state.allowed_exchange_rate_change_upper, 1e4)
-                || _new_exchange_rate < current_exchange_rate.mulDivDown(state.allowed_exchange_rate_change_lower, 1e4)
+            currentTime < state.lastUpdateTimestamp + (state.minimumUpdateDelayInHours * ONE_HOUR)
+                || newExchangeRate > currentExchangeRate.mulDivDown(state.allowedExchangeRateChangeUpper, 1e4)
+                || newExchangeRate < currentExchangeRate.mulDivDown(state.allowedExchangeRateChangeLower, 1e4)
         ) {
             // Instead of reverting, pause the contract. This way the exchange rate updater is able to update the exchange rate
             // to a better value, and pause it.
-            state.is_paused = true;
+            state.isPaused = true;
         } else {
             // Only update fees adn hwm if we are not paused.
             // Update fee accounting.
-            uint256 share_supply_to_use = current_total_shares;
+            uint256 shareSupplyToUse = currentTotalShares;
             // Use the minimum between current total supply and total supply for last update.
-            if (state.total_shares_last_update < share_supply_to_use) {
-                share_supply_to_use = state.total_shares_last_update;
+            if (state.totalSharesLastUpdate < shareSupplyToUse) {
+                shareSupplyToUse = state.totalSharesLastUpdate;
             }
 
             // Determine management fees owned.
-            uint256 time_delta = current_time - state.last_update_timestamp;
-            uint256 minimum_assets = _new_exchange_rate > current_exchange_rate
-                ? share_supply_to_use.mulDivDown(current_exchange_rate, ONE_SHARE)
-                : share_supply_to_use.mulDivDown(_new_exchange_rate, ONE_SHARE);
-            uint256 management_fees_annual = minimum_assets.mulDivDown(state.management_fee, 1e4);
-            uint256 new_fees_owed_in_base = management_fees_annual.mulDivDown(time_delta, 365 days);
+            uint256 timeDelta = currentTime - state.lastUpdateTimestamp;
+            uint256 minimumAssets = newExchangeRate > currentExchangeRate
+                ? shareSupplyToUse.mulDivDown(currentExchangeRate, ONE_SHARE)
+                : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
+            uint256 managementFeesAnnual = minimumAssets.mulDivDown(state.managementFee, 1e4);
+            uint256 newFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
 
-            state.fees_owed_in_base += uint128(new_fees_owed_in_base);
+            state.feesOwedInBase += uint128(newFeesOwedInBase);
         }
 
-        state.exchange_rate = _new_exchange_rate;
-        state.total_shares_last_update = uint128(current_total_shares);
-        state.last_update_timestamp = current_time;
-        // TODO emit an event
+        state.exchangeRate = newExchangeRate;
+        state.totalSharesLastUpdate = uint128(currentTotalShares);
+        state.lastUpdateTimestamp = currentTime;
+
+        emit ExchangeRateUpdated(uint96(currentExchangeRate), newExchangeRate, currentTime);
     }
 
-    function claimFees(ERC20 fee_asset) external {
+    /**
+     * @notice Claim pending fees.
+     * @dev This function must be called by the BoringVault.
+     */
+    function claimFees(ERC20 feeAsset) external {
         require(msg.sender == address(vault), "only vault");
         AccountantState storage state = accountantState;
-        if (state.is_paused) revert("paused");
-        if (state.fees_owed_in_base == 0) revert("no fees owed");
+        if (state.isPaused) revert("paused");
+        if (state.feesOwedInBase == 0) revert("no fees owed");
 
-        // Determine amount of fees owed in fee_asset.
-        uint256 fees_owed_in_fee_asset;
-        RateProviderData memory data = rate_provider_data[fee_asset];
-        if (address(fee_asset) == address(base) || data.is_pegged_to_base) {
-            fees_owed_in_fee_asset = state.fees_owed_in_base;
+        // Determine amount of fees owed in feeAsset.
+        uint256 feesOwedInFeeAsset;
+        RateProviderData memory data = rateProviderData[feeAsset];
+        if (address(feeAsset) == address(base) || data.isPeggedToBase) {
+            feesOwedInFeeAsset = state.feesOwedInBase;
         } else {
-            uint256 rate = data.rate_provider.getRate();
-            fees_owed_in_fee_asset = uint256(state.fees_owed_in_base).mulDivDown(rate, 10 ** decimals);
+            uint256 rate = data.rateProvider.getRate();
+            feesOwedInFeeAsset = uint256(state.feesOwedInBase).mulDivDown(rate, 10 ** decimals);
         }
         // Zero out fees owed.
-        state.fees_owed_in_base = 0;
+        state.feesOwedInBase = 0;
         // Transfer fee asset to payout address.
-        fee_asset.safeTransferFrom(msg.sender, state.payout_address, fees_owed_in_fee_asset);
+        feeAsset.safeTransferFrom(msg.sender, state.payoutAddress, feesOwedInFeeAsset);
+
+        emit FeesClaimed(address(feeAsset), feesOwedInFeeAsset);
     }
 
     // ========================================= RATE FUNCTIONS =========================================
 
+    /**
+     * @notice Get this BoringVault's current rate in the base.
+     */
     function getRate() public view returns (uint256 rate) {
-        rate = accountantState.exchange_rate;
+        rate = accountantState.exchangeRate;
     }
 
+    /**
+     * @notice Get this BoringVault's current rate in the base.
+     * @dev Revert if paused.
+     */
     function getRateSafe() external view returns (uint256 rate) {
-        if (accountantState.is_paused) revert("paused");
+        if (accountantState.isPaused) revert("paused");
         rate = getRate();
     }
 
-    function getRateInQuote(ERC20 quote) public view returns (uint256 rate_in_quote) {
+    /**
+     * @notice Get this BoringVault's current rate in the provided quote.
+     * @dev `quote` must have its RateProviderData set, else this will revert.
+     */
+    function getRateInQuote(ERC20 quote) public view returns (uint256 rateInQuote) {
         if (address(quote) == address(base)) {
-            rate_in_quote = accountantState.exchange_rate;
+            rateInQuote = accountantState.exchangeRate;
         } else {
-            RateProviderData memory data = rate_provider_data[quote];
-            if (data.is_pegged_to_base) {
-                rate_in_quote = accountantState.exchange_rate;
+            RateProviderData memory data = rateProviderData[quote];
+            if (data.isPeggedToBase) {
+                rateInQuote = accountantState.exchangeRate;
             } else {
-                uint256 quote_rate = data.rate_provider.getRate();
-                uint256 one_quote = 10 ** ERC20(quote).decimals();
-                rate_in_quote = one_quote.mulDivDown(accountantState.exchange_rate, quote_rate);
+                uint256 quoteRate = data.rateProvider.getRate();
+                uint256 oneQuote = 10 ** ERC20(quote).decimals();
+                rateInQuote = oneQuote.mulDivDown(accountantState.exchangeRate, quoteRate);
             }
         }
     }
 
-    function getRateInQuoteSafe(ERC20 quote) external view returns (uint256 rate_in_quote) {
-        if (accountantState.is_paused) revert("paused");
-        rate_in_quote = getRateInQuote(quote);
+    /**
+     * @notice Get this BoringVault's current rate in the provided quote.
+     * @dev `quote` must have its RateProviderData set, else this will revert.
+     * @dev Revert if paused.
+     */
+    function getRateInQuoteSafe(ERC20 quote) external view returns (uint256 rateInQuote) {
+        if (accountantState.isPaused) revert("paused");
+        rateInQuote = getRateInQuote(quote);
     }
 }
