@@ -15,7 +15,6 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
 
     // ========================================= STRUCTS =========================================
 
-    // TODO is this really packed right?
     /**
      * @param payoutAddress the address `claimFees` sends fees to
      * @param feesOwedInBase total pending fees owed in terms of base
@@ -261,7 +260,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
             // to a better value, and pause it.
             state.isPaused = true;
         } else {
-            // Only update fees adn hwm if we are not paused.
+            // Only update fees if we are not paused.
             // Update fee accounting.
             uint256 shareSupplyToUse = currentTotalShares;
             // Use the minimum between current total supply and total supply for last update.

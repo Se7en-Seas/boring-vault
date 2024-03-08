@@ -149,6 +149,17 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         }
     }
 
+    function testBalancerV2Integration() external {
+        deal(address(WETH), address(boringVault), 100e18);
+        deal(address(WEETH), address(boringVault), 100e18);
+        // Make sure the vault can
+        // swap wETH -> rETH
+        // create a new position rETH/weETH
+        // add to an existing position rETH/weETH
+        // pull from an existing position rETH/weETH
+        // collect from a position rETH/weETH
+    }
+
     // TODO add uniswap revert test checks
     function testUniswapV3Integration() external {
         deal(address(WETH), address(boringVault), 100e18);
@@ -273,6 +284,10 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         );
         targetData[7] = abi.encodeWithSignature("collect((uint256,address,uint128,uint128))", collectParams);
 
+        // uint256 memSize = 0;
+        // assembly {
+        //     memSize := msize()
+        // }
         manager.manageVaultWithMerkleVerification(
             manageProofs, functionSignatures, targets, targetData, new uint256[](8)
         );
