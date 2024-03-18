@@ -51,7 +51,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         ManageLeaf[] memory leafs = new ManageLeaf[](2);
         leafs[0] = ManageLeaf(address(USDC), "approve(address,uint256)", new address[](1));
         leafs[0].argumentAddresses[0] = usdcSpender;
-        leafs[1] = ManageLeaf(address(USDT), "transfer(address,uint256)", new address[](1));
+        leafs[1] = ManageLeaf(address(USDT), "approve(address,uint256)", new address[](1));
         leafs[1].argumentAddresses[0] = usdtTo;
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
@@ -64,24 +64,20 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         bytes[] memory targetData = new bytes[](2);
         targetData[0] = abi.encodeWithSelector(ERC20.approve.selector, usdcSpender, 777);
-        targetData[1] = abi.encodeWithSelector(ERC20.transfer.selector, usdtTo, 777);
+        targetData[1] = abi.encodeWithSelector(ERC20.approve.selector, usdtTo, 777);
 
         (bytes32[][] memory manageProofs) = _getProofsUsingTree(leafs, manageTree);
-
-        string[] memory functionSignatures = new string[](2);
-        functionSignatures[0] = "approve(address,uint256)";
-        functionSignatures[1] = "transfer(address,uint256)";
 
         uint256[] memory values = new uint256[](2);
 
         deal(address(USDT), address(boringVault), 777);
 
         uint256 gas = gasleft();
-        manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
         console.log("Gas used", gas - gasleft());
 
         assertEq(USDC.allowance(address(boringVault), usdcSpender), 777, "USDC should have an allowance");
-        assertEq(USDT.balanceOf(usdtTo), 777, "USDT should have been transfered");
+        assertEq(USDT.allowance(address(boringVault), usdtTo), 777, "USDT should have have an allowance");
     }
 
     function testFlashLoan() external {
@@ -148,7 +144,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
             uint256[] memory values = new uint256[](1);
 
-            manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+            manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
 
             assertTrue(iDidSomething == true, "Should have called doSomethingWithFlashLoan");
         }
@@ -294,9 +290,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         //     memSize := msize()
         // }
         uint256 gas = gasleft();
-        manager.manageVaultWithMerkleVerification(
-            manageProofs, functionSignatures, targets, targetData, new uint256[](8)
-        );
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](8));
         console.log("Gas used", gas - gasleft());
     }
 
@@ -309,37 +303,37 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         uint256[] memory values;
 
         vm.expectRevert(bytes("Invalid target proof length"));
-        manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
         manageProofs = new bytes32[][](1);
 
         vm.expectRevert(bytes("Invalid function signatures length"));
-        manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
         functionSignatures = new string[](1);
 
         vm.expectRevert(bytes("Invalid data length"));
-        manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
         targetData = new bytes[](1);
 
         vm.expectRevert(bytes("Invalid values length"));
-        manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
         values = new uint256[](1);
 
         vm.expectRevert(bytes("Function Selector Mismatch"));
-        manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
         functionSignatures[0] = "approve(address,uint256)";
 
         targets[0] = address(USDC);
         targetData[0] = abi.encodeWithSelector(ERC20.approve.selector, address(this), 1_000);
 
         vm.expectRevert(bytes("Failed to verify manage call"));
-        manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
 
         // Set the manage root to be the leaf of the USDC approve function
         bytes32 manageRoot = keccak256(abi.encodePacked(targets[0], bytes4(targetData[0]), address(this)));
         manager.setManageRoot(manageRoot);
 
         // Call now works.
-        manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
 
         // Check `receiveFlashLoan`
         address[] memory tokens;

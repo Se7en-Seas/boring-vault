@@ -291,7 +291,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
 
         vm.startPrank(strategist);
         uint256 gas = gasleft();
-        manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
         console.log("Gas For Rebalance", gas - gasleft());
         vm.stopPrank();
 

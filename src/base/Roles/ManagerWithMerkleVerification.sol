@@ -26,7 +26,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      */
     struct VerifyData {
         bytes32 currentManageRoot;
-        RawDataDecoderAndSanitizer currentRawDataDecoderAndSanitizer;
+        address currentRawDataDecoderAndSanitizer;
     }
 
     // ========================================= CONSTANTS =========================================
@@ -57,7 +57,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     /**
      * @notice The RawDataDecoderAndSanitizer this contract uses to decode and sanitize call data.
      */
-    RawDataDecoderAndSanitizer public rawDataDecoderAndSanitizer;
+    address public rawDataDecoderAndSanitizer;
 
     /**
      * @notice Bool indicating whether or not this contract is actively being managed.
@@ -111,8 +111,8 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      * @notice Sets the rawDataDecoderAndSanitizer.
      */
     function setRawDataDecoderAndSanitizer(address _rawDataDecoderAndSanitizer) external onlyRole(ADMIN_ROLE) {
-        address oldRawDataDecoderAndSanitizer = address(rawDataDecoderAndSanitizer);
-        rawDataDecoderAndSanitizer = RawDataDecoderAndSanitizer(_rawDataDecoderAndSanitizer);
+        address oldRawDataDecoderAndSanitizer = rawDataDecoderAndSanitizer;
+        rawDataDecoderAndSanitizer = _rawDataDecoderAndSanitizer;
         emit RawDataDecoderAndSanitizerUpdated(oldRawDataDecoderAndSanitizer, _rawDataDecoderAndSanitizer);
     }
 
@@ -124,7 +124,6 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      */
     function manageVaultWithMerkleVerification(
         bytes32[][] calldata manageProofs,
-        string[] calldata functionSignatures,
         address[] calldata targets,
         bytes[] calldata targetData,
         uint256[] calldata values
@@ -137,7 +136,6 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
         uint256 targetsLength = targets.length;
         require(targetsLength == manageProofs.length, "Invalid target proof length");
-        require(targetsLength == functionSignatures.length, "Invalid function signatures length");
         require(targetsLength == targetData.length, "Invalid data length");
         require(targetsLength == values.length, "Invalid values length");
 
@@ -147,7 +145,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
         for (uint256 i; i < targetsLength; ++i) {
             // Mem expansion cost seems to only add less than 1k gas to calls so not that big of a deal
-            _verifyCallData(vd, manageProofs[i], functionSignatures[i], targets[i], targetData[i]);
+            _verifyCallData(vd, manageProofs[i], targets[i], targetData[i]);
             vault.manage(targets[i], targetData[i], values[i]);
         }
 
@@ -174,16 +172,11 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
             ERC20(tokens[i]).safeTransfer(address(vault), amounts[i]);
         }
         {
-            (
-                bytes32[][] memory manageProofs,
-                string[] memory functionSignatures,
-                address[] memory targets,
-                bytes[] memory data,
-                uint256[] memory values
-            ) = abi.decode(userData, (bytes32[][], string[], address[], bytes[], uint256[]));
+            (bytes32[][] memory manageProofs, address[] memory targets, bytes[] memory data, uint256[] memory values) =
+                abi.decode(userData, (bytes32[][], address[], bytes[], uint256[]));
 
             ManagerWithMerkleVerification(address(this)).manageVaultWithMerkleVerification(
-                manageProofs, functionSignatures, targets, data, values
+                manageProofs, targets, data, values
             );
         }
 
@@ -206,22 +199,15 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     function _verifyCallData(
         VerifyData memory vd,
         bytes32[] calldata manageProof,
-        string calldata functionSignature,
         address target,
         bytes calldata targetData
     ) internal view {
         bytes4 providedSelector = bytes4(targetData);
-        bytes4 derivedSelector = bytes4(keccak256(abi.encodePacked(functionSignature)));
-
-        // Verify provided and derived selectors match.
-        require(providedSelector == derivedSelector, "Function Selector Mismatch");
 
         // Use address decoder to get addresses in call data.
         address[] memory argumentAddresses =
-            abi.decode(address(vd.currentRawDataDecoderAndSanitizer).functionStaticCall(targetData), (address[]));
+            abi.decode(vd.currentRawDataDecoderAndSanitizer.functionStaticCall(targetData), (address[]));
 
-        // address[] memory argumentAddresses =
-        // vd.currentRawDataDecoderAndSanitizer.decodeAndSanitizeRawData(address(vault), targetData); // Slice 4 bytes away to remove function selector.
         require(
             _verifyManageProof(vd.currentManageRoot, manageProof, target, providedSelector, argumentAddresses),
             "Failed to verify manage call"
