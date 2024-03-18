@@ -288,9 +288,11 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         // assembly {
         //     memSize := msize()
         // }
+        uint256 gas = gasleft();
         manager.manageVaultWithMerkleVerification(
             manageProofs, functionSignatures, targets, targetData, new uint256[](8)
         );
+        console.log("Gas used", gas - gasleft());
     }
 
     function testReverts() external {

@@ -146,6 +146,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
             VerifyData({currentManageRoot: manageRoot, currentRawDataDecoderAndSanitizer: rawDataDecoderAndSanitizer});
 
         for (uint256 i; i < targetsLength; ++i) {
+            // Mem expansion cost seems to only add less than 1k gas to calls so not that big of a deal
             _verifyCallData(vd, manageProofs[i], functionSignatures[i], targets[i], targetData[i]);
             vault.manage(targets[i], targetData[i], values[i]);
         }
