@@ -6,7 +6,7 @@ import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndS
 abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
     //============================== BALANCER V2 ===============================
 
-    function flashloan(address recipient, address[] calldata tokens, uint256[] calldata, bytes calldata)
+    function flashLoan(address recipient, address[] calldata tokens, uint256[] calldata, bytes calldata)
         external
         pure
         virtual

@@ -16,7 +16,7 @@ abstract contract ConvexDecoderAndSanitizer is BaseDecoderAndSanitizer {
         return addressesFound;
     }
 
-    function getReward(address _addr, bool) external view virtual returns (address[] memory addressesFound) {
+    function getReward(address _addr, bool) external pure virtual returns (address[] memory addressesFound) {
         addressesFound = new address[](1);
         addressesFound[0] = _addr;
     }

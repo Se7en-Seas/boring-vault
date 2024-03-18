@@ -7,10 +7,10 @@ import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVer
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {RawDataDecoderAndSanitizer, DecoderCustomTypes} from "src/base/RawDataDecoderAndSanitizer.sol";
 import {EtherFiLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {IUniswapV3Router} from "src/interfaces/IUniswapV3Router.sol";
+import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -34,7 +34,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         manager =
             new ManagerWithMerkleVerification(address(this), address(this), address(this), address(boringVault), vault);
 
-        rawDataDecoderAndSanitizer = address(new RawDataDecoderAndSanitizer(uniswapV3NonFungiblePositionManager));
         rawDataDecoderAndSanitizer =
             address(new EtherFiLiquidDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
 
@@ -85,7 +84,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         leafs[0] = ManageLeaf(vault, "flashLoan(address,address[],uint256[],bytes)", new address[](2));
         leafs[0].argumentAddresses[0] = address(manager);
         leafs[0].argumentAddresses[1] = address(USDC);
-        leafs[1] = ManageLeaf(address(this), "doSomethingWithFlashLoan(address,uint256)", new address[](1));
+        leafs[1] = ManageLeaf(address(this), "approve(address,uint256)", new address[](1));
         leafs[1].argumentAddresses[0] = address(USDC);
         leafs[2] = ManageLeaf(address(USDC), "approve(address,uint256)", new address[](1));
         leafs[2].argumentAddresses[0] = address(this);
@@ -104,8 +103,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             targets[1] = address(this);
             bytes[] memory targetData = new bytes[](2);
             targetData[0] = abi.encodeWithSelector(ERC20.approve.selector, address(this), flashLoanAmount);
-            targetData[1] =
-                abi.encodeWithSelector(this.doSomethingWithFlashLoan.selector, address(USDC), flashLoanAmount);
+            targetData[1] = abi.encodeWithSelector(ERC20.approve.selector, address(USDC), flashLoanAmount);
 
             ManageLeaf[] memory flashLoanLeafs = new ManageLeaf[](2);
             flashLoanLeafs[0] = leafs[2];
@@ -113,13 +111,9 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
             bytes32[][] memory flashLoanManageProofs = _getProofsUsingTree(flashLoanLeafs, manageTree);
 
-            string[] memory functionSignatures = new string[](2);
-            functionSignatures[0] = "approve(address,uint256)";
-            functionSignatures[1] = "doSomethingWithFlashLoan(address,uint256)";
-
             uint256[] memory values = new uint256[](2);
 
-            userData = abi.encode(flashLoanManageProofs, functionSignatures, targets, targetData, values);
+            userData = abi.encode(flashLoanManageProofs, targets, targetData, values);
         }
         {
             address[] memory targets = new address[](1);
@@ -138,9 +132,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             manageLeafs[0] = leafs[0];
 
             bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
-
-            string[] memory functionSignatures = new string[](1);
-            functionSignatures[0] = "flashLoan(address,address[],uint256[],bytes)";
 
             uint256[] memory values = new uint256[](1);
 
@@ -296,7 +287,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
     function testReverts() external {
         bytes32[][] memory manageProofs;
-        string[] memory functionSignatures;
         address[] memory targets;
         targets = new address[](1);
         bytes[] memory targetData;
@@ -306,10 +296,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
         manageProofs = new bytes32[][](1);
 
-        vm.expectRevert(bytes("Invalid function signatures length"));
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
-        functionSignatures = new string[](1);
-
         vm.expectRevert(bytes("Invalid data length"));
         manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
         targetData = new bytes[](1);
@@ -317,10 +303,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         vm.expectRevert(bytes("Invalid values length"));
         manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
         values = new uint256[](1);
-
-        vm.expectRevert(bytes("Function Selector Mismatch"));
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
-        functionSignatures[0] = "approve(address,uint256)";
 
         targets[0] = address(USDC);
         targetData[0] = abi.encodeWithSelector(ERC20.approve.selector, address(this), 1_000);
@@ -353,7 +335,8 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
     // ========================================= HELPER FUNCTIONS =========================================
     bool iDidSomething = false;
 
-    function doSomethingWithFlashLoan(ERC20 token, uint256 amount) external {
+    // Call this function approve, so that we can use the standard decoder.
+    function approve(ERC20 token, uint256 amount) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
         token.safeTransfer(msg.sender, amount);
         iDidSomething = true;

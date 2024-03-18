@@ -9,6 +9,7 @@ import {ERC4626DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protoco
 import {CurveDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/CurveDecoderAndSanitizer.sol";
 import {AuraDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/AuraDecoderAndSanitizer.sol";
 import {ConvexDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/ConvexDecoderAndSanitizer.sol";
+import {EtherFiDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/EtherFiDecoderAndSanitizer.sol";
 
 // TODO maybe common collision functions should be moved to BaseDecoderAndSanitizer?
 contract EtherFiLiquidDecoderAndSanitizer is
@@ -18,7 +19,8 @@ contract EtherFiLiquidDecoderAndSanitizer is
     ERC4626DecoderAndSanitizer,
     CurveDecoderAndSanitizer,
     AuraDecoderAndSanitizer,
-    ConvexDecoderAndSanitizer
+    ConvexDecoderAndSanitizer,
+    EtherFiDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
@@ -60,7 +62,7 @@ contract EtherFiLiquidDecoderAndSanitizer is
      */
     function getReward(address _addr, bool)
         external
-        view
+        pure
         override(AuraDecoderAndSanitizer, ConvexDecoderAndSanitizer)
         returns (address[] memory addressesFound)
     {

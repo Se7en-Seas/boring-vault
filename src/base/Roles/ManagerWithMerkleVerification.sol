@@ -9,7 +9,6 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {RawDataDecoderAndSanitizer} from "src/base/RawDataDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {console} from "@forge-std/Test.sol"; // TODO remove
 
