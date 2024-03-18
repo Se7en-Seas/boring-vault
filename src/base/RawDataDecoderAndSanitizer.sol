@@ -4,8 +4,10 @@ pragma solidity 0.8.21;
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {INonFungiblePositionManager} from "src/interfaces/RawDataDecoderAndSanitizerInterfaces.sol";
 import {console} from "@forge-std/Test.sol"; // TODO remove
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 contract RawDataDecoderAndSanitizer {
+    using Address for address;
     // ========================================= CONSTANTS =========================================
 
     // ========================================= ERC20 =========================================
@@ -107,214 +109,258 @@ contract RawDataDecoderAndSanitizer {
      * @dev Decoding is needed to find any addresses in the contract data, and return them to the caller.
      * @dev Sanitizing is performing logical checks on non address arguments in the contract data.
      * @param boringVault the BoringVault that will be making a call using rawData
-     * @param functionSignature the function signature for the call
      * @param rawData the raw call data with the bytes4 selector removed
      */
-    function decodeAndSanitizeRawData(address boringVault, string calldata functionSignature, bytes calldata rawData)
+    function decodeAndSanitizeRawData(address boringVault, bytes calldata rawData)
         external
         view
         returns (address[] memory addressesFound)
     {
+        bytes memory result = address(this).functionStaticCall(rawData);
+        addressesFound = abi.decode(result, (address[]));
         // Iterate through string until an open parenthesis is found.
-        bytes32 hashedArguments;
-        {
-            bytes memory functionSignature_bytes = bytes(functionSignature);
-            uint256 functionSignature_length = functionSignature_bytes.length;
-            bytes1 open_char = bytes1("(");
-            for (uint256 i; i < functionSignature_length; ++i) {
-                if (functionSignature_bytes[i] == open_char) {
-                    // We found the open char, so save the hashedArguments.
-                    hashedArguments = keccak256(bytes(functionSignature[i:]));
-                    break;
-                }
-            }
-            if (hashedArguments == bytes32(0)) revert("Failed to find arguments");
-        }
-        // TODO should these verify the length of the raw data? So we know that we aren't trying to pass extra arguments in the msg.data?
-        if (hashedArguments == HASHED_ARGUMENTS_ADDRESS_UINT256) {
-            addressesFound = new address[](1);
-            addressesFound[0] = abi.decode(rawData, (address));
-        } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_ADDRESS) {
-            addressesFound = new address[](1);
-            (, addressesFound[0]) = abi.decode(rawData, (uint256, address));
-        } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_ADDRESS_ADDRESS) {
-            addressesFound = new address[](2);
-            (, addressesFound[0], addressesFound[1]) = abi.decode(rawData, (uint256, address, address));
-        } else if (hashedArguments == HASHED_ARGUMENTS_ADDRESS_ADDRESS_ARRAY_UINT256_ARRAY_BYTES) {
-            (address first, address[] memory second) = abi.decode(rawData, (address, address[]));
-            addressesFound = new address[](second.length + 1);
-            addressesFound[0] = first;
-            for (uint256 i; i < second.length; ++i) {
-                addressesFound[i + 1] = second[i];
-            }
-        } else if (hashedArguments == HASHED_ARGUMENTS_SINGLE_SWAP_FUND_MANAGEMENT_UINT256_UINT256) {
-            (DecoderCustomTypes.SingleSwap memory singleSwap, DecoderCustomTypes.FundManagement memory funds) =
-                abi.decode(rawData, (DecoderCustomTypes.SingleSwap, DecoderCustomTypes.FundManagement));
-            // Sanitize raw data
-            require(singleSwap.userData.length == 0, "SingleSwap userData non zero length.");
-            // Return addresses found
-            addressesFound = new address[](5);
-            addressesFound[0] = _getPoolAddressFromPoolId(singleSwap.poolId); // Extract pool address from poolId
-            addressesFound[1] = singleSwap.assetIn;
-            addressesFound[2] = singleSwap.assetOut;
-            addressesFound[3] = funds.sender;
-            addressesFound[4] = funds.recipient;
-        } else if (hashedArguments == HASHED_ARGUMENTS_BYTES32_ADDRESS_ADDRESS_POOL_REQUEST) {
-            (bytes32 poolId, address sender, address recipient, DecoderCustomTypes.PoolRequest memory req) =
-                abi.decode(rawData, (bytes32, address, address, DecoderCustomTypes.PoolRequest));
-            // Sanitize raw data
-            require(!req.useInternalBalance, "internal balances not supported");
-            // Return addresses found
-            uint256 assetsLength = req.assets.length;
-            addressesFound = new address[](3 + assetsLength);
-            addressesFound[0] = _getPoolAddressFromPoolId(poolId);
-            addressesFound[1] = sender;
-            addressesFound[2] = recipient;
-            for (uint256 i; i < assetsLength; ++i) {
-                addressesFound[i + 3] = req.assets[i];
-            }
-        } else if (hashedArguments == HASHED_ARGUMENTS_MINT_PARAMS) {
-            (DecoderCustomTypes.MintParams memory params) = abi.decode(rawData, (DecoderCustomTypes.MintParams));
-            // Nothing to sanitize
-            // Return addresses found
-            addressesFound = new address[](3);
-            addressesFound[0] = params.token0;
-            addressesFound[1] = params.token1;
-            addressesFound[2] = params.recipient;
-        } else if (hashedArguments == HASHED_ARGUMENTS_INCREASE_LIQUIDITY_PARAMS) {
-            (DecoderCustomTypes.IncreaseLiquidityParams memory params) =
-                abi.decode(rawData, (DecoderCustomTypes.IncreaseLiquidityParams));
-            // Sanitize raw data
-            require(
-                uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) == boringVault,
-                "adding liquidity to a position not owned by vault"
-            );
-            // No addresses in data
-        } else if (hashedArguments == HASHED_ARGUMENTS_DECREASE_LIQUIDITY_PARAMS) {
-            (DecoderCustomTypes.DecreaseLiquidityParams memory params) =
-                abi.decode(rawData, (DecoderCustomTypes.DecreaseLiquidityParams));
-            // Sanitize raw data
-            // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
-            // just for completeness.
-            require(
-                uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) == boringVault,
-                "removing liquidity from a position not owned by vault"
-            );
-            // No addresses in data
-        } else if (hashedArguments == HASHED_ARGUMENTS_COLLECT_PARAMS) {
-            (DecoderCustomTypes.CollectParams memory params) = abi.decode(rawData, (DecoderCustomTypes.CollectParams));
-            // Sanitize raw data
-            // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
-            // just for completeness.
-            require(
-                uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) == boringVault,
-                "collecting from a position not owned by vault"
-            );
-            // Return addresses found
-            addressesFound = new address[](1);
-            addressesFound[0] = params.recipient;
-        } else if (hashedArguments == HASHED_ARGUMENTS_INT128_INT128_UINT256_UINT256) {
-            // Nothing to sanitize or return
-        } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_FIXED_2_ARRAY_UINT256) {
-            // Nothing to sanitize or return
-        } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_FIXED_3_ARRAY_UINT256) {
-            // Nothing to sanitize or return
-        } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_ARRAY_UINT256) {
-            // Nothing to sanitize or return
-        } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_UINT256_FIXED_2_ARRAY) {
-            // Nothing to sanitize or return
-        } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_UINT256_FIXED_3_ARRAY) {
-            // Nothing to sanitize or return
-        } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_UINT256_ARRAY) {
-            // Nothing to sanitize or return
-        } else if (hashedArguments == HASHED_ARGUMENTS_ADDRESS_BOOL) {
-            addressesFound = new address[](1);
-            addressesFound[0] = abi.decode(rawData, (address));
-        } else if (hashedArguments == HASHED_ARGUMENTS_UINT256) {
-            // Nothing to sanitize or return
-        } else if (hashedArguments == HASHED_ARGUMENTS_ADDRESS) {
-            addressesFound = new address[](1);
-            addressesFound[0] = abi.decode(rawData, (address));
-        } else if (hashedArguments == HASHED_ARGUMENTS_NONE) {
-            // Nothing to sanitize or return
-        } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_UINT256_BOOL) {
-            // Nothing to sanitize or return
-        } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_BOOL) {
-            // Nothing to sanitize or return
-        } else if (hashedArguments == HASHED_ARGUMENTS_EXACT_INPUT_PARAMS) {
-            (DecoderCustomTypes.ExactInputParams memory params) =
-                abi.decode(rawData, (DecoderCustomTypes.ExactInputParams));
-            // Nothing to sanitize
-            // Return addresses found
-            // Determine how many addresses are in params.path.
-            uint256 chunkSize = 23; // 3 bytes for uint24 fee, and 20 bytes for address token
-            uint256 pathLength = params.path.length;
-            require(pathLength % chunkSize == 20, "wrong path format"); // We expect a remainder of 20
-            uint256 pathAddressLength = 1 + (pathLength / chunkSize);
-            addressesFound = new address[](1 + pathAddressLength);
-            uint256 pathIndex;
-            for (uint256 i; i < pathAddressLength; ++i) {
-                bytes20 rawAddress;
-                for (uint256 j; j < 20; ++j) {
-                    rawAddress |= bytes20(params.path[pathIndex + j]) >> (j * 8);
-                }
-                addressesFound[i] = address(rawAddress);
-                pathIndex += chunkSize;
-            }
-            addressesFound[pathAddressLength] = params.recipient;
-        } else if (hashedArguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_ADDRESS_BYTES) {
-            (DecoderCustomTypes.MarketParams memory params,, address onBehalf, bytes memory callbackData) =
-                abi.decode(rawData, (DecoderCustomTypes.MarketParams, uint256, address, bytes));
-            // Sanitize raw data
-            require(callbackData.length == 0, "callback not supported");
-            // Return addresses found
-            addressesFound = new address[](5);
-            addressesFound[0] = params.loanToken;
-            addressesFound[1] = params.collateralToken;
-            addressesFound[2] = params.oracle;
-            addressesFound[3] = params.irm;
-            addressesFound[4] = onBehalf;
-        } else if (hashedArguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_UINT256_ADDRESS_ADDRESS) {
-            (DecoderCustomTypes.MarketParams memory params,,, address onBehalf, address receiver) =
-                abi.decode(rawData, (DecoderCustomTypes.MarketParams, uint256, uint256, address, address));
-            // Nothing to sanitize
-            // Return addresses found
-            addressesFound = new address[](6);
-            addressesFound[0] = params.loanToken;
-            addressesFound[1] = params.collateralToken;
-            addressesFound[2] = params.oracle;
-            addressesFound[3] = params.irm;
-            addressesFound[4] = onBehalf;
-            addressesFound[5] = receiver;
-        } else if (hashedArguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_ADDRESS_ADDRESS) {
-            (DecoderCustomTypes.MarketParams memory params,, address onBehalf, address receiver) =
-                abi.decode(rawData, (DecoderCustomTypes.MarketParams, uint256, address, address));
-            // Nothing to sanitize
-            // Return addresses found
-            addressesFound = new address[](6);
-            addressesFound[0] = params.loanToken;
-            addressesFound[1] = params.collateralToken;
-            addressesFound[2] = params.oracle;
-            addressesFound[3] = params.irm;
-            addressesFound[4] = onBehalf;
-            addressesFound[5] = receiver;
-        } else if (hashedArguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_UINT256_ADDRESS_BYTES) {
-            (DecoderCustomTypes.MarketParams memory params,,, address onBehalf, bytes memory callbackData) =
-                abi.decode(rawData, (DecoderCustomTypes.MarketParams, uint256, uint256, address, bytes));
-            // Sanitize raw data
-            require(callbackData.length == 0, "callback not supported");
-            // Return addresses found
-            addressesFound = new address[](5);
-            addressesFound[0] = params.loanToken;
-            addressesFound[1] = params.collateralToken;
-            addressesFound[2] = params.oracle;
-            addressesFound[3] = params.irm;
-            addressesFound[4] = onBehalf;
-        } else {
-            // We do not know how to safely decode and sanitize this data, so revert.
-            revert("unknown hash");
-        }
+        // bytes32 hashedArguments;
+        // {
+        //     bytes memory functionSignature_bytes = bytes(functionSignature);
+        //     uint256 functionSignature_length = functionSignature_bytes.length;
+        //     bytes1 open_char = bytes1("(");
+        //     for (uint256 i; i < functionSignature_length; ++i) {
+        //         if (functionSignature_bytes[i] == open_char) {
+        //             // We found the open char, so save the hashedArguments.
+        //             hashedArguments = keccak256(bytes(functionSignature[i:]));
+        //             break;
+        //         }
+        //     }
+        //     if (hashedArguments == bytes32(0)) revert("Failed to find arguments");
+        // }
+        // // TODO should these verify the length of the raw data? So we know that we aren't trying to pass extra arguments in the msg.data?
+        // if (hashedArguments == HASHED_ARGUMENTS_ADDRESS_UINT256) {
+        //     addressesFound = new address[](1);
+        //     addressesFound[0] = abi.decode(rawData, (address));
+        // } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_ADDRESS) {
+        //     addressesFound = new address[](1);
+        //     (, addressesFound[0]) = abi.decode(rawData, (uint256, address));
+        // } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_ADDRESS_ADDRESS) {
+        //     addressesFound = new address[](2);
+        //     (, addressesFound[0], addressesFound[1]) = abi.decode(rawData, (uint256, address, address));
+        // } else if (hashedArguments == HASHED_ARGUMENTS_ADDRESS_ADDRESS_ARRAY_UINT256_ARRAY_BYTES) {
+        //     (address first, address[] memory second) = abi.decode(rawData, (address, address[]));
+        //     addressesFound = new address[](second.length + 1);
+        //     addressesFound[0] = first;
+        //     for (uint256 i; i < second.length; ++i) {
+        //         addressesFound[i + 1] = second[i];
+        //     }
+        // } else if (hashedArguments == HASHED_ARGUMENTS_SINGLE_SWAP_FUND_MANAGEMENT_UINT256_UINT256) {
+        //     (DecoderCustomTypes.SingleSwap memory singleSwap, DecoderCustomTypes.FundManagement memory funds) =
+        //         abi.decode(rawData, (DecoderCustomTypes.SingleSwap, DecoderCustomTypes.FundManagement));
+        //     // Sanitize raw data
+        //     require(singleSwap.userData.length == 0, "SingleSwap userData non zero length.");
+        //     // Return addresses found
+        //     addressesFound = new address[](5);
+        //     addressesFound[0] = _getPoolAddressFromPoolId(singleSwap.poolId); // Extract pool address from poolId
+        //     addressesFound[1] = singleSwap.assetIn;
+        //     addressesFound[2] = singleSwap.assetOut;
+        //     addressesFound[3] = funds.sender;
+        //     addressesFound[4] = funds.recipient;
+        // } else if (hashedArguments == HASHED_ARGUMENTS_BYTES32_ADDRESS_ADDRESS_POOL_REQUEST) {
+        //     (bytes32 poolId, address sender, address recipient, DecoderCustomTypes.PoolRequest memory req) =
+        //         abi.decode(rawData, (bytes32, address, address, DecoderCustomTypes.PoolRequest));
+        //     // Sanitize raw data
+        //     require(!req.useInternalBalance, "internal balances not supported");
+        //     // Return addresses found
+        //     uint256 assetsLength = req.assets.length;
+        //     addressesFound = new address[](3 + assetsLength);
+        //     addressesFound[0] = _getPoolAddressFromPoolId(poolId);
+        //     addressesFound[1] = sender;
+        //     addressesFound[2] = recipient;
+        //     for (uint256 i; i < assetsLength; ++i) {
+        //         addressesFound[i + 3] = req.assets[i];
+        //     }
+        // } else if (hashedArguments == HASHED_ARGUMENTS_MINT_PARAMS) {
+        //     (DecoderCustomTypes.MintParams memory params) = abi.decode(rawData, (DecoderCustomTypes.MintParams));
+        //     // Nothing to sanitize
+        //     // Return addresses found
+        //     addressesFound = new address[](3);
+        //     addressesFound[0] = params.token0;
+        //     addressesFound[1] = params.token1;
+        //     addressesFound[2] = params.recipient;
+        // } else if (hashedArguments == HASHED_ARGUMENTS_INCREASE_LIQUIDITY_PARAMS) {
+        //     (DecoderCustomTypes.IncreaseLiquidityParams memory params) =
+        //         abi.decode(rawData, (DecoderCustomTypes.IncreaseLiquidityParams));
+        //     // Sanitize raw data
+        //     require(
+        //         uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) == boringVault,
+        //         "adding liquidity to a position not owned by vault"
+        //     );
+        //     // No addresses in data
+        // } else if (hashedArguments == HASHED_ARGUMENTS_DECREASE_LIQUIDITY_PARAMS) {
+        //     (DecoderCustomTypes.DecreaseLiquidityParams memory params) =
+        //         abi.decode(rawData, (DecoderCustomTypes.DecreaseLiquidityParams));
+        //     // Sanitize raw data
+        //     // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
+        //     // just for completeness.
+        //     require(
+        //         uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) == boringVault,
+        //         "removing liquidity from a position not owned by vault"
+        //     );
+        //     // No addresses in data
+        // } else if (hashedArguments == HASHED_ARGUMENTS_COLLECT_PARAMS) {
+        //     (DecoderCustomTypes.CollectParams memory params) = abi.decode(rawData, (DecoderCustomTypes.CollectParams));
+        //     // Sanitize raw data
+        //     // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
+        //     // just for completeness.
+        //     require(
+        //         uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) == boringVault,
+        //         "collecting from a position not owned by vault"
+        //     );
+        //     // Return addresses found
+        //     addressesFound = new address[](1);
+        //     addressesFound[0] = params.recipient;
+        // } else if (hashedArguments == HASHED_ARGUMENTS_INT128_INT128_UINT256_UINT256) {
+        //     // Nothing to sanitize or return
+        // } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_FIXED_2_ARRAY_UINT256) {
+        //     // Nothing to sanitize or return
+        // } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_FIXED_3_ARRAY_UINT256) {
+        //     // Nothing to sanitize or return
+        // } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_ARRAY_UINT256) {
+        //     // Nothing to sanitize or return
+        // } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_UINT256_FIXED_2_ARRAY) {
+        //     // Nothing to sanitize or return
+        // } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_UINT256_FIXED_3_ARRAY) {
+        //     // Nothing to sanitize or return
+        // } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_UINT256_ARRAY) {
+        //     // Nothing to sanitize or return
+        // } else if (hashedArguments == HASHED_ARGUMENTS_ADDRESS_BOOL) {
+        //     addressesFound = new address[](1);
+        //     addressesFound[0] = abi.decode(rawData, (address));
+        // } else if (hashedArguments == HASHED_ARGUMENTS_UINT256) {
+        //     // Nothing to sanitize or return
+        // } else if (hashedArguments == HASHED_ARGUMENTS_ADDRESS) {
+        //     addressesFound = new address[](1);
+        //     addressesFound[0] = abi.decode(rawData, (address));
+        // } else if (hashedArguments == HASHED_ARGUMENTS_NONE) {
+        //     // Nothing to sanitize or return
+        // } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_UINT256_BOOL) {
+        //     // Nothing to sanitize or return
+        // } else if (hashedArguments == HASHED_ARGUMENTS_UINT256_BOOL) {
+        //     // Nothing to sanitize or return
+        // } else if (hashedArguments == HASHED_ARGUMENTS_EXACT_INPUT_PARAMS) {
+        //     (DecoderCustomTypes.ExactInputParams memory params) =
+        //         abi.decode(rawData, (DecoderCustomTypes.ExactInputParams));
+        //     // Nothing to sanitize
+        //     // Return addresses found
+        //     // Determine how many addresses are in params.path.
+        //     uint256 chunkSize = 23; // 3 bytes for uint24 fee, and 20 bytes for address token
+        //     uint256 pathLength = params.path.length;
+        //     require(pathLength % chunkSize == 20, "wrong path format"); // We expect a remainder of 20
+        //     uint256 pathAddressLength = 1 + (pathLength / chunkSize);
+        //     addressesFound = new address[](1 + pathAddressLength);
+        //     uint256 pathIndex;
+        //     for (uint256 i; i < pathAddressLength; ++i) {
+        //         bytes20 rawAddress;
+        //         for (uint256 j; j < 20; ++j) {
+        //             rawAddress |= bytes20(params.path[pathIndex + j]) >> (j * 8);
+        //         }
+        //         addressesFound[i] = address(rawAddress);
+        //         pathIndex += chunkSize;
+        //     }
+        //     addressesFound[pathAddressLength] = params.recipient;
+        // } else if (hashedArguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_ADDRESS_BYTES) {
+        //     (DecoderCustomTypes.MarketParams memory params,, address onBehalf, bytes memory callbackData) =
+        //         abi.decode(rawData, (DecoderCustomTypes.MarketParams, uint256, address, bytes));
+        //     // Sanitize raw data
+        //     require(callbackData.length == 0, "callback not supported");
+        //     // Return addresses found
+        //     addressesFound = new address[](5);
+        //     addressesFound[0] = params.loanToken;
+        //     addressesFound[1] = params.collateralToken;
+        //     addressesFound[2] = params.oracle;
+        //     addressesFound[3] = params.irm;
+        //     addressesFound[4] = onBehalf;
+        // } else if (hashedArguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_UINT256_ADDRESS_ADDRESS) {
+        //     (DecoderCustomTypes.MarketParams memory params,,, address onBehalf, address receiver) =
+        //         abi.decode(rawData, (DecoderCustomTypes.MarketParams, uint256, uint256, address, address));
+        //     // Nothing to sanitize
+        //     // Return addresses found
+        //     addressesFound = new address[](6);
+        //     addressesFound[0] = params.loanToken;
+        //     addressesFound[1] = params.collateralToken;
+        //     addressesFound[2] = params.oracle;
+        //     addressesFound[3] = params.irm;
+        //     addressesFound[4] = onBehalf;
+        //     addressesFound[5] = receiver;
+        // } else if (hashedArguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_ADDRESS_ADDRESS) {
+        //     (DecoderCustomTypes.MarketParams memory params,, address onBehalf, address receiver) =
+        //         abi.decode(rawData, (DecoderCustomTypes.MarketParams, uint256, address, address));
+        //     // Nothing to sanitize
+        //     // Return addresses found
+        //     addressesFound = new address[](6);
+        //     addressesFound[0] = params.loanToken;
+        //     addressesFound[1] = params.collateralToken;
+        //     addressesFound[2] = params.oracle;
+        //     addressesFound[3] = params.irm;
+        //     addressesFound[4] = onBehalf;
+        //     addressesFound[5] = receiver;
+        // } else if (hashedArguments == HASHED_ARGUMENTS_MARKET_PARAMS_UINT256_UINT256_ADDRESS_BYTES) {
+        //     (DecoderCustomTypes.MarketParams memory params,,, address onBehalf, bytes memory callbackData) =
+        //         abi.decode(rawData, (DecoderCustomTypes.MarketParams, uint256, uint256, address, bytes));
+        //     // Sanitize raw data
+        //     require(callbackData.length == 0, "callback not supported");
+        //     // Return addresses found
+        //     addressesFound = new address[](5);
+        //     addressesFound[0] = params.loanToken;
+        //     addressesFound[1] = params.collateralToken;
+        //     addressesFound[2] = params.oracle;
+        //     addressesFound[3] = params.irm;
+        //     addressesFound[4] = onBehalf;
+        // } else {
+        //     // We do not know how to safely decode and sanitize this data, so revert.
+        //     revert("unknown hash");
+        // }
     }
+
+    function approve(address a, uint256) external view returns (address[] memory addressesFound) {
+        addressesFound = new address[](1);
+        addressesFound[0] = a;
+    }
+
+    function transfer(address a, uint256) external view returns (address[] memory addressesFound) {
+        addressesFound = new address[](1);
+        addressesFound[0] = a;
+    }
+
+    //     leafs[0] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
+    // leafs[0].argumentAddresses[0] = uniV3Router;
+    // leafs[1] = ManageLeaf(uniV3Router, "exactInput((bytes,address,uint256,uint256,uint256))", new address[](3));
+    // leafs[1].argumentAddresses[0] = address(WETH);
+    // leafs[1].argumentAddresses[1] = address(RETH);
+    // leafs[1].argumentAddresses[2] = address(boringVault);
+    // leafs[2] = ManageLeaf(address(RETH), "approve(address,uint256)", new address[](1));
+    // leafs[2].argumentAddresses[0] = uniswapV3NonFungiblePositionManager;
+    // leafs[3] = ManageLeaf(address(WEETH), "approve(address,uint256)", new address[](1));
+    // leafs[3].argumentAddresses[0] = uniswapV3NonFungiblePositionManager;
+    // leafs[4] = ManageLeaf(
+    //     uniswapV3NonFungiblePositionManager,
+    //     "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
+    //     new address[](3)
+    // );
+    // leafs[4].argumentAddresses[0] = address(RETH);
+    // leafs[4].argumentAddresses[1] = address(WEETH);
+    // leafs[4].argumentAddresses[2] = address(boringVault);
+    // leafs[5] = ManageLeaf(
+    //     uniswapV3NonFungiblePositionManager,
+    //     "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+    //     new address[](0)
+    // );
+    // leafs[6] = ManageLeaf(
+    //     uniswapV3NonFungiblePositionManager,
+    //     "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
+    //     new address[](0)
+    // );
+    // leafs[7] = ManageLeaf(
+    //     uniswapV3NonFungiblePositionManager, "collect((uint256,address,uint128,uint128))", new address[](1)
+    // );
+    // leafs[7].argumentAddresses[0] = address(boringVault);
 
     // ========================================= INTERNAL HELPER FUNCTIONS =========================================
 

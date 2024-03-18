@@ -8,6 +8,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {RawDataDecoderAndSanitizer, DecoderCustomTypes} from "src/base/RawDataDecoderAndSanitizer.sol";
+import {EtherFiLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {IUniswapV3Router} from "src/interfaces/IUniswapV3Router.sol";
 
@@ -34,6 +35,8 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             new ManagerWithMerkleVerification(address(this), address(this), address(this), address(boringVault), vault);
 
         rawDataDecoderAndSanitizer = address(new RawDataDecoderAndSanitizer(uniswapV3NonFungiblePositionManager));
+        rawDataDecoderAndSanitizer =
+            address(new EtherFiLiquidDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
 
         boringVault.grantRole(boringVault.MANAGER_ROLE(), address(manager));
 
@@ -73,7 +76,9 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         deal(address(USDT), address(boringVault), 777);
 
+        uint256 gas = gasleft();
         manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+        console.log("Gas used", gas - gasleft());
 
         assertEq(USDC.allowance(address(boringVault), usdcSpender), 777, "USDC should have an allowance");
         assertEq(USDT.balanceOf(usdtTo), 777, "USDT should have been transfered");

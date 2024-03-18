@@ -217,9 +217,11 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         require(providedSelector == derivedSelector, "Function Selector Mismatch");
 
         // Use address decoder to get addresses in call data.
-        address[] memory argumentAddresses = vd.currentRawDataDecoderAndSanitizer.decodeAndSanitizeRawData(
-            address(vault), functionSignature, targetData[4:]
-        ); // Slice 4 bytes away to remove function selector.
+        address[] memory argumentAddresses =
+            abi.decode(address(vd.currentRawDataDecoderAndSanitizer).functionStaticCall(targetData), (address[]));
+
+        // address[] memory argumentAddresses =
+        // vd.currentRawDataDecoderAndSanitizer.decodeAndSanitizeRawData(address(vault), targetData); // Slice 4 bytes away to remove function selector.
         require(
             _verifyManageProof(vd.currentManageRoot, manageProof, target, providedSelector, argumentAddresses),
             "Failed to verify manage call"
