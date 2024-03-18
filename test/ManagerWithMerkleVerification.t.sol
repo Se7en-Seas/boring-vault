@@ -7,7 +7,10 @@ import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVer
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {EtherFiLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
+import {
+    EtherFiLiquidDecoderAndSanitizer,
+    BalancerV2DecoderAndSanitizer
+} from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {IUniswapV3Router} from "src/interfaces/IUniswapV3Router.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
@@ -141,15 +144,153 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         }
     }
 
-    function testBalancerV2Integration() external {
-        deal(address(WETH), address(boringVault), 100e18);
-        deal(address(WEETH), address(boringVault), 100e18);
+    function testBalancerV2AndAuraIntegration() external {
+        deal(address(WETH), address(boringVault), 1_000e18);
+        bytes32 poolId = 0x1e19cf2d73a72ef1332c882f20534b6519be0276000200000000000000000112;
         // Make sure the vault can
         // swap wETH -> rETH
-        // create a new position rETH/weETH
-        // add to an existing position rETH/weETH
-        // pull from an existing position rETH/weETH
-        // collect from a position rETH/weETH
+        // add liquidity rETH/wETH
+        // add to an existing position rETH/wETH
+        // stake in balancer
+        // unstake from balancer
+        // stake in aura
+        // unstake from aura
+        // remove liquidity from rETH/wETH
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        leafs[0] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = vault;
+        leafs[1] = ManageLeaf(
+            vault,
+            "swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)",
+            new address[](5)
+        );
+        leafs[1].argumentAddresses[0] = address(rETH_wETH);
+        leafs[1].argumentAddresses[1] = address(WETH);
+        leafs[1].argumentAddresses[2] = address(RETH);
+        leafs[1].argumentAddresses[3] = address(boringVault);
+        leafs[1].argumentAddresses[4] = address(boringVault);
+        leafs[2] = ManageLeaf(address(RETH), "approve(address,uint256)", new address[](1));
+        leafs[2].argumentAddresses[0] = vault;
+        leafs[3] =
+            ManageLeaf(vault, "joinPool(bytes32,address,address,(address[],uint256[],bytes,bool))", new address[](5));
+        leafs[3].argumentAddresses[0] = address(rETH_wETH);
+        leafs[3].argumentAddresses[1] = address(boringVault);
+        leafs[3].argumentAddresses[2] = address(boringVault);
+        leafs[3].argumentAddresses[3] = address(RETH);
+        leafs[3].argumentAddresses[4] = address(WETH);
+        leafs[4] = ManageLeaf(address(rETH_wETH), "approve(address,uint256)", new address[](1));
+        leafs[4].argumentAddresses[0] = rETH_wETH_gauge;
+        leafs[5] = ManageLeaf(rETH_wETH_gauge, "deposit(uint256,address)", new address[](1));
+        leafs[5].argumentAddresses[0] = address(boringVault);
+        leafs[6] = ManageLeaf(rETH_wETH_gauge, "withdraw(uint256)", new address[](0));
+        leafs[7] = ManageLeaf(address(rETH_wETH), "approve(address,uint256)", new address[](1));
+        leafs[7].argumentAddresses[0] = aura_reth_weth;
+        leafs[8] = ManageLeaf(aura_reth_weth, "deposit(uint256,address)", new address[](1));
+        leafs[8].argumentAddresses[0] = address(boringVault);
+        leafs[9] = ManageLeaf(aura_reth_weth, "withdraw(uint256,address,address)", new address[](2));
+        leafs[9].argumentAddresses[0] = address(boringVault);
+        leafs[9].argumentAddresses[1] = address(boringVault);
+        leafs[10] =
+            ManageLeaf(vault, "exitPool(bytes32,address,address,(address[],uint256[],bytes,bool))", new address[](5));
+        leafs[10].argumentAddresses[0] = address(rETH_wETH);
+        leafs[10].argumentAddresses[1] = address(boringVault);
+        leafs[10].argumentAddresses[2] = address(boringVault);
+        leafs[10].argumentAddresses[3] = address(RETH);
+        leafs[10].argumentAddresses[4] = address(WETH);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](11);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+        manageLeafs[5] = leafs[5];
+        manageLeafs[6] = leafs[6];
+        manageLeafs[7] = leafs[7];
+        manageLeafs[8] = leafs[8];
+        manageLeafs[9] = leafs[9];
+        manageLeafs[10] = leafs[10];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](11);
+        targets[0] = address(WETH);
+        targets[1] = vault;
+        targets[2] = address(RETH);
+        targets[3] = vault;
+        targets[4] = address(rETH_wETH);
+        targets[5] = rETH_wETH_gauge;
+        targets[6] = rETH_wETH_gauge;
+        targets[7] = address(rETH_wETH);
+        targets[8] = aura_reth_weth;
+        targets[9] = aura_reth_weth;
+        targets[10] = vault;
+        // targets[7] = uniswapV3NonFungiblePositionManager;
+        bytes[] memory targetData = new bytes[](11);
+        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", vault, type(uint256).max);
+        DecoderCustomTypes.SingleSwap memory singleSwap = DecoderCustomTypes.SingleSwap({
+            poolId: poolId,
+            kind: DecoderCustomTypes.SwapKind.GIVEN_IN,
+            assetIn: address(WETH),
+            assetOut: address(RETH),
+            amount: 500e18,
+            userData: hex""
+        });
+        DecoderCustomTypes.FundManagement memory funds = DecoderCustomTypes.FundManagement({
+            sender: address(boringVault),
+            fromInternalBalance: false,
+            recipient: address(boringVault),
+            toInternalBalance: false
+        });
+        targetData[1] = abi.encodeWithSelector(BalancerV2DecoderAndSanitizer.swap.selector, singleSwap, funds, 0);
+        targetData[2] = abi.encodeWithSignature("approve(address,uint256)", vault, type(uint256).max);
+        DecoderCustomTypes.JoinPoolRequest memory joinRequest = DecoderCustomTypes.JoinPoolRequest({
+            assets: new address[](2),
+            maxAmountsIn: new uint256[](2),
+            userData: hex"",
+            fromInternalBalance: false
+        });
+        joinRequest.assets[0] = address(RETH);
+        joinRequest.assets[1] = address(WETH);
+        joinRequest.maxAmountsIn[0] = 100e18;
+        joinRequest.maxAmountsIn[1] = 100e18;
+        joinRequest.userData = abi.encode(1, joinRequest.maxAmountsIn, 0); // EXACT_TOKENS_IN_FOR_BPT_OUT, [100e18,100e18], 0
+        targetData[3] = abi.encodeWithSelector(
+            BalancerV2DecoderAndSanitizer.joinPool.selector,
+            poolId,
+            address(boringVault),
+            address(boringVault),
+            joinRequest
+        );
+        targetData[4] = abi.encodeWithSignature("approve(address,uint256)", rETH_wETH_gauge, type(uint256).max);
+        targetData[5] = abi.encodeWithSignature("deposit(uint256,address)", 203690537881715311640, address(boringVault));
+        targetData[6] = abi.encodeWithSignature("withdraw(uint256)", 203690537881715311640, address(boringVault));
+        targetData[7] = abi.encodeWithSignature("approve(address,uint256)", aura_reth_weth, type(uint256).max);
+        targetData[8] = abi.encodeWithSignature("deposit(uint256,address)", 203690537881715311640, address(boringVault));
+        targetData[9] = abi.encodeWithSignature(
+            "withdraw(uint256,address,address)", 203690537881715311640, address(boringVault), address(boringVault)
+        );
+        DecoderCustomTypes.ExitPoolRequest memory exitRequest = DecoderCustomTypes.ExitPoolRequest({
+            assets: new address[](2),
+            minAmountsOut: new uint256[](2),
+            userData: hex"",
+            toInternalBalance: false
+        });
+        exitRequest.assets[0] = address(RETH);
+        exitRequest.assets[1] = address(WETH);
+        exitRequest.userData = abi.encode(1, 203690537881715311640); // EXACT_BPT_IN_FOR_TOKENS_OUT, 203690537881715311640
+        targetData[10] = abi.encodeWithSelector(
+            BalancerV2DecoderAndSanitizer.exitPool.selector,
+            poolId,
+            address(boringVault),
+            address(boringVault),
+            exitRequest
+        );
+
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](11));
     }
 
     // TODO add uniswap revert test checks
@@ -210,17 +351,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         manageLeafs[6] = leafs[6];
         manageLeafs[7] = leafs[7];
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
-
-        string[] memory functionSignatures = new string[](8);
-        functionSignatures[0] = "approve(address,uint256)";
-        functionSignatures[1] = "exactInput((bytes,address,uint256,uint256,uint256))";
-        functionSignatures[2] = "approve(address,uint256)";
-        functionSignatures[3] = "approve(address,uint256)";
-        functionSignatures[4] =
-            "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))";
-        functionSignatures[5] = "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))";
-        functionSignatures[6] = "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))";
-        functionSignatures[7] = "collect((uint256,address,uint128,uint128))";
 
         address[] memory targets = new address[](8);
         targets[0] = address(WETH);

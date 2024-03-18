@@ -27,6 +27,9 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
     ) external pure virtual returns (address[] memory addressesFound) {
         // Sanitize raw data
         require(singleSwap.userData.length == 0, "SingleSwap userData non zero length.");
+        require(!funds.fromInternalBalance, "internal balances not supported");
+        require(!funds.toInternalBalance, "internal balances not supported");
+
         // Return addresses found
         addressesFound = new address[](5);
         addressesFound[0] = _getPoolAddressFromPoolId(singleSwap.poolId); // Extract pool address from poolId
@@ -40,8 +43,7 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         bytes32 poolId,
         address sender,
         address recipient,
-        DecoderCustomTypes.JoinPoolRequest calldata req,
-        uint256[] calldata
+        DecoderCustomTypes.JoinPoolRequest calldata req
     ) external pure virtual returns (address[] memory addressesFound) {
         // Sanitize raw data
         require(!req.fromInternalBalance, "internal balances not supported");
@@ -60,8 +62,7 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         bytes32 poolId,
         address sender,
         address recipient,
-        DecoderCustomTypes.ExitPoolRequest calldata req,
-        uint256[] calldata
+        DecoderCustomTypes.ExitPoolRequest calldata req
     ) external pure virtual returns (address[] memory addressesFound) {
         // Sanitize raw data
         require(!req.toInternalBalance, "internal balances not supported");
