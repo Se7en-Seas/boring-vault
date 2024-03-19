@@ -117,6 +117,8 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             uint256[] memory values = new uint256[](2);
 
             userData = abi.encode(flashLoanManageProofs, targets, targetData, values);
+            bytes32 intentHash = keccak256(userData);
+            manager.saveFlashLoanIntentHash(intentHash);
         }
         {
             address[] memory targets = new address[](1);

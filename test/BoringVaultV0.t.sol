@@ -227,6 +227,10 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
             manageProofs = _getProofsUsingTree(flashLoanLeafs, manageTree);
 
             flashLoanData = abi.encode(manageProofs, targets, targetData, valuesInFlashloan);
+            bytes32 intentHash = keccak256(flashLoanData);
+            vm.startPrank(strategist);
+            manager.saveFlashLoanIntentHash(intentHash);
+            vm.stopPrank();
         }
 
         string[] memory functionSignatures = new string[](5);

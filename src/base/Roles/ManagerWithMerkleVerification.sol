@@ -64,6 +64,11 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      */
     bool internal ongoingManage;
 
+    /**
+     * @notice keccak256 hash of flash loan data.
+     */
+    bytes32 internal flashLoanIntentHash = bytes32(0);
+
     //============================== EVENTS ===============================
 
     event ManageRootUpdated(bytes32 oldRoot, bytes32 newRoot);
@@ -95,7 +100,6 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
     // ========================================= ADMIN FUNCTIONS =========================================
 
-    // This could be sommelier to start, then the multisig of the BoringVault can change the depositor.
     // TODO I could have the contents of the merkle tree passed in as call data, then we derive the merkle root on chain? That is more gas intensive, but allows people to easily verify what is in it.
     /**
      * @notice Sets the manageRoot.
@@ -154,9 +158,21 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     }
 
     // ========================================= FLASH LOAN FUNCTIONS =========================================
+    /**
+     * @notice While managing vault, if strategist wants to execute a flash loan the first step is
+     *         having the BoringVault call this function, passing in the `intentHash`.
+     * @param intentHash the keccak256 hash of userData passed into `receiveFlashLoan`
+     * @dev This function accepts the hash rather than the pre-image to keep userData private until it is being executed on chain.
+     */
+    function saveFlashLoanIntentHash(bytes32 intentHash) external onlyRole(STRATEGIST_ROLE) {
+        flashLoanIntentHash = intentHash;
+    }
 
     /**
      * @notice Add support for balancer flash loans.
+     * @dev userData can optionally have salt encoded at the end of it, in order to change the intentHash,
+     *      if a flash loan is exact userData is being repeated, and their is fear of 3rd parties
+     *      front-running the rebalance.
      */
     function receiveFlashLoan(
         address[] calldata tokens,
@@ -166,6 +182,13 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     ) external {
         require(msg.sender == address(balancerVault), "wrong caller");
         require(ongoingManage, "not being managed");
+
+        // Validate userData using intentHash.
+        bytes32 intentHash = keccak256(userData);
+        require(intentHash == flashLoanIntentHash, "Intent hash mismatch");
+        // reset intent hash to prevent replays.
+        flashLoanIntentHash = bytes32(0);
+
         // Transfer tokens to vault.
         for (uint256 i = 0; i < amounts.length; ++i) {
             ERC20(tokens[i]).safeTransfer(address(vault), amounts[i]);
