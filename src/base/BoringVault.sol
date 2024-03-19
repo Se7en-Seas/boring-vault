@@ -33,6 +33,19 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC
      */
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
+    /**
+     * @notice Role needed to set ShareLocker.
+     */
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+
+    // ========================================= STATE =========================================
+
+    /**
+     * @notice Contract responsbile for implementing `revertIfLocked`, if shares
+     *         need to be locked to an address for some reason.
+     */
+    IShareLocker public locker;
+
     //============================== EVENTS ===============================
 
     event Enter(address from, address asset, uint256 amount, address to, uint256 shares);
@@ -106,13 +119,17 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC
     }
 
     //============================== SHARELOCKER ===============================
-
-    IShareLocker public locker;
-
-    function setShareLocker(address _locker) external {
+    /**
+     * @notice Sets the share locker.
+     * @notice If set to zero address, the share locker logic is disabled.
+     */
+    function setShareLocker(address _locker) external onlyRole(ADMIN_ROLE) {
         locker = IShareLocker(_locker);
     }
 
+    /**
+     * @notice Check if from addresses shares are locked, reverting if so.
+     */
     function _checkShareLock(address from) internal view {
         if (address(locker) != address(0)) locker.revertIfLocked(from);
     }

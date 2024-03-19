@@ -10,6 +10,7 @@ import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProv
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {IShareLocker} from "src/interfaces/IShareLocker.sol";
+import {console} from "@forge-std/Test.sol";
 
 contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, IShareLocker {
     using FixedPointMathLib for uint256;
@@ -33,10 +34,17 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, IShareLo
      */
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE"); // can turn off normal user deposits and withdraws
 
+    bytes32 public constant DEPOSIT_REVERTER_ROLE = keccak256("DEPOSIT_REVERTER_ROLE"); // can revert pending deposits
+
     /**
      * @notice Native address used to tell the contract to handle native asset deposits.
      */
     address internal constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
+    /**
+     * @notice The maximum possible share lock period.
+     */
+    uint256 internal constant MAX_SHARE_LOCK_PERIOD = 3 days;
 
     // ========================================= STATE =========================================
 
@@ -51,20 +59,34 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, IShareLo
     bool public isPaused;
 
     uint248 public depositNonce = 1;
+    // TODO pack this?
+    uint64 public shareLockPeriod;
 
     /**
-     * @dev Maps deposit nonce to keccak256(address receiver, address depositAsset, uint256 depositAmount, uint256 mintAmount, uint256 timestamp).
+     * @dev Maps deposit nonce to keccak256(address receiver, address depositAsset, uint256 depositAmount, uint256 shareAmount, uint256 timestamp, uint256 shareLockPeriod).
      */
     mapping(uint256 => bytes32) public publicDepositHistory;
+
+    mapping(address => uint256) public shareUnlockTime;
+
     //============================== EVENTS ===============================
 
     event Paused();
     event Unpaused();
     event AssetAdded(address asset);
     event AssetRemoved(address asset);
-    event Deposit(address asset, uint256 amount);
+    event Deposit(
+        uint256 nonce,
+        address receiver,
+        address depositAsset,
+        uint256 depositAmount,
+        uint256 shareAmount,
+        uint256 depositTimestamp,
+        uint256 shareLockPeriodAtTimeOfDeposit
+    );
     event BulkDeposit(address asset, uint256 depositAmount);
     event BulkWithdraw(address asset, uint256 shareAmount);
+    event DepositReverted(uint256 nonce, bytes32 depositHash);
 
     //============================== IMMUTABLES ===============================
 
@@ -132,81 +154,99 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, IShareLo
         emit AssetRemoved(address(asset));
     }
 
+    /**
+     * @notice Sets the share lock period.
+     * @dev This not only locks shares to the user address, but also serves as the pending deposit period, where deposits can be reverted.
+     */
+    function setShareLockPeriod(uint64 _shareLockPeriod) external onlyRole(ADMIN_ROLE) {
+        if (_shareLockPeriod > MAX_SHARE_LOCK_PERIOD) revert("too long");
+        shareLockPeriod = _shareLockPeriod;
+    }
+
     // ========================================= ISHARELOCKER FUNCTIONS =========================================
 
-    uint256 public shareLockPeriod;
-    mapping(address => uint256) public shareUnlockTime;
-
+    /**
+     * @notice Implement
+     */
     function revertIfLocked(address from) external view {
-        require(shareUnlockTime[from] > block.timestamp, "share locked");
+        if (shareUnlockTime[from] <= block.timestamp) revert("share locked");
     }
 
     // ========================================= REVERT DEPOSIT FUNCTIONS =========================================
 
+    // TODO should we verify share locker contract is set in vault?
+    /**
+     * @notice Allows DEPOSIT_REVERTER_ROLE to revert a pending deposit.
+     * @dev Once a deposit share lock period has passed, it can no longer be reverted.
+     */
     function revertDeposit(
         uint256 nonce,
         address receiver,
         address depositAsset,
         uint256 depositAmount,
-        uint256 mintAmount,
+        uint256 shareAmount,
         uint256 depositTimestamp,
         uint256 shareLockUpPeriodAtTimeOfDeposit
-    ) external onlyRole(ADMIN_ROLE) {
-        if ((block.timestamp - depositTimestamp) < shareLockUpPeriodAtTimeOfDeposit) {
+    ) external onlyRole(DEPOSIT_REVERTER_ROLE) {
+        if ((block.timestamp - depositTimestamp) > shareLockUpPeriodAtTimeOfDeposit) {
             // Shares are already unlocked, so we can not revert deposit.
             revert("Shares already unlocked");
         }
         bytes32 depositHash = keccak256(
             abi.encode(
-                receiver, depositAsset, depositAmount, mintAmount, depositTimestamp, shareLockUpPeriodAtTimeOfDeposit
+                receiver, depositAsset, depositAmount, shareAmount, depositTimestamp, shareLockUpPeriodAtTimeOfDeposit
             )
         );
-        require(publicDepositHistory[nonce] == depositHash, "invalid deposit");
+        if (publicDepositHistory[nonce] != depositHash) revert("invalid deposit");
 
-        // refund gas.
+        // Delete hash to prevent refund gas.
         delete publicDepositHistory[nonce];
 
+        // If deposit used native asset, send user back wrapped native asset.
+        depositAsset = depositAsset == NATIVE ? address(nativeWrapper) : depositAsset;
         // Burn shares and refund assets to receiver.
-        vault.exit(receiver, ERC20(depositAsset), depositAmount, receiver, mintAmount);
+        vault.exit(receiver, ERC20(depositAsset), depositAmount, receiver, shareAmount);
+
+        emit DepositReverted(nonce, depositHash);
     }
 
     // ========================================= USER FUNCTIONS =========================================
 
-    // TODO remove to address to prevent griefing.
     /**
      * @notice Allows users to deposit into the BoringVault, if this contract is not paused.
      */
-    function deposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint, address to)
+    function deposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint)
         public
         payable
         returns (uint256 shares)
     {
-        require(!isPaused, "paused");
-        require(isSupported[depositAsset], "asset not supported");
+        if (isPaused) revert("paused");
+        if (!isSupported[depositAsset]) revert("asset not supported");
 
         if (address(depositAsset) == NATIVE) {
-            require(msg.value > 0, "zero deposit");
+            if (msg.value == 0) revert("zero deposit");
             nativeWrapper.deposit{value: msg.value}();
             depositAmount = msg.value;
             shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(nativeWrapper));
-            require(shares > minimumMint, "minimumMint");
-            // `from` is this address since user already sent value.
+            if (shares < minimumMint) revert("minimumMint");
+            // `from` is address(this) since user already sent value.
             nativeWrapper.safeApprove(address(vault), depositAmount);
-            vault.enter(address(this), nativeWrapper, depositAmount, to, shares);
+            vault.enter(address(this), nativeWrapper, depositAmount, msg.sender, shares);
         } else {
-            require(depositAmount > 0, "zero deposit");
-            require(msg.value == 0, "dual deposit");
+            if (depositAmount == 0) revert("zero deposit");
+            if (msg.value > 0) revert("dual deposit");
             shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(depositAsset));
-            require(shares > minimumMint, "minimumMint");
-            vault.enter(msg.sender, depositAsset, depositAmount, to, shares);
+            if (shares < minimumMint) revert("minimumMint");
+            vault.enter(msg.sender, depositAsset, depositAmount, msg.sender, shares);
         }
 
-        shareUnlockTime[to] = block.timestamp + shareLockPeriod;
+        shareUnlockTime[msg.sender] = block.timestamp + shareLockPeriod;
 
-        publicDepositHistory[depositNonce] =
-            keccak256(abi.encode(to, depositAsset, depositAmount, shares, block.timestamp, shareLockPeriod));
+        uint256 nonce = depositNonce;
+        publicDepositHistory[nonce] =
+            keccak256(abi.encode(msg.sender, depositAsset, depositAmount, shares, block.timestamp, shareLockPeriod));
         depositNonce++;
-        emit Deposit(address(depositAsset), depositAmount);
+        emit Deposit(nonce, msg.sender, address(depositAsset), depositAmount, shares, block.timestamp, shareLockPeriod);
     }
 
     /**
@@ -218,9 +258,9 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, IShareLo
         onlyRole(ON_RAMP_ROLE)
         returns (uint256 shares)
     {
-        require(depositAmount > 0, "zero deposit");
+        if (depositAmount == 0) revert("zero deposit");
         shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(depositAsset));
-        require(shares > minimumMint, "minimumMint");
+        if (shares < minimumMint) revert("minimumMint");
         vault.enter(msg.sender, depositAsset, depositAmount, to, shares);
         emit BulkDeposit(address(depositAsset), depositAmount);
     }
@@ -233,9 +273,9 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, IShareLo
         onlyRole(OFF_RAMP_ROLE)
         returns (uint256 assetsOut)
     {
-        require(shareAmount > 0, "zero withdraw");
+        if (shareAmount == 0) revert("zero withdraw");
         assetsOut = shareAmount.mulDivDown(accountant.getRateInQuoteSafe(withdrawAsset), ONE_SHARE);
-        require(assetsOut > minimumAssets, "minimumAssets");
+        if (assetsOut < minimumAssets) revert("minimumAssets");
         vault.exit(to, withdrawAsset, assetsOut, msg.sender, shareAmount);
         emit BulkWithdraw(address(withdrawAsset), shareAmount);
     }
@@ -244,8 +284,6 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, IShareLo
      * @dev Depositing this way means users can not set a min value out.
      */
     receive() external payable {
-        deposit(ERC20(NATIVE), msg.value, 0, msg.sender);
+        deposit(ERC20(NATIVE), msg.value, 0);
     }
-
-    // TODO have some period after deposits where a special address can reverse deposits and refund them to an address
 }

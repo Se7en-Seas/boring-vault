@@ -19,7 +19,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
 
-    BoringVault public boring_vault;
+    BoringVault public boringVault;
 
     TellerWithMultiAssetSupport public teller;
     AccountantWithRateProviders public accountant;
@@ -33,13 +33,13 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         uint256 blockNumber = 19363419;
         _startFork(rpcKey, blockNumber);
 
-        boring_vault = new BoringVault(address(this), "Boring Vault", "BV", 18);
+        boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
         accountant = new AccountantWithRateProviders(
             address(this),
             address(this),
             address(this),
-            address(boring_vault),
+            address(boringVault),
             payout_address,
             1e18,
             address(WETH),
@@ -50,14 +50,16 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         );
 
         teller =
-            new TellerWithMultiAssetSupport(address(this), address(boring_vault), address(accountant), address(WETH));
+            new TellerWithMultiAssetSupport(address(this), address(boringVault), address(accountant), address(WETH));
 
-        boring_vault.grantRole(boring_vault.MINTER_ROLE(), address(teller));
-        boring_vault.grantRole(boring_vault.BURNER_ROLE(), address(teller));
+        boringVault.grantRole(boringVault.MINTER_ROLE(), address(teller));
+        boringVault.grantRole(boringVault.BURNER_ROLE(), address(teller));
+        boringVault.grantRole(boringVault.ADMIN_ROLE(), address(this));
 
         teller.grantRole(teller.ADMIN_ROLE(), address(this));
         teller.grantRole(teller.ON_RAMP_ROLE(), address(this));
         teller.grantRole(teller.OFF_RAMP_ROLE(), address(this));
+        teller.grantRole(teller.DEPOSIT_REVERTER_ROLE(), address(this));
 
         teller.addAsset(WETH);
         teller.addAsset(ERC20(NATIVE));
@@ -66,6 +68,43 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
 
         accountant.setRateProviderData(EETH, true, address(0));
         accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
+    }
+
+    function testDepositReverting(uint256 amount) external {
+        amount = bound(amount, 0.0001e18, 10_000e18);
+        // Turn on share lock period, and deposit reverting
+        boringVault.setShareLocker(address(teller));
+
+        teller.setShareLockPeriod(1 days);
+
+        uint256 wETH_amount = amount;
+        deal(address(WETH), address(this), wETH_amount);
+        uint256 eETH_amount = amount;
+        deal(address(this), eETH_amount + 1);
+        ILiquidityPool(EETH_LIQUIDITY_POOL).deposit{value: eETH_amount + 1}();
+
+        WETH.safeApprove(address(boringVault), wETH_amount);
+        EETH.safeApprove(address(boringVault), eETH_amount);
+        uint256 shares0 = teller.deposit(WETH, wETH_amount, 0);
+        uint256 firstDepositTimestamp = block.timestamp;
+        // Skip 1 days to finalize first deposit.
+        skip(1 days + 1);
+        uint256 shares1 = teller.deposit(EETH, eETH_amount, 0);
+        uint256 secondDepositTimestamp = block.timestamp;
+
+        // Even if setShareLockPeriod is set to 2 days, first deposit is still not revertable.
+        teller.setShareLockPeriod(2 days);
+
+        // If depositReverter tries to revert the first deposit, call fails.
+        vm.expectRevert(bytes("Shares already unlocked"));
+        teller.revertDeposit(1, address(this), address(WETH), wETH_amount, shares0, firstDepositTimestamp, 1 days);
+
+        // However the second deposit is still revertable.
+        teller.revertDeposit(2, address(this), address(EETH), eETH_amount, shares1, secondDepositTimestamp, 1 days);
+
+        // Calling revert deposit again should revert.
+        vm.expectRevert(bytes("invalid deposit"));
+        teller.revertDeposit(2, address(this), address(EETH), eETH_amount, shares1, secondDepositTimestamp, 1 days);
     }
 
     function testUserDepositPeggedAssets(uint256 amount) external {
@@ -77,15 +116,15 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         deal(address(this), eETH_amount + 1);
         ILiquidityPool(EETH_LIQUIDITY_POOL).deposit{value: eETH_amount + 1}();
 
-        WETH.safeApprove(address(boring_vault), wETH_amount);
-        EETH.safeApprove(address(boring_vault), eETH_amount);
+        WETH.safeApprove(address(boringVault), wETH_amount);
+        EETH.safeApprove(address(boringVault), eETH_amount);
 
-        teller.deposit(WETH, wETH_amount, 0, address(this));
-        teller.deposit(EETH, eETH_amount, 0, address(this));
+        teller.deposit(WETH, wETH_amount, 0);
+        teller.deposit(EETH, eETH_amount, 0);
 
         uint256 expected_shares = 2 * amount;
 
-        assertEq(boring_vault.balanceOf(address(this)), expected_shares, "Should have received expected shares");
+        assertEq(boringVault.balanceOf(address(this)), expected_shares, "Should have received expected shares");
     }
 
     function testUserDepositNonPeggedAssets(uint256 amount) external {
@@ -94,14 +133,14 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         uint256 weETH_amount = amount.mulDivDown(1e18, IRateProvider(WEETH_RATE_PROVIDER).getRate());
         deal(address(WEETH), address(this), weETH_amount);
 
-        WEETH.safeApprove(address(boring_vault), weETH_amount);
+        WEETH.safeApprove(address(boringVault), weETH_amount);
 
-        teller.deposit(WEETH, weETH_amount, 0, address(this));
+        teller.deposit(WEETH, weETH_amount, 0);
 
         uint256 expected_shares = amount;
 
         assertApproxEqRel(
-            boring_vault.balanceOf(address(this)), expected_shares, 0.000001e18, "Should have received expected shares"
+            boringVault.balanceOf(address(this)), expected_shares, 0.000001e18, "Should have received expected shares"
         );
     }
 
@@ -110,17 +149,16 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
 
         deal(address(this), 2 * amount);
 
-        teller.deposit{value: amount}(ERC20(NATIVE), 0, 0, address(this));
+        teller.deposit{value: amount}(ERC20(NATIVE), 0, 0);
 
         (bool ok,) = address(teller).call{value: amount}("");
         assertTrue(ok, "Failed to deposit with native");
 
         uint256 expected_shares = 2 * amount;
 
-        assertEq(boring_vault.balanceOf(address(this)), expected_shares, "Should have received expected shares");
+        assertEq(boringVault.balanceOf(address(this)), expected_shares, "Should have received expected shares");
     }
 
-    // TODO test bulk deposit and bulk withdraw.
     function testBulkDeposit(uint256 amount) external {
         amount = bound(amount, 0.0001e18, 10_000e18);
 
@@ -132,9 +170,9 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         uint256 weETH_amount = amount.mulDivDown(1e18, IRateProvider(WEETH_RATE_PROVIDER).getRate());
         deal(address(WEETH), address(this), weETH_amount);
 
-        WETH.safeApprove(address(boring_vault), wETH_amount);
-        EETH.safeApprove(address(boring_vault), eETH_amount);
-        WEETH.safeApprove(address(boring_vault), weETH_amount);
+        WETH.safeApprove(address(boringVault), wETH_amount);
+        EETH.safeApprove(address(boringVault), eETH_amount);
+        WEETH.safeApprove(address(boringVault), weETH_amount);
 
         teller.bulkDeposit(WETH, wETH_amount, 0, address(this));
         teller.bulkDeposit(EETH, eETH_amount, 0, address(this));
@@ -143,7 +181,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         uint256 expected_shares = 3 * amount;
 
         assertApproxEqRel(
-            boring_vault.balanceOf(address(this)), expected_shares, 0.0001e18, "Should have received expected shares"
+            boringVault.balanceOf(address(this)), expected_shares, 0.0001e18, "Should have received expected shares"
         );
     }
 
@@ -158,9 +196,9 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         uint256 weETH_amount = amount.mulDivDown(1e18, IRateProvider(WEETH_RATE_PROVIDER).getRate());
         deal(address(WEETH), address(this), weETH_amount);
 
-        WETH.safeApprove(address(boring_vault), wETH_amount);
-        EETH.safeApprove(address(boring_vault), eETH_amount);
-        WEETH.safeApprove(address(boring_vault), weETH_amount);
+        WETH.safeApprove(address(boringVault), wETH_amount);
+        EETH.safeApprove(address(boringVault), eETH_amount);
+        WEETH.safeApprove(address(boringVault), weETH_amount);
 
         uint256 shares_0 = teller.bulkDeposit(WETH, wETH_amount, 0, address(this));
         uint256 shares_1 = teller.bulkDeposit(EETH, eETH_amount, 0, address(this));
@@ -203,29 +241,29 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
 
         // deposit reverts
         vm.expectRevert(bytes("paused"));
-        teller.deposit(WETH, 0, 0, address(this));
+        teller.deposit(WETH, 0, 0);
 
         teller.unpause();
 
         vm.expectRevert(bytes("asset not supported"));
-        teller.deposit(WETH, 0, 0, address(this));
+        teller.deposit(WETH, 0, 0);
 
         teller.addAsset(WETH);
 
         vm.expectRevert(bytes("zero deposit"));
-        teller.deposit(WETH, 0, 0, address(this));
+        teller.deposit(WETH, 0, 0);
 
         vm.expectRevert(bytes("dual deposit"));
-        teller.deposit{value: 1}(WETH, 1, 0, address(this));
+        teller.deposit{value: 1}(WETH, 1, 0);
 
         vm.expectRevert(bytes("minimumMint"));
-        teller.deposit(WETH, 1, type(uint256).max, address(this));
+        teller.deposit(WETH, 1, type(uint256).max);
 
         vm.expectRevert(bytes("zero deposit"));
-        teller.deposit(NATIVE_ERC20, 0, 0, address(this));
+        teller.deposit(NATIVE_ERC20, 0, 0);
 
         vm.expectRevert(bytes("minimumMint"));
-        teller.deposit{value: 1}(NATIVE_ERC20, 1, type(uint256).max, address(this));
+        teller.deposit{value: 1}(NATIVE_ERC20, 1, type(uint256).max);
 
         // bulkDeposit reverts
         vm.expectRevert(bytes("zero deposit"));
@@ -242,7 +280,6 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         teller.bulkWithdraw(WETH, 1, type(uint256).max, address(this));
     }
 
-    // TODO test checking slippage check
     // ========================================= HELPER FUNCTIONS =========================================
 
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {

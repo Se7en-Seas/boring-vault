@@ -10,7 +10,6 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
-import {console} from "@forge-std/Test.sol"; // TODO remove
 
 contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     using FixedPointMathLib for uint256;
@@ -133,9 +132,9 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         uint256[] calldata values
     ) external onlyRole(STRATEGIST_ROLE) {
         uint256 targetsLength = targets.length;
-        require(targetsLength == manageProofs.length, "Invalid target proof length");
-        require(targetsLength == targetData.length, "Invalid data length");
-        require(targetsLength == values.length, "Invalid values length");
+        if (targetsLength != manageProofs.length) revert("Invalid target proof length");
+        if (targetsLength != targetData.length) revert("Invalid data length");
+        if (targetsLength != values.length) revert("Invalid values length");
 
         // Read state and save it in memory.
         VerifyData memory vd =
@@ -164,12 +163,12 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         uint256[] calldata amounts,
         bytes calldata userData
     ) external {
-        require(msg.sender == address(vault), "wrong caller");
+        if (msg.sender != address(vault)) revert("wrong caller");
         flashLoanIntentHash = keccak256(userData);
         performingFlashLoan = true;
         balancerVault.flashLoan(recipient, tokens, amounts, userData);
         performingFlashLoan = false;
-        require(flashLoanIntentHash == bytes32(0), "flash loan not executed");
+        if (flashLoanIntentHash != bytes32(0)) revert("flash loan not executed");
     }
 
     /**
@@ -184,12 +183,12 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         uint256[] calldata feeAmounts,
         bytes calldata userData
     ) external {
-        require(msg.sender == address(balancerVault), "wrong caller");
-        require(performingFlashLoan, "no flash loan");
+        if (msg.sender != address(balancerVault)) revert("wrong caller");
+        if (!performingFlashLoan) revert("no flash loan");
 
         // Validate userData using intentHash.
         bytes32 intentHash = keccak256(userData);
-        require(intentHash == flashLoanIntentHash, "Intent hash mismatch");
+        if (intentHash != flashLoanIntentHash) revert("Intent hash mismatch");
         // reset intent hash to prevent replays.
         flashLoanIntentHash = bytes32(0);
 
@@ -234,10 +233,9 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         address[] memory argumentAddresses =
             abi.decode(vd.currentRawDataDecoderAndSanitizer.functionStaticCall(targetData), (address[]));
 
-        require(
-            _verifyManageProof(vd.currentManageRoot, manageProof, target, providedSelector, argumentAddresses),
-            "Failed to verify manage call"
-        );
+        if (!_verifyManageProof(vd.currentManageRoot, manageProof, target, providedSelector, argumentAddresses)) {
+            revert("Failed to verify manage call");
+        }
     }
 
     /**

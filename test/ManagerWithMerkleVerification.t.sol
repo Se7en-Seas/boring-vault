@@ -441,6 +441,73 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         console.log("Gas used", gas - gasleft());
     }
 
+    function testCurveAndConvexIntegration() external {
+        deal(address(WETH), address(boringVault), 100e18);
+
+        // weETH_wETH_Curve_LP
+        // weETH_wETH_Curve_Gauge
+
+        // Make sure the vault can
+        // swap wETH -> weETH
+        // add liquidity weETH/wETH
+        // deposit to gauge
+        // withdraw from gauge
+        // claim gauge rewards
+        // deposit into convex pId 275
+        // withdraw from convex pId 275
+        // claim rewards from convex
+        // redeem LP for underlying
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        leafs[0] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = weETH_wETH_Curve_LP;
+        leafs[1] = ManageLeaf(uniV3Router, "exchange(int128,int128,uint256,uint256)", new address[](0));
+        leafs[2] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
+        leafs[2].argumentAddresses[0] = weETH_wETH_Curve_LP;
+        leafs[3] = ManageLeaf(address(WEETH), "approve(address,uint256)", new address[](1));
+        leafs[3].argumentAddresses[0] = weETH_wETH_Curve_LP;
+        leafs[4] = ManageLeaf(weETH_wETH_Curve_LP, "add_liquidity(uint256[],uint256)", new address[](0));
+        leafs[5] = ManageLeaf(weETH_wETH_Curve_LP, "approve(address,uint256)", new address[](1));
+        leafs[5].argumentAddresses[0] = weETH_wETH_Curve_Gauge;
+        leafs[6] = ManageLeaf(weETH_wETH_Curve_Gauge, "deposit(uint256,address)", new address[](1));
+        leafs[6].argumentAddresses[0] = address(boringVault);
+        leafs[7] = ManageLeaf(uniswapV3NonFungiblePositionManager, "withdraw(uint256)", new address[](0));
+        leafs[8] = ManageLeaf(weETH_wETH_Curve_Gauge, "claimRewards(address)", new address[](1));
+        leafs[8].argumentAddresses[0] = address(boringVault);
+        leafs[9] = ManageLeaf(weETH_wETH_Curve_LP, "approve(address,uint256)", new address[](1));
+        leafs[9].argumentAddresses[0] = convexCurveMainnetBooster;
+        leafs[10] = ManageLeaf(convexCurveMainnetBooster, "deposit(uint256,uint256,bool)", new address[](0));
+        leafs[11] = ManageLeaf(convexCurveMainnetBooster, "withdraw(uint256,bool)", new address[](0));
+        leafs[12] = ManageLeaf(weETH_wETH_Convex_Reward, "getReward(address,bool)", new address[](1));
+        leafs[12].argumentAddresses[0] = address(boringVault);
+        leafs[13] = ManageLeaf(weETH_wETH_Curve_LP, "remove_liquidity(uint256,uint256[])", new address[](0));
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](14);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+        manageLeafs[5] = leafs[5];
+        manageLeafs[6] = leafs[6];
+        manageLeafs[7] = leafs[7];
+        manageLeafs[8] = leafs[8];
+        manageLeafs[9] = leafs[9];
+        manageLeafs[10] = leafs[10];
+        manageLeafs[11] = leafs[11];
+        manageLeafs[12] = leafs[12];
+        manageLeafs[13] = leafs[13];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](14);
+        bytes[] memory targetData = new bytes[](14);
+
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](14));
+    }
+
     function testReverts() external {
         bytes32[][] memory manageProofs;
         address[] memory targets;

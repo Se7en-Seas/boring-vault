@@ -105,17 +105,17 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
 
         vm.startPrank(weth_user);
         WETH.safeApprove(address(boringVault), wETH_amount);
-        teller.deposit(WETH, wETH_amount, 0, weth_user);
+        teller.deposit(WETH, wETH_amount, 0);
         vm.stopPrank();
 
         vm.startPrank(eeth_user);
         EETH.safeApprove(address(boringVault), eETH_amount);
-        teller.deposit(EETH, eETH_amount, 0, eeth_user);
+        teller.deposit(EETH, eETH_amount, 0);
         vm.stopPrank();
 
         vm.startPrank(weeth_user);
         WEETH.safeApprove(address(boringVault), weETH_amount);
-        teller.deposit(WEETH, weETH_amount, 0, weeth_user);
+        teller.deposit(WEETH, weETH_amount, 0);
         vm.stopPrank();
     }
 
