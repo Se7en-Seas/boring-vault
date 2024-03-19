@@ -9,7 +9,6 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {RawDataDecoderAndSanitizer} from "src/base/RawDataDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {console} from "@forge-std/Test.sol"; // TODO remove
 
@@ -26,7 +25,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      */
     struct VerifyData {
         bytes32 currentManageRoot;
-        RawDataDecoderAndSanitizer currentRawDataDecoderAndSanitizer;
+        address currentRawDataDecoderAndSanitizer;
     }
 
     // ========================================= CONSTANTS =========================================
@@ -57,13 +56,18 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     /**
      * @notice The RawDataDecoderAndSanitizer this contract uses to decode and sanitize call data.
      */
-    RawDataDecoderAndSanitizer public rawDataDecoderAndSanitizer;
+    address public rawDataDecoderAndSanitizer;
 
     /**
      * @notice Bool indicating whether or not this contract is actively being managed.
      * @dev Used to block flash loans that are initiated outside a manage call.
      */
     bool internal ongoingManage;
+
+    /**
+     * @notice keccak256 hash of flash loan data.
+     */
+    bytes32 internal flashLoanIntentHash = bytes32(0);
 
     //============================== EVENTS ===============================
 
@@ -96,7 +100,6 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
     // ========================================= ADMIN FUNCTIONS =========================================
 
-    // This could be sommelier to start, then the multisig of the BoringVault can change the depositor.
     // TODO I could have the contents of the merkle tree passed in as call data, then we derive the merkle root on chain? That is more gas intensive, but allows people to easily verify what is in it.
     /**
      * @notice Sets the manageRoot.
@@ -111,8 +114,8 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      * @notice Sets the rawDataDecoderAndSanitizer.
      */
     function setRawDataDecoderAndSanitizer(address _rawDataDecoderAndSanitizer) external onlyRole(ADMIN_ROLE) {
-        address oldRawDataDecoderAndSanitizer = address(rawDataDecoderAndSanitizer);
-        rawDataDecoderAndSanitizer = RawDataDecoderAndSanitizer(_rawDataDecoderAndSanitizer);
+        address oldRawDataDecoderAndSanitizer = rawDataDecoderAndSanitizer;
+        rawDataDecoderAndSanitizer = _rawDataDecoderAndSanitizer;
         emit RawDataDecoderAndSanitizerUpdated(oldRawDataDecoderAndSanitizer, _rawDataDecoderAndSanitizer);
     }
 
@@ -124,7 +127,6 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      */
     function manageVaultWithMerkleVerification(
         bytes32[][] calldata manageProofs,
-        string[] calldata functionSignatures,
         address[] calldata targets,
         bytes[] calldata targetData,
         uint256[] calldata values
@@ -137,7 +139,6 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
         uint256 targetsLength = targets.length;
         require(targetsLength == manageProofs.length, "Invalid target proof length");
-        require(targetsLength == functionSignatures.length, "Invalid function signatures length");
         require(targetsLength == targetData.length, "Invalid data length");
         require(targetsLength == values.length, "Invalid values length");
 
@@ -147,7 +148,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
         for (uint256 i; i < targetsLength; ++i) {
             // Mem expansion cost seems to only add less than 1k gas to calls so not that big of a deal
-            _verifyCallData(vd, manageProofs[i], functionSignatures[i], targets[i], targetData[i]);
+            _verifyCallData(vd, manageProofs[i], targets[i], targetData[i]);
             vault.manage(targets[i], targetData[i], values[i]);
         }
 
@@ -157,9 +158,21 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     }
 
     // ========================================= FLASH LOAN FUNCTIONS =========================================
+    /**
+     * @notice While managing vault, if strategist wants to execute a flash loan the first step is
+     *         having the BoringVault call this function, passing in the `intentHash`.
+     * @param intentHash the keccak256 hash of userData passed into `receiveFlashLoan`
+     * @dev This function accepts the hash rather than the pre-image to keep userData private until it is being executed on chain.
+     */
+    function saveFlashLoanIntentHash(bytes32 intentHash) external onlyRole(STRATEGIST_ROLE) {
+        flashLoanIntentHash = intentHash;
+    }
 
     /**
      * @notice Add support for balancer flash loans.
+     * @dev userData can optionally have salt encoded at the end of it, in order to change the intentHash,
+     *      if a flash loan is exact userData is being repeated, and their is fear of 3rd parties
+     *      front-running the rebalance.
      */
     function receiveFlashLoan(
         address[] calldata tokens,
@@ -169,21 +182,23 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     ) external {
         require(msg.sender == address(balancerVault), "wrong caller");
         require(ongoingManage, "not being managed");
+
+        // Validate userData using intentHash.
+        bytes32 intentHash = keccak256(userData);
+        require(intentHash == flashLoanIntentHash, "Intent hash mismatch");
+        // reset intent hash to prevent replays.
+        flashLoanIntentHash = bytes32(0);
+
         // Transfer tokens to vault.
         for (uint256 i = 0; i < amounts.length; ++i) {
             ERC20(tokens[i]).safeTransfer(address(vault), amounts[i]);
         }
         {
-            (
-                bytes32[][] memory manageProofs,
-                string[] memory functionSignatures,
-                address[] memory targets,
-                bytes[] memory data,
-                uint256[] memory values
-            ) = abi.decode(userData, (bytes32[][], string[], address[], bytes[], uint256[]));
+            (bytes32[][] memory manageProofs, address[] memory targets, bytes[] memory data, uint256[] memory values) =
+                abi.decode(userData, (bytes32[][], address[], bytes[], uint256[]));
 
             ManagerWithMerkleVerification(address(this)).manageVaultWithMerkleVerification(
-                manageProofs, functionSignatures, targets, data, values
+                manageProofs, targets, data, values
             );
         }
 
@@ -206,20 +221,15 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     function _verifyCallData(
         VerifyData memory vd,
         bytes32[] calldata manageProof,
-        string calldata functionSignature,
         address target,
         bytes calldata targetData
     ) internal view {
         bytes4 providedSelector = bytes4(targetData);
-        bytes4 derivedSelector = bytes4(keccak256(abi.encodePacked(functionSignature)));
-
-        // Verify provided and derived selectors match.
-        require(providedSelector == derivedSelector, "Function Selector Mismatch");
 
         // Use address decoder to get addresses in call data.
-        address[] memory argumentAddresses = vd.currentRawDataDecoderAndSanitizer.decodeAndSanitizeRawData(
-            address(vault), functionSignature, targetData[4:]
-        ); // Slice 4 bytes away to remove function selector.
+        address[] memory argumentAddresses =
+            abi.decode(vd.currentRawDataDecoderAndSanitizer.functionStaticCall(targetData), (address[]));
+
         require(
             _verifyManageProof(vd.currentManageRoot, manageProof, target, providedSelector, argumentAddresses),
             "Failed to verify manage call"
