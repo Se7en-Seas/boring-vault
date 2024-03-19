@@ -9,6 +9,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {AccessControlDefaultAdminRules} from
     "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
+import {IShareLocker} from "src/interfaces/IShareLocker.sol";
 
 contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC1155Holder {
     using Address for address;
@@ -102,6 +103,28 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC
         if (assetAmount > 0) asset.safeTransfer(to, assetAmount);
 
         emit Exit(to, address(asset), assetAmount, from, shareAmount);
+    }
+
+    //============================== SHARELOCKER ===============================
+
+    IShareLocker public locker;
+
+    function setShareLocker(address _locker) external {
+        locker = IShareLocker(_locker);
+    }
+
+    function _checkShareLock(address from) internal view {
+        if (address(locker) != address(0)) locker.revertIfLocked(from);
+    }
+
+    function transfer(address to, uint256 amount) public override returns (bool) {
+        _checkShareLock(msg.sender);
+        return super.transfer(to, amount);
+    }
+
+    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
+        _checkShareLock(from);
+        return super.transferFrom(from, to, amount);
     }
 
     //============================== RECEIVE ===============================

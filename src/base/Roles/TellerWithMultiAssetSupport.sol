@@ -9,8 +9,9 @@ import {BoringVault} from "src/base/BoringVault.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {IShareLocker} from "src/interfaces/IShareLocker.sol";
 
-contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules {
+contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, IShareLocker {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
     using SafeTransferLib for WETH;
@@ -49,6 +50,12 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules {
      */
     bool public isPaused;
 
+    uint248 public depositNonce = 1;
+
+    /**
+     * @dev Maps deposit nonce to keccak256(address receiver, address depositAsset, uint256 depositAmount, uint256 mintAmount, uint256 timestamp).
+     */
+    mapping(uint256 => bytes32) public publicDepositHistory;
     //============================== EVENTS ===============================
 
     event Paused();
@@ -125,8 +132,47 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules {
         emit AssetRemoved(address(asset));
     }
 
+    // ========================================= ISHARELOCKER FUNCTIONS =========================================
+
+    uint256 public shareLockPeriod;
+    mapping(address => uint256) public shareUnlockTime;
+
+    function revertIfLocked(address from) external view {
+        require(shareUnlockTime[from] > block.timestamp, "share locked");
+    }
+
+    // ========================================= REVERT DEPOSIT FUNCTIONS =========================================
+
+    function revertDeposit(
+        uint256 nonce,
+        address receiver,
+        address depositAsset,
+        uint256 depositAmount,
+        uint256 mintAmount,
+        uint256 depositTimestamp,
+        uint256 shareLockUpPeriodAtTimeOfDeposit
+    ) external onlyRole(ADMIN_ROLE) {
+        if ((block.timestamp - depositTimestamp) < shareLockUpPeriodAtTimeOfDeposit) {
+            // Shares are already unlocked, so we can not revert deposit.
+            revert("Shares already unlocked");
+        }
+        bytes32 depositHash = keccak256(
+            abi.encode(
+                receiver, depositAsset, depositAmount, mintAmount, depositTimestamp, shareLockUpPeriodAtTimeOfDeposit
+            )
+        );
+        require(publicDepositHistory[nonce] == depositHash, "invalid deposit");
+
+        // refund gas.
+        delete publicDepositHistory[nonce];
+
+        // Burn shares and refund assets to receiver.
+        vault.exit(receiver, ERC20(depositAsset), depositAmount, receiver, mintAmount);
+    }
+
     // ========================================= USER FUNCTIONS =========================================
 
+    // TODO remove to address to prevent griefing.
     /**
      * @notice Allows users to deposit into the BoringVault, if this contract is not paused.
      */
@@ -154,6 +200,12 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules {
             require(shares > minimumMint, "minimumMint");
             vault.enter(msg.sender, depositAsset, depositAmount, to, shares);
         }
+
+        shareUnlockTime[to] = block.timestamp + shareLockPeriod;
+
+        publicDepositHistory[depositNonce] =
+            keccak256(abi.encode(to, depositAsset, depositAmount, shares, block.timestamp, shareLockPeriod));
+        depositNonce++;
         emit Deposit(address(depositAsset), depositAmount);
     }
 
@@ -194,4 +246,6 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules {
     receive() external payable {
         deposit(ERC20(NATIVE), msg.value, 0, msg.sender);
     }
+
+    // TODO have some period after deposits where a special address can reverse deposits and refund them to an address
 }

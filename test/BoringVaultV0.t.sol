@@ -129,7 +129,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         leafs[1].argumentAddresses[0] = morphoBlue;
         leafs[2] = ManageLeaf(address(WEETH), "wrap(uint256)", new address[](0));
         leafs[3] = ManageLeaf(address(WEETH), "unwrap(uint256)", new address[](0));
-        leafs[4] = ManageLeaf(vault, "flashLoan(address,address[],uint256[],bytes)", new address[](2));
+        leafs[4] = ManageLeaf(address(manager), "flashLoan(address,address[],uint256[],bytes)", new address[](2));
         leafs[4].argumentAddresses[0] = address(manager);
         leafs[4].argumentAddresses[1] = address(WETH);
         leafs[5] = ManageLeaf(address(WETH), "withdraw(uint256)", new address[](0));
@@ -227,10 +227,6 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
             manageProofs = _getProofsUsingTree(flashLoanLeafs, manageTree);
 
             flashLoanData = abi.encode(manageProofs, targets, targetData, valuesInFlashloan);
-            bytes32 intentHash = keccak256(flashLoanData);
-            vm.startPrank(strategist);
-            manager.saveFlashLoanIntentHash(intentHash);
-            vm.stopPrank();
         }
 
         string[] memory functionSignatures = new string[](5);
@@ -245,7 +241,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         targets = new address[](5);
         targets[0] = address(EETH);
         targets[1] = address(WEETH);
-        targets[2] = address(balancer_vault);
+        targets[2] = address(manager);
         targets[3] = address(WETH);
         targets[4] = address(WEETH);
 

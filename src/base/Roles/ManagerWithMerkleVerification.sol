@@ -59,10 +59,10 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     address public rawDataDecoderAndSanitizer;
 
     /**
-     * @notice Bool indicating whether or not this contract is actively being managed.
+     * @notice Bool indicating whether or not this contract is actively performing a flash loan.
      * @dev Used to block flash loans that are initiated outside a manage call.
      */
-    bool internal ongoingManage;
+    bool internal performingFlashLoan;
 
     /**
      * @notice keccak256 hash of flash loan data.
@@ -94,6 +94,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     {
         vault = BoringVault(payable(_vault));
         _grantRole(STRATEGIST_ROLE, _manager);
+        _grantRole(STRATEGIST_ROLE, address(this));
         _grantRole(ADMIN_ROLE, _admin);
         balancerVault = BalancerVault(_balancerVault);
     }
@@ -130,13 +131,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         address[] calldata targets,
         bytes[] calldata targetData,
         uint256[] calldata values
-    ) external {
-        // The only way ongoingManage is true is if we are already in a `manageVaultWithMerkleVerification`
-        // call, so we only need to check role if it is false.
-        if (!ongoingManage) _checkRole(STRATEGIST_ROLE);
-
-        ongoingManage = true;
-
+    ) external onlyRole(STRATEGIST_ROLE) {
         uint256 targetsLength = targets.length;
         require(targetsLength == manageProofs.length, "Invalid target proof length");
         require(targetsLength == targetData.length, "Invalid data length");
@@ -152,20 +147,29 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
             vault.manage(targets[i], targetData[i], values[i]);
         }
 
-        ongoingManage = false;
-
         emit BoringVaultManaged(targetsLength);
     }
 
     // ========================================= FLASH LOAN FUNCTIONS =========================================
+
     /**
-     * @notice While managing vault, if strategist wants to execute a flash loan the first step is
-     *         having the BoringVault call this function, passing in the `intentHash`.
-     * @param intentHash the keccak256 hash of userData passed into `receiveFlashLoan`
-     * @dev This function accepts the hash rather than the pre-image to keep userData private until it is being executed on chain.
+     * @notice In order to perform a flash loan,
+     *         1) Merkle root must contain the leaf(address(this), this.flashLoan.selector, ARGUMENT_ADDRESSES ...)
+     *         2) Strategist must initiate the flash loan using `manageVaultWithMerkleVerification`
+     *         3) balancerVault MUST callback to this contract with the same userData
      */
-    function saveFlashLoanIntentHash(bytes32 intentHash) external onlyRole(STRATEGIST_ROLE) {
-        flashLoanIntentHash = intentHash;
+    function flashLoan(
+        address recipient,
+        address[] calldata tokens,
+        uint256[] calldata amounts,
+        bytes calldata userData
+    ) external {
+        require(msg.sender == address(vault), "wrong caller");
+        flashLoanIntentHash = keccak256(userData);
+        performingFlashLoan = true;
+        balancerVault.flashLoan(recipient, tokens, amounts, userData);
+        performingFlashLoan = false;
+        require(flashLoanIntentHash == bytes32(0), "flash loan not executed");
     }
 
     /**
@@ -181,7 +185,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         bytes calldata userData
     ) external {
         require(msg.sender == address(balancerVault), "wrong caller");
-        require(ongoingManage, "not being managed");
+        require(performingFlashLoan, "no flash loan");
 
         // Validate userData using intentHash.
         bytes32 intentHash = keccak256(userData);

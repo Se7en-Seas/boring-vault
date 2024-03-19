@@ -84,7 +84,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
     function testFlashLoan() external {
         ManageLeaf[] memory leafs = new ManageLeaf[](4);
-        leafs[0] = ManageLeaf(vault, "flashLoan(address,address[],uint256[],bytes)", new address[](2));
+        leafs[0] = ManageLeaf(address(manager), "flashLoan(address,address[],uint256[],bytes)", new address[](2));
         leafs[0].argumentAddresses[0] = address(manager);
         leafs[0].argumentAddresses[1] = address(USDC);
         leafs[1] = ManageLeaf(address(this), "approve(address,uint256)", new address[](1));
@@ -117,12 +117,10 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             uint256[] memory values = new uint256[](2);
 
             userData = abi.encode(flashLoanManageProofs, targets, targetData, values);
-            bytes32 intentHash = keccak256(userData);
-            manager.saveFlashLoanIntentHash(intentHash);
         }
         {
             address[] memory targets = new address[](1);
-            targets[0] = address(vault);
+            targets[0] = address(manager);
 
             address[] memory tokensToBorrow = new address[](1);
             tokensToBorrow[0] = address(USDC);
@@ -146,6 +144,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         }
     }
 
+    // TODO add balancer revert test checks
     function testBalancerV2AndAuraIntegration() external {
         deal(address(WETH), address(boringVault), 1_000e18);
         bytes32 poolId = 0x1e19cf2d73a72ef1332c882f20534b6519be0276000200000000000000000112;
@@ -293,6 +292,31 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         );
 
         manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](11));
+
+        // Make sure we can call Balancer mint and Aura getReward
+        leafs = new ManageLeaf[](2);
+        leafs[0] = ManageLeaf(minter, "mint(address)", new address[](1));
+        leafs[0].argumentAddresses[0] = rETH_wETH_gauge;
+        leafs[1] = ManageLeaf(aura_reth_weth, "getReward(address,bool)", new address[](1));
+        leafs[1].argumentAddresses[0] = address(boringVault);
+
+        manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+
+        manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        targets = new address[](2);
+        targets[0] = minter;
+        targets[1] = aura_reth_weth;
+        targetData = new bytes[](2);
+        targetData[0] = abi.encodeWithSignature("mint(address)", rETH_wETH_gauge);
+        targetData[1] = abi.encodeWithSignature("getReward(address,bool)", address(boringVault), true);
+
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](2));
     }
 
     // TODO add uniswap revert test checks
@@ -459,7 +483,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         // Someone else initiated a flash loan
         vm.startPrank(vault);
-        vm.expectRevert(bytes("not being managed"));
+        vm.expectRevert(bytes("no flash loan"));
         manager.receiveFlashLoan(tokens, amounts, feeAmounts, abi.encode(0));
         vm.stopPrank();
     }
