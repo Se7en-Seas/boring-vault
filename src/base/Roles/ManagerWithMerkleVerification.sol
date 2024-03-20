@@ -251,7 +251,8 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         bytes4 selector,
         address[] memory argumentAddresses
     ) internal pure returns (bool) {
-        bytes memory rawDigest = abi.encodePacked(target, selector /*, value > 0*/ );
+        bool valueNonZero = value > 0;
+        bytes memory rawDigest = abi.encodePacked(target, valueNonZero, selector);
         uint256 argumentAddressesLength = argumentAddresses.length;
         for (uint256 i; i < argumentAddressesLength; ++i) {
             rawDigest = abi.encodePacked(rawDigest, argumentAddresses[i]);

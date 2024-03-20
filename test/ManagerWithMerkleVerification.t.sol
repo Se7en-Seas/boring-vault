@@ -54,9 +54,9 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         address usdcSpender = vm.addr(0xDEAD);
         address usdtTo = vm.addr(0xDEAD1);
         ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        leafs[0] = ManageLeaf(address(USDC), "approve(address,uint256)", new address[](1));
+        leafs[0] = ManageLeaf(address(USDC), false, "approve(address,uint256)", new address[](1));
         leafs[0].argumentAddresses[0] = usdcSpender;
-        leafs[1] = ManageLeaf(address(USDT), "approve(address,uint256)", new address[](1));
+        leafs[1] = ManageLeaf(address(USDT), false, "approve(address,uint256)", new address[](1));
         leafs[1].argumentAddresses[0] = usdtTo;
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
@@ -87,12 +87,12 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
     function testFlashLoan() external {
         ManageLeaf[] memory leafs = new ManageLeaf[](4);
-        leafs[0] = ManageLeaf(address(manager), "flashLoan(address,address[],uint256[],bytes)", new address[](2));
+        leafs[0] = ManageLeaf(address(manager), false, "flashLoan(address,address[],uint256[],bytes)", new address[](2));
         leafs[0].argumentAddresses[0] = address(manager);
         leafs[0].argumentAddresses[1] = address(USDC);
-        leafs[1] = ManageLeaf(address(this), "approve(address,uint256)", new address[](1));
+        leafs[1] = ManageLeaf(address(this), false, "approve(address,uint256)", new address[](1));
         leafs[1].argumentAddresses[0] = address(USDC);
-        leafs[2] = ManageLeaf(address(USDC), "approve(address,uint256)", new address[](1));
+        leafs[2] = ManageLeaf(address(USDC), false, "approve(address,uint256)", new address[](1));
         leafs[2].argumentAddresses[0] = address(this);
         // leaf[3] empty
 
@@ -161,10 +161,11 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         // unstake from aura
         // remove liquidity from rETH/wETH
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
-        leafs[0] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
+        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
         leafs[0].argumentAddresses[0] = vault;
         leafs[1] = ManageLeaf(
             vault,
+            false,
             "swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)",
             new address[](5)
         );
@@ -173,29 +174,31 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         leafs[1].argumentAddresses[2] = address(RETH);
         leafs[1].argumentAddresses[3] = address(boringVault);
         leafs[1].argumentAddresses[4] = address(boringVault);
-        leafs[2] = ManageLeaf(address(RETH), "approve(address,uint256)", new address[](1));
+        leafs[2] = ManageLeaf(address(RETH), false, "approve(address,uint256)", new address[](1));
         leafs[2].argumentAddresses[0] = vault;
-        leafs[3] =
-            ManageLeaf(vault, "joinPool(bytes32,address,address,(address[],uint256[],bytes,bool))", new address[](5));
+        leafs[3] = ManageLeaf(
+            vault, false, "joinPool(bytes32,address,address,(address[],uint256[],bytes,bool))", new address[](5)
+        );
         leafs[3].argumentAddresses[0] = address(rETH_wETH);
         leafs[3].argumentAddresses[1] = address(boringVault);
         leafs[3].argumentAddresses[2] = address(boringVault);
         leafs[3].argumentAddresses[3] = address(RETH);
         leafs[3].argumentAddresses[4] = address(WETH);
-        leafs[4] = ManageLeaf(address(rETH_wETH), "approve(address,uint256)", new address[](1));
+        leafs[4] = ManageLeaf(address(rETH_wETH), false, "approve(address,uint256)", new address[](1));
         leafs[4].argumentAddresses[0] = rETH_wETH_gauge;
-        leafs[5] = ManageLeaf(rETH_wETH_gauge, "deposit(uint256,address)", new address[](1));
+        leafs[5] = ManageLeaf(rETH_wETH_gauge, false, "deposit(uint256,address)", new address[](1));
         leafs[5].argumentAddresses[0] = address(boringVault);
-        leafs[6] = ManageLeaf(rETH_wETH_gauge, "withdraw(uint256)", new address[](0));
-        leafs[7] = ManageLeaf(address(rETH_wETH), "approve(address,uint256)", new address[](1));
+        leafs[6] = ManageLeaf(rETH_wETH_gauge, false, "withdraw(uint256)", new address[](0));
+        leafs[7] = ManageLeaf(address(rETH_wETH), false, "approve(address,uint256)", new address[](1));
         leafs[7].argumentAddresses[0] = aura_reth_weth;
-        leafs[8] = ManageLeaf(aura_reth_weth, "deposit(uint256,address)", new address[](1));
+        leafs[8] = ManageLeaf(aura_reth_weth, false, "deposit(uint256,address)", new address[](1));
         leafs[8].argumentAddresses[0] = address(boringVault);
-        leafs[9] = ManageLeaf(aura_reth_weth, "withdraw(uint256,address,address)", new address[](2));
+        leafs[9] = ManageLeaf(aura_reth_weth, false, "withdraw(uint256,address,address)", new address[](2));
         leafs[9].argumentAddresses[0] = address(boringVault);
         leafs[9].argumentAddresses[1] = address(boringVault);
-        leafs[10] =
-            ManageLeaf(vault, "exitPool(bytes32,address,address,(address[],uint256[],bytes,bool))", new address[](5));
+        leafs[10] = ManageLeaf(
+            vault, false, "exitPool(bytes32,address,address,(address[],uint256[],bytes,bool))", new address[](5)
+        );
         leafs[10].argumentAddresses[0] = address(rETH_wETH);
         leafs[10].argumentAddresses[1] = address(boringVault);
         leafs[10].argumentAddresses[2] = address(boringVault);
@@ -298,9 +301,9 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         // Make sure we can call Balancer mint and Aura getReward
         leafs = new ManageLeaf[](2);
-        leafs[0] = ManageLeaf(minter, "mint(address)", new address[](1));
+        leafs[0] = ManageLeaf(minter, false, "mint(address)", new address[](1));
         leafs[0].argumentAddresses[0] = rETH_wETH_gauge;
-        leafs[1] = ManageLeaf(aura_reth_weth, "getReward(address,bool)", new address[](1));
+        leafs[1] = ManageLeaf(aura_reth_weth, false, "getReward(address,bool)", new address[](1));
         leafs[1].argumentAddresses[0] = address(boringVault);
 
         manageTree = _generateMerkleTree(leafs);
@@ -333,18 +336,20 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         // pull from an existing position rETH/weETH
         // collect from a position rETH/weETH
         ManageLeaf[] memory leafs = new ManageLeaf[](8);
-        leafs[0] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
+        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
         leafs[0].argumentAddresses[0] = uniV3Router;
-        leafs[1] = ManageLeaf(uniV3Router, "exactInput((bytes,address,uint256,uint256,uint256))", new address[](3));
+        leafs[1] =
+            ManageLeaf(uniV3Router, false, "exactInput((bytes,address,uint256,uint256,uint256))", new address[](3));
         leafs[1].argumentAddresses[0] = address(WETH);
         leafs[1].argumentAddresses[1] = address(RETH);
         leafs[1].argumentAddresses[2] = address(boringVault);
-        leafs[2] = ManageLeaf(address(RETH), "approve(address,uint256)", new address[](1));
+        leafs[2] = ManageLeaf(address(RETH), false, "approve(address,uint256)", new address[](1));
         leafs[2].argumentAddresses[0] = uniswapV3NonFungiblePositionManager;
-        leafs[3] = ManageLeaf(address(WEETH), "approve(address,uint256)", new address[](1));
+        leafs[3] = ManageLeaf(address(WEETH), false, "approve(address,uint256)", new address[](1));
         leafs[3].argumentAddresses[0] = uniswapV3NonFungiblePositionManager;
         leafs[4] = ManageLeaf(
             uniswapV3NonFungiblePositionManager,
+            false,
             "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
             new address[](3)
         );
@@ -353,16 +358,18 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         leafs[4].argumentAddresses[2] = address(boringVault);
         leafs[5] = ManageLeaf(
             uniswapV3NonFungiblePositionManager,
+            false,
             "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
             new address[](0)
         );
         leafs[6] = ManageLeaf(
             uniswapV3NonFungiblePositionManager,
+            false,
             "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
             new address[](0)
         );
         leafs[7] = ManageLeaf(
-            uniswapV3NonFungiblePositionManager, "collect((uint256,address,uint128,uint128))", new address[](1)
+            uniswapV3NonFungiblePositionManager, false, "collect((uint256,address,uint128,uint128))", new address[](1)
         );
         leafs[7].argumentAddresses[0] = address(boringVault);
 
@@ -461,28 +468,28 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         // claim rewards from convex
         // redeem LP for underlying
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
-        leafs[0] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
+        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
         leafs[0].argumentAddresses[0] = weETH_wETH_Curve_LP;
-        leafs[1] = ManageLeaf(weETH_wETH_Curve_LP, "exchange(int128,int128,uint256,uint256)", new address[](0));
-        leafs[2] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
+        leafs[1] = ManageLeaf(weETH_wETH_Curve_LP, false, "exchange(int128,int128,uint256,uint256)", new address[](0));
+        leafs[2] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
         leafs[2].argumentAddresses[0] = weETH_wETH_Curve_LP;
-        leafs[3] = ManageLeaf(address(WEETH), "approve(address,uint256)", new address[](1));
+        leafs[3] = ManageLeaf(address(WEETH), false, "approve(address,uint256)", new address[](1));
         leafs[3].argumentAddresses[0] = weETH_wETH_Curve_LP;
-        leafs[4] = ManageLeaf(weETH_wETH_Curve_LP, "add_liquidity(uint256[],uint256)", new address[](0));
-        leafs[5] = ManageLeaf(weETH_wETH_Curve_LP, "approve(address,uint256)", new address[](1));
+        leafs[4] = ManageLeaf(weETH_wETH_Curve_LP, false, "add_liquidity(uint256[],uint256)", new address[](0));
+        leafs[5] = ManageLeaf(weETH_wETH_Curve_LP, false, "approve(address,uint256)", new address[](1));
         leafs[5].argumentAddresses[0] = weETH_wETH_Curve_Gauge;
-        leafs[6] = ManageLeaf(weETH_wETH_Curve_Gauge, "deposit(uint256,address)", new address[](1));
+        leafs[6] = ManageLeaf(weETH_wETH_Curve_Gauge, false, "deposit(uint256,address)", new address[](1));
         leafs[6].argumentAddresses[0] = address(boringVault);
-        leafs[7] = ManageLeaf(weETH_wETH_Curve_Gauge, "withdraw(uint256)", new address[](0));
-        leafs[8] = ManageLeaf(weETH_wETH_Curve_Gauge, "claim_rewards(address)", new address[](1));
+        leafs[7] = ManageLeaf(weETH_wETH_Curve_Gauge, false, "withdraw(uint256)", new address[](0));
+        leafs[8] = ManageLeaf(weETH_wETH_Curve_Gauge, false, "claim_rewards(address)", new address[](1));
         leafs[8].argumentAddresses[0] = address(boringVault);
-        leafs[9] = ManageLeaf(weETH_wETH_Curve_LP, "approve(address,uint256)", new address[](1));
+        leafs[9] = ManageLeaf(weETH_wETH_Curve_LP, false, "approve(address,uint256)", new address[](1));
         leafs[9].argumentAddresses[0] = convexCurveMainnetBooster;
-        leafs[10] = ManageLeaf(convexCurveMainnetBooster, "deposit(uint256,uint256,bool)", new address[](0));
-        leafs[11] = ManageLeaf(weETH_wETH_Convex_Reward, "withdrawAndUnwrap(uint256,bool)", new address[](0));
-        leafs[12] = ManageLeaf(weETH_wETH_Convex_Reward, "getReward(address,bool)", new address[](1));
+        leafs[10] = ManageLeaf(convexCurveMainnetBooster, false, "deposit(uint256,uint256,bool)", new address[](0));
+        leafs[11] = ManageLeaf(weETH_wETH_Convex_Reward, false, "withdrawAndUnwrap(uint256,bool)", new address[](0));
+        leafs[12] = ManageLeaf(weETH_wETH_Convex_Reward, false, "getReward(address,bool)", new address[](1));
         leafs[12].argumentAddresses[0] = weETH_wETH_Convex_Reward;
-        leafs[13] = ManageLeaf(weETH_wETH_Curve_LP, "remove_liquidity(uint256,uint256[])", new address[](0));
+        leafs[13] = ManageLeaf(weETH_wETH_Curve_LP, false, "remove_liquidity(uint256,uint256[])", new address[](0));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -554,8 +561,8 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         // Unwrap all WETH
         // mint WETH via deposit
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
-        leafs[0] = ManageLeaf(address(WETH), "withdraw(uint256)", new address[](0));
-        leafs[1] = ManageLeaf(address(WETH), "deposit()", new address[](0));
+        leafs[0] = ManageLeaf(address(WETH), false, "withdraw(uint256)", new address[](0));
+        leafs[1] = ManageLeaf(address(WETH), true, "deposit()", new address[](0));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -587,17 +594,17 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         // unwrap weETH
         // unstaking eETH
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
-        leafs[0] = ManageLeaf(address(WETH), "withdraw(uint256)", new address[](0));
-        leafs[1] = ManageLeaf(EETH_LIQUIDITY_POOL, "deposit()", new address[](0));
-        leafs[2] = ManageLeaf(address(EETH), "approve(address,uint256)", new address[](1));
+        leafs[0] = ManageLeaf(address(WETH), false, "withdraw(uint256)", new address[](0));
+        leafs[1] = ManageLeaf(EETH_LIQUIDITY_POOL, true, "deposit()", new address[](0));
+        leafs[2] = ManageLeaf(address(EETH), false, "approve(address,uint256)", new address[](1));
         leafs[2].argumentAddresses[0] = address(WEETH);
-        leafs[3] = ManageLeaf(address(WEETH), "wrap(uint256)", new address[](0));
-        leafs[4] = ManageLeaf(address(WEETH), "unwrap(uint256)", new address[](0));
-        leafs[5] = ManageLeaf(address(EETH), "approve(address,uint256)", new address[](1));
+        leafs[3] = ManageLeaf(address(WEETH), false, "wrap(uint256)", new address[](0));
+        leafs[4] = ManageLeaf(address(WEETH), false, "unwrap(uint256)", new address[](0));
+        leafs[5] = ManageLeaf(address(EETH), false, "approve(address,uint256)", new address[](1));
         leafs[5].argumentAddresses[0] = EETH_LIQUIDITY_POOL;
-        leafs[6] = ManageLeaf(EETH_LIQUIDITY_POOL, "requestWithdraw(address,uint256)", new address[](1));
+        leafs[6] = ManageLeaf(EETH_LIQUIDITY_POOL, false, "requestWithdraw(address,uint256)", new address[](1));
         leafs[6].argumentAddresses[0] = address(boringVault);
-        leafs[7] = ManageLeaf(withdrawalRequestNft, "claimWithdraw(uint256)", new address[](0));
+        leafs[7] = ManageLeaf(withdrawalRequestNft, false, "claimWithdraw(uint256)", new address[](0));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -663,10 +670,11 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         // repay weth
         // withdraw weeth.
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
-        leafs[0] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
+        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
         leafs[0].argumentAddresses[0] = morphoBlue;
         leafs[1] = ManageLeaf(
             morphoBlue,
+            false,
             "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
             new address[](5)
         );
@@ -677,6 +685,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         leafs[1].argumentAddresses[4] = address(boringVault);
         leafs[2] = ManageLeaf(
             morphoBlue,
+            false,
             "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
             new address[](6)
         );
@@ -686,10 +695,11 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         leafs[2].argumentAddresses[3] = weEthIrm;
         leafs[2].argumentAddresses[4] = address(boringVault);
         leafs[2].argumentAddresses[5] = address(boringVault);
-        leafs[3] = ManageLeaf(address(WEETH), "approve(address,uint256)", new address[](1));
+        leafs[3] = ManageLeaf(address(WEETH), false, "approve(address,uint256)", new address[](1));
         leafs[3].argumentAddresses[0] = morphoBlue;
         leafs[4] = ManageLeaf(
             morphoBlue,
+            false,
             "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)",
             new address[](5)
         );
@@ -700,6 +710,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         leafs[4].argumentAddresses[4] = address(boringVault);
         leafs[5] = ManageLeaf(
             morphoBlue,
+            false,
             "borrow((address,address,address,address,uint256),uint256,uint256,address,address)",
             new address[](6)
         );
@@ -711,6 +722,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         leafs[5].argumentAddresses[5] = address(boringVault);
         leafs[6] = ManageLeaf(
             morphoBlue,
+            false,
             "repay((address,address,address,address,uint256),uint256,uint256,address,bytes)",
             new address[](5)
         );
@@ -721,6 +733,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         leafs[6].argumentAddresses[4] = address(boringVault);
         leafs[7] = ManageLeaf(
             morphoBlue,
+            false,
             "withdrawCollateral((address,address,address,address,uint256),uint256,address,address)",
             new address[](6)
         );
@@ -837,7 +850,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
 
         // Set the manage root to be the leaf of the USDC approve function
-        bytes32 manageRoot = keccak256(abi.encodePacked(targets[0], bytes4(targetData[0]), address(this)));
+        bytes32 manageRoot = keccak256(abi.encodePacked(targets[0], false, bytes4(targetData[0]), address(this)));
         manager.setManageRoot(manageRoot);
 
         // Call now works.
@@ -896,7 +909,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         for (uint256 i; i < manageLeafs.length; ++i) {
             // Generate manage proof.
             bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, selector);
+            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, manageLeafs[i].canSendValue, selector);
             uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
             for (uint256 j; j < argumentAddressesLength; ++j) {
                 rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
@@ -942,6 +955,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
     struct ManageLeaf {
         address target;
+        bool canSendValue;
         string signature;
         address[] argumentAddresses;
     }
@@ -952,7 +966,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         leafs[0] = new bytes32[](leafsLength);
         for (uint256 i; i < leafsLength; ++i) {
             bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, selector);
+            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, manageLeafs[i].canSendValue, selector);
             uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
             for (uint256 j; j < argumentAddressesLength; ++j) {
                 rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
