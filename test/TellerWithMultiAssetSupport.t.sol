@@ -73,7 +73,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
     function testDepositReverting(uint256 amount) external {
         amount = bound(amount, 0.0001e18, 10_000e18);
         // Turn on share lock period, and deposit reverting
-        boringVault.setShareLocker(address(teller));
+        boringVault.setBeforeTransferHook(address(teller));
 
         teller.setShareLockPeriod(1 days);
 

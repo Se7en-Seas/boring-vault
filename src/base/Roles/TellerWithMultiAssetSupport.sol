@@ -9,10 +9,9 @@ import {BoringVault} from "src/base/BoringVault.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {IShareLocker} from "src/interfaces/IShareLocker.sol";
-import {console} from "@forge-std/Test.sol";
+import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
 
-contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, IShareLocker {
+contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTransferHook {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
     using SafeTransferLib for WETH;
@@ -168,7 +167,7 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, IShareLo
     /**
      * @notice Implement
      */
-    function revertIfLocked(address from) external view {
+    function beforeTransfer(address from) external view {
         if (shareUnlockTime[from] <= block.timestamp) revert("share locked");
     }
 

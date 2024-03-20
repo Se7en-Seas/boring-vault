@@ -9,7 +9,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {AccessControlDefaultAdminRules} from
     "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
-import {IShareLocker} from "src/interfaces/IShareLocker.sol";
+import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
 
 contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC1155Holder {
     using Address for address;
@@ -41,10 +41,9 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC
     // ========================================= STATE =========================================
 
     /**
-     * @notice Contract responsbile for implementing `revertIfLocked`, if shares
-     *         need to be locked to an address for some reason.
+     * @notice Contract responsbile for implementing `beforeTransfer`.
      */
-    IShareLocker public locker;
+    BeforeTransferHook public hook;
 
     //============================== EVENTS ===============================
 
@@ -118,29 +117,29 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC
         emit Exit(to, address(asset), assetAmount, from, shareAmount);
     }
 
-    //============================== SHARELOCKER ===============================
+    //============================== BEFORE TRANSFER HOOK ===============================
     /**
      * @notice Sets the share locker.
      * @notice If set to zero address, the share locker logic is disabled.
      */
-    function setShareLocker(address _locker) external onlyRole(ADMIN_ROLE) {
-        locker = IShareLocker(_locker);
+    function setBeforeTransferHook(address _hook) external onlyRole(ADMIN_ROLE) {
+        hook = BeforeTransferHook(_hook);
     }
 
     /**
      * @notice Check if from addresses shares are locked, reverting if so.
      */
-    function _checkShareLock(address from) internal view {
-        if (address(locker) != address(0)) locker.revertIfLocked(from);
+    function _callBeforeTransfer(address from) internal view {
+        if (address(hook) != address(0)) hook.beforeTransfer(from);
     }
 
     function transfer(address to, uint256 amount) public override returns (bool) {
-        _checkShareLock(msg.sender);
+        _callBeforeTransfer(msg.sender);
         return super.transfer(to, amount);
     }
 
     function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
-        _checkShareLock(from);
+        _callBeforeTransfer(from);
         return super.transferFrom(from, to, amount);
     }
 
