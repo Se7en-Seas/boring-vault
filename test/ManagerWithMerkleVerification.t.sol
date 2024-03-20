@@ -460,7 +460,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
         leafs[0] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
         leafs[0].argumentAddresses[0] = weETH_wETH_Curve_LP;
-        leafs[1] = ManageLeaf(uniV3Router, "exchange(int128,int128,uint256,uint256)", new address[](0));
+        leafs[1] = ManageLeaf(weETH_wETH_Curve_LP, "exchange(int128,int128,uint256,uint256)", new address[](0));
         leafs[2] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
         leafs[2].argumentAddresses[0] = weETH_wETH_Curve_LP;
         leafs[3] = ManageLeaf(address(WEETH), "approve(address,uint256)", new address[](1));
@@ -470,15 +470,15 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         leafs[5].argumentAddresses[0] = weETH_wETH_Curve_Gauge;
         leafs[6] = ManageLeaf(weETH_wETH_Curve_Gauge, "deposit(uint256,address)", new address[](1));
         leafs[6].argumentAddresses[0] = address(boringVault);
-        leafs[7] = ManageLeaf(uniswapV3NonFungiblePositionManager, "withdraw(uint256)", new address[](0));
-        leafs[8] = ManageLeaf(weETH_wETH_Curve_Gauge, "claimRewards(address)", new address[](1));
+        leafs[7] = ManageLeaf(weETH_wETH_Curve_Gauge, "withdraw(uint256)", new address[](0));
+        leafs[8] = ManageLeaf(weETH_wETH_Curve_Gauge, "claim_rewards(address)", new address[](1));
         leafs[8].argumentAddresses[0] = address(boringVault);
         leafs[9] = ManageLeaf(weETH_wETH_Curve_LP, "approve(address,uint256)", new address[](1));
         leafs[9].argumentAddresses[0] = convexCurveMainnetBooster;
         leafs[10] = ManageLeaf(convexCurveMainnetBooster, "deposit(uint256,uint256,bool)", new address[](0));
-        leafs[11] = ManageLeaf(convexCurveMainnetBooster, "withdraw(uint256,bool)", new address[](0));
+        leafs[11] = ManageLeaf(weETH_wETH_Convex_Reward, "withdrawAndUnwrap(uint256,bool)", new address[](0));
         leafs[12] = ManageLeaf(weETH_wETH_Convex_Reward, "getReward(address,bool)", new address[](1));
-        leafs[12].argumentAddresses[0] = address(boringVault);
+        leafs[12].argumentAddresses[0] = weETH_wETH_Convex_Reward;
         leafs[13] = ManageLeaf(weETH_wETH_Curve_LP, "remove_liquidity(uint256,uint256[])", new address[](0));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
@@ -503,7 +503,44 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](14);
+        targets[0] = address(WETH);
+        targets[1] = weETH_wETH_Curve_LP;
+        targets[2] = address(WETH);
+        targets[3] = address(WEETH);
+        targets[4] = weETH_wETH_Curve_LP;
+        targets[5] = weETH_wETH_Curve_LP;
+        targets[6] = weETH_wETH_Curve_Gauge;
+        targets[7] = weETH_wETH_Curve_Gauge;
+        targets[8] = weETH_wETH_Curve_Gauge;
+        targets[9] = weETH_wETH_Curve_LP;
+        targets[10] = convexCurveMainnetBooster;
+        targets[11] = weETH_wETH_Convex_Reward;
+        targets[12] = weETH_wETH_Convex_Reward;
+        targets[13] = weETH_wETH_Curve_LP;
+
         bytes[] memory targetData = new bytes[](14);
+        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", weETH_wETH_Curve_LP, type(uint256).max);
+        targetData[1] =
+            abi.encodeWithSignature("exchange(int128,int128,uint256,uint256)", int128(1), int128(0), 50e18, 0);
+        targetData[2] = abi.encodeWithSignature("approve(address,uint256)", weETH_wETH_Curve_LP, type(uint256).max);
+        targetData[3] = abi.encodeWithSignature("approve(address,uint256)", weETH_wETH_Curve_LP, type(uint256).max);
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 48473470070721278615;
+        amounts[1] = 50e18;
+        targetData[4] = abi.encodeWithSignature("add_liquidity(uint256[],uint256)", amounts, 0);
+        uint256 lpTokens = 99561344877023277620;
+        targetData[5] = abi.encodeWithSignature("approve(address,uint256)", weETH_wETH_Curve_Gauge, type(uint256).max);
+        targetData[6] = abi.encodeWithSignature("deposit(uint256,address)", lpTokens, address(boringVault));
+        targetData[7] = abi.encodeWithSignature("withdraw(uint256)", lpTokens);
+        targetData[8] = abi.encodeWithSignature("claim_rewards(address)", address(boringVault));
+        targetData[9] =
+            abi.encodeWithSignature("approve(address,uint256)", convexCurveMainnetBooster, type(uint256).max);
+        targetData[10] = abi.encodeWithSignature("deposit(uint256,uint256,bool)", 275, lpTokens, true);
+        targetData[11] = abi.encodeWithSignature("withdrawAndUnwrap(uint256,bool)", lpTokens, true);
+        targetData[12] = abi.encodeWithSignature("getReward(address,bool)", weETH_wETH_Convex_Reward, true);
+        amounts[0] = 0;
+        amounts[1] = 0;
+        targetData[13] = abi.encodeWithSignature("remove_liquidity(uint256,uint256[])", lpTokens, amounts);
 
         manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](14));
     }

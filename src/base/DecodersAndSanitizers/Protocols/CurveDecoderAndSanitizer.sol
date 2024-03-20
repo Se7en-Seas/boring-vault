@@ -86,7 +86,7 @@ abstract contract CurveDecoderAndSanitizer is BaseDecoderAndSanitizer {
         return addressesFound;
     }
 
-    function claimRewards(address _addr) external pure virtual returns (address[] memory addressesFound) {
+    function claim_rewards(address _addr) external pure virtual returns (address[] memory addressesFound) {
         addressesFound = new address[](1);
         addressesFound[0] = _addr;
     }
