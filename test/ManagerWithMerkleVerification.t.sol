@@ -548,9 +548,110 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](14));
     }
 
-    // TODO native wrapper integration test
-    // TODO integration test for etherfi
-    // TODO integration test for morpho blue
+    function testNativeWrapperIntegration() external {
+        deal(address(WETH), address(boringVault), 100e18);
+
+        // Unwrap all WETH
+        // mint WETH via deposit
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        leafs[0] = ManageLeaf(address(WETH), "withdraw(uint256)", new address[](0));
+        leafs[1] = ManageLeaf(address(WETH), "deposit()", new address[](0));
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](2);
+        targets[0] = address(WETH);
+        targets[1] = address(WETH);
+
+        bytes[] memory targetData = new bytes[](2);
+        targetData[0] = abi.encodeWithSignature("withdraw(uint256)", 100e18);
+        targetData[1] = abi.encodeWithSignature("deposit()");
+        uint256[] memory values = new uint256[](2);
+        values[1] = 100e18;
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+    }
+
+    function testEtherFiIntegration() external {
+        deal(address(WETH), address(boringVault), 100e18);
+
+        // unwrap weth
+        // mint eETH
+        // wrap eETH
+        // unwrap weETH
+        // unstaking eETH
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        leafs[0] = ManageLeaf(address(WETH), "withdraw(uint256)", new address[](0));
+        leafs[1] = ManageLeaf(EETH_LIQUIDITY_POOL, "deposit()", new address[](0));
+        leafs[2] = ManageLeaf(address(EETH), "approve(address,uint256)", new address[](1));
+        leafs[2].argumentAddresses[0] = address(WEETH);
+        leafs[3] = ManageLeaf(address(WEETH), "wrap(uint256)", new address[](0));
+        leafs[4] = ManageLeaf(address(WEETH), "unwrap(uint256)", new address[](0));
+        leafs[5] = ManageLeaf(address(EETH), "approve(address,uint256)", new address[](1));
+        leafs[5].argumentAddresses[0] = EETH_LIQUIDITY_POOL;
+        leafs[6] = ManageLeaf(EETH_LIQUIDITY_POOL, "requestWithdraw(address,uint256)", new address[](1));
+        leafs[6].argumentAddresses[0] = address(boringVault);
+        leafs[7] = ManageLeaf(withdrawalRequestNft, "claimWithdraw(uint256)", new address[](0));
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](7);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+        manageLeafs[5] = leafs[5];
+        manageLeafs[6] = leafs[6];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](7);
+        targets[0] = address(WETH);
+        targets[1] = EETH_LIQUIDITY_POOL;
+        targets[2] = address(EETH);
+        targets[3] = address(WEETH);
+        targets[4] = address(WEETH);
+        targets[5] = address(EETH);
+        targets[6] = EETH_LIQUIDITY_POOL;
+
+        bytes[] memory targetData = new bytes[](7);
+        targetData[0] = abi.encodeWithSignature("withdraw(uint256)", 100e18);
+        targetData[1] = abi.encodeWithSignature("deposit()");
+        targetData[2] = abi.encodeWithSignature("approve(address,uint256)", address(WEETH), type(uint256).max);
+        targetData[3] = abi.encodeWithSignature("wrap(uint256)", 100e18 - 1);
+        uint256 weETHAmount = 96806692052320886040;
+        targetData[4] = abi.encodeWithSignature("unwrap(uint256)", weETHAmount);
+        targetData[5] = abi.encodeWithSignature("approve(address,uint256)", EETH_LIQUIDITY_POOL, type(uint256).max);
+        targetData[6] = abi.encodeWithSignature("requestWithdraw(address,uint256)", address(boringVault), 100e18 - 2);
+        uint256[] memory values = new uint256[](7);
+        values[1] = 100e18;
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+
+        uint256 withdrawRequestId = 4840;
+
+        _finalizeRequest(withdrawRequestId, 100e18 - 2);
+
+        manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[7];
+        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        targets = new address[](1);
+        targets[0] = withdrawalRequestNft;
+
+        targetData = new bytes[](1);
+        targetData[0] = abi.encodeWithSignature("claimWithdraw(uint256)", withdrawRequestId);
+        values = new uint256[](1);
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+    }
+
     function testMorphoBlueIntegration() external {
         deal(address(WETH), address(boringVault), 100e18);
         deal(address(WEETH), address(boringVault), 100e18);
@@ -878,4 +979,56 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
     }
+
+    function _finalizeRequest(uint256 requestId, uint256 amount) internal {
+        // Spoof unstEth contract into finalizing our request.
+        IWithdrawRequestNft w = IWithdrawRequestNft(withdrawalRequestNft);
+        address owner = w.owner();
+        vm.startPrank(owner);
+        w.updateAdmin(address(this), true);
+        vm.stopPrank();
+
+        ILiquidityPool lp = ILiquidityPool(EETH_LIQUIDITY_POOL);
+
+        deal(address(this), amount);
+        lp.deposit{value: amount}();
+        address admin = lp.etherFiAdminContract();
+
+        vm.startPrank(admin);
+        lp.addEthAmountLockedForWithdrawal(uint128(amount));
+        vm.stopPrank();
+
+        w.finalizeRequests(requestId);
+    }
+}
+
+interface IWithdrawRequestNft {
+    struct WithdrawRequest {
+        uint96 amountOfEEth;
+        uint96 shareOfEEth;
+        bool isValid;
+        uint32 feeGwei;
+    }
+
+    function claimWithdraw(uint256 tokenId) external;
+
+    function getRequest(uint256 requestId) external view returns (WithdrawRequest memory);
+
+    function finalizeRequests(uint256 requestId) external;
+
+    function owner() external view returns (address);
+
+    function updateAdmin(address admin, bool isAdmin) external;
+}
+
+interface ILiquidityPool {
+    function deposit() external payable returns (uint256);
+
+    function requestWithdraw(address recipient, uint256 amount) external returns (uint256);
+
+    function amountForShare(uint256 shares) external view returns (uint256);
+
+    function etherFiAdminContract() external view returns (address);
+
+    function addEthAmountLockedForWithdrawal(uint128 _amount) external;
 }

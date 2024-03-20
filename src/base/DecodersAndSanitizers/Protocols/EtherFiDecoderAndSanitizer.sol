@@ -25,4 +25,9 @@ abstract contract EtherFiDecoderAndSanitizer is BaseDecoderAndSanitizer {
         addressesFound = new address[](1);
         addressesFound[0] = _addr;
     }
+
+    function claimWithdraw(uint256) external pure virtual returns (address[] memory addressesFound) {
+        // Nothing to sanitize or return
+        return addressesFound;
+    }
 }

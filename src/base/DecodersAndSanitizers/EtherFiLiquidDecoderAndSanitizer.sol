@@ -10,6 +10,8 @@ import {CurveDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols
 import {AuraDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/AuraDecoderAndSanitizer.sol";
 import {ConvexDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/ConvexDecoderAndSanitizer.sol";
 import {EtherFiDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/EtherFiDecoderAndSanitizer.sol";
+import {NativeWrapperDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/NativeWrapperDecoderAndSanitizer.sol";
 
 // TODO maybe common collision functions should be moved to BaseDecoderAndSanitizer?
 contract EtherFiLiquidDecoderAndSanitizer is
@@ -20,7 +22,8 @@ contract EtherFiLiquidDecoderAndSanitizer is
     CurveDecoderAndSanitizer,
     AuraDecoderAndSanitizer,
     ConvexDecoderAndSanitizer,
-    EtherFiDecoderAndSanitizer
+    EtherFiDecoderAndSanitizer,
+    NativeWrapperDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
@@ -43,13 +46,26 @@ contract EtherFiLiquidDecoderAndSanitizer is
     }
 
     /**
-     * @notice BalancerV2, and Curve all specify a `withdraw(uint256)`,
+     * @notice EtherFi, NativeWrapper all specify a `deposit()`,
+     *         all cases are handled the same way.
+     */
+    function deposit()
+        external
+        pure
+        override(EtherFiDecoderAndSanitizer, NativeWrapperDecoderAndSanitizer)
+        returns (address[] memory addressesFound)
+    {
+        return addressesFound;
+    }
+
+    /**
+     * @notice BalancerV2, NativeWrapper, and Curve all specify a `withdraw(uint256)`,
      *         all cases are handled the same way.
      */
     function withdraw(uint256)
         external
         pure
-        override(BalancerV2DecoderAndSanitizer, CurveDecoderAndSanitizer)
+        override(BalancerV2DecoderAndSanitizer, CurveDecoderAndSanitizer, NativeWrapperDecoderAndSanitizer)
         returns (address[] memory addressesFound)
     {
         // Nothing to sanitize or return
