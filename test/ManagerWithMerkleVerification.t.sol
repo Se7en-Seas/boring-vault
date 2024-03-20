@@ -26,6 +26,9 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
     BoringVault public boringVault;
     address public rawDataDecoderAndSanitizer;
 
+    address public weEthOracle = 0x3fa58b74e9a8eA8768eb33c8453e9C2Ed089A40a;
+    address public weEthIrm = 0x870aC11D48B15DB9a138Cf899d20F13F79Ba00BC;
+
     function setUp() external {
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
@@ -543,6 +546,168 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         targetData[13] = abi.encodeWithSignature("remove_liquidity(uint256,uint256[])", lpTokens, amounts);
 
         manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](14));
+    }
+
+    // TODO native wrapper integration test
+    // TODO integration test for etherfi
+    // TODO integration test for morpho blue
+    function testMorphoBlueIntegration() external {
+        deal(address(WETH), address(boringVault), 100e18);
+        deal(address(WEETH), address(boringVault), 100e18);
+
+        // supply weth
+        // withdraw weth
+        // supply weeth
+        // borrow weth
+        // repay weth
+        // withdraw weeth.
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        leafs[0] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = morphoBlue;
+        leafs[1] = ManageLeaf(
+            morphoBlue,
+            "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            new address[](5)
+        );
+        leafs[1].argumentAddresses[0] = address(WETH);
+        leafs[1].argumentAddresses[1] = address(WEETH);
+        leafs[1].argumentAddresses[2] = weEthOracle;
+        leafs[1].argumentAddresses[3] = weEthIrm;
+        leafs[1].argumentAddresses[4] = address(boringVault);
+        leafs[2] = ManageLeaf(
+            morphoBlue,
+            "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+            new address[](6)
+        );
+        leafs[2].argumentAddresses[0] = address(WETH);
+        leafs[2].argumentAddresses[1] = address(WEETH);
+        leafs[2].argumentAddresses[2] = weEthOracle;
+        leafs[2].argumentAddresses[3] = weEthIrm;
+        leafs[2].argumentAddresses[4] = address(boringVault);
+        leafs[2].argumentAddresses[5] = address(boringVault);
+        leafs[3] = ManageLeaf(address(WEETH), "approve(address,uint256)", new address[](1));
+        leafs[3].argumentAddresses[0] = morphoBlue;
+        leafs[4] = ManageLeaf(
+            morphoBlue,
+            "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)",
+            new address[](5)
+        );
+        leafs[4].argumentAddresses[0] = address(WETH);
+        leafs[4].argumentAddresses[1] = address(WEETH);
+        leafs[4].argumentAddresses[2] = weEthOracle;
+        leafs[4].argumentAddresses[3] = weEthIrm;
+        leafs[4].argumentAddresses[4] = address(boringVault);
+        leafs[5] = ManageLeaf(
+            morphoBlue,
+            "borrow((address,address,address,address,uint256),uint256,uint256,address,address)",
+            new address[](6)
+        );
+        leafs[5].argumentAddresses[0] = address(WETH);
+        leafs[5].argumentAddresses[1] = address(WEETH);
+        leafs[5].argumentAddresses[2] = weEthOracle;
+        leafs[5].argumentAddresses[3] = weEthIrm;
+        leafs[5].argumentAddresses[4] = address(boringVault);
+        leafs[5].argumentAddresses[5] = address(boringVault);
+        leafs[6] = ManageLeaf(
+            morphoBlue,
+            "repay((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            new address[](5)
+        );
+        leafs[6].argumentAddresses[0] = address(WETH);
+        leafs[6].argumentAddresses[1] = address(WEETH);
+        leafs[6].argumentAddresses[2] = weEthOracle;
+        leafs[6].argumentAddresses[3] = weEthIrm;
+        leafs[6].argumentAddresses[4] = address(boringVault);
+        leafs[7] = ManageLeaf(
+            morphoBlue,
+            "withdrawCollateral((address,address,address,address,uint256),uint256,address,address)",
+            new address[](6)
+        );
+        leafs[7].argumentAddresses[0] = address(WETH);
+        leafs[7].argumentAddresses[1] = address(WEETH);
+        leafs[7].argumentAddresses[2] = weEthOracle;
+        leafs[7].argumentAddresses[3] = weEthIrm;
+        leafs[7].argumentAddresses[4] = address(boringVault);
+        leafs[7].argumentAddresses[5] = address(boringVault);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](8);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+        manageLeafs[5] = leafs[5];
+        manageLeafs[6] = leafs[6];
+        manageLeafs[7] = leafs[7];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](8);
+        targets[0] = address(WETH);
+        targets[1] = morphoBlue;
+        targets[2] = morphoBlue;
+        targets[3] = address(WEETH);
+        targets[4] = morphoBlue;
+        targets[5] = morphoBlue;
+        targets[6] = morphoBlue;
+        targets[7] = morphoBlue;
+
+        bytes[] memory targetData = new bytes[](8);
+        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", morphoBlue, type(uint256).max);
+        DecoderCustomTypes.MarketParams memory params =
+            DecoderCustomTypes.MarketParams(address(WETH), address(WEETH), weEthOracle, weEthIrm, 0.86e18);
+        targetData[1] = abi.encodeWithSignature(
+            "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            params,
+            100e18,
+            0,
+            address(boringVault),
+            hex""
+        );
+        targetData[2] = abi.encodeWithSignature(
+            "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+            params,
+            100e18 - 1,
+            0,
+            address(boringVault),
+            address(boringVault)
+        );
+        targetData[3] = abi.encodeWithSignature("approve(address,uint256)", morphoBlue, type(uint256).max);
+        targetData[4] = abi.encodeWithSignature(
+            "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)",
+            params,
+            100e18,
+            address(boringVault),
+            hex""
+        );
+        targetData[5] = abi.encodeWithSignature(
+            "borrow((address,address,address,address,uint256),uint256,uint256,address,address)",
+            params,
+            10e18,
+            0,
+            address(boringVault),
+            address(boringVault)
+        );
+        targetData[6] = abi.encodeWithSignature(
+            "repay((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            params,
+            10e18,
+            0,
+            address(boringVault),
+            hex""
+        );
+        targetData[7] = abi.encodeWithSignature(
+            "withdrawCollateral((address,address,address,address,uint256),uint256,address,address)",
+            params,
+            90e18,
+            address(boringVault),
+            address(boringVault)
+        );
+
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](8));
     }
 
     function testReverts() external {

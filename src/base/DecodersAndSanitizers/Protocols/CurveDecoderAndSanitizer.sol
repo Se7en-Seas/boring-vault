@@ -5,7 +5,7 @@ import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndS
 
 abstract contract CurveDecoderAndSanitizer is BaseDecoderAndSanitizer {
     //============================== CURVE ===============================
-
+    // TODO should I have every variation in here? Or just the ones that are tested/used?
     function exchange(int128, int128, uint256, uint256)
         external
         pure

@@ -173,7 +173,7 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, IShareLo
     }
 
     // ========================================= REVERT DEPOSIT FUNCTIONS =========================================
-
+    // TODO permit deposit
     // TODO should we verify share locker contract is set in vault?
     /**
      * @notice Allows DEPOSIT_REVERTER_ROLE to revert a pending deposit.
