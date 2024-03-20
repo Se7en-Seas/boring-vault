@@ -7,7 +7,6 @@ import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVer
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {RawDataDecoderAndSanitizer} from "src/base/RawDataDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
@@ -17,6 +16,8 @@ import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {IWEETH} from "src/interfaces/IStaking.sol";
 import {ILiquidityPool} from "src/interfaces/IStaking.sol";
 import {WETH} from "@solmate/tokens/WETH.sol";
+import {EtherFiLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
+import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -70,7 +71,8 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
 
         teller = new TellerWithMultiAssetSupport(multisig, address(boringVault), address(accountant), address(WETH));
 
-        rawDataDecoderAndSanitizer = address(new RawDataDecoderAndSanitizer(uniswapV3NonFungiblePositionManager));
+        rawDataDecoderAndSanitizer =
+            address(new EtherFiLiquidDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
 
         // Deploy queue.
         atomic_queue = new AtomicQueue();
@@ -103,17 +105,17 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
 
         vm.startPrank(weth_user);
         WETH.safeApprove(address(boringVault), wETH_amount);
-        teller.deposit(WETH, wETH_amount, 0, weth_user);
+        teller.deposit(WETH, wETH_amount, 0);
         vm.stopPrank();
 
         vm.startPrank(eeth_user);
         EETH.safeApprove(address(boringVault), eETH_amount);
-        teller.deposit(EETH, eETH_amount, 0, eeth_user);
+        teller.deposit(EETH, eETH_amount, 0);
         vm.stopPrank();
 
         vm.startPrank(weeth_user);
         WEETH.safeApprove(address(boringVault), weETH_amount);
-        teller.deposit(WEETH, weETH_amount, 0, weeth_user);
+        teller.deposit(WEETH, weETH_amount, 0);
         vm.stopPrank();
     }
 
@@ -127,7 +129,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         leafs[1].argumentAddresses[0] = morphoBlue;
         leafs[2] = ManageLeaf(address(WEETH), "wrap(uint256)", new address[](0));
         leafs[3] = ManageLeaf(address(WEETH), "unwrap(uint256)", new address[](0));
-        leafs[4] = ManageLeaf(vault, "flashLoan(address,address[],uint256[],bytes)", new address[](2));
+        leafs[4] = ManageLeaf(address(manager), "flashLoan(address,address[],uint256[],bytes)", new address[](2));
         leafs[4].argumentAddresses[0] = address(manager);
         leafs[4].argumentAddresses[1] = address(WETH);
         leafs[5] = ManageLeaf(address(WETH), "withdraw(uint256)", new address[](0));
@@ -183,17 +185,6 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
             targets[5] = morphoBlue;
             targets[6] = morphoBlue;
 
-            string[] memory functionSignaturesInFlashLoan = new string[](7);
-            functionSignaturesInFlashLoan[0] = "withdraw(uint256)";
-            functionSignaturesInFlashLoan[1] = "deposit()";
-            functionSignaturesInFlashLoan[2] = "approve(address,uint256)";
-            functionSignaturesInFlashLoan[3] = "wrap(uint256)";
-            functionSignaturesInFlashLoan[4] = "approve(address,uint256)";
-            functionSignaturesInFlashLoan[5] =
-                "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)";
-            functionSignaturesInFlashLoan[6] =
-                "borrow((address,address,address,address,uint256),uint256,uint256,address,address)";
-
             targetData = new bytes[](7);
             targetData[0] = abi.encodeWithSignature("withdraw(uint256)", wEthToBorrow); // Unwrap ETH
             targetData[1] = abi.encodeWithSignature("deposit()"); // convert ETH to eETH
@@ -235,8 +226,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
 
             manageProofs = _getProofsUsingTree(flashLoanLeafs, manageTree);
 
-            flashLoanData =
-                abi.encode(manageProofs, functionSignaturesInFlashLoan, targets, targetData, valuesInFlashloan);
+            flashLoanData = abi.encode(manageProofs, targets, targetData, valuesInFlashloan);
         }
 
         string[] memory functionSignatures = new string[](5);
@@ -251,7 +241,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         targets = new address[](5);
         targets[0] = address(EETH);
         targets[1] = address(WEETH);
-        targets[2] = address(balancer_vault);
+        targets[2] = address(manager);
         targets[3] = address(WETH);
         targets[4] = address(WEETH);
 
@@ -291,7 +281,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
 
         vm.startPrank(strategist);
         uint256 gas = gasleft();
-        manager.manageVaultWithMerkleVerification(manageProofs, functionSignatures, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
         console.log("Gas For Rebalance", gas - gasleft());
         vm.stopPrank();
 

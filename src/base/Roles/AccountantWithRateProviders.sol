@@ -189,7 +189,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
      * @notice Update the allowed upper bound change of exchange rate between `updateExchangeRateCalls`.
      */
     function updateUpper(uint16 allowedExchangeRateChangeUpper) external onlyRole(ADMIN_ROLE) {
-        require(allowedExchangeRateChangeUpper > 1e4, "upper bound too small");
+        if (allowedExchangeRateChangeUpper < 1e4) revert("upper bound too small");
         uint16 oldBound = accountantState.allowedExchangeRateChangeUpper;
         accountantState.allowedExchangeRateChangeUpper = allowedExchangeRateChangeUpper;
         emit UpperBoundUpdated(oldBound, allowedExchangeRateChangeUpper);
@@ -199,7 +199,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
      * @notice Update the allowed lower bound change of exchange rate between `updateExchangeRateCalls`.
      */
     function updateLower(uint16 allowedExchangeRateChangeLower) external onlyRole(ADMIN_ROLE) {
-        require(allowedExchangeRateChangeLower < 1e4, "lower bound too large");
+        if (allowedExchangeRateChangeLower > 1e4) revert("lower bound too large");
         uint16 oldBound = accountantState.allowedExchangeRateChangeLower;
         accountantState.allowedExchangeRateChangeLower = allowedExchangeRateChangeLower;
         emit LowerBoundUpdated(oldBound, allowedExchangeRateChangeLower);
@@ -209,7 +209,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
      * @notice Update the management fee to a new value.
      */
     function updateManagementFee(uint16 managementFee) external onlyRole(ADMIN_ROLE) {
-        require(managementFee < 0.2e4, "management fee too large");
+        if (managementFee > 0.2e4) revert("management fee too large");
         uint16 oldFee = accountantState.managementFee;
         accountantState.managementFee = managementFee;
         emit ManagementFeeUpdated(oldFee, managementFee);
@@ -291,7 +291,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
      * @dev This function must be called by the BoringVault.
      */
     function claimFees(ERC20 feeAsset) external {
-        require(msg.sender == address(vault), "only vault");
+        if (msg.sender != address(vault)) revert("only vault");
         AccountantState storage state = accountantState;
         if (state.isPaused) revert("paused");
         if (state.feesOwedInBase == 0) revert("no fees owed");

@@ -277,6 +277,9 @@ contract MainnetAddresses {
     address public EthEthXPool = 0x59Ab5a5b5d617E478a2479B0cAD80DA7e2831492;
     address public EthEthXToken = 0x59Ab5a5b5d617E478a2479B0cAD80DA7e2831492;
     address public EthEthXGauge = 0x7671299eA7B4bbE4f3fD305A994e6443b4be680E;
+    address public weETH_wETH_Curve_LP = 0x13947303F63b363876868D070F14dc865C36463b;
+    address public weETH_wETH_Curve_Gauge = 0x1CAC1a0Ed47E2e0A313c712b2dcF85994021a365;
+    address public weETH_wETH_Convex_Reward = 0x2D159E01A5cEe7498F84Be68276a5266b3cb3774;
 
     address public WethMkUsdPool = 0xc89570207c5BA1B0E3cD372172cCaEFB173DB270;
 

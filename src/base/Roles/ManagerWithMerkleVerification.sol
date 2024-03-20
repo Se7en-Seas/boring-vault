@@ -9,9 +9,7 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {RawDataDecoderAndSanitizer} from "src/base/RawDataDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
-import {console} from "@forge-std/Test.sol"; // TODO remove
 
 contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     using FixedPointMathLib for uint256;
@@ -26,7 +24,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      */
     struct VerifyData {
         bytes32 currentManageRoot;
-        RawDataDecoderAndSanitizer currentRawDataDecoderAndSanitizer;
+        address currentRawDataDecoderAndSanitizer;
     }
 
     // ========================================= CONSTANTS =========================================
@@ -57,13 +55,18 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     /**
      * @notice The RawDataDecoderAndSanitizer this contract uses to decode and sanitize call data.
      */
-    RawDataDecoderAndSanitizer public rawDataDecoderAndSanitizer;
+    address public rawDataDecoderAndSanitizer;
 
     /**
-     * @notice Bool indicating whether or not this contract is actively being managed.
+     * @notice Bool indicating whether or not this contract is actively performing a flash loan.
      * @dev Used to block flash loans that are initiated outside a manage call.
      */
-    bool internal ongoingManage;
+    bool internal performingFlashLoan;
+
+    /**
+     * @notice keccak256 hash of flash loan data.
+     */
+    bytes32 internal flashLoanIntentHash = bytes32(0);
 
     //============================== EVENTS ===============================
 
@@ -90,13 +93,13 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     {
         vault = BoringVault(payable(_vault));
         _grantRole(STRATEGIST_ROLE, _manager);
+        _grantRole(STRATEGIST_ROLE, address(this));
         _grantRole(ADMIN_ROLE, _admin);
         balancerVault = BalancerVault(_balancerVault);
     }
 
     // ========================================= ADMIN FUNCTIONS =========================================
 
-    // This could be sommelier to start, then the multisig of the BoringVault can change the depositor.
     // TODO I could have the contents of the merkle tree passed in as call data, then we derive the merkle root on chain? That is more gas intensive, but allows people to easily verify what is in it.
     /**
      * @notice Sets the manageRoot.
@@ -111,8 +114,8 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      * @notice Sets the rawDataDecoderAndSanitizer.
      */
     function setRawDataDecoderAndSanitizer(address _rawDataDecoderAndSanitizer) external onlyRole(ADMIN_ROLE) {
-        address oldRawDataDecoderAndSanitizer = address(rawDataDecoderAndSanitizer);
-        rawDataDecoderAndSanitizer = RawDataDecoderAndSanitizer(_rawDataDecoderAndSanitizer);
+        address oldRawDataDecoderAndSanitizer = rawDataDecoderAndSanitizer;
+        rawDataDecoderAndSanitizer = _rawDataDecoderAndSanitizer;
         emit RawDataDecoderAndSanitizerUpdated(oldRawDataDecoderAndSanitizer, _rawDataDecoderAndSanitizer);
     }
 
@@ -124,33 +127,24 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      */
     function manageVaultWithMerkleVerification(
         bytes32[][] calldata manageProofs,
-        string[] calldata functionSignatures,
         address[] calldata targets,
         bytes[] calldata targetData,
         uint256[] calldata values
-    ) external {
-        // The only way ongoingManage is true is if we are already in a `manageVaultWithMerkleVerification`
-        // call, so we only need to check role if it is false.
-        if (!ongoingManage) _checkRole(STRATEGIST_ROLE);
-
-        ongoingManage = true;
-
+    ) external onlyRole(STRATEGIST_ROLE) {
         uint256 targetsLength = targets.length;
-        require(targetsLength == manageProofs.length, "Invalid target proof length");
-        require(targetsLength == functionSignatures.length, "Invalid function signatures length");
-        require(targetsLength == targetData.length, "Invalid data length");
-        require(targetsLength == values.length, "Invalid values length");
+        if (targetsLength != manageProofs.length) revert("Invalid target proof length");
+        if (targetsLength != targetData.length) revert("Invalid data length");
+        if (targetsLength != values.length) revert("Invalid values length");
 
         // Read state and save it in memory.
         VerifyData memory vd =
             VerifyData({currentManageRoot: manageRoot, currentRawDataDecoderAndSanitizer: rawDataDecoderAndSanitizer});
 
         for (uint256 i; i < targetsLength; ++i) {
-            _verifyCallData(vd, manageProofs[i], functionSignatures[i], targets[i], targetData[i]);
+            // Mem expansion cost seems to only add less than 1k gas to calls so not that big of a deal
+            _verifyCallData(vd, manageProofs[i], targets[i], targetData[i]);
             vault.manage(targets[i], targetData[i], values[i]);
         }
-
-        ongoingManage = false;
 
         emit BoringVaultManaged(targetsLength);
     }
@@ -158,7 +152,30 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     // ========================================= FLASH LOAN FUNCTIONS =========================================
 
     /**
+     * @notice In order to perform a flash loan,
+     *         1) Merkle root must contain the leaf(address(this), this.flashLoan.selector, ARGUMENT_ADDRESSES ...)
+     *         2) Strategist must initiate the flash loan using `manageVaultWithMerkleVerification`
+     *         3) balancerVault MUST callback to this contract with the same userData
+     */
+    function flashLoan(
+        address recipient,
+        address[] calldata tokens,
+        uint256[] calldata amounts,
+        bytes calldata userData
+    ) external {
+        if (msg.sender != address(vault)) revert("wrong caller");
+        flashLoanIntentHash = keccak256(userData);
+        performingFlashLoan = true;
+        balancerVault.flashLoan(recipient, tokens, amounts, userData);
+        performingFlashLoan = false;
+        if (flashLoanIntentHash != bytes32(0)) revert("flash loan not executed");
+    }
+
+    /**
      * @notice Add support for balancer flash loans.
+     * @dev userData can optionally have salt encoded at the end of it, in order to change the intentHash,
+     *      if a flash loan is exact userData is being repeated, and their is fear of 3rd parties
+     *      front-running the rebalance.
      */
     function receiveFlashLoan(
         address[] calldata tokens,
@@ -166,23 +183,25 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         uint256[] calldata feeAmounts,
         bytes calldata userData
     ) external {
-        require(msg.sender == address(balancerVault), "wrong caller");
-        require(ongoingManage, "not being managed");
+        if (msg.sender != address(balancerVault)) revert("wrong caller");
+        if (!performingFlashLoan) revert("no flash loan");
+
+        // Validate userData using intentHash.
+        bytes32 intentHash = keccak256(userData);
+        if (intentHash != flashLoanIntentHash) revert("Intent hash mismatch");
+        // reset intent hash to prevent replays.
+        flashLoanIntentHash = bytes32(0);
+
         // Transfer tokens to vault.
         for (uint256 i = 0; i < amounts.length; ++i) {
             ERC20(tokens[i]).safeTransfer(address(vault), amounts[i]);
         }
         {
-            (
-                bytes32[][] memory manageProofs,
-                string[] memory functionSignatures,
-                address[] memory targets,
-                bytes[] memory data,
-                uint256[] memory values
-            ) = abi.decode(userData, (bytes32[][], string[], address[], bytes[], uint256[]));
+            (bytes32[][] memory manageProofs, address[] memory targets, bytes[] memory data, uint256[] memory values) =
+                abi.decode(userData, (bytes32[][], address[], bytes[], uint256[]));
 
             ManagerWithMerkleVerification(address(this)).manageVaultWithMerkleVerification(
-                manageProofs, functionSignatures, targets, data, values
+                manageProofs, targets, data, values
             );
         }
 
@@ -205,24 +224,18 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     function _verifyCallData(
         VerifyData memory vd,
         bytes32[] calldata manageProof,
-        string calldata functionSignature,
         address target,
         bytes calldata targetData
     ) internal view {
         bytes4 providedSelector = bytes4(targetData);
-        bytes4 derivedSelector = bytes4(keccak256(abi.encodePacked(functionSignature)));
-
-        // Verify provided and derived selectors match.
-        require(providedSelector == derivedSelector, "Function Selector Mismatch");
 
         // Use address decoder to get addresses in call data.
-        address[] memory argumentAddresses = vd.currentRawDataDecoderAndSanitizer.decodeAndSanitizeRawData(
-            address(vault), functionSignature, targetData[4:]
-        ); // Slice 4 bytes away to remove function selector.
-        require(
-            _verifyManageProof(vd.currentManageRoot, manageProof, target, providedSelector, argumentAddresses),
-            "Failed to verify manage call"
-        );
+        address[] memory argumentAddresses =
+            abi.decode(vd.currentRawDataDecoderAndSanitizer.functionStaticCall(targetData), (address[]));
+
+        if (!_verifyManageProof(vd.currentManageRoot, manageProof, target, providedSelector, argumentAddresses)) {
+            revert("Failed to verify manage call");
+        }
     }
 
     /**
