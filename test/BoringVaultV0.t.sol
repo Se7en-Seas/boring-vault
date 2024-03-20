@@ -123,19 +123,20 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
 
     function testComplexStrategy() external {
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
-        leafs[0] = ManageLeaf(address(EETH), "approve(address,uint256)", new address[](1));
+        leafs[0] = ManageLeaf(address(EETH), false, "approve(address,uint256)", new address[](1));
         leafs[0].argumentAddresses[0] = address(WEETH);
-        leafs[1] = ManageLeaf(address(WEETH), "approve(address,uint256)", new address[](1));
+        leafs[1] = ManageLeaf(address(WEETH), false, "approve(address,uint256)", new address[](1));
         leafs[1].argumentAddresses[0] = morphoBlue;
-        leafs[2] = ManageLeaf(address(WEETH), "wrap(uint256)", new address[](0));
-        leafs[3] = ManageLeaf(address(WEETH), "unwrap(uint256)", new address[](0));
-        leafs[4] = ManageLeaf(address(manager), "flashLoan(address,address[],uint256[],bytes)", new address[](2));
+        leafs[2] = ManageLeaf(address(WEETH), false, "wrap(uint256)", new address[](0));
+        leafs[3] = ManageLeaf(address(WEETH), false, "unwrap(uint256)", new address[](0));
+        leafs[4] = ManageLeaf(address(manager), false, "flashLoan(address,address[],uint256[],bytes)", new address[](2));
         leafs[4].argumentAddresses[0] = address(manager);
         leafs[4].argumentAddresses[1] = address(WETH);
-        leafs[5] = ManageLeaf(address(WETH), "withdraw(uint256)", new address[](0));
-        leafs[6] = ManageLeaf(address(EETH_LIQUIDITY_POOL), "deposit()", new address[](0));
+        leafs[5] = ManageLeaf(address(WETH), false, "withdraw(uint256)", new address[](0));
+        leafs[6] = ManageLeaf(address(EETH_LIQUIDITY_POOL), true, "deposit()", new address[](0));
         leafs[7] = ManageLeaf(
             morphoBlue,
+            false,
             "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)",
             new address[](5)
         );
@@ -146,6 +147,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         leafs[7].argumentAddresses[4] = address(boringVault);
         leafs[8] = ManageLeaf(
             morphoBlue,
+            false,
             "borrow((address,address,address,address,uint256),uint256,uint256,address,address)",
             new address[](6)
         );
@@ -155,9 +157,9 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         leafs[8].argumentAddresses[3] = weEthIrm;
         leafs[8].argumentAddresses[4] = address(boringVault);
         leafs[8].argumentAddresses[5] = address(boringVault);
-        leafs[9] = ManageLeaf(address(WETH), "approve(address,uint256)", new address[](1));
+        leafs[9] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
         leafs[9].argumentAddresses[0] = uniswapV3PositionManager;
-        leafs[10] = ManageLeaf(address(WEETH), "approve(address,uint256)", new address[](1));
+        leafs[10] = ManageLeaf(address(WEETH), false, "approve(address,uint256)", new address[](1));
         leafs[10].argumentAddresses[0] = uniswapV3PositionManager;
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
@@ -335,7 +337,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         for (uint256 i; i < manageLeafs.length; ++i) {
             // Generate manage proof.
             bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, selector);
+            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, manageLeafs[i].canSendValue, selector);
             uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
             for (uint256 j; j < argumentAddressesLength; ++j) {
                 rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
@@ -381,6 +383,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
 
     struct ManageLeaf {
         address target;
+        bool canSendValue;
         string signature;
         address[] argumentAddresses;
     }
@@ -391,7 +394,7 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         leafs[0] = new bytes32[](leafsLength);
         for (uint256 i; i < leafsLength; ++i) {
             bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, selector);
+            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, manageLeafs[i].canSendValue, selector);
             uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
             for (uint256 j; j < argumentAddressesLength; ++j) {
                 rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);

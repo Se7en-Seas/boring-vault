@@ -142,7 +142,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
         for (uint256 i; i < targetsLength; ++i) {
             // Mem expansion cost seems to only add less than 1k gas to calls so not that big of a deal
-            _verifyCallData(vd, manageProofs[i], targets[i], targetData[i]);
+            _verifyCallData(vd, manageProofs[i], targets[i], values[i], targetData[i]);
             vault.manage(targets[i], targetData[i], values[i]);
         }
 
@@ -225,6 +225,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         VerifyData memory vd,
         bytes32[] calldata manageProof,
         address target,
+        uint256 value,
         bytes calldata targetData
     ) internal view {
         bytes4 providedSelector = bytes4(targetData);
@@ -233,7 +234,8 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         address[] memory argumentAddresses =
             abi.decode(vd.currentRawDataDecoderAndSanitizer.functionStaticCall(targetData), (address[]));
 
-        if (!_verifyManageProof(vd.currentManageRoot, manageProof, target, providedSelector, argumentAddresses)) {
+        if (!_verifyManageProof(vd.currentManageRoot, manageProof, target, value, providedSelector, argumentAddresses))
+        {
             revert("Failed to verify manage call");
         }
     }
@@ -245,10 +247,12 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         bytes32 root,
         bytes32[] calldata proof,
         address target,
+        uint256 value,
         bytes4 selector,
         address[] memory argumentAddresses
     ) internal pure returns (bool) {
-        bytes memory rawDigest = abi.encodePacked(target, selector);
+        bool valueNonZero = value > 0;
+        bytes memory rawDigest = abi.encodePacked(target, valueNonZero, selector);
         uint256 argumentAddressesLength = argumentAddresses.length;
         for (uint256 i; i < argumentAddressesLength; ++i) {
             rawDigest = abi.encodePacked(rawDigest, argumentAddresses[i]);
