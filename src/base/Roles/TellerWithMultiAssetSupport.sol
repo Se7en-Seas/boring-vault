@@ -33,7 +33,10 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
      */
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE"); // can turn off normal user deposits and withdraws
 
-    bytes32 public constant DEPOSIT_REVERTER_ROLE = keccak256("DEPOSIT_REVERTER_ROLE"); // can revert pending deposits
+    /**
+     * @notice Accounts with this role are allowed to call `refundDeposit`.
+     */
+    bytes32 public constant DEPOSIT_REFUNDER_ROLE = keccak256("DEPOSIT_REFUNDER_ROLE"); // can revert pending deposits
 
     /**
      * @notice Native address used to tell the contract to handle native asset deposits.
@@ -57,8 +60,17 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
      */
     bool public isPaused;
 
-    uint248 public depositNonce = 1;
-    // TODO pack this?
+    /**
+     * @notice The deposit nonce used to map to a deposit hash.
+     */
+    uint96 public depositNonce = 1;
+
+    /**
+     * @notice After deposits, shares are locked to the msg.sender's address
+     *         for `shareLockPeriod`.
+     * @dev During this time all trasnfers from msg.sender will revert, and
+     *      deposits are refundable.
+     */
     uint64 public shareLockPeriod;
 
     /**
@@ -175,10 +187,10 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
     // TODO permit deposit
     // TODO should we verify share locker contract is set in vault?
     /**
-     * @notice Allows DEPOSIT_REVERTER_ROLE to revert a pending deposit.
+     * @notice Allows DEPOSIT_REFUNDER_ROLE to revert a pending deposit.
      * @dev Once a deposit share lock period has passed, it can no longer be reverted.
      */
-    function revertDeposit(
+    function refundDeposit(
         uint256 nonce,
         address receiver,
         address depositAsset,
@@ -186,7 +198,7 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
         uint256 shareAmount,
         uint256 depositTimestamp,
         uint256 shareLockUpPeriodAtTimeOfDeposit
-    ) external onlyRole(DEPOSIT_REVERTER_ROLE) {
+    ) external onlyRole(DEPOSIT_REFUNDER_ROLE) {
         if ((block.timestamp - depositTimestamp) > shareLockUpPeriodAtTimeOfDeposit) {
             // Shares are already unlocked, so we can not revert deposit.
             revert("Shares already unlocked");

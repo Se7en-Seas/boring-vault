@@ -59,7 +59,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         teller.grantRole(teller.ADMIN_ROLE(), address(this));
         teller.grantRole(teller.ON_RAMP_ROLE(), address(this));
         teller.grantRole(teller.OFF_RAMP_ROLE(), address(this));
-        teller.grantRole(teller.DEPOSIT_REVERTER_ROLE(), address(this));
+        teller.grantRole(teller.DEPOSIT_REFUNDER_ROLE(), address(this));
 
         teller.addAsset(WETH);
         teller.addAsset(ERC20(NATIVE));
@@ -97,14 +97,14 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
 
         // If depositReverter tries to revert the first deposit, call fails.
         vm.expectRevert(bytes("Shares already unlocked"));
-        teller.revertDeposit(1, address(this), address(WETH), wETH_amount, shares0, firstDepositTimestamp, 1 days);
+        teller.refundDeposit(1, address(this), address(WETH), wETH_amount, shares0, firstDepositTimestamp, 1 days);
 
         // However the second deposit is still revertable.
-        teller.revertDeposit(2, address(this), address(EETH), eETH_amount, shares1, secondDepositTimestamp, 1 days);
+        teller.refundDeposit(2, address(this), address(EETH), eETH_amount, shares1, secondDepositTimestamp, 1 days);
 
         // Calling revert deposit again should revert.
         vm.expectRevert(bytes("invalid deposit"));
-        teller.revertDeposit(2, address(this), address(EETH), eETH_amount, shares1, secondDepositTimestamp, 1 days);
+        teller.refundDeposit(2, address(this), address(EETH), eETH_amount, shares1, secondDepositTimestamp, 1 days);
     }
 
     function testUserDepositPeggedAssets(uint256 amount) external {
