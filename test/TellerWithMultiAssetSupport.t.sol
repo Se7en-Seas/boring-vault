@@ -119,10 +119,13 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         WETH.safeApprove(address(boringVault), wETH_amount);
         EETH.safeApprove(address(boringVault), eETH_amount);
 
+        uint256 gas = gasleft();
         teller.deposit(WETH, wETH_amount, 0);
+        console.log("Deposit Gas", gas - gasleft());
         teller.deposit(EETH, eETH_amount, 0);
 
         uint256 expected_shares = 2 * amount;
+        revert();
 
         assertEq(boringVault.balanceOf(address(this)), expected_shares, "Should have received expected shares");
     }
@@ -157,6 +160,79 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         uint256 expected_shares = 2 * amount;
 
         assertEq(boringVault.balanceOf(address(this)), expected_shares, "Should have received expected shares");
+    }
+
+    function testUserPermitDeposit(uint256 amount) external {
+        amount = bound(amount, 0.0001e18, 10_000e18);
+
+        uint256 userKey = 111;
+        address user = vm.addr(userKey);
+
+        uint256 weETH_amount = amount.mulDivDown(1e18, IRateProvider(WEETH_RATE_PROVIDER).getRate());
+        deal(address(WEETH), user, weETH_amount);
+        // function sign(uint256 privateKey, bytes32 digest) external pure returns (uint8 v, bytes32 r, bytes32 s);
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                WEETH.DOMAIN_SEPARATOR(),
+                keccak256(
+                    abi.encode(
+                        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
+                        user,
+                        address(boringVault),
+                        weETH_amount,
+                        WEETH.nonces(user),
+                        block.timestamp
+                    )
+                )
+            )
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userKey, digest);
+
+        vm.startPrank(user);
+        teller.depositWithPermit(WEETH, weETH_amount, 0, block.timestamp, v, r, s);
+        vm.stopPrank();
+    }
+
+    function testUserPermitDepositWithFrontRunning(uint256 amount) external {
+        amount = bound(amount, 0.0001e18, 10_000e18);
+
+        uint256 userKey = 111;
+        address user = vm.addr(userKey);
+
+        uint256 weETH_amount = amount.mulDivDown(1e18, IRateProvider(WEETH_RATE_PROVIDER).getRate());
+        deal(address(WEETH), user, weETH_amount);
+        // function sign(uint256 privateKey, bytes32 digest) external pure returns (uint8 v, bytes32 r, bytes32 s);
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                WEETH.DOMAIN_SEPARATOR(),
+                keccak256(
+                    abi.encode(
+                        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
+                        user,
+                        address(boringVault),
+                        weETH_amount,
+                        WEETH.nonces(user),
+                        block.timestamp
+                    )
+                )
+            )
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userKey, digest);
+
+        // Assume attacker seems users TX in the mem pool and tries griefing them by calling `permit` first.
+        address attacker = vm.addr(0xDEAD);
+        vm.startPrank(attacker);
+        WEETH.permit(user, address(boringVault), weETH_amount, block.timestamp, v, r, s);
+        vm.stopPrank();
+
+        // Users TX is still successful.
+        vm.startPrank(user);
+        teller.depositWithPermit(WEETH, weETH_amount, 0, block.timestamp, v, r, s);
+        vm.stopPrank();
+
+        assertTrue(boringVault.balanceOf(user) > 0, "Should have received shares");
     }
 
     function testBulkDeposit(uint256 amount) external {

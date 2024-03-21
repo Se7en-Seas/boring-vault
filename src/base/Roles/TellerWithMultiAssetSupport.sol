@@ -248,15 +248,12 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
             shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender);
         }
 
-        shareUnlockTime[msg.sender] = block.timestamp + shareLockPeriod;
-
-        uint256 nonce = depositNonce;
-        publicDepositHistory[nonce] =
-            keccak256(abi.encode(msg.sender, depositAsset, depositAmount, shares, block.timestamp, shareLockPeriod));
-        depositNonce++;
-        emit Deposit(nonce, msg.sender, address(depositAsset), depositAmount, shares, block.timestamp, shareLockPeriod);
+        _afterPublicDeposit(msg.sender, depositAsset, depositAmount, shares, shareLockPeriod);
     }
 
+    /**
+     * @notice Allows users to deposit into BoringVault using permit.
+     */
     function depositWithPermit(
         ERC20 depositAsset,
         uint256 depositAmount,
@@ -266,21 +263,18 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
         bytes32 r,
         bytes32 s
     ) external returns (uint256 shares) {
-        try depositAsset.permit(msg.sender, address(this), depositAmount, deadline, v, r, s) {}
+        if (isPaused) revert("paused");
+        if (!isSupported[depositAsset]) revert("asset not supported");
+
+        try depositAsset.permit(msg.sender, address(vault), depositAmount, deadline, v, r, s) {}
         catch {
-            if (depositAsset.allowance(msg.sender, address(this)) < depositAmount) {
+            if (depositAsset.allowance(msg.sender, address(vault)) < depositAmount) {
                 revert("permit failed and allowance too low");
             }
         }
         shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender);
 
-        shareUnlockTime[msg.sender] = block.timestamp + shareLockPeriod;
-
-        uint256 nonce = depositNonce;
-        publicDepositHistory[nonce] =
-            keccak256(abi.encode(msg.sender, depositAsset, depositAmount, shares, block.timestamp, shareLockPeriod));
-        depositNonce++;
-        emit Deposit(nonce, msg.sender, address(depositAsset), depositAmount, shares, block.timestamp, shareLockPeriod);
+        _afterPublicDeposit(msg.sender, depositAsset, depositAmount, shares, shareLockPeriod);
     }
 
     /**
@@ -331,5 +325,24 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
         shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(depositAsset));
         if (shares < minimumMint) revert("minimumMint");
         vault.enter(msg.sender, depositAsset, depositAmount, to, shares);
+    }
+
+    /**
+     * @notice Handle share lock logic, and event.
+     */
+    function _afterPublicDeposit(
+        address user,
+        ERC20 depositAsset,
+        uint256 depositAmount,
+        uint256 shares,
+        uint256 currentShareLockPeriod
+    ) internal {
+        shareUnlockTime[user] = block.timestamp + currentShareLockPeriod;
+
+        uint256 nonce = depositNonce;
+        publicDepositHistory[nonce] =
+            keccak256(abi.encode(user, depositAsset, depositAmount, shares, block.timestamp, currentShareLockPeriod));
+        depositNonce++;
+        emit Deposit(nonce, user, address(depositAsset), depositAmount, shares, block.timestamp, currentShareLockPeriod);
     }
 }
