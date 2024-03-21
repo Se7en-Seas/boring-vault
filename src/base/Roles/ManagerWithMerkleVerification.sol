@@ -6,6 +6,7 @@ import {BoringVault} from "src/base/BoringVault.sol";
 import {AccessControlDefaultAdminRules} from
     "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import {MerkleProofLib} from "@solmate/utils/MerkleProofLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
@@ -259,5 +260,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         }
         bytes32 leaf = keccak256(rawDigest);
         return MerkleProof.verifyCalldata(proof, root, leaf);
+        // TODO this is SLIGHTLY more gas efficient, but uses more assembly
+        // return MerkleProofLib.verify(proof, root, leaf);
     }
 }

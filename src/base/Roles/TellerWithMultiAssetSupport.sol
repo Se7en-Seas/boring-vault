@@ -244,12 +244,35 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
             nativeWrapper.safeApprove(address(vault), depositAmount);
             vault.enter(address(this), nativeWrapper, depositAmount, msg.sender, shares);
         } else {
-            if (depositAmount == 0) revert("zero deposit");
             if (msg.value > 0) revert("dual deposit");
-            shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(depositAsset));
-            if (shares < minimumMint) revert("minimumMint");
-            vault.enter(msg.sender, depositAsset, depositAmount, msg.sender, shares);
+            shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender);
         }
+
+        shareUnlockTime[msg.sender] = block.timestamp + shareLockPeriod;
+
+        uint256 nonce = depositNonce;
+        publicDepositHistory[nonce] =
+            keccak256(abi.encode(msg.sender, depositAsset, depositAmount, shares, block.timestamp, shareLockPeriod));
+        depositNonce++;
+        emit Deposit(nonce, msg.sender, address(depositAsset), depositAmount, shares, block.timestamp, shareLockPeriod);
+    }
+
+    function depositWithPermit(
+        ERC20 depositAsset,
+        uint256 depositAmount,
+        uint256 minimumMint,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 shares) {
+        try depositAsset.permit(msg.sender, address(this), depositAmount, deadline, v, r, s) {}
+        catch {
+            if (depositAsset.allowance(msg.sender, address(this)) < depositAmount) {
+                revert("permit failed and allowance too low");
+            }
+        }
+        shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender);
 
         shareUnlockTime[msg.sender] = block.timestamp + shareLockPeriod;
 
@@ -269,10 +292,7 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
         onlyRole(ON_RAMP_ROLE)
         returns (uint256 shares)
     {
-        if (depositAmount == 0) revert("zero deposit");
-        shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(depositAsset));
-        if (shares < minimumMint) revert("minimumMint");
-        vault.enter(msg.sender, depositAsset, depositAmount, to, shares);
+        shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, to);
         emit BulkDeposit(address(depositAsset), depositAmount);
     }
 
@@ -296,5 +316,20 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
      */
     receive() external payable {
         deposit(ERC20(NATIVE), msg.value, 0);
+    }
+
+    // ========================================= INTERNAL HELPER FUNCTIONS =========================================
+
+    /**
+     * @notice Implements a common ERC20 deposit into BoringVault.
+     */
+    function _erc20Deposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint, address to)
+        internal
+        returns (uint256 shares)
+    {
+        if (depositAmount == 0) revert("zero deposit");
+        shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(depositAsset));
+        if (shares < minimumMint) revert("minimumMint");
+        vault.enter(msg.sender, depositAsset, depositAmount, to, shares);
     }
 }
