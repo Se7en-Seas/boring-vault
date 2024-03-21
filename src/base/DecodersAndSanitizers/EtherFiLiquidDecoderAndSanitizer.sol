@@ -13,7 +13,6 @@ import {EtherFiDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protoco
 import {NativeWrapperDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/NativeWrapperDecoderAndSanitizer.sol";
 
-// TODO maybe common collision functions should be moved to BaseDecoderAndSanitizer?
 contract EtherFiLiquidDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
     BalancerV2DecoderAndSanitizer,

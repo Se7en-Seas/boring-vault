@@ -97,7 +97,7 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
     );
     event BulkDeposit(address asset, uint256 depositAmount);
     event BulkWithdraw(address asset, uint256 shareAmount);
-    event DepositReverted(uint256 nonce, bytes32 depositHash);
+    event DepositRefunded(uint256 nonce, bytes32 depositHash, address user);
 
     //============================== IMMUTABLES ===============================
 
@@ -184,11 +184,14 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
     }
 
     // ========================================= REVERT DEPOSIT FUNCTIONS =========================================
-    // TODO permit deposit
-    // TODO should we verify share locker contract is set in vault?
+
     /**
      * @notice Allows DEPOSIT_REFUNDER_ROLE to revert a pending deposit.
      * @dev Once a deposit share lock period has passed, it can no longer be reverted.
+     * @dev It is possible the admin does not setup the BoringVault to call the transfer hook,
+     *      but this contract can still be saving share lock state. In the event this happens
+     *      deposits are still refundable if the user has not transferred their shares.
+     *      But there is no guarantee that the user has no transferred their shares.
      */
     function refundDeposit(
         uint256 nonce,
@@ -218,7 +221,7 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
         // Burn shares and refund assets to receiver.
         vault.exit(receiver, ERC20(depositAsset), depositAmount, receiver, shareAmount);
 
-        emit DepositReverted(nonce, depositHash);
+        emit DepositRefunded(nonce, depositHash, receiver);
     }
 
     // ========================================= USER FUNCTIONS =========================================

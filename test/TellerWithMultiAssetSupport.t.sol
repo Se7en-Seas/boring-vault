@@ -119,13 +119,10 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         WETH.safeApprove(address(boringVault), wETH_amount);
         EETH.safeApprove(address(boringVault), eETH_amount);
 
-        uint256 gas = gasleft();
         teller.deposit(WETH, wETH_amount, 0);
-        console.log("Deposit Gas", gas - gasleft());
         teller.deposit(EETH, eETH_amount, 0);
 
         uint256 expected_shares = 2 * amount;
-        revert();
 
         assertEq(boringVault.balanceOf(address(this)), expected_shares, "Should have received expected shares");
     }
