@@ -128,6 +128,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      */
     function manageVaultWithMerkleVerification(
         bytes32[][] calldata manageProofs,
+        address[] calldata decodersAndSanitizers,
         address[] calldata targets,
         bytes[] calldata targetData,
         uint256[] calldata values
@@ -143,7 +144,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
         for (uint256 i; i < targetsLength; ++i) {
             // Mem expansion cost seems to only add less than 1k gas to calls so not that big of a deal
-            _verifyCallData(vd, manageProofs[i], targets[i], values[i], targetData[i]);
+            _verifyCallData(vd, manageProofs[i], decodersAndSanitizers[i], targets[i], values[i], targetData[i]);
             vault.manage(targets[i], targetData[i], values[i]);
         }
 
@@ -198,11 +199,16 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
             ERC20(tokens[i]).safeTransfer(address(vault), amounts[i]);
         }
         {
-            (bytes32[][] memory manageProofs, address[] memory targets, bytes[] memory data, uint256[] memory values) =
-                abi.decode(userData, (bytes32[][], address[], bytes[], uint256[]));
+            (
+                bytes32[][] memory manageProofs,
+                address[] memory decodersAndSanitizers,
+                address[] memory targets,
+                bytes[] memory data,
+                uint256[] memory values
+            ) = abi.decode(userData, (bytes32[][], address[], address[], bytes[], uint256[]));
 
             ManagerWithMerkleVerification(address(this)).manageVaultWithMerkleVerification(
-                manageProofs, targets, data, values
+                manageProofs, decodersAndSanitizers, targets, data, values
             );
         }
 
@@ -225,6 +231,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     function _verifyCallData(
         VerifyData memory vd,
         bytes32[] calldata manageProof,
+        address decoderAndSanitizer,
         address target,
         uint256 value,
         bytes calldata targetData
@@ -232,11 +239,19 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         bytes4 providedSelector = bytes4(targetData);
 
         // Use address decoder to get addresses in call data.
-        address[] memory argumentAddresses =
-            abi.decode(vd.currentRawDataDecoderAndSanitizer.functionStaticCall(targetData), (address[]));
+        address[] memory argumentAddresses = abi.decode(decoderAndSanitizer.functionStaticCall(targetData), (address[]));
 
-        if (!_verifyManageProof(vd.currentManageRoot, manageProof, target, value, providedSelector, argumentAddresses))
-        {
+        if (
+            !_verifyManageProof(
+                vd.currentManageRoot,
+                manageProof,
+                target,
+                decoderAndSanitizer,
+                value,
+                providedSelector,
+                argumentAddresses
+            )
+        ) {
             revert("Failed to verify manage call");
         }
     }
@@ -248,12 +263,13 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         bytes32 root,
         bytes32[] calldata proof,
         address target,
+        address decoderAndSanitizer,
         uint256 value,
         bytes4 selector,
         address[] memory argumentAddresses
     ) internal pure returns (bool) {
         bool valueNonZero = value > 0;
-        bytes memory rawDigest = abi.encodePacked(target, valueNonZero, selector);
+        bytes memory rawDigest = abi.encodePacked(decoderAndSanitizer, target, valueNonZero, selector);
         uint256 argumentAddressesLength = argumentAddresses.length;
         for (uint256 i; i < argumentAddressesLength; ++i) {
             rawDigest = abi.encodePacked(rawDigest, argumentAddresses[i]);
