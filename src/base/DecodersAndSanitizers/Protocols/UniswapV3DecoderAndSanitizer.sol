@@ -18,6 +18,7 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
 
     //============================== UNISWAP V3 ===============================
 
+    // TODO this could probs be made more efficient since we can slice calldata
     function exactInput(DecoderCustomTypes.ExactInputParams calldata params)
         external
         pure
