@@ -228,7 +228,16 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
 
             manageProofs = _getProofsUsingTree(flashLoanLeafs, manageTree);
 
-            flashLoanData = abi.encode(manageProofs, targets, targetData, valuesInFlashloan);
+            address[] memory dAs = new address[](7);
+            dAs[0] = rawDataDecoderAndSanitizer;
+            dAs[1] = rawDataDecoderAndSanitizer;
+            dAs[2] = rawDataDecoderAndSanitizer;
+            dAs[3] = rawDataDecoderAndSanitizer;
+            dAs[4] = rawDataDecoderAndSanitizer;
+            dAs[5] = rawDataDecoderAndSanitizer;
+            dAs[6] = rawDataDecoderAndSanitizer;
+
+            flashLoanData = abi.encode(manageProofs, dAs, targets, targetData, valuesInFlashloan);
         }
 
         string[] memory functionSignatures = new string[](5);
@@ -280,10 +289,15 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         // - unwrap, then mint EETH
         // - wrap EETH
         // - use 200 weETH as collateral on morpho blue, and borrow 90 weth to repay loan.
-
+        address[] memory decodersAndSanitizers = new address[](5);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
         vm.startPrank(strategist);
         uint256 gas = gasleft();
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
         console.log("Gas For Rebalance", gas - gasleft());
         vm.stopPrank();
 
@@ -330,14 +344,16 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
 
     function _getProofsUsingTree(ManageLeaf[] memory manageLeafs, bytes32[][] memory tree)
         internal
-        pure
+        view
         returns (bytes32[][] memory proofs)
     {
         proofs = new bytes32[][](manageLeafs.length);
         for (uint256 i; i < manageLeafs.length; ++i) {
             // Generate manage proof.
             bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, manageLeafs[i].canSendValue, selector);
+            bytes memory rawDigest = abi.encodePacked(
+                rawDataDecoderAndSanitizer, manageLeafs[i].target, manageLeafs[i].canSendValue, selector
+            );
             uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
             for (uint256 j; j < argumentAddressesLength; ++j) {
                 rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
@@ -388,13 +404,15 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         address[] argumentAddresses;
     }
 
-    function _generateMerkleTree(ManageLeaf[] memory manageLeafs) internal pure returns (bytes32[][] memory tree) {
+    function _generateMerkleTree(ManageLeaf[] memory manageLeafs) internal view returns (bytes32[][] memory tree) {
         uint256 leafsLength = manageLeafs.length;
         bytes32[][] memory leafs = new bytes32[][](1);
         leafs[0] = new bytes32[](leafsLength);
         for (uint256 i; i < leafsLength; ++i) {
             bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, manageLeafs[i].canSendValue, selector);
+            bytes memory rawDigest = abi.encodePacked(
+                rawDataDecoderAndSanitizer, manageLeafs[i].target, manageLeafs[i].canSendValue, selector
+            );
             uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
             for (uint256 j; j < argumentAddressesLength; ++j) {
                 rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);

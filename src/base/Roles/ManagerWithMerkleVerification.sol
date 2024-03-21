@@ -137,6 +137,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         if (targetsLength != manageProofs.length) revert("Invalid target proof length");
         if (targetsLength != targetData.length) revert("Invalid data length");
         if (targetsLength != values.length) revert("Invalid values length");
+        if (targetsLength != decodersAndSanitizers.length) revert("Invalid decodersAndSanitizers length");
 
         // Read state and save it in memory.
         VerifyData memory vd =
