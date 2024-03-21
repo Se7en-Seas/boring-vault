@@ -7,3 +7,6 @@
 [submodule "lib/openzeppelin-contracts"]
 	path = lib/openzeppelin-contracts
 	url = https://github.com/openzeppelin/openzeppelin-contracts
+[submodule "lib/cellar-contracts"]
+	path = lib/cellar-contracts
+	url = https://github.com/se7en-seas/cellar-contracts
