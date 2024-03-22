@@ -15,8 +15,7 @@ contract BaseDecoderAndSanitizer {
         boringVault = _boringVault;
     }
 
-    function approve(address spender, uint256) external pure returns (address[] memory addressesFound) {
-        addressesFound = new address[](1);
-        addressesFound[0] = spender;
+    function approve(address spender, uint256) external pure returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(spender);
     }
 }

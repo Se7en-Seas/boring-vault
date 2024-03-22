@@ -209,7 +209,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         bytes calldata targetData
     ) internal view {
         // Use address decoder to get addresses in call data.
-        address[] memory argumentAddresses = abi.decode(decoderAndSanitizer.functionStaticCall(targetData), (address[]));
+        bytes memory packedArgumentAddresses = abi.decode(decoderAndSanitizer.functionStaticCall(targetData), (bytes));
 
         if (
             !_verifyManageProof(
@@ -219,7 +219,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
                 decoderAndSanitizer,
                 value,
                 bytes4(targetData),
-                argumentAddresses
+                packedArgumentAddresses
             )
         ) {
             revert("Failed to verify manage call");
@@ -236,14 +236,11 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         address decoderAndSanitizer,
         uint256 value,
         bytes4 selector,
-        address[] memory argumentAddresses
+        bytes memory packedArgumentAddresses
     ) internal pure returns (bool) {
         bool valueNonZero = value > 0;
-        bytes memory rawDigest = abi.encodePacked(decoderAndSanitizer, target, valueNonZero, selector);
-        uint256 argumentAddressesLength = argumentAddresses.length;
-        for (uint256 i; i < argumentAddressesLength; ++i) {
-            rawDigest = abi.encodePacked(rawDigest, argumentAddresses[i]);
-        }
+        bytes memory rawDigest =
+            abi.encodePacked(decoderAndSanitizer, target, valueNonZero, selector, packedArgumentAddresses);
         bytes32 leaf = keccak256(rawDigest);
         return MerkleProofLib.verify(proof, root, leaf);
     }
