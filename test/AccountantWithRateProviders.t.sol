@@ -297,7 +297,9 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     function testReverts() external {
         accountant.pause();
 
-        vm.expectRevert(bytes("paused"));
+        vm.expectRevert(
+            abi.encodeWithSelector(AccountantWithRateProviders.AccountantWithRateProviders__Paused.selector)
+        );
         accountant.updateExchangeRate(0);
 
         address attacker = vm.addr(1);
@@ -307,14 +309,18 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         vm.stopPrank();
 
         vm.startPrank(address(boringVault));
-        vm.expectRevert(bytes("paused"));
+        vm.expectRevert(
+            abi.encodeWithSelector(AccountantWithRateProviders.AccountantWithRateProviders__Paused.selector)
+        );
         accountant.claimFees(WETH);
         vm.stopPrank();
 
         accountant.unpause();
 
         vm.startPrank(address(boringVault));
-        vm.expectRevert(bytes("no fees owed"));
+        vm.expectRevert(
+            abi.encodeWithSelector(AccountantWithRateProviders.AccountantWithRateProviders__ZeroFeesOwed.selector)
+        );
         accountant.claimFees(WETH);
         vm.stopPrank();
 
@@ -326,10 +332,14 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
 
         accountant.pause();
 
-        vm.expectRevert(bytes("paused"));
+        vm.expectRevert(
+            abi.encodeWithSelector(AccountantWithRateProviders.AccountantWithRateProviders__Paused.selector)
+        );
         accountant.getRateSafe();
 
-        vm.expectRevert(bytes("paused"));
+        vm.expectRevert(
+            abi.encodeWithSelector(AccountantWithRateProviders.AccountantWithRateProviders__Paused.selector)
+        );
         accountant.getRateInQuoteSafe(WEETH);
 
         // Trying to getRateInQuote with unsupported token should revert.

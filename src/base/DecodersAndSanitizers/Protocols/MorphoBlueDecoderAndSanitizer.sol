@@ -4,6 +4,10 @@ pragma solidity 0.8.21;
 import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
 
 abstract contract MorphoBlueDecoderAndSanitizer is BaseDecoderAndSanitizer {
+    //============================== ERRORS ===============================
+
+    error MorphoBlueDecoderAndSanitizer__CallbackNotSupported();
+
     //============================== MORPHO BLUE ===============================
 
     function supply(
@@ -14,7 +18,7 @@ abstract contract MorphoBlueDecoderAndSanitizer is BaseDecoderAndSanitizer {
         bytes calldata data
     ) external pure returns (bytes memory addressesFound) {
         // Sanitize raw data
-        require(data.length == 0, "callback not supported");
+        if (data.length > 0) revert MorphoBlueDecoderAndSanitizer__CallbackNotSupported();
         // Return addresses found
         addressesFound = abi.encodePacked(params.loanToken, params.collateralToken, params.oracle, params.irm, onBehalf);
     }
@@ -51,7 +55,8 @@ abstract contract MorphoBlueDecoderAndSanitizer is BaseDecoderAndSanitizer {
         bytes calldata data
     ) external pure returns (bytes memory addressesFound) {
         // Sanitize raw data
-        require(data.length == 0, "callback not supported");
+        if (data.length > 0) revert MorphoBlueDecoderAndSanitizer__CallbackNotSupported();
+
         // Return addresses found
         addressesFound = abi.encodePacked(params.loanToken, params.collateralToken, params.oracle, params.irm, onBehalf);
     }
@@ -63,7 +68,8 @@ abstract contract MorphoBlueDecoderAndSanitizer is BaseDecoderAndSanitizer {
         bytes calldata data
     ) external pure returns (bytes memory addressesFound) {
         // Sanitize raw data
-        require(data.length == 0, "callback not supported");
+        if (data.length > 0) revert MorphoBlueDecoderAndSanitizer__CallbackNotSupported();
+
         // Return addresses found
         addressesFound = abi.encodePacked(params.loanToken, params.collateralToken, params.oracle, params.irm, onBehalf);
     }

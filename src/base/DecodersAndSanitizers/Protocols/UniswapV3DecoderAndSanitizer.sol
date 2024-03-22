@@ -5,6 +5,11 @@ import {INonFungiblePositionManager} from "src/interfaces/RawDataDecoderAndSanit
 import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
 
 abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
+    //============================== ERRORS ===============================
+
+    error UniswapV3DecoderAndSanitizer__BadPathFormat();
+    error UniswapV3DecoderAndSanitizer__BadTokenId();
+
     //============================== IMMUTABLES ===============================
 
     /**
@@ -29,7 +34,7 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         // Determine how many addresses are in params.path.
         uint256 chunkSize = 23; // 3 bytes for uint24 fee, and 20 bytes for address token
         uint256 pathLength = params.path.length;
-        require(pathLength % chunkSize == 20, "wrong path format"); // We expect a remainder of 20
+        if (pathLength % chunkSize != 20) revert UniswapV3DecoderAndSanitizer__BadPathFormat();
         uint256 pathAddressLength = 1 + (pathLength / chunkSize);
         uint256 pathIndex;
         for (uint256 i; i < pathAddressLength; ++i) {
@@ -57,10 +62,9 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         returns (bytes memory addressesFound)
     {
         // Sanitize raw data
-        require(
-            uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) == boringVault,
-            "adding liquidity to a position not owned by vault"
-        );
+        if (uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
+            revert UniswapV3DecoderAndSanitizer__BadTokenId();
+        }
         // No addresses in data
         return addressesFound;
     }
@@ -74,10 +78,10 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         // Sanitize raw data
         // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
         // just for completeness.
-        require(
-            uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) == boringVault,
-            "removing liquidity from a position not owned by vault"
-        );
+        if (uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
+            revert UniswapV3DecoderAndSanitizer__BadTokenId();
+        }
+
         // No addresses in data
         return addressesFound;
     }
@@ -91,10 +95,10 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         // Sanitize raw data
         // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
         // just for completeness.
-        require(
-            uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) == boringVault,
-            "collecting from a position not owned by vault"
-        );
+        if (uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
+            revert UniswapV3DecoderAndSanitizer__BadTokenId();
+        }
+
         // Return addresses found
         addressesFound = abi.encodePacked(params.recipient);
     }
