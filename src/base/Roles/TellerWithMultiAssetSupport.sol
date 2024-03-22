@@ -266,7 +266,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
     /**
      * @dev Depositing this way means users can not set a min value out.
      */
-    receive() external payable requiresAuth {
+    receive() external payable {
         deposit(ERC20(NATIVE), msg.value, 0);
     }
 

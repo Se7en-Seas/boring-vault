@@ -1002,8 +1002,11 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         uint256[] memory amounts;
         uint256[] memory feeAmounts;
 
-        vm.expectRevert(bytes("wrong caller"));
+        address attacker = vm.addr(1);
+        vm.startPrank(attacker);
+        vm.expectRevert(bytes("UNAUTHORIZED"));
         manager.receiveFlashLoan(tokens, amounts, feeAmounts, abi.encode(0));
+        vm.stopPrank();
 
         // Someone else initiated a flash loan
         vm.startPrank(vault);

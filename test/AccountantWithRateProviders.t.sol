@@ -79,6 +79,9 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
             BORING_VAULT_ROLE, address(accountant), AccountantWithRateProviders.claimFees.selector, true
         );
 
+        // Allow the boring vault to receive ETH.
+        rolesAuthority.setPublicCapability(address(boringVault), bytes4(0), true);
+
         rolesAuthority.setUserRole(address(this), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
         rolesAuthority.setUserRole(address(this), UPDATE_EXCHANGE_RATE_ROLE, true);
