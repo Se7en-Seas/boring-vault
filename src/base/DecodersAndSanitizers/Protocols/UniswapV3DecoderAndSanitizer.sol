@@ -18,7 +18,6 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
 
     //============================== UNISWAP V3 ===============================
 
-    // TODO this could probs be made more efficient since we can slice calldata
     function exactInput(DecoderCustomTypes.ExactInputParams calldata params)
         external
         pure
@@ -35,11 +34,7 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         addressesFound = new address[](1 + pathAddressLength);
         uint256 pathIndex;
         for (uint256 i; i < pathAddressLength; ++i) {
-            bytes20 rawAddress;
-            for (uint256 j; j < 20; ++j) {
-                rawAddress |= bytes20(params.path[pathIndex + j]) >> (j * 8);
-            }
-            addressesFound[i] = address(rawAddress);
+            addressesFound[i] = address(bytes20(params.path[pathIndex:pathIndex + 20]));
             pathIndex += chunkSize;
         }
         addressesFound[pathAddressLength] = params.recipient;

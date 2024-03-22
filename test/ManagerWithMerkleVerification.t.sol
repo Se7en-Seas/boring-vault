@@ -44,8 +44,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             address(new EtherFiLiquidDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
 
         boringVault.grantRole(boringVault.MANAGER_ROLE(), address(manager));
-
-        manager.setRawDataDecoderAndSanitizer(address(rawDataDecoderAndSanitizer));
     }
 
     function testManagerMerkleVerificationHappyPath() external {

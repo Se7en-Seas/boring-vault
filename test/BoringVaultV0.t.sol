@@ -82,7 +82,6 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         boringVault.grantRole(boringVault.MINTER_ROLE(), address(teller));
         boringVault.grantRole(boringVault.BURNER_ROLE(), address(teller));
         boringVault.grantRole(boringVault.MANAGER_ROLE(), address(manager));
-        manager.setRawDataDecoderAndSanitizer(address(rawDataDecoderAndSanitizer));
         accountant.setRateProviderData(EETH, true, address(0));
         accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
         teller.grantRole(teller.ADMIN_ROLE(), multisig);
