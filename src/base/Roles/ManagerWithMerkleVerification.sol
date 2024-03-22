@@ -82,7 +82,6 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
     // ========================================= ADMIN FUNCTIONS =========================================
 
-    // TODO I could have the contents of the merkle tree passed in as call data, then we derive the merkle root on chain? That is more gas intensive, but allows people to easily verify what is in it.
     /**
      * @notice Sets the manageRoot.
      */
@@ -239,9 +238,8 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         bytes memory packedArgumentAddresses
     ) internal pure returns (bool) {
         bool valueNonZero = value > 0;
-        bytes memory rawDigest =
-            abi.encodePacked(decoderAndSanitizer, target, valueNonZero, selector, packedArgumentAddresses);
-        bytes32 leaf = keccak256(rawDigest);
+        bytes32 leaf =
+            keccak256(abi.encodePacked(decoderAndSanitizer, target, valueNonZero, selector, packedArgumentAddresses));
         return MerkleProofLib.verify(proof, root, leaf);
     }
 }

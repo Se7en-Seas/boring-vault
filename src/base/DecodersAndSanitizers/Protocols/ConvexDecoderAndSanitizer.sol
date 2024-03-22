@@ -6,18 +6,17 @@ import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndS
 abstract contract ConvexDecoderAndSanitizer is BaseDecoderAndSanitizer {
     //============================== CONVEX ===============================
 
-    function deposit(uint256, uint256, bool) external view virtual returns (address[] memory addressesFound) {
+    function deposit(uint256, uint256, bool) external view virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }
 
-    function withdrawAndUnwrap(uint256, bool) external view virtual returns (address[] memory addressesFound) {
+    function withdrawAndUnwrap(uint256, bool) external view virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }
 
-    function getReward(address _addr, bool) external pure virtual returns (address[] memory addressesFound) {
-        addressesFound = new address[](1);
-        addressesFound[0] = _addr;
+    function getReward(address _addr, bool) external pure virtual returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(_addr);
     }
 }

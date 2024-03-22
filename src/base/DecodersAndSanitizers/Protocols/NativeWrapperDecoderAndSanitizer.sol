@@ -6,12 +6,12 @@ import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndS
 abstract contract NativeWrapperDecoderAndSanitizer is BaseDecoderAndSanitizer {
     //============================== ETHERFI ===============================
 
-    function deposit() external pure virtual returns (address[] memory addressesFound) {
+    function deposit() external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }
 
-    function withdraw(uint256) external pure virtual returns (address[] memory addressesFound) {
+    function withdraw(uint256) external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }
