@@ -114,14 +114,18 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         teller.setShareLockPeriod(2 days);
 
         // If depositReverter tries to revert the first deposit, call fails.
-        vm.expectRevert(bytes("Shares already unlocked"));
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__SharesAreUnLocked.selector)
+        );
         teller.refundDeposit(1, address(this), address(WETH), wETH_amount, shares0, firstDepositTimestamp, 1 days);
 
         // However the second deposit is still revertable.
         teller.refundDeposit(2, address(this), address(EETH), eETH_amount, shares1, secondDepositTimestamp, 1 days);
 
         // Calling revert deposit again should revert.
-        vm.expectRevert(bytes("invalid deposit"));
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__BadDepositHash.selector)
+        );
         teller.refundDeposit(2, address(this), address(EETH), eETH_amount, shares1, secondDepositTimestamp, 1 days);
     }
 
@@ -326,38 +330,60 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
 
         // teller.unpause();
 
-        vm.expectRevert(bytes("asset not supported"));
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__AssetNotSupported.selector)
+        );
         teller.deposit(WETH, 0, 0);
 
         teller.addAsset(WETH);
 
-        vm.expectRevert(bytes("zero deposit"));
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__ZeroAssets.selector)
+        );
         teller.deposit(WETH, 0, 0);
 
-        vm.expectRevert(bytes("dual deposit"));
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__DualDeposit.selector)
+        );
         teller.deposit{value: 1}(WETH, 1, 0);
 
-        vm.expectRevert(bytes("minimumMint"));
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__MinimumMintNotMet.selector)
+        );
         teller.deposit(WETH, 1, type(uint256).max);
 
-        vm.expectRevert(bytes("zero deposit"));
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__ZeroAssets.selector)
+        );
         teller.deposit(NATIVE_ERC20, 0, 0);
 
-        vm.expectRevert(bytes("minimumMint"));
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__MinimumMintNotMet.selector)
+        );
         teller.deposit{value: 1}(NATIVE_ERC20, 1, type(uint256).max);
 
         // bulkDeposit reverts
-        vm.expectRevert(bytes("zero deposit"));
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__ZeroAssets.selector)
+        );
         teller.bulkDeposit(WETH, 0, 0, address(this));
 
-        vm.expectRevert(bytes("minimumMint"));
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__MinimumMintNotMet.selector)
+        );
         teller.bulkDeposit(WETH, 1, type(uint256).max, address(this));
 
         // bulkWithdraw reverts
-        vm.expectRevert(bytes("zero withdraw"));
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__ZeroShares.selector)
+        );
         teller.bulkWithdraw(WETH, 0, 0, address(this));
 
-        vm.expectRevert(bytes("minimumAssets"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__MinimumAssetsNotMet.selector
+            )
+        );
         teller.bulkWithdraw(WETH, 1, type(uint256).max, address(this));
     }
 

@@ -4,6 +4,11 @@ pragma solidity 0.8.21;
 import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
 
 abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
+    //============================== ERRORS ===============================
+
+    error BalancerV2DecoderAndSanitizer__SingleSwapUserDataLengthNonZero();
+    error BalancerV2DecoderAndSanitizer__InternalBalancesNotSupported();
+
     //============================== BALANCER V2 ===============================
 
     function flashLoan(address recipient, address[] calldata tokens, uint256[] calldata, bytes calldata)
@@ -25,9 +30,9 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         uint256
     ) external pure virtual returns (bytes memory addressesFound) {
         // Sanitize raw data
-        require(singleSwap.userData.length == 0, "SingleSwap userData non zero length.");
-        require(!funds.fromInternalBalance, "internal balances not supported");
-        require(!funds.toInternalBalance, "internal balances not supported");
+        if (singleSwap.userData.length > 0) revert BalancerV2DecoderAndSanitizer__SingleSwapUserDataLengthNonZero();
+        if (funds.fromInternalBalance) revert BalancerV2DecoderAndSanitizer__InternalBalancesNotSupported();
+        if (funds.toInternalBalance) revert BalancerV2DecoderAndSanitizer__InternalBalancesNotSupported();
 
         // Return addresses found
         addressesFound = abi.encodePacked(
@@ -46,7 +51,7 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         DecoderCustomTypes.JoinPoolRequest calldata req
     ) external pure virtual returns (bytes memory addressesFound) {
         // Sanitize raw data
-        require(!req.fromInternalBalance, "internal balances not supported");
+        if (req.fromInternalBalance) revert BalancerV2DecoderAndSanitizer__InternalBalancesNotSupported();
         // Return addresses found
         addressesFound = abi.encodePacked(_getPoolAddressFromPoolId(poolId), sender, recipient);
         uint256 assetsLength = req.assets.length;
@@ -62,7 +67,7 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         DecoderCustomTypes.ExitPoolRequest calldata req
     ) external pure virtual returns (bytes memory addressesFound) {
         // Sanitize raw data
-        require(!req.toInternalBalance, "internal balances not supported");
+        if (req.toInternalBalance) revert BalancerV2DecoderAndSanitizer__InternalBalancesNotSupported();
         // Return addresses found
         addressesFound = abi.encodePacked(_getPoolAddressFromPoolId(poolId), sender, recipient);
         uint256 assetsLength = req.assets.length;
