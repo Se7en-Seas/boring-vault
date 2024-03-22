@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
-import {AccessControlDefaultAdminRules} from
-    "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {WETH} from "@solmate/tokens/WETH.sol";
 import {BoringVault} from "src/base/BoringVault.sol";
@@ -10,33 +8,14 @@ import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProv
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
+import {Auth, Authority} from "@solmate/auth/Auth.sol";
 
-contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTransferHook {
+contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
     using SafeTransferLib for WETH;
 
     // ========================================= CONSTANTS =========================================
-
-    /**
-     * @notice Accounts with this role are allowed to call `bulkDeposit`.
-     */
-    bytes32 public constant ON_RAMP_ROLE = keccak256("ON_RAMP_ROLE");
-
-    /**
-     * @notice Accounts with this role are allowed to call `bulkWithdraw`.
-     */
-    bytes32 public constant OFF_RAMP_ROLE = keccak256("OFF_RAMP_ROLE"); // bulk user withdraws with no waiting period.
-
-    /**
-     * @notice Accounts with this role are allowed to call admin functions.
-     */
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE"); // can turn off normal user deposits and withdraws
-
-    /**
-     * @notice Accounts with this role are allowed to call `refundDeposit`.
-     */
-    bytes32 public constant DEPOSIT_REFUNDER_ROLE = keccak256("DEPOSIT_REFUNDER_ROLE"); // can revert pending deposits
 
     /**
      * @notice Native address used to tell the contract to handle native asset deposits.
@@ -54,11 +33,6 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
      * @notice Mapping ERC20s to an isSupported bool.
      */
     mapping(ERC20 => bool) public isSupported;
-
-    /**
-     * @notice Used to pause normal user deposits.
-     */
-    bool public isPaused;
 
     /**
      * @notice The deposit nonce used to map to a deposit hash.
@@ -82,8 +56,6 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
 
     //============================== EVENTS ===============================
 
-    event Paused();
-    event Unpaused();
     event AssetAdded(address asset);
     event AssetRemoved(address asset);
     event Deposit(
@@ -122,7 +94,7 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
     WETH public immutable nativeWrapper;
 
     constructor(address _owner, address _vault, address _accountant, address _weth)
-        AccessControlDefaultAdminRules(3 days, _owner)
+        Auth(_owner, Authority(address(0)))
     {
         vault = BoringVault(payable(_vault));
         ONE_SHARE = 10 ** vault.decimals();
@@ -133,26 +105,10 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
     // ========================================= ADMIN FUNCTIONS =========================================
 
     /**
-     * @notice Pause this contract, which prevents future calls to `deposit`.
-     */
-    function pause() external onlyRole(ADMIN_ROLE) {
-        isPaused = true;
-        emit Paused();
-    }
-
-    /**
-     * @notice Unpause this contract, which allows future calls to `deposit`.
-     */
-    function unpause() external onlyRole(ADMIN_ROLE) {
-        isPaused = false;
-        emit Unpaused();
-    }
-
-    /**
      * @notice Adds this asset as a deposit asset.
      * @dev The accountant must also support pricing this asset, else the `deposit` call will revert.
      */
-    function addAsset(ERC20 asset) external onlyRole(ADMIN_ROLE) {
+    function addAsset(ERC20 asset) external requiresAuth {
         isSupported[asset] = true;
         emit AssetAdded(address(asset));
     }
@@ -160,7 +116,7 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
     /**
      * @notice Removes this asset as a deposit asset.
      */
-    function removeAsset(ERC20 asset) external onlyRole(ADMIN_ROLE) {
+    function removeAsset(ERC20 asset) external requiresAuth {
         isSupported[asset] = false;
         emit AssetRemoved(address(asset));
     }
@@ -169,7 +125,7 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
      * @notice Sets the share lock period.
      * @dev This not only locks shares to the user address, but also serves as the pending deposit period, where deposits can be reverted.
      */
-    function setShareLockPeriod(uint64 _shareLockPeriod) external onlyRole(ADMIN_ROLE) {
+    function setShareLockPeriod(uint64 _shareLockPeriod) external requiresAuth {
         if (_shareLockPeriod > MAX_SHARE_LOCK_PERIOD) revert("too long");
         shareLockPeriod = _shareLockPeriod;
     }
@@ -201,7 +157,7 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
         uint256 shareAmount,
         uint256 depositTimestamp,
         uint256 shareLockUpPeriodAtTimeOfDeposit
-    ) external onlyRole(DEPOSIT_REFUNDER_ROLE) {
+    ) external requiresAuth {
         if ((block.timestamp - depositTimestamp) > shareLockUpPeriodAtTimeOfDeposit) {
             // Shares are already unlocked, so we can not revert deposit.
             revert("Shares already unlocked");
@@ -232,9 +188,9 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
     function deposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint)
         public
         payable
+        requiresAuth
         returns (uint256 shares)
     {
-        if (isPaused) revert("paused");
         if (!isSupported[depositAsset]) revert("asset not supported");
 
         if (address(depositAsset) == NATIVE) {
@@ -265,8 +221,7 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external returns (uint256 shares) {
-        if (isPaused) revert("paused");
+    ) external requiresAuth returns (uint256 shares) {
         if (!isSupported[depositAsset]) revert("asset not supported");
 
         try depositAsset.permit(msg.sender, address(vault), depositAmount, deadline, v, r, s) {}
@@ -286,7 +241,7 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
      */
     function bulkDeposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint, address to)
         external
-        onlyRole(ON_RAMP_ROLE)
+        requiresAuth
         returns (uint256 shares)
     {
         shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, to);
@@ -298,7 +253,7 @@ contract TellerWithMultiAssetSupport is AccessControlDefaultAdminRules, BeforeTr
      */
     function bulkWithdraw(ERC20 withdrawAsset, uint256 shareAmount, uint256 minimumAssets, address to)
         external
-        onlyRole(OFF_RAMP_ROLE)
+        requiresAuth
         returns (uint256 assetsOut)
     {
         if (shareAmount == 0) revert("zero withdraw");

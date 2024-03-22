@@ -36,18 +36,18 @@ contract DeployTestBoringVaultScript is Script {
     function run() external {
         vm.startBroadcast(privateKey);
 
-        boring_vault = new BoringVault(owner, "Test Boring Vault", "BV", 18);
+        // boring_vault = new BoringVault(owner, "Test Boring Vault", "BV", 18);
 
-        manager = new ManagerWithMerkleVerification(owner, managerAddress, owner, address(boring_vault), balancerVault);
+        // manager = new ManagerWithMerkleVerification(owner, managerAddress, owner, address(boring_vault), balancerVault);
 
-        rawDataDecoderAndSanitizer = address(
-            new EtherFiLiquidDecoderAndSanitizer(address(boring_vault), 0xC36442b4a4522E871399CD717aBDD847Ab11FE88)
-        );
+        // rawDataDecoderAndSanitizer = address(
+        //     new EtherFiLiquidDecoderAndSanitizer(address(boring_vault), 0xC36442b4a4522E871399CD717aBDD847Ab11FE88)
+        // );
 
-        boring_vault.grantRole(boring_vault.MANAGER_ROLE(), address(manager));
-        boring_vault.grantRole(boring_vault.MINTER_ROLE(), managerAddress);
-        boring_vault.grantRole(boring_vault.BURNER_ROLE(), managerAddress);
-        manager.grantRole(manager.ADMIN_ROLE(), managerAddress);
+        // boring_vault.grantRole(boring_vault.MANAGER_ROLE(), address(manager));
+        // boring_vault.grantRole(boring_vault.MINTER_ROLE(), managerAddress);
+        // boring_vault.grantRole(boring_vault.BURNER_ROLE(), managerAddress);
+        // manager.grantRole(manager.ADMIN_ROLE(), managerAddress);
 
         vm.stopBroadcast();
     }

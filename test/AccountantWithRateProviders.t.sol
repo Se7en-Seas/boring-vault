@@ -8,6 +8,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {IRateProvider} from "src/interfaces/IRateProvider.sol";
+import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -16,9 +17,15 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
 
-    BoringVault public boring_vault;
+    BoringVault public boringVault;
     AccountantWithRateProviders public accountant;
     address public payout_address = vm.addr(7777777);
+    RolesAuthority public rolesAuthority;
+
+    uint8 public constant MINTER_ROLE = 1;
+    uint8 public constant ADMIN_ROLE = 2;
+    uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 3;
+    uint8 public constant BORING_VAULT_ROLE = 4;
 
     function setUp() external {
         // Setup forked environment.
@@ -26,26 +33,62 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         uint256 blockNumber = 19363419;
         _startFork(rpcKey, blockNumber);
 
-        boring_vault = new BoringVault(address(this), "Boring Vault", "BV", 18);
+        boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
         accountant = new AccountantWithRateProviders(
-            address(this),
-            address(this),
-            address(this),
-            address(boring_vault),
-            payout_address,
-            1e18,
-            address(WETH),
-            1.001e4,
-            0.999e4,
-            1,
-            0
+            address(this), address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0
         );
 
-        boring_vault.grantRole(boring_vault.MINTER_ROLE(), address(this));
+        rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
+        accountant.setAuthority(rolesAuthority);
+        boringVault.setAuthority(rolesAuthority);
+
+        // Setup roles authority.
+        rolesAuthority.setRoleCapability(MINTER_ROLE, address(boringVault), BoringVault.enter.selector, true);
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.pause.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.unpause.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateDelay.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateUpper.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateLower.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateManagementFee.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updatePayoutAddress.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.setRateProviderData.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            UPDATE_EXCHANGE_RATE_ROLE,
+            address(accountant),
+            AccountantWithRateProviders.updateExchangeRate.selector,
+            true
+        );
+        rolesAuthority.setRoleCapability(
+            BORING_VAULT_ROLE, address(accountant), AccountantWithRateProviders.claimFees.selector, true
+        );
+
+        // Allow the boring vault to receive ETH.
+        rolesAuthority.setPublicCapability(address(boringVault), bytes4(0), true);
+
+        rolesAuthority.setUserRole(address(this), MINTER_ROLE, true);
+        rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
+        rolesAuthority.setUserRole(address(this), UPDATE_EXCHANGE_RATE_ROLE, true);
+        rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
         deal(address(WETH), address(this), 1_000e18);
-        WETH.safeApprove(address(boring_vault), 1_000e18);
-        boring_vault.enter(address(this), WETH, 1_000e18, address(address(this)), 1_000e18);
+        WETH.safeApprove(address(boringVault), 1_000e18);
+        boringVault.enter(address(this), WETH, 1_000e18, address(address(this)), 1_000e18);
 
         accountant.setRateProviderData(EETH, true, address(0));
         accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
@@ -217,7 +260,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         (, fees_owed,,,,,,,,) = accountant.accountantState();
         assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
 
-        vm.startPrank(address(boring_vault));
+        vm.startPrank(address(boringVault));
         WETH.safeApprove(address(accountant), fees_owed);
         accountant.claimFees(WETH);
         vm.stopPrank();
@@ -229,8 +272,8 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         new_exchange_rate = uint96(1.0015e18);
         accountant.updateExchangeRate(new_exchange_rate);
 
-        deal(address(WEETH), address(boring_vault), 1e18);
-        vm.startPrank(address(boring_vault));
+        deal(address(WEETH), address(boringVault), 1e18);
+        vm.startPrank(address(boringVault));
         WEETH.safeApprove(address(accountant), 1e18);
         accountant.claimFees(WEETH);
         vm.stopPrank();
@@ -257,23 +300,26 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         vm.expectRevert(bytes("paused"));
         accountant.updateExchangeRate(0);
 
-        vm.expectRevert(bytes("only vault"));
+        address attacker = vm.addr(1);
+        vm.startPrank(attacker);
+        vm.expectRevert(bytes("UNAUTHORIZED"));
         accountant.claimFees(WETH);
+        vm.stopPrank();
 
-        vm.startPrank(address(boring_vault));
+        vm.startPrank(address(boringVault));
         vm.expectRevert(bytes("paused"));
         accountant.claimFees(WETH);
         vm.stopPrank();
 
         accountant.unpause();
 
-        vm.startPrank(address(boring_vault));
+        vm.startPrank(address(boringVault));
         vm.expectRevert(bytes("no fees owed"));
         accountant.claimFees(WETH);
         vm.stopPrank();
 
         // Trying to claimFees with unsupported token should revert.
-        vm.startPrank(address(boring_vault));
+        vm.startPrank(address(boringVault));
         vm.expectRevert();
         accountant.claimFees(ETHX);
         vm.stopPrank();
