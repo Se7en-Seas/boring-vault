@@ -31,9 +31,9 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
     // ========================================= STATE =========================================
 
-    // A tree where the leafs are the keccak256 hash of the target address, function selector.
     /**
      * @notice A merkle tree root that restricts what data can be passed to the BoringVault.
+     * @dev Maps a strategist address to their specific merkle root.
      * @dev Each leaf is composed of the keccak256 hash of abi.encodePacked {decodersAndSanitizer, target, valueIsNonZero, selector, argumentAddress_0, ...., argumentAddress_N}
      *      Where:
      *             - decodersAndSanitizer is the addres to call to extract packed address arguments from the calldata
@@ -42,7 +42,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      *             - selector is the function selector on target
      *             - argumentAddress is each allowed address argument in that call
      */
-    bytes32 public manageRoot;
+    mapping(address => bytes32) public manageRoot;
 
     /**
      * @notice Bool indicating whether or not this contract is actively performing a flash loan.
@@ -57,7 +57,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
     //============================== EVENTS ===============================
 
-    event ManageRootUpdated(bytes32 oldRoot, bytes32 newRoot);
+    event ManageRootUpdated(address strategist, bytes32 oldRoot, bytes32 newRoot);
     event BoringVaultManaged(uint256 callsMade);
 
     //============================== IMMUTABLES ===============================
@@ -87,10 +87,10 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     /**
      * @notice Sets the manageRoot.
      */
-    function setManageRoot(bytes32 _manageRoot) external onlyRole(ADMIN_ROLE) {
-        bytes32 oldRoot = manageRoot;
-        manageRoot = _manageRoot;
-        emit ManageRootUpdated(oldRoot, _manageRoot);
+    function setManageRoot(address strategist, bytes32 _manageRoot) external onlyRole(ADMIN_ROLE) {
+        bytes32 oldRoot = manageRoot[strategist];
+        manageRoot[strategist] = _manageRoot;
+        emit ManageRootUpdated(strategist, oldRoot, _manageRoot);
     }
 
     // ========================================= STRATEGIST FUNCTIONS =========================================
@@ -113,11 +113,11 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         if (targetsLength != decodersAndSanitizers.length) revert("Invalid decodersAndSanitizers length");
 
         // Read state and save it in memory.
-        bytes32 currentManageRoot = manageRoot;
+        bytes32 strategistManageRoot = manageRoot[msg.sender];
 
         for (uint256 i; i < targetsLength; ++i) {
             _verifyCallData(
-                currentManageRoot, manageProofs[i], decodersAndSanitizers[i], targets[i], values[i], targetData[i]
+                strategistManageRoot, manageProofs[i], decodersAndSanitizers[i], targets[i], values[i], targetData[i]
             );
             vault.manage(targets[i], targetData[i], values[i]);
         }
