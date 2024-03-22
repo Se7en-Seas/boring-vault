@@ -12,16 +12,11 @@ abstract contract MorphoBlueDecoderAndSanitizer is BaseDecoderAndSanitizer {
         uint256,
         address onBehalf,
         bytes calldata data
-    ) external pure returns (address[] memory addressesFound) {
+    ) external pure returns (bytes memory addressesFound) {
         // Sanitize raw data
         require(data.length == 0, "callback not supported");
         // Return addresses found
-        addressesFound = new address[](5);
-        addressesFound[0] = params.loanToken;
-        addressesFound[1] = params.collateralToken;
-        addressesFound[2] = params.oracle;
-        addressesFound[3] = params.irm;
-        addressesFound[4] = onBehalf;
+        addressesFound = abi.encodePacked(params.loanToken, params.collateralToken, params.oracle, params.irm, onBehalf);
     }
 
     function withdraw(
@@ -30,16 +25,11 @@ abstract contract MorphoBlueDecoderAndSanitizer is BaseDecoderAndSanitizer {
         uint256,
         address onBehalf,
         address receiver
-    ) external pure returns (address[] memory addressesFound) {
+    ) external pure returns (bytes memory addressesFound) {
         // Nothing to sanitize
         // Return addresses found
-        addressesFound = new address[](6);
-        addressesFound[0] = params.loanToken;
-        addressesFound[1] = params.collateralToken;
-        addressesFound[2] = params.oracle;
-        addressesFound[3] = params.irm;
-        addressesFound[4] = onBehalf;
-        addressesFound[5] = receiver;
+        addressesFound =
+            abi.encodePacked(params.loanToken, params.collateralToken, params.oracle, params.irm, onBehalf, receiver);
     }
 
     function borrow(
@@ -48,14 +38,9 @@ abstract contract MorphoBlueDecoderAndSanitizer is BaseDecoderAndSanitizer {
         uint256,
         address onBehalf,
         address receiver
-    ) external pure returns (address[] memory addressesFound) {
-        addressesFound = new address[](6);
-        addressesFound[0] = params.loanToken;
-        addressesFound[1] = params.collateralToken;
-        addressesFound[2] = params.oracle;
-        addressesFound[3] = params.irm;
-        addressesFound[4] = onBehalf;
-        addressesFound[5] = receiver;
+    ) external pure returns (bytes memory addressesFound) {
+        addressesFound =
+            abi.encodePacked(params.loanToken, params.collateralToken, params.oracle, params.irm, onBehalf, receiver);
     }
 
     function repay(
@@ -64,16 +49,11 @@ abstract contract MorphoBlueDecoderAndSanitizer is BaseDecoderAndSanitizer {
         uint256,
         address onBehalf,
         bytes calldata data
-    ) external pure returns (address[] memory addressesFound) {
+    ) external pure returns (bytes memory addressesFound) {
         // Sanitize raw data
         require(data.length == 0, "callback not supported");
         // Return addresses found
-        addressesFound = new address[](5);
-        addressesFound[0] = params.loanToken;
-        addressesFound[1] = params.collateralToken;
-        addressesFound[2] = params.oracle;
-        addressesFound[3] = params.irm;
-        addressesFound[4] = onBehalf;
+        addressesFound = abi.encodePacked(params.loanToken, params.collateralToken, params.oracle, params.irm, onBehalf);
     }
 
     function supplyCollateral(
@@ -81,16 +61,11 @@ abstract contract MorphoBlueDecoderAndSanitizer is BaseDecoderAndSanitizer {
         uint256,
         address onBehalf,
         bytes calldata data
-    ) external pure returns (address[] memory addressesFound) {
+    ) external pure returns (bytes memory addressesFound) {
         // Sanitize raw data
         require(data.length == 0, "callback not supported");
         // Return addresses found
-        addressesFound = new address[](5);
-        addressesFound[0] = params.loanToken;
-        addressesFound[1] = params.collateralToken;
-        addressesFound[2] = params.oracle;
-        addressesFound[3] = params.irm;
-        addressesFound[4] = onBehalf;
+        addressesFound = abi.encodePacked(params.loanToken, params.collateralToken, params.oracle, params.irm, onBehalf);
     }
 
     function withdrawCollateral(
@@ -98,15 +73,10 @@ abstract contract MorphoBlueDecoderAndSanitizer is BaseDecoderAndSanitizer {
         uint256,
         address onBehalf,
         address receiver
-    ) external pure returns (address[] memory addressesFound) {
+    ) external pure returns (bytes memory addressesFound) {
         // Nothing to sanitize
         // Return addresses found
-        addressesFound = new address[](6);
-        addressesFound[0] = params.loanToken;
-        addressesFound[1] = params.collateralToken;
-        addressesFound[2] = params.oracle;
-        addressesFound[3] = params.irm;
-        addressesFound[4] = onBehalf;
-        addressesFound[5] = receiver;
+        addressesFound =
+            abi.encodePacked(params.loanToken, params.collateralToken, params.oracle, params.irm, onBehalf, receiver);
     }
 }

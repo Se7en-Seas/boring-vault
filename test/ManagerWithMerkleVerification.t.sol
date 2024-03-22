@@ -44,8 +44,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             address(new EtherFiLiquidDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
 
         boringVault.grantRole(boringVault.MANAGER_ROLE(), address(manager));
-
-        manager.setRawDataDecoderAndSanitizer(address(rawDataDecoderAndSanitizer));
     }
 
     function testManagerMerkleVerificationHappyPath() external {
@@ -77,8 +75,12 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         deal(address(USDT), address(boringVault), 777);
 
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
         uint256 gas = gasleft();
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
         console.log("Gas used", gas - gasleft());
 
         assertEq(USDC.allowance(address(boringVault), usdcSpender), 777, "USDC should have an allowance");
@@ -118,8 +120,10 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             bytes32[][] memory flashLoanManageProofs = _getProofsUsingTree(flashLoanLeafs, manageTree);
 
             uint256[] memory values = new uint256[](2);
-
-            userData = abi.encode(flashLoanManageProofs, targets, targetData, values);
+            address[] memory dAs = new address[](2);
+            dAs[0] = rawDataDecoderAndSanitizer;
+            dAs[1] = rawDataDecoderAndSanitizer;
+            userData = abi.encode(flashLoanManageProofs, dAs, targets, targetData, values);
         }
         {
             address[] memory targets = new address[](1);
@@ -140,8 +144,9 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
             uint256[] memory values = new uint256[](1);
-
-            manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+            address[] memory decodersAndSanitizers = new address[](1);
+            decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+            manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
             assertTrue(iDidSomething == true, "Should have called doSomethingWithFlashLoan");
         }
@@ -296,8 +301,21 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             address(boringVault),
             exitRequest
         );
-
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](11));
+        address[] memory decodersAndSanitizers = new address[](11);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[7] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[8] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[9] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[10] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](11)
+        );
 
         // Make sure we can call Balancer mint and Aura getReward
         leafs = new ManageLeaf[](2);
@@ -321,8 +339,12 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         targetData = new bytes[](2);
         targetData[0] = abi.encodeWithSignature("mint(address)", rETH_wETH_gauge);
         targetData[1] = abi.encodeWithSignature("getReward(address,bool)", address(boringVault), true);
-
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](2));
+        decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](2)
+        );
     }
 
     // TODO add uniswap revert test checks
@@ -446,8 +468,19 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         // assembly {
         //     memSize := msize()
         // }
+        address[] memory decodersAndSanitizers = new address[](8);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[7] = rawDataDecoderAndSanitizer;
         uint256 gas = gasleft();
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](8));
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
+        );
         console.log("Gas used", gas - gasleft());
     }
 
@@ -551,8 +584,24 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         amounts[0] = 0;
         amounts[1] = 0;
         targetData[13] = abi.encodeWithSignature("remove_liquidity(uint256,uint256[])", lpTokens, amounts);
-
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](14));
+        address[] memory decodersAndSanitizers = new address[](14);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[7] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[8] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[9] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[10] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[11] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[12] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[13] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](14)
+        );
     }
 
     function testNativeWrapperIntegration() external {
@@ -582,7 +631,10 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         targetData[1] = abi.encodeWithSignature("deposit()");
         uint256[] memory values = new uint256[](2);
         values[1] = 100e18;
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 
     function testEtherFiIntegration() external {
@@ -640,7 +692,15 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         targetData[6] = abi.encodeWithSignature("requestWithdraw(address,uint256)", address(boringVault), 100e18 - 2);
         uint256[] memory values = new uint256[](7);
         values[1] = 100e18;
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+        address[] memory decodersAndSanitizers = new address[](7);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
         uint256 withdrawRequestId = 4840;
 
@@ -656,7 +716,10 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         targetData = new bytes[](1);
         targetData[0] = abi.encodeWithSignature("claimWithdraw(uint256)", withdrawRequestId);
         values = new uint256[](1);
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+
+        decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 
     function testMorphoBlueIntegration() external {
@@ -821,7 +884,18 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             address(boringVault)
         );
 
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, new uint256[](8));
+        address[] memory decodersAndSanitizers = new address[](8);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[7] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
+        );
     }
 
     function testReverts() external {
@@ -830,31 +904,39 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         targets = new address[](1);
         bytes[] memory targetData;
         uint256[] memory values;
+        address[] memory decodersAndSanitizers;
 
         vm.expectRevert(bytes("Invalid target proof length"));
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
         manageProofs = new bytes32[][](1);
 
         vm.expectRevert(bytes("Invalid data length"));
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
         targetData = new bytes[](1);
 
         vm.expectRevert(bytes("Invalid values length"));
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
         values = new uint256[](1);
+
+        vm.expectRevert(bytes("Invalid decodersAndSanitizers length"));
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+        decodersAndSanitizers = new address[](1);
 
         targets[0] = address(USDC);
         targetData[0] = abi.encodeWithSelector(ERC20.approve.selector, address(this), 1_000);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
 
         vm.expectRevert(bytes("Failed to verify manage call"));
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
         // Set the manage root to be the leaf of the USDC approve function
-        bytes32 manageRoot = keccak256(abi.encodePacked(targets[0], false, bytes4(targetData[0]), address(this)));
+        bytes32 manageRoot = keccak256(
+            abi.encodePacked(rawDataDecoderAndSanitizer, targets[0], false, bytes4(targetData[0]), address(this))
+        );
         manager.setManageRoot(manageRoot);
 
         // Call now works.
-        manager.manageVaultWithMerkleVerification(manageProofs, targets, targetData, values);
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
         // Check `receiveFlashLoan`
         address[] memory tokens;
@@ -902,14 +984,16 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
     function _getProofsUsingTree(ManageLeaf[] memory manageLeafs, bytes32[][] memory tree)
         internal
-        pure
+        view
         returns (bytes32[][] memory proofs)
     {
         proofs = new bytes32[][](manageLeafs.length);
         for (uint256 i; i < manageLeafs.length; ++i) {
             // Generate manage proof.
             bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, manageLeafs[i].canSendValue, selector);
+            bytes memory rawDigest = abi.encodePacked(
+                rawDataDecoderAndSanitizer, manageLeafs[i].target, manageLeafs[i].canSendValue, selector
+            );
             uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
             for (uint256 j; j < argumentAddressesLength; ++j) {
                 rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
@@ -960,13 +1044,15 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         address[] argumentAddresses;
     }
 
-    function _generateMerkleTree(ManageLeaf[] memory manageLeafs) internal pure returns (bytes32[][] memory tree) {
+    function _generateMerkleTree(ManageLeaf[] memory manageLeafs) internal view returns (bytes32[][] memory tree) {
         uint256 leafsLength = manageLeafs.length;
         bytes32[][] memory leafs = new bytes32[][](1);
         leafs[0] = new bytes32[](leafsLength);
         for (uint256 i; i < leafsLength; ++i) {
             bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, manageLeafs[i].canSendValue, selector);
+            bytes memory rawDigest = abi.encodePacked(
+                rawDataDecoderAndSanitizer, manageLeafs[i].target, manageLeafs[i].canSendValue, selector
+            );
             uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
             for (uint256 j; j < argumentAddressesLength; ++j) {
                 rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);

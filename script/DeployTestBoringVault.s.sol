@@ -49,8 +49,6 @@ contract DeployTestBoringVaultScript is Script {
         boring_vault.grantRole(boring_vault.BURNER_ROLE(), managerAddress);
         manager.grantRole(manager.ADMIN_ROLE(), managerAddress);
 
-        manager.setRawDataDecoderAndSanitizer(rawDataDecoderAndSanitizer);
-
         vm.stopBroadcast();
     }
 }

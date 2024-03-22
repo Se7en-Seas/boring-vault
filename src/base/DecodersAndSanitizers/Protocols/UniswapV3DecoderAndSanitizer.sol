@@ -18,12 +18,11 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
 
     //============================== UNISWAP V3 ===============================
 
-    // TODO this could probs be made more efficient since we can slice calldata
     function exactInput(DecoderCustomTypes.ExactInputParams calldata params)
         external
         pure
         virtual
-        returns (address[] memory addressesFound)
+        returns (bytes memory addressesFound)
     {
         // Nothing to sanitize
         // Return addresses found
@@ -32,38 +31,30 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         uint256 pathLength = params.path.length;
         require(pathLength % chunkSize == 20, "wrong path format"); // We expect a remainder of 20
         uint256 pathAddressLength = 1 + (pathLength / chunkSize);
-        addressesFound = new address[](1 + pathAddressLength);
         uint256 pathIndex;
         for (uint256 i; i < pathAddressLength; ++i) {
-            bytes20 rawAddress;
-            for (uint256 j; j < 20; ++j) {
-                rawAddress |= bytes20(params.path[pathIndex + j]) >> (j * 8);
-            }
-            addressesFound[i] = address(rawAddress);
+            addressesFound = abi.encodePacked(addressesFound, params.path[pathIndex:pathIndex + 20]);
             pathIndex += chunkSize;
         }
-        addressesFound[pathAddressLength] = params.recipient;
+        addressesFound = abi.encodePacked(addressesFound, params.recipient);
     }
 
     function mint(DecoderCustomTypes.MintParams calldata params)
         external
         pure
         virtual
-        returns (address[] memory addressesFound)
+        returns (bytes memory addressesFound)
     {
         // Nothing to sanitize
         // Return addresses found
-        addressesFound = new address[](3);
-        addressesFound[0] = params.token0;
-        addressesFound[1] = params.token1;
-        addressesFound[2] = params.recipient;
+        addressesFound = abi.encodePacked(params.token0, params.token1, params.recipient);
     }
 
     function increaseLiquidity(DecoderCustomTypes.IncreaseLiquidityParams calldata params)
         external
         view
         virtual
-        returns (address[] memory addressesFound)
+        returns (bytes memory addressesFound)
     {
         // Sanitize raw data
         require(
@@ -78,7 +69,7 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         view
         virtual
-        returns (address[] memory addressesFound)
+        returns (bytes memory addressesFound)
     {
         // Sanitize raw data
         // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
@@ -95,7 +86,7 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         view
         virtual
-        returns (address[] memory addressesFound)
+        returns (bytes memory addressesFound)
     {
         // Sanitize raw data
         // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
@@ -105,7 +96,6 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
             "collecting from a position not owned by vault"
         );
         // Return addresses found
-        addressesFound = new address[](1);
-        addressesFound[0] = params.recipient;
+        addressesFound = abi.encodePacked(params.recipient);
     }
 }

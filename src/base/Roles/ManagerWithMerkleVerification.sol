@@ -5,28 +5,17 @@ import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {BoringVault} from "src/base/BoringVault.sol";
 import {AccessControlDefaultAdminRules} from
     "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
-import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {MerkleProofLib} from "@solmate/utils/MerkleProofLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
+import {console} from "@forge-std/Test.sol";
 
 contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
     using Address for address;
-
-    // ========================================= STRUCTS =========================================
-
-    /**
-     * @param currentManageRoot current manage root
-     * @param currentRawDataDecoderAndSanitizer current raw data decoder and sanitizer
-     */
-    struct VerifyData {
-        bytes32 currentManageRoot;
-        address currentRawDataDecoderAndSanitizer;
-    }
 
     // ========================================= CONSTANTS =========================================
 
@@ -54,11 +43,6 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     bytes32 public manageRoot;
 
     /**
-     * @notice The RawDataDecoderAndSanitizer this contract uses to decode and sanitize call data.
-     */
-    address public rawDataDecoderAndSanitizer;
-
-    /**
      * @notice Bool indicating whether or not this contract is actively performing a flash loan.
      * @dev Used to block flash loans that are initiated outside a manage call.
      */
@@ -72,9 +56,6 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     //============================== EVENTS ===============================
 
     event ManageRootUpdated(bytes32 oldRoot, bytes32 newRoot);
-    event RawDataDecoderAndSanitizerUpdated(
-        address oldRawDataDecoderAndSanitizer, address newRawDataDecoderAndSanitizer
-    );
     event BoringVaultManaged(uint256 callsMade);
 
     //============================== IMMUTABLES ===============================
@@ -101,7 +82,6 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
 
     // ========================================= ADMIN FUNCTIONS =========================================
 
-    // TODO I could have the contents of the merkle tree passed in as call data, then we derive the merkle root on chain? That is more gas intensive, but allows people to easily verify what is in it.
     /**
      * @notice Sets the manageRoot.
      */
@@ -109,15 +89,6 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         bytes32 oldRoot = manageRoot;
         manageRoot = _manageRoot;
         emit ManageRootUpdated(oldRoot, _manageRoot);
-    }
-
-    /**
-     * @notice Sets the rawDataDecoderAndSanitizer.
-     */
-    function setRawDataDecoderAndSanitizer(address _rawDataDecoderAndSanitizer) external onlyRole(ADMIN_ROLE) {
-        address oldRawDataDecoderAndSanitizer = rawDataDecoderAndSanitizer;
-        rawDataDecoderAndSanitizer = _rawDataDecoderAndSanitizer;
-        emit RawDataDecoderAndSanitizerUpdated(oldRawDataDecoderAndSanitizer, _rawDataDecoderAndSanitizer);
     }
 
     // ========================================= STRATEGIST FUNCTIONS =========================================
@@ -128,6 +99,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      */
     function manageVaultWithMerkleVerification(
         bytes32[][] calldata manageProofs,
+        address[] calldata decodersAndSanitizers,
         address[] calldata targets,
         bytes[] calldata targetData,
         uint256[] calldata values
@@ -136,17 +108,17 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         if (targetsLength != manageProofs.length) revert("Invalid target proof length");
         if (targetsLength != targetData.length) revert("Invalid data length");
         if (targetsLength != values.length) revert("Invalid values length");
+        if (targetsLength != decodersAndSanitizers.length) revert("Invalid decodersAndSanitizers length");
 
         // Read state and save it in memory.
-        VerifyData memory vd =
-            VerifyData({currentManageRoot: manageRoot, currentRawDataDecoderAndSanitizer: rawDataDecoderAndSanitizer});
+        bytes32 currentManageRoot = manageRoot;
 
         for (uint256 i; i < targetsLength; ++i) {
-            // Mem expansion cost seems to only add less than 1k gas to calls so not that big of a deal
-            _verifyCallData(vd, manageProofs[i], targets[i], values[i], targetData[i]);
+            _verifyCallData(
+                currentManageRoot, manageProofs[i], decodersAndSanitizers[i], targets[i], values[i], targetData[i]
+            );
             vault.manage(targets[i], targetData[i], values[i]);
         }
-
         emit BoringVaultManaged(targetsLength);
     }
 
@@ -198,11 +170,16 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
             ERC20(tokens[i]).safeTransfer(address(vault), amounts[i]);
         }
         {
-            (bytes32[][] memory manageProofs, address[] memory targets, bytes[] memory data, uint256[] memory values) =
-                abi.decode(userData, (bytes32[][], address[], bytes[], uint256[]));
+            (
+                bytes32[][] memory manageProofs,
+                address[] memory decodersAndSanitizers,
+                address[] memory targets,
+                bytes[] memory data,
+                uint256[] memory values
+            ) = abi.decode(userData, (bytes32[][], address[], address[], bytes[], uint256[]));
 
             ManagerWithMerkleVerification(address(this)).manageVaultWithMerkleVerification(
-                manageProofs, targets, data, values
+                manageProofs, decodersAndSanitizers, targets, data, values
             );
         }
 
@@ -223,20 +200,27 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      * @notice Helper function to decode, sanitize, and verify call data.
      */
     function _verifyCallData(
-        VerifyData memory vd,
+        bytes32 currentManageRoot,
         bytes32[] calldata manageProof,
+        address decoderAndSanitizer,
         address target,
         uint256 value,
         bytes calldata targetData
     ) internal view {
-        bytes4 providedSelector = bytes4(targetData);
-
         // Use address decoder to get addresses in call data.
-        address[] memory argumentAddresses =
-            abi.decode(vd.currentRawDataDecoderAndSanitizer.functionStaticCall(targetData), (address[]));
+        bytes memory packedArgumentAddresses = abi.decode(decoderAndSanitizer.functionStaticCall(targetData), (bytes));
 
-        if (!_verifyManageProof(vd.currentManageRoot, manageProof, target, value, providedSelector, argumentAddresses))
-        {
+        if (
+            !_verifyManageProof(
+                currentManageRoot,
+                manageProof,
+                target,
+                decoderAndSanitizer,
+                value,
+                bytes4(targetData),
+                packedArgumentAddresses
+            )
+        ) {
             revert("Failed to verify manage call");
         }
     }
@@ -248,19 +232,14 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         bytes32 root,
         bytes32[] calldata proof,
         address target,
+        address decoderAndSanitizer,
         uint256 value,
         bytes4 selector,
-        address[] memory argumentAddresses
+        bytes memory packedArgumentAddresses
     ) internal pure returns (bool) {
         bool valueNonZero = value > 0;
-        bytes memory rawDigest = abi.encodePacked(target, valueNonZero, selector);
-        uint256 argumentAddressesLength = argumentAddresses.length;
-        for (uint256 i; i < argumentAddressesLength; ++i) {
-            rawDigest = abi.encodePacked(rawDigest, argumentAddresses[i]);
-        }
-        bytes32 leaf = keccak256(rawDigest);
-        return MerkleProof.verifyCalldata(proof, root, leaf);
-        // TODO this is SLIGHTLY more gas efficient, but uses more assembly
-        // return MerkleProofLib.verify(proof, root, leaf);
+        bytes32 leaf =
+            keccak256(abi.encodePacked(decoderAndSanitizer, target, valueNonZero, selector, packedArgumentAddresses));
+        return MerkleProofLib.verify(proof, root, leaf);
     }
 }

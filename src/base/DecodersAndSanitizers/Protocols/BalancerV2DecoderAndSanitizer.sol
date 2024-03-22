@@ -10,12 +10,11 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         external
         pure
         virtual
-        returns (address[] memory addressesFound)
+        returns (bytes memory addressesFound)
     {
-        addressesFound = new address[](tokens.length + 1);
-        addressesFound[0] = recipient;
+        addressesFound = abi.encodePacked(recipient);
         for (uint256 i; i < tokens.length; ++i) {
-            addressesFound[i + 1] = tokens[i];
+            addressesFound = abi.encodePacked(addressesFound, tokens[i]);
         }
     }
 
@@ -24,19 +23,20 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         DecoderCustomTypes.FundManagement calldata funds,
         uint256,
         uint256
-    ) external pure virtual returns (address[] memory addressesFound) {
+    ) external pure virtual returns (bytes memory addressesFound) {
         // Sanitize raw data
         require(singleSwap.userData.length == 0, "SingleSwap userData non zero length.");
         require(!funds.fromInternalBalance, "internal balances not supported");
         require(!funds.toInternalBalance, "internal balances not supported");
 
         // Return addresses found
-        addressesFound = new address[](5);
-        addressesFound[0] = _getPoolAddressFromPoolId(singleSwap.poolId); // Extract pool address from poolId
-        addressesFound[1] = singleSwap.assetIn;
-        addressesFound[2] = singleSwap.assetOut;
-        addressesFound[3] = funds.sender;
-        addressesFound[4] = funds.recipient;
+        addressesFound = abi.encodePacked(
+            _getPoolAddressFromPoolId(singleSwap.poolId),
+            singleSwap.assetIn,
+            singleSwap.assetOut,
+            funds.sender,
+            funds.recipient
+        );
     }
 
     function joinPool(
@@ -44,17 +44,14 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         address sender,
         address recipient,
         DecoderCustomTypes.JoinPoolRequest calldata req
-    ) external pure virtual returns (address[] memory addressesFound) {
+    ) external pure virtual returns (bytes memory addressesFound) {
         // Sanitize raw data
         require(!req.fromInternalBalance, "internal balances not supported");
         // Return addresses found
+        addressesFound = abi.encodePacked(_getPoolAddressFromPoolId(poolId), sender, recipient);
         uint256 assetsLength = req.assets.length;
-        addressesFound = new address[](3 + assetsLength);
-        addressesFound[0] = _getPoolAddressFromPoolId(poolId);
-        addressesFound[1] = sender;
-        addressesFound[2] = recipient;
         for (uint256 i; i < assetsLength; ++i) {
-            addressesFound[i + 3] = req.assets[i];
+            addressesFound = abi.encodePacked(addressesFound, req.assets[i]);
         }
     }
 
@@ -63,33 +60,28 @@ abstract contract BalancerV2DecoderAndSanitizer is BaseDecoderAndSanitizer {
         address sender,
         address recipient,
         DecoderCustomTypes.ExitPoolRequest calldata req
-    ) external pure virtual returns (address[] memory addressesFound) {
+    ) external pure virtual returns (bytes memory addressesFound) {
         // Sanitize raw data
         require(!req.toInternalBalance, "internal balances not supported");
         // Return addresses found
+        addressesFound = abi.encodePacked(_getPoolAddressFromPoolId(poolId), sender, recipient);
         uint256 assetsLength = req.assets.length;
-        addressesFound = new address[](3 + assetsLength);
-        addressesFound[0] = _getPoolAddressFromPoolId(poolId);
-        addressesFound[1] = sender;
-        addressesFound[2] = recipient;
         for (uint256 i; i < assetsLength; ++i) {
-            addressesFound[i + 3] = req.assets[i];
+            addressesFound = abi.encodePacked(addressesFound, req.assets[i]);
         }
     }
 
-    function deposit(uint256, address recipient) external pure virtual returns (address[] memory addressesFound) {
-        addressesFound = new address[](1);
-        addressesFound[0] = recipient;
+    function deposit(uint256, address recipient) external pure virtual returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(recipient);
     }
 
-    function withdraw(uint256) external pure virtual returns (address[] memory addressesFound) {
+    function withdraw(uint256) external pure virtual returns (bytes memory addressesFound) {
         // No addresses in data
         return addressesFound;
     }
 
-    function mint(address gauge) external pure virtual returns (address[] memory addressesFound) {
-        addressesFound = new address[](1);
-        addressesFound[0] = gauge;
+    function mint(address gauge) external pure virtual returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(gauge);
     }
 
     // ========================================= INTERNAL HELPER FUNCTIONS =========================================
