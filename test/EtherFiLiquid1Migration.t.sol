@@ -20,6 +20,7 @@ import {EtherFiLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/E
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {EtherFiLiquid1} from "src/interfaces/EtherFiLiquid1.sol";
 import {CellarMigrationAdaptor} from "src/migration/CellarMigrationAdaptor.sol";
+import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -37,6 +38,18 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     address public rawDataDecoderAndSanitizer;
     CellarMigrationAdaptor public migrationAdaptor;
     EtherFiLiquid1 public etherFiLiquid1;
+    RolesAuthority public rolesAuthority;
+
+    uint8 public constant MANAGER_ROLE = 1;
+    uint8 public constant STRATEGIST_ROLE = 2;
+    uint8 public constant MANGER_INTERNAL_ROLE = 3;
+    uint8 public constant ADMIN_ROLE = 4;
+    uint8 public constant BORING_VAULT_ROLE = 5;
+    uint8 public constant BALANCER_VAULT_ROLE = 6;
+    uint8 public constant MINTER_ROLE = 7;
+    uint8 public constant BURNER_ROLE = 8;
+    uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 9;
+    uint8 public constant SOLVER_ROLE = 10;
 
     address public multisig = vm.addr(123456789);
     address public strategist = vm.addr(987654321);
@@ -60,20 +73,10 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         boringVault = new BoringVault(multisig, "Boring Vault", "BV", 18);
 
-        manager = new ManagerWithMerkleVerification(multisig, strategist, multisig, address(boringVault), vault);
+        manager = new ManagerWithMerkleVerification(multisig, address(boringVault), vault);
 
         accountant = new AccountantWithRateProviders(
-            multisig,
-            strategist,
-            multisig,
-            address(boringVault),
-            payout_address,
-            1e18,
-            address(WETH),
-            1.001e4,
-            0.999e4,
-            1,
-            0.01e4
+            multisig, address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0.01e4
         );
 
         teller = new TellerWithMultiAssetSupport(multisig, address(boringVault), address(accountant), address(WETH));
@@ -87,15 +90,120 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         atomic_queue = new AtomicQueue();
         atomic_solver = new AtomicSolver(address(this), vault);
 
+        rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
         vm.startPrank(multisig);
-        boringVault.grantRole(boringVault.MINTER_ROLE(), address(teller));
-        boringVault.grantRole(boringVault.BURNER_ROLE(), address(teller));
-        boringVault.grantRole(boringVault.MANAGER_ROLE(), address(manager));
+        boringVault.setAuthority(rolesAuthority);
+        manager.setAuthority(rolesAuthority);
+        accountant.setAuthority(rolesAuthority);
+        teller.setAuthority(rolesAuthority);
+        vm.stopPrank();
+
+        // Setup roles authority.
+        rolesAuthority.setRoleCapability(
+            MANAGER_ROLE,
+            address(boringVault),
+            bytes4(keccak256(abi.encodePacked("manage(address,bytes,uint256)"))),
+            true
+        );
+        rolesAuthority.setRoleCapability(
+            MANAGER_ROLE,
+            address(boringVault),
+            bytes4(keccak256(abi.encodePacked("manage(address[],bytes[],uint256[])"))),
+            true
+        );
+
+        rolesAuthority.setRoleCapability(
+            STRATEGIST_ROLE,
+            address(manager),
+            ManagerWithMerkleVerification.manageVaultWithMerkleVerification.selector,
+            true
+        );
+        rolesAuthority.setRoleCapability(
+            MANGER_INTERNAL_ROLE,
+            address(manager),
+            ManagerWithMerkleVerification.manageVaultWithMerkleVerification.selector,
+            true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(manager), ManagerWithMerkleVerification.setManageRoot.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            BORING_VAULT_ROLE, address(manager), ManagerWithMerkleVerification.flashLoan.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            BALANCER_VAULT_ROLE, address(manager), ManagerWithMerkleVerification.receiveFlashLoan.selector, true
+        );
+        rolesAuthority.setRoleCapability(MINTER_ROLE, address(boringVault), BoringVault.enter.selector, true);
+        rolesAuthority.setRoleCapability(BURNER_ROLE, address(boringVault), BoringVault.exit.selector, true);
+
+        rolesAuthority.setPublicCapability(address(teller), TellerWithMultiAssetSupport.deposit.selector, true);
+        rolesAuthority.setPublicCapability(
+            address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.addAsset.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.removeAsset.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.pause.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.unpause.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateDelay.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateUpper.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateLower.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateManagementFee.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updatePayoutAddress.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.setRateProviderData.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            UPDATE_EXCHANGE_RATE_ROLE,
+            address(accountant),
+            AccountantWithRateProviders.updateExchangeRate.selector,
+            true
+        );
+        rolesAuthority.setRoleCapability(
+            BORING_VAULT_ROLE, address(accountant), AccountantWithRateProviders.claimFees.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            SOLVER_ROLE, address(teller), TellerWithMultiAssetSupport.bulkDeposit.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            SOLVER_ROLE, address(teller), TellerWithMultiAssetSupport.bulkWithdraw.selector, true
+        );
+
+        // Grant roles
+        rolesAuthority.setUserRole(address(this), STRATEGIST_ROLE, true);
+        rolesAuthority.setUserRole(strategist, STRATEGIST_ROLE, true);
+        rolesAuthority.setUserRole(address(manager), MANGER_INTERNAL_ROLE, true);
+        rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
+        rolesAuthority.setUserRole(multisig, ADMIN_ROLE, true);
+        rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
+        rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
+        rolesAuthority.setUserRole(vault, BALANCER_VAULT_ROLE, true);
+        rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
+        rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
+        rolesAuthority.setUserRole(address(this), UPDATE_EXCHANGE_RATE_ROLE, true);
+        rolesAuthority.setUserRole(address(atomic_solver), SOLVER_ROLE, true);
+        rolesAuthority.setUserRole(address(atomic_solver), SOLVER_ROLE, true);
+
+        vm.startPrank(multisig);
         accountant.setRateProviderData(EETH, true, address(0));
         accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
-        teller.grantRole(teller.ADMIN_ROLE(), multisig);
-        teller.grantRole(teller.ON_RAMP_ROLE(), address(atomic_solver));
-        teller.grantRole(teller.OFF_RAMP_ROLE(), address(atomic_solver));
         teller.addAsset(WETH);
         teller.addAsset(NATIVE_ERC20);
         teller.addAsset(EETH);
@@ -143,10 +251,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         etherFiLiquid1.addPosition(0, migrationPosition, abi.encode(true), false);
         vm.stopPrank();
         // Give EtherFiLiquid1 the appropriate roles so it can rebalance.
-        vm.startPrank(multisig);
-        teller.grantRole(teller.ON_RAMP_ROLE(), address(etherFiLiquid1));
-        teller.grantRole(teller.OFF_RAMP_ROLE(), address(etherFiLiquid1));
-        vm.stopPrank();
+        rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
 
         // Strategist rebalances all liquid assets into BoringVault.
         EtherFiLiquid1.AdaptorCall[] memory data = new EtherFiLiquid1.AdaptorCall[](1);

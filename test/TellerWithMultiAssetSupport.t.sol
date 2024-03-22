@@ -10,6 +10,7 @@ import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {ILiquidityPool} from "src/interfaces/IStaking.sol";
+import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -21,11 +22,16 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
 
     BoringVault public boringVault;
 
+    uint8 public constant ADMIN_ROLE = 1;
+    uint8 public constant MINTER_ROLE = 7;
+    uint8 public constant BURNER_ROLE = 8;
+
     TellerWithMultiAssetSupport public teller;
     AccountantWithRateProviders public accountant;
     address public payout_address = vm.addr(7777777);
     address internal constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     ERC20 internal constant NATIVE_ERC20 = ERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+    RolesAuthority public rolesAuthority;
 
     function setUp() external {
         // Setup forked environment.
@@ -36,30 +42,42 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
         accountant = new AccountantWithRateProviders(
-            address(this),
-            address(this),
-            address(this),
-            address(boringVault),
-            payout_address,
-            1e18,
-            address(WETH),
-            1.001e4,
-            0.999e4,
-            1,
-            0
+            address(this), address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0
         );
 
         teller =
             new TellerWithMultiAssetSupport(address(this), address(boringVault), address(accountant), address(WETH));
 
-        boringVault.grantRole(boringVault.MINTER_ROLE(), address(teller));
-        boringVault.grantRole(boringVault.BURNER_ROLE(), address(teller));
-        boringVault.grantRole(boringVault.ADMIN_ROLE(), address(this));
+        rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
+        boringVault.setAuthority(rolesAuthority);
+        accountant.setAuthority(rolesAuthority);
+        teller.setAuthority(rolesAuthority);
 
-        teller.grantRole(teller.ADMIN_ROLE(), address(this));
-        teller.grantRole(teller.ON_RAMP_ROLE(), address(this));
-        teller.grantRole(teller.OFF_RAMP_ROLE(), address(this));
-        teller.grantRole(teller.DEPOSIT_REFUNDER_ROLE(), address(this));
+        rolesAuthority.setRoleCapability(MINTER_ROLE, address(boringVault), BoringVault.enter.selector, true);
+        rolesAuthority.setRoleCapability(BURNER_ROLE, address(boringVault), BoringVault.exit.selector, true);
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.addAsset.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.removeAsset.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.bulkDeposit.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.bulkWithdraw.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.refundDeposit.selector, true
+        );
+        rolesAuthority.setPublicCapability(address(teller), TellerWithMultiAssetSupport.deposit.selector, true);
+        rolesAuthority.setPublicCapability(
+            address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
+        );
+
+        rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
+        rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
+        rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
 
         teller.addAsset(WETH);
         teller.addAsset(ERC20(NATIVE));
@@ -286,16 +304,6 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         assertApproxEqAbs(assets_out_2, weETH_amount, 1, "Should have received expected weETH assets");
     }
 
-    function testPausing() external {
-        teller.pause();
-
-        assertTrue(teller.isPaused() == true, "Teller should be paused");
-
-        teller.unpause();
-
-        assertTrue(teller.isPaused() == false, "Teller should be unpaused");
-    }
-
     function testAssetIsSupported() external {
         assertTrue(teller.isSupported(WETH) == true, "WETH should be supported");
 
@@ -309,14 +317,14 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
     }
 
     function testReverts() external {
-        teller.pause();
+        // teller.pause();
         teller.removeAsset(WETH);
 
         // deposit reverts
-        vm.expectRevert(bytes("paused"));
-        teller.deposit(WETH, 0, 0);
+        // vm.expectRevert(bytes("paused"));
+        // teller.deposit(WETH, 0, 0);
 
-        teller.unpause();
+        // teller.unpause();
 
         vm.expectRevert(bytes("asset not supported"));
         teller.deposit(WETH, 0, 0);
