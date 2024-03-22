@@ -59,7 +59,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        manager.setManageRoot(manageTree[1][0]);
+        manager.setManageRoot(address(this), manageTree[1][0]);
 
         address[] memory targets = new address[](2);
         targets[0] = address(USDC);
@@ -100,7 +100,9 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        manager.setManageRoot(manageTree[2][0]);
+        manager.setManageRoot(address(this), manageTree[2][0]);
+        // Since the manager calls to itself to fulfill the flashloan, we need to set its root.
+        manager.setManageRoot(address(manager), manageTree[2][0]);
 
         bytes memory userData;
         {
@@ -212,7 +214,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](11);
         manageLeafs[0] = leafs[0];
@@ -326,7 +328,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         manageTree = _generateMerkleTree(leafs);
 
-        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         manageLeafs = new ManageLeaf[](2);
         manageLeafs[0] = leafs[0];
@@ -397,7 +399,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](8);
         manageLeafs[0] = leafs[0];
@@ -526,7 +528,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](14);
         manageLeafs[0] = leafs[0];
@@ -615,7 +617,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
         manageLeafs[0] = leafs[0];
@@ -660,7 +662,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](7);
         manageLeafs[0] = leafs[0];
@@ -809,7 +811,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](8);
         manageLeafs[0] = leafs[0];
@@ -933,7 +935,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         bytes32 manageRoot = keccak256(
             abi.encodePacked(rawDataDecoderAndSanitizer, targets[0], false, bytes4(targetData[0]), address(this))
         );
-        manager.setManageRoot(manageRoot);
+        manager.setManageRoot(address(this), manageRoot);
 
         // Call now works.
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);

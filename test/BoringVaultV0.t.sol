@@ -164,7 +164,8 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         vm.startPrank(multisig);
-        manager.setManageRoot(manageTree[manageTree.length - 1][0]);
+        manager.setManageRoot(strategist, manageTree[manageTree.length - 1][0]);
+        manager.setManageRoot(address(manager), manageTree[manageTree.length - 1][0]);
         vm.stopPrank();
 
         bytes32[][] memory manageProofs;
