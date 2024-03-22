@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
-import {AccessControlDefaultAdminRules} from
-    "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {BoringVault} from "src/base/BoringVault.sol";
+import {Auth, Authority} from "@solmate/auth/Auth.sol";
 
-contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRateProvider {
+contract AccountantWithRateProviders is Auth, IRateProvider {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
 
@@ -56,22 +55,6 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
      * @notice 1 hour.
      */
     uint256 internal constant ONE_HOUR = 3_600;
-
-    /**
-     * @notice Accounts with this role are allowed to call `updateExchangeRate`.
-     */
-    bytes32 public constant EXCHANGE_RATE_UPDATER_ROLE = keccak256("EXCHANGE_RATE_UPDATER_ROLE");
-
-    /**
-     * @notice Accounts with this role are able to interact with every admin function, except `pause`.
-     *         However the constructor will give the `_admin` account both the ADMIN and PAUSE roles.
-     */
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-
-    /**
-     * @notice Accounts with this role are allowed to call `pause`.
-     */
-    bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
 
     // ========================================= STATE =========================================
 
@@ -123,8 +106,6 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
 
     constructor(
         address _owner,
-        address _updater,
-        address _admin,
         address _vault,
         address payoutAddress,
         uint96 startingExchangeRate,
@@ -133,10 +114,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
         uint16 allowedExchangeRateChangeLower,
         uint8 minimumUpdateDelayInHours,
         uint16 managementFee
-    ) AccessControlDefaultAdminRules(3 days, _owner) {
-        _grantRole(EXCHANGE_RATE_UPDATER_ROLE, _updater);
-        _grantRole(ADMIN_ROLE, _admin);
-        _grantRole(PAUSE_ROLE, _admin);
+    ) Auth(_owner, Authority(address(0))) {
         base = ERC20(_base);
         decimals = ERC20(_base).decimals();
         vault = BoringVault(payable(_vault));
@@ -160,7 +138,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
      * @notice Pause this contract, which prevents future calls to `updateExchangeRate`, and any safe rate
      *         calls will revert.
      */
-    function pause() external onlyRole(PAUSE_ROLE) {
+    function pause() external requiresAuth {
         accountantState.isPaused = true;
         emit Paused();
     }
@@ -169,7 +147,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
      * @notice Unpause this contract, which allows future calls to `updateExchangeRate`, and any safe rate
      *         calls will stop reverting.
      */
-    function unpause() external onlyRole(ADMIN_ROLE) {
+    function unpause() external requiresAuth {
         accountantState.isPaused = false;
         emit Unpaused();
     }
@@ -179,7 +157,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
      * @dev There are no input requirements, as it is possible the admin would want
      *      the exchange rate updated as frequently as needed.
      */
-    function updateDelay(uint8 minimumUpdateDelayInHours) external onlyRole(ADMIN_ROLE) {
+    function updateDelay(uint8 minimumUpdateDelayInHours) external requiresAuth {
         uint8 oldDelay = accountantState.minimumUpdateDelayInHours;
         accountantState.minimumUpdateDelayInHours = minimumUpdateDelayInHours;
         emit DelayInHoursUpdated(oldDelay, minimumUpdateDelayInHours);
@@ -188,7 +166,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
     /**
      * @notice Update the allowed upper bound change of exchange rate between `updateExchangeRateCalls`.
      */
-    function updateUpper(uint16 allowedExchangeRateChangeUpper) external onlyRole(ADMIN_ROLE) {
+    function updateUpper(uint16 allowedExchangeRateChangeUpper) external requiresAuth {
         if (allowedExchangeRateChangeUpper < 1e4) revert("upper bound too small");
         uint16 oldBound = accountantState.allowedExchangeRateChangeUpper;
         accountantState.allowedExchangeRateChangeUpper = allowedExchangeRateChangeUpper;
@@ -198,7 +176,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
     /**
      * @notice Update the allowed lower bound change of exchange rate between `updateExchangeRateCalls`.
      */
-    function updateLower(uint16 allowedExchangeRateChangeLower) external onlyRole(ADMIN_ROLE) {
+    function updateLower(uint16 allowedExchangeRateChangeLower) external requiresAuth {
         if (allowedExchangeRateChangeLower > 1e4) revert("lower bound too large");
         uint16 oldBound = accountantState.allowedExchangeRateChangeLower;
         accountantState.allowedExchangeRateChangeLower = allowedExchangeRateChangeLower;
@@ -208,7 +186,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
     /**
      * @notice Update the management fee to a new value.
      */
-    function updateManagementFee(uint16 managementFee) external onlyRole(ADMIN_ROLE) {
+    function updateManagementFee(uint16 managementFee) external requiresAuth {
         if (managementFee > 0.2e4) revert("management fee too large");
         uint16 oldFee = accountantState.managementFee;
         accountantState.managementFee = managementFee;
@@ -218,7 +196,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
     /**
      * @notice Update the payout address fees are sent to.
      */
-    function updatePayoutAddress(address payoutAddress) external onlyRole(ADMIN_ROLE) {
+    function updatePayoutAddress(address payoutAddress) external requiresAuth {
         address oldPayout = accountantState.payoutAddress;
         accountantState.payoutAddress = payoutAddress;
         emit PayoutAddressUpdated(oldPayout, payoutAddress);
@@ -229,10 +207,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
      * @dev Rate providers must return rates in terms of `base` and
      *      they must use the same decimals as `base`.
      */
-    function setRateProviderData(ERC20 asset, bool isPeggedToBase, address rateProvider)
-        external
-        onlyRole(ADMIN_ROLE)
-    {
+    function setRateProviderData(ERC20 asset, bool isPeggedToBase, address rateProvider) external requiresAuth {
         rateProviderData[asset] =
             RateProviderData({isPeggedToBase: isPeggedToBase, rateProvider: IRateProvider(rateProvider)});
         emit RateProviderUpdated(address(asset), isPeggedToBase, rateProvider);
@@ -245,7 +220,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
      * @dev If new exchange rate is outside of accepted bounds, or if not enough time has passed, this
      *      will pause the contract, and this function will NOT calculate fees owed.
      */
-    function updateExchangeRate(uint96 newExchangeRate) external onlyRole(EXCHANGE_RATE_UPDATER_ROLE) {
+    function updateExchangeRate(uint96 newExchangeRate) external requiresAuth {
         AccountantState storage state = accountantState;
         if (state.isPaused) revert("paused");
         uint64 currentTime = uint64(block.timestamp);
@@ -290,8 +265,7 @@ contract AccountantWithRateProviders is AccessControlDefaultAdminRules, IRatePro
      * @notice Claim pending fees.
      * @dev This function must be called by the BoringVault.
      */
-    function claimFees(ERC20 feeAsset) external {
-        if (msg.sender != address(vault)) revert("only vault");
+    function claimFees(ERC20 feeAsset) external requiresAuth {
         AccountantState storage state = accountantState;
         if (state.isPaused) revert("paused");
         if (state.feesOwedInBase == 0) revert("no fees owed");

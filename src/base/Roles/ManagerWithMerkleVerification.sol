@@ -3,31 +3,17 @@ pragma solidity 0.8.21;
 
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {BoringVault} from "src/base/BoringVault.sol";
-import {AccessControlDefaultAdminRules} from
-    "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 import {MerkleProofLib} from "@solmate/utils/MerkleProofLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
-import {console} from "@forge-std/Test.sol";
+import {Auth, Authority} from "@solmate/auth/Auth.sol";
 
-contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
+contract ManagerWithMerkleVerification is Auth {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
     using Address for address;
-
-    // ========================================= CONSTANTS =========================================
-
-    /**
-     * @notice Accounts with this role are allowed to call `manageVaultWithMerkleVerification`.
-     */
-    bytes32 public constant STRATEGIST_ROLE = keccak256("STRATEGIST_ROLE");
-
-    /**
-     * @notice Accounts with this role are able to set the manageRoot, and the RawDataDecoderAndSanitizer.
-     */
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     // ========================================= STATE =========================================
 
@@ -72,13 +58,8 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
      */
     BalancerVault public immutable balancerVault;
 
-    constructor(address _owner, address _manager, address _admin, address _vault, address _balancerVault)
-        AccessControlDefaultAdminRules(3 days, _owner)
-    {
+    constructor(address _owner, address _vault, address _balancerVault) Auth(_owner, Authority(address(0))) {
         vault = BoringVault(payable(_vault));
-        _grantRole(STRATEGIST_ROLE, _manager);
-        _grantRole(STRATEGIST_ROLE, address(this));
-        _grantRole(ADMIN_ROLE, _admin);
         balancerVault = BalancerVault(_balancerVault);
     }
 
@@ -87,7 +68,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     /**
      * @notice Sets the manageRoot.
      */
-    function setManageRoot(address strategist, bytes32 _manageRoot) external onlyRole(ADMIN_ROLE) {
+    function setManageRoot(address strategist, bytes32 _manageRoot) external requiresAuth {
         bytes32 oldRoot = manageRoot[strategist];
         manageRoot[strategist] = _manageRoot;
         emit ManageRootUpdated(strategist, oldRoot, _manageRoot);
@@ -105,7 +86,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         address[] calldata targets,
         bytes[] calldata targetData,
         uint256[] calldata values
-    ) external onlyRole(STRATEGIST_ROLE) {
+    ) external requiresAuth {
         uint256 targetsLength = targets.length;
         if (targetsLength != manageProofs.length) revert("Invalid target proof length");
         if (targetsLength != targetData.length) revert("Invalid data length");
@@ -137,8 +118,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         address[] calldata tokens,
         uint256[] calldata amounts,
         bytes calldata userData
-    ) external {
-        if (msg.sender != address(vault)) revert("wrong caller");
+    ) external requiresAuth {
         flashLoanIntentHash = keccak256(userData);
         performingFlashLoan = true;
         balancerVault.flashLoan(recipient, tokens, amounts, userData);
@@ -157,8 +137,7 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
         uint256[] calldata amounts,
         uint256[] calldata feeAmounts,
         bytes calldata userData
-    ) external {
-        if (msg.sender != address(balancerVault)) revert("wrong caller");
+    ) external requiresAuth {
         if (!performingFlashLoan) revert("no flash loan");
 
         // Validate userData using intentHash.

@@ -7,36 +7,13 @@ import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {AccessControlDefaultAdminRules} from
-    "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
+import {Auth, Authority} from "@solmate/auth/Auth.sol";
 
-contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC1155Holder {
+contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
     using Address for address;
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
-
-    // ========================================= CONSTANTS =========================================
-
-    /**
-     * @notice Role needed to rebalance the vault.
-     */
-    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-
-    /**
-     * @notice Role needed to deposit into vault.
-     */
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-
-    /**
-     * @notice Role needed to withdraw form vault.
-     */
-    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
-
-    /**
-     * @notice Role needed to set ShareLocker.
-     */
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     // ========================================= STATE =========================================
 
@@ -54,7 +31,7 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC
 
     constructor(address _owner, string memory _name, string memory _symbol, uint8 _decimals)
         ERC20(_name, _symbol, _decimals)
-        AccessControlDefaultAdminRules(3 days, _owner)
+        Auth(_owner, Authority(address(0)))
     {}
 
     //============================== MANAGE ===============================
@@ -62,7 +39,7 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC
     /**
      * @notice Allows manager to make an arbitrary function call from this contract.
      */
-    function manage(address target, bytes calldata data, uint256 value) external onlyRole(MANAGER_ROLE) {
+    function manage(address target, bytes calldata data, uint256 value) external requiresAuth {
         target.functionCallWithValue(data, value);
     }
 
@@ -71,7 +48,7 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC
      */
     function manage(address[] calldata targets, bytes[] calldata data, uint256[] calldata values)
         external
-        onlyRole(MANAGER_ROLE)
+        requiresAuth
     {
         uint256 targetsLength = targets.length;
         for (uint256 i; i < targetsLength; ++i) {
@@ -87,7 +64,7 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC
      */
     function enter(address from, ERC20 asset, uint256 assetAmount, address to, uint256 shareAmount)
         external
-        onlyRole(MINTER_ROLE)
+        requiresAuth
     {
         // Transfer assets in
         if (assetAmount > 0) asset.safeTransferFrom(from, address(this), assetAmount);
@@ -106,7 +83,7 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC
      */
     function exit(address to, ERC20 asset, uint256 assetAmount, address from, uint256 shareAmount)
         external
-        onlyRole(BURNER_ROLE)
+        requiresAuth
     {
         // Burn shares.
         _burn(from, shareAmount);
@@ -122,7 +99,7 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC
      * @notice Sets the share locker.
      * @notice If set to zero address, the share locker logic is disabled.
      */
-    function setBeforeTransferHook(address _hook) external onlyRole(ADMIN_ROLE) {
+    function setBeforeTransferHook(address _hook) external requiresAuth {
         hook = BeforeTransferHook(_hook);
     }
 
@@ -145,20 +122,5 @@ contract BoringVault is ERC20, AccessControlDefaultAdminRules, ERC721Holder, ERC
 
     //============================== RECEIVE ===============================
 
-    receive() external payable {}
-
-    //============================== VIEW ===============================
-
-    /**
-     * @notice Override this here, so that we only report supporting ERC1155, and not the AccessControl interface.
-     */
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(ERC1155Holder, AccessControlDefaultAdminRules)
-        returns (bool)
-    {
-        return ERC1155Holder.supportsInterface(interfaceId);
-    }
+    receive() external payable requiresAuth {}
 }
