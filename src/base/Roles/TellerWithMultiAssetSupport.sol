@@ -54,6 +54,20 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
 
     mapping(address => uint256) public shareUnlockTime;
 
+    //============================== ERRORS ===============================
+
+    error TellerWithMultiAssetSupport__ShareLockPeriodTooLong();
+    error TellerWithMultiAssetSupport__SharesAreLocked();
+    error TellerWithMultiAssetSupport__SharesAreUnLocked();
+    error TellerWithMultiAssetSupport__BadDepositHash();
+    error TellerWithMultiAssetSupport__AssetNotSupported();
+    error TellerWithMultiAssetSupport__ZeroAssets();
+    error TellerWithMultiAssetSupport__MinimumMintNotMet();
+    error TellerWithMultiAssetSupport__MinimumAssetsNotMet();
+    error TellerWithMultiAssetSupport__PermitFailedAndAllowanceTooLow();
+    error TellerWithMultiAssetSupport__ZeroShares();
+    error TellerWithMultiAssetSupport__DualDeposit();
+
     //============================== EVENTS ===============================
 
     event AssetAdded(address asset);
@@ -126,17 +140,17 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
      * @dev This not only locks shares to the user address, but also serves as the pending deposit period, where deposits can be reverted.
      */
     function setShareLockPeriod(uint64 _shareLockPeriod) external requiresAuth {
-        if (_shareLockPeriod > MAX_SHARE_LOCK_PERIOD) revert("too long");
+        if (_shareLockPeriod > MAX_SHARE_LOCK_PERIOD) revert TellerWithMultiAssetSupport__ShareLockPeriodTooLong();
         shareLockPeriod = _shareLockPeriod;
     }
 
-    // ========================================= ISHARELOCKER FUNCTIONS =========================================
+    // ========================================= BeforeTransferHook FUNCTIONS =========================================
 
     /**
      * @notice Implement
      */
     function beforeTransfer(address from) external view {
-        if (shareUnlockTime[from] <= block.timestamp) revert("share locked");
+        if (shareUnlockTime[from] <= block.timestamp) revert TellerWithMultiAssetSupport__SharesAreLocked();
     }
 
     // ========================================= REVERT DEPOSIT FUNCTIONS =========================================
@@ -160,14 +174,14 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
     ) external requiresAuth {
         if ((block.timestamp - depositTimestamp) > shareLockUpPeriodAtTimeOfDeposit) {
             // Shares are already unlocked, so we can not revert deposit.
-            revert("Shares already unlocked");
+            revert TellerWithMultiAssetSupport__SharesAreUnLocked();
         }
         bytes32 depositHash = keccak256(
             abi.encode(
                 receiver, depositAsset, depositAmount, shareAmount, depositTimestamp, shareLockUpPeriodAtTimeOfDeposit
             )
         );
-        if (publicDepositHistory[nonce] != depositHash) revert("invalid deposit");
+        if (publicDepositHistory[nonce] != depositHash) revert TellerWithMultiAssetSupport__BadDepositHash();
 
         // Delete hash to prevent refund gas.
         delete publicDepositHistory[nonce];
@@ -191,19 +205,19 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
         requiresAuth
         returns (uint256 shares)
     {
-        if (!isSupported[depositAsset]) revert("asset not supported");
+        if (!isSupported[depositAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
 
         if (address(depositAsset) == NATIVE) {
-            if (msg.value == 0) revert("zero deposit");
+            if (msg.value == 0) revert TellerWithMultiAssetSupport__ZeroAssets();
             nativeWrapper.deposit{value: msg.value}();
             depositAmount = msg.value;
             shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(nativeWrapper));
-            if (shares < minimumMint) revert("minimumMint");
+            if (shares < minimumMint) revert TellerWithMultiAssetSupport__MinimumMintNotMet();
             // `from` is address(this) since user already sent value.
             nativeWrapper.safeApprove(address(vault), depositAmount);
             vault.enter(address(this), nativeWrapper, depositAmount, msg.sender, shares);
         } else {
-            if (msg.value > 0) revert("dual deposit");
+            if (msg.value > 0) revert TellerWithMultiAssetSupport__DualDeposit();
             shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender);
         }
 
@@ -222,12 +236,12 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
         bytes32 r,
         bytes32 s
     ) external requiresAuth returns (uint256 shares) {
-        if (!isSupported[depositAsset]) revert("asset not supported");
+        if (!isSupported[depositAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
 
         try depositAsset.permit(msg.sender, address(vault), depositAmount, deadline, v, r, s) {}
         catch {
             if (depositAsset.allowance(msg.sender, address(vault)) < depositAmount) {
-                revert("permit failed and allowance too low");
+                revert TellerWithMultiAssetSupport__PermitFailedAndAllowanceTooLow();
             }
         }
         shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender);
@@ -256,9 +270,9 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
         requiresAuth
         returns (uint256 assetsOut)
     {
-        if (shareAmount == 0) revert("zero withdraw");
+        if (shareAmount == 0) revert TellerWithMultiAssetSupport__ZeroShares();
         assetsOut = shareAmount.mulDivDown(accountant.getRateInQuoteSafe(withdrawAsset), ONE_SHARE);
-        if (assetsOut < minimumAssets) revert("minimumAssets");
+        if (assetsOut < minimumAssets) revert TellerWithMultiAssetSupport__MinimumAssetsNotMet();
         vault.exit(to, withdrawAsset, assetsOut, msg.sender, shareAmount);
         emit BulkWithdraw(address(withdrawAsset), shareAmount);
     }
@@ -279,9 +293,9 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
         internal
         returns (uint256 shares)
     {
-        if (depositAmount == 0) revert("zero deposit");
+        if (depositAmount == 0) revert TellerWithMultiAssetSupport__ZeroAssets();
         shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(depositAsset));
-        if (shares < minimumMint) revert("minimumMint");
+        if (shares < minimumMint) revert TellerWithMultiAssetSupport__MinimumMintNotMet();
         vault.enter(msg.sender, depositAsset, depositAmount, to, shares);
     }
 

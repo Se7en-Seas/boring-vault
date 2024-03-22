@@ -68,6 +68,14 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      */
     mapping(ERC20 => RateProviderData) public rateProviderData;
 
+    //============================== ERRORS ===============================
+
+    error AccountantWithRateProviders__UpperBoundTooSmall();
+    error AccountantWithRateProviders__LowerBoundTooLarge();
+    error AccountantWithRateProviders__ManagementFeeTooLarge();
+    error AccountantWithRateProviders__Paused();
+    error AccountantWithRateProviders__ZeroFeesOwed();
+
     //============================== EVENTS ===============================
 
     event Paused();
@@ -167,7 +175,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @notice Update the allowed upper bound change of exchange rate between `updateExchangeRateCalls`.
      */
     function updateUpper(uint16 allowedExchangeRateChangeUpper) external requiresAuth {
-        if (allowedExchangeRateChangeUpper < 1e4) revert("upper bound too small");
+        if (allowedExchangeRateChangeUpper < 1e4) revert AccountantWithRateProviders__UpperBoundTooSmall();
         uint16 oldBound = accountantState.allowedExchangeRateChangeUpper;
         accountantState.allowedExchangeRateChangeUpper = allowedExchangeRateChangeUpper;
         emit UpperBoundUpdated(oldBound, allowedExchangeRateChangeUpper);
@@ -177,7 +185,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @notice Update the allowed lower bound change of exchange rate between `updateExchangeRateCalls`.
      */
     function updateLower(uint16 allowedExchangeRateChangeLower) external requiresAuth {
-        if (allowedExchangeRateChangeLower > 1e4) revert("lower bound too large");
+        if (allowedExchangeRateChangeLower > 1e4) revert AccountantWithRateProviders__LowerBoundTooLarge();
         uint16 oldBound = accountantState.allowedExchangeRateChangeLower;
         accountantState.allowedExchangeRateChangeLower = allowedExchangeRateChangeLower;
         emit LowerBoundUpdated(oldBound, allowedExchangeRateChangeLower);
@@ -187,7 +195,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @notice Update the management fee to a new value.
      */
     function updateManagementFee(uint16 managementFee) external requiresAuth {
-        if (managementFee > 0.2e4) revert("management fee too large");
+        if (managementFee > 0.2e4) revert AccountantWithRateProviders__ManagementFeeTooLarge();
         uint16 oldFee = accountantState.managementFee;
         accountantState.managementFee = managementFee;
         emit ManagementFeeUpdated(oldFee, managementFee);
@@ -222,7 +230,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      */
     function updateExchangeRate(uint96 newExchangeRate) external requiresAuth {
         AccountantState storage state = accountantState;
-        if (state.isPaused) revert("paused");
+        if (state.isPaused) revert AccountantWithRateProviders__Paused();
         uint64 currentTime = uint64(block.timestamp);
         uint256 currentExchangeRate = state.exchangeRate;
         uint256 currentTotalShares = vault.totalSupply();
@@ -267,8 +275,8 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      */
     function claimFees(ERC20 feeAsset) external requiresAuth {
         AccountantState storage state = accountantState;
-        if (state.isPaused) revert("paused");
-        if (state.feesOwedInBase == 0) revert("no fees owed");
+        if (state.isPaused) revert AccountantWithRateProviders__Paused();
+        if (state.feesOwedInBase == 0) revert AccountantWithRateProviders__ZeroFeesOwed();
 
         // Determine amount of fees owed in feeAsset.
         uint256 feesOwedInFeeAsset;
@@ -301,7 +309,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @dev Revert if paused.
      */
     function getRateSafe() external view returns (uint256 rate) {
-        if (accountantState.isPaused) revert("paused");
+        if (accountantState.isPaused) revert AccountantWithRateProviders__Paused();
         rate = getRate();
     }
 
@@ -330,7 +338,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @dev Revert if paused.
      */
     function getRateInQuoteSafe(ERC20 quote) external view returns (uint256 rateInQuote) {
-        if (accountantState.isPaused) revert("paused");
+        if (accountantState.isPaused) revert AccountantWithRateProviders__Paused();
         rateInQuote = getRateInQuote(quote);
     }
 }

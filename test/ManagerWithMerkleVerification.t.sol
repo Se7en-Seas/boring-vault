@@ -965,19 +965,35 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         uint256[] memory values;
         address[] memory decodersAndSanitizers;
 
-        vm.expectRevert(bytes("Invalid target proof length"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__InvalidManageProofLength.selector
+            )
+        );
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
         manageProofs = new bytes32[][](1);
 
-        vm.expectRevert(bytes("Invalid data length"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__InvalidTargetDataLength.selector
+            )
+        );
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
         targetData = new bytes[](1);
 
-        vm.expectRevert(bytes("Invalid values length"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__InvalidValuesLength.selector
+            )
+        );
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
         values = new uint256[](1);
 
-        vm.expectRevert(bytes("Invalid decodersAndSanitizers length"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__InvalidDecodersAndSanitizersLength.selector
+            )
+        );
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
         decodersAndSanitizers = new address[](1);
 
@@ -985,7 +1001,11 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         targetData[0] = abi.encodeWithSelector(ERC20.approve.selector, address(this), 1_000);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
 
-        vm.expectRevert(bytes("Failed to verify manage call"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__FailedToVerifyManageProof.selector
+            )
+        );
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
         // Set the manage root to be the leaf of the USDC approve function
@@ -1010,7 +1030,11 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         // Someone else initiated a flash loan
         vm.startPrank(vault);
-        vm.expectRevert(bytes("no flash loan"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__FlashLoanNotInProgress.selector
+            )
+        );
         manager.receiveFlashLoan(tokens, amounts, feeAmounts, abi.encode(0));
         vm.stopPrank();
     }

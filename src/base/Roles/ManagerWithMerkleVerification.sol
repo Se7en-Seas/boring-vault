@@ -41,6 +41,17 @@ contract ManagerWithMerkleVerification is Auth {
      */
     bytes32 internal flashLoanIntentHash = bytes32(0);
 
+    //============================== ERRORS ===============================
+
+    error ManagerWithMerkleVerification__InvalidManageProofLength();
+    error ManagerWithMerkleVerification__InvalidTargetDataLength();
+    error ManagerWithMerkleVerification__InvalidValuesLength();
+    error ManagerWithMerkleVerification__InvalidDecodersAndSanitizersLength();
+    error ManagerWithMerkleVerification__FlashLoanNotExecuted();
+    error ManagerWithMerkleVerification__FlashLoanNotInProgress();
+    error ManagerWithMerkleVerification__BadFlashLoanIntentHash();
+    error ManagerWithMerkleVerification__FailedToVerifyManageProof();
+
     //============================== EVENTS ===============================
 
     event ManageRootUpdated(address strategist, bytes32 oldRoot, bytes32 newRoot);
@@ -88,10 +99,12 @@ contract ManagerWithMerkleVerification is Auth {
         uint256[] calldata values
     ) external requiresAuth {
         uint256 targetsLength = targets.length;
-        if (targetsLength != manageProofs.length) revert("Invalid target proof length");
-        if (targetsLength != targetData.length) revert("Invalid data length");
-        if (targetsLength != values.length) revert("Invalid values length");
-        if (targetsLength != decodersAndSanitizers.length) revert("Invalid decodersAndSanitizers length");
+        if (targetsLength != manageProofs.length) revert ManagerWithMerkleVerification__InvalidManageProofLength();
+        if (targetsLength != targetData.length) revert ManagerWithMerkleVerification__InvalidTargetDataLength();
+        if (targetsLength != values.length) revert ManagerWithMerkleVerification__InvalidValuesLength();
+        if (targetsLength != decodersAndSanitizers.length) {
+            revert ManagerWithMerkleVerification__InvalidDecodersAndSanitizersLength();
+        }
 
         // Read state and save it in memory.
         bytes32 strategistManageRoot = manageRoot[msg.sender];
@@ -123,7 +136,7 @@ contract ManagerWithMerkleVerification is Auth {
         performingFlashLoan = true;
         balancerVault.flashLoan(recipient, tokens, amounts, userData);
         performingFlashLoan = false;
-        if (flashLoanIntentHash != bytes32(0)) revert("flash loan not executed");
+        if (flashLoanIntentHash != bytes32(0)) revert ManagerWithMerkleVerification__FlashLoanNotExecuted();
     }
 
     /**
@@ -138,11 +151,11 @@ contract ManagerWithMerkleVerification is Auth {
         uint256[] calldata feeAmounts,
         bytes calldata userData
     ) external requiresAuth {
-        if (!performingFlashLoan) revert("no flash loan");
+        if (!performingFlashLoan) revert ManagerWithMerkleVerification__FlashLoanNotInProgress();
 
         // Validate userData using intentHash.
         bytes32 intentHash = keccak256(userData);
-        if (intentHash != flashLoanIntentHash) revert("Intent hash mismatch");
+        if (intentHash != flashLoanIntentHash) revert ManagerWithMerkleVerification__BadFlashLoanIntentHash();
         // reset intent hash to prevent replays.
         flashLoanIntentHash = bytes32(0);
 
@@ -202,7 +215,7 @@ contract ManagerWithMerkleVerification is Auth {
                 packedArgumentAddresses
             )
         ) {
-            revert("Failed to verify manage call");
+            revert ManagerWithMerkleVerification__FailedToVerifyManageProof();
         }
     }
 
