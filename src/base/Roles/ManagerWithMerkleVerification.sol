@@ -34,9 +34,11 @@ contract ManagerWithMerkleVerification is AccessControlDefaultAdminRules {
     // A tree where the leafs are the keccak256 hash of the target address, function selector.
     /**
      * @notice A merkle tree root that restricts what data can be passed to the BoringVault.
-     * @dev Each leaf is composed of the keccak256 hash of abi.encodePacked {target, selector, argumentAddress_0, ...., argumentAddress_N}
+     * @dev Each leaf is composed of the keccak256 hash of abi.encodePacked {decodersAndSanitizer, target, valueIsNonZero, selector, argumentAddress_0, ...., argumentAddress_N}
      *      Where:
+     *             - decodersAndSanitizer is the addres to call to extract packed address arguments from the calldata
      *             - target is the address to make the call to
+     *             - valueIsNonZero is a bool indicating whether or not the value is non-zero
      *             - selector is the function selector on target
      *             - argumentAddress is each allowed address argument in that call
      */
