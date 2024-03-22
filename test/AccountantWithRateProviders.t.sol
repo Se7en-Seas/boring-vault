@@ -300,8 +300,11 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         vm.expectRevert(bytes("paused"));
         accountant.updateExchangeRate(0);
 
-        vm.expectRevert(bytes("only vault"));
+        address attacker = vm.addr(1);
+        vm.startPrank(attacker);
+        vm.expectRevert(bytes("UNAUTHORIZED"));
         accountant.claimFees(WETH);
+        vm.stopPrank();
 
         vm.startPrank(address(boringVault));
         vm.expectRevert(bytes("paused"));

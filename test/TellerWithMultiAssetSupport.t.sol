@@ -304,16 +304,6 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         assertApproxEqAbs(assets_out_2, weETH_amount, 1, "Should have received expected weETH assets");
     }
 
-    // function testPausing() external {
-    //     teller.pause();
-
-    //     assertTrue(teller.isPaused() == true, "Teller should be paused");
-
-    //     teller.unpause();
-
-    //     assertTrue(teller.isPaused() == false, "Teller should be unpaused");
-    // }
-
     function testAssetIsSupported() external {
         assertTrue(teller.isSupported(WETH) == true, "WETH should be supported");
 

@@ -82,10 +82,12 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         atomic_solver = new AtomicSolver(address(this), vault);
 
         rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
+        vm.startPrank(multisig);
         boringVault.setAuthority(rolesAuthority);
         manager.setAuthority(rolesAuthority);
         accountant.setAuthority(rolesAuthority);
         teller.setAuthority(rolesAuthority);
+        vm.stopPrank();
 
         // Setup roles authority.
         rolesAuthority.setRoleCapability(
@@ -168,8 +170,16 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         rolesAuthority.setRoleCapability(
             BORING_VAULT_ROLE, address(accountant), AccountantWithRateProviders.claimFees.selector, true
         );
+
+        rolesAuthority.setRoleCapability(
+            SOLVER_ROLE, address(teller), TellerWithMultiAssetSupport.bulkDeposit.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            SOLVER_ROLE, address(teller), TellerWithMultiAssetSupport.bulkWithdraw.selector, true
+        );
         // Grant roles
         rolesAuthority.setUserRole(address(this), STRATEGIST_ROLE, true);
+        rolesAuthority.setUserRole(strategist, STRATEGIST_ROLE, true);
         rolesAuthority.setUserRole(address(manager), MANGER_INTERNAL_ROLE, true);
         rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
         rolesAuthority.setUserRole(multisig, ADMIN_ROLE, true);
@@ -180,10 +190,6 @@ contract BoringVaultV0Test is Test, MainnetAddresses {
         rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
         rolesAuthority.setUserRole(address(this), UPDATE_EXCHANGE_RATE_ROLE, true);
         rolesAuthority.setUserRole(address(atomic_solver), SOLVER_ROLE, true);
-        rolesAuthority.setUserRole(address(atomic_solver), SOLVER_ROLE, true);
-
-        // Allow the boring vault to receive ETH.
-        rolesAuthority.setPublicCapability(address(boringVault), bytes4(0), true);
 
         vm.startPrank(multisig);
         accountant.setRateProviderData(EETH, true, address(0));
