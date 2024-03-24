@@ -26,8 +26,16 @@ contract ExpectedTokenBalancesUManager is Auth {
         boringVault = address(manager.vault());
     }
 
-    // What about using multicall? So we make the call then the follow up TX is balance check?
+    struct ComplexData {
+        uint256 a;
+        uint256 b;
+        uint256 c;
+        uint256 d;
+    }
 
+    // TODO I think the issue was that calldata is pushed onto the stack when read,
+    // but memory data is only pushed onto the stack when it is needed to be read.
+    // So the name of the game is to make as much calldata as possible?
     function manageAndEnforceTokenBalances(
         bytes32[][] calldata manageProofs,
         address[] calldata decodersAndSanitizers,
@@ -35,8 +43,10 @@ contract ExpectedTokenBalancesUManager is Auth {
         bytes[] calldata targetData,
         uint256[] memory values,
         ERC20[] memory tokens,
-        uint256[] memory minimumBalances
+        uint256[] memory minimumBalances,
+        ComplexData calldata data
     ) external requiresAuth {
+        require(data.a > 0);
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
         for (uint256 i = 0; i < tokens.length; ++i) {
             uint256 tokenBalance = tokens[i].balanceOf(boringVault);
