@@ -26,18 +26,18 @@ contract ExpectedTokenBalancesUManager is Auth {
         boringVault = address(manager.vault());
     }
 
+    // What about using multicall? So we make the call then the follow up TX is balance check?
+
     function manageAndEnforceTokenBalances(
-        ManageData calldata manageData,
-        ERC20[] calldata tokens,
-        uint256[] calldata minimumBalances
+        bytes32[][] calldata manageProofs,
+        address[] calldata decodersAndSanitizers,
+        address[] calldata targets,
+        bytes[] calldata targetData,
+        uint256[] memory values,
+        ERC20[] memory tokens,
+        uint256[] memory minimumBalances
     ) external requiresAuth {
-        manager.manageVaultWithMerkleVerification(
-            manageData.manageProofs,
-            manageData.decodersAndSanitizers,
-            manageData.targets,
-            manageData.targetData,
-            manageData.values
-        );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
         for (uint256 i = 0; i < tokens.length; ++i) {
             uint256 tokenBalance = tokens[i].balanceOf(boringVault);
             if (tokenBalance < minimumBalances[i]) {
