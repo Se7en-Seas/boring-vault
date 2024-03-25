@@ -14,7 +14,6 @@ import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthorit
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-// TODO call functions from accounts without the roles.
 contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -211,6 +210,34 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         vm.startPrank(user);
         teller.depositWithPermit(WEETH, weETH_amount, 0, block.timestamp, v, r, s);
         vm.stopPrank();
+
+        // and if user supplied wrong permit data, deposit will fail.
+        digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                WEETH.DOMAIN_SEPARATOR(),
+                keccak256(
+                    abi.encode(
+                        keccak256("permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
+                        user,
+                        address(boringVault),
+                        weETH_amount,
+                        WEETH.nonces(user),
+                        block.timestamp
+                    )
+                )
+            )
+        );
+        (v, r, s) = vm.sign(userKey, digest);
+
+        vm.startPrank(user);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__PermitFailedAndAllowanceTooLow.selector
+            )
+        );
+        teller.depositWithPermit(WEETH, weETH_amount, 0, block.timestamp, v, r, s);
+        vm.stopPrank();
     }
 
     function testUserPermitDepositWithFrontRunning(uint256 amount) external {
@@ -321,14 +348,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
     }
 
     function testReverts() external {
-        // teller.pause();
         teller.removeAsset(WETH);
-
-        // deposit reverts
-        // vm.expectRevert(bytes("paused"));
-        // teller.deposit(WETH, 0, 0);
-
-        // teller.unpause();
 
         vm.expectRevert(
             abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__AssetNotSupported.selector)
@@ -385,6 +405,45 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
             )
         );
         teller.bulkWithdraw(WETH, 1, type(uint256).max, address(this));
+
+        // Set share lock reverts
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__ShareLockPeriodTooLong.selector
+            )
+        );
+        teller.setShareLockPeriod(3 days + 1);
+
+        teller.setShareLockPeriod(3 days);
+        boringVault.setBeforeTransferHook(address(teller));
+
+        // Have user deposit
+        address user = vm.addr(333);
+        vm.startPrank(user);
+        uint256 wETH_amount = 1e18;
+        deal(address(WETH), user, wETH_amount);
+        WETH.safeApprove(address(boringVault), wETH_amount);
+
+        teller.deposit(WETH, wETH_amount, 0);
+
+        // Trying to transfer shares should revert.
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__SharesAreLocked.selector)
+        );
+        boringVault.transfer(address(this), 1);
+
+        vm.stopPrank();
+        // Calling transferFrom should also revert.
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__SharesAreLocked.selector)
+        );
+        boringVault.transferFrom(user, address(this), 1);
+
+        // But if user waits 3 days.
+        skip(3 days + 1);
+        // They can now transfer.
+        vm.prank(user);
+        boringVault.transfer(address(this), 1);
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

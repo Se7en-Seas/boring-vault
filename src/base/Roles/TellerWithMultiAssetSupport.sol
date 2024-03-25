@@ -150,7 +150,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
      * @notice Implement
      */
     function beforeTransfer(address from) external view {
-        if (shareUnlockTime[from] <= block.timestamp) revert TellerWithMultiAssetSupport__SharesAreLocked();
+        if (shareUnlockTime[from] >= block.timestamp) revert TellerWithMultiAssetSupport__SharesAreLocked();
     }
 
     // ========================================= REVERT DEPOSIT FUNCTIONS =========================================
