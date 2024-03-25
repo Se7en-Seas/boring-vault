@@ -95,4 +95,16 @@ contract DecoderCustomTypes {
         address irm;
         uint256 lltv;
     }
+
+    // ========================================= 1INCH =========================================
+
+    struct SwapDescription {
+        address srcToken;
+        address dstToken;
+        address payable srcReceiver;
+        address payable dstReceiver;
+        uint256 amount;
+        uint256 minReturnAmount;
+        uint256 flags;
+    }
 }

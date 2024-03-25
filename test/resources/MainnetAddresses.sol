@@ -366,4 +366,9 @@ contract MainnetAddresses {
     address public morphoBlue = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb;
 
     address public uniswapV3PositionManager = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
+
+    // 1Inch
+    address public aggregationRouterV5 = 0x1111111254EEB25477B68fb85Ed929f73A960582;
+    address public oneInchExecutor = 0xE37e799D5077682FA0a244D46E5649F71457BD09;
+    address public wETHweETH5bps = 0x7A415B19932c0105c82FDB6b720bb01B0CC2CAe3;
 }

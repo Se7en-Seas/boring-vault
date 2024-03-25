@@ -12,6 +12,7 @@ import {ConvexDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocol
 import {EtherFiDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/EtherFiDecoderAndSanitizer.sol";
 import {NativeWrapperDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/NativeWrapperDecoderAndSanitizer.sol";
+import {OneInchDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/OneInchDecoderAndSanitizer.sol";
 
 contract EtherFiLiquidDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
@@ -22,7 +23,8 @@ contract EtherFiLiquidDecoderAndSanitizer is
     AuraDecoderAndSanitizer,
     ConvexDecoderAndSanitizer,
     EtherFiDecoderAndSanitizer,
-    NativeWrapperDecoderAndSanitizer
+    NativeWrapperDecoderAndSanitizer,
+    OneInchDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
