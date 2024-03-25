@@ -82,7 +82,7 @@ contract DexAggregatorUManager is Auth {
     }
 
     /**
-     * @notice Performs a swap using the UniswapV3 Router, and enforces a slippage check.
+     * @notice Performs a swap using the 1inch Router, and enforces a slippage check.
      * @param manageProofs 2 manage proofs, the first one for the ERC20 approval, and the second
      *        for the router swap call
      * @param decodersAndSanitizers 2 DecodersAndSanitizers one that implements ERC20 approve, and one that
