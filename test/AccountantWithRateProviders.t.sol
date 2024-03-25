@@ -345,6 +345,24 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         // Trying to getRateInQuote with unsupported token should revert.
         vm.expectRevert();
         accountant.getRateInQuoteSafe(ETHX);
+
+        // Updating bounds, and management fee reverts.
+        vm.expectRevert(
+            abi.encodeWithSelector(AccountantWithRateProviders.AccountantWithRateProviders__UpperBoundTooSmall.selector)
+        );
+        accountant.updateUpper(0.9999e4);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(AccountantWithRateProviders.AccountantWithRateProviders__LowerBoundTooLarge.selector)
+        );
+        accountant.updateLower(1.0001e4);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AccountantWithRateProviders.AccountantWithRateProviders__ManagementFeeTooLarge.selector
+            )
+        );
+        accountant.updateManagementFee(0.2001e4);
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

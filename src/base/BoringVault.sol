@@ -9,7 +9,6 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
-import {console} from "@forge-std/Test.sol"; // TODO remove
 
 contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
     using Address for address;
