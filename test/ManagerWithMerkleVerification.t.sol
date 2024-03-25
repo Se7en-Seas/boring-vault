@@ -9,6 +9,8 @@ import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {
     EtherFiLiquidDecoderAndSanitizer,
+    MorphoBlueDecoderAndSanitizer,
+    UniswapV3DecoderAndSanitizer,
     BalancerV2DecoderAndSanitizer
 } from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
@@ -211,7 +213,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         }
     }
 
-    // TODO add balancer revert test checks
     function testBalancerV2AndAuraIntegration() external {
         deal(address(WETH), address(boringVault), 1_000e18);
         bytes32 poolId = 0x1e19cf2d73a72ef1332c882f20534b6519be0276000200000000000000000112;
@@ -406,7 +407,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         );
     }
 
-    // TODO add uniswap revert test checks
     function testUniswapV3Integration() external {
         deal(address(WETH), address(boringVault), 100e18);
         deal(address(WEETH), address(boringVault), 100e18);
@@ -1039,7 +1039,915 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         vm.stopPrank();
     }
 
+    function testFlashLoanReverts() external {
+        // Deploy a new manager, setting the Balancer Vault as address(this)
+        manager = new ManagerWithMerkleVerification(address(this), address(boringVault), address(this));
+        rolesAuthority.setRoleCapability(
+            STRATEGIST_ROLE,
+            address(manager),
+            ManagerWithMerkleVerification.manageVaultWithMerkleVerification.selector,
+            true
+        );
+        rolesAuthority.setRoleCapability(
+            MANGER_INTERNAL_ROLE,
+            address(manager),
+            ManagerWithMerkleVerification.manageVaultWithMerkleVerification.selector,
+            true
+        );
+        rolesAuthority.setRoleCapability(
+            BORING_VAULT_ROLE, address(manager), ManagerWithMerkleVerification.flashLoan.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            BALANCER_VAULT_ROLE, address(manager), ManagerWithMerkleVerification.receiveFlashLoan.selector, true
+        );
+        rolesAuthority.setUserRole(address(this), STRATEGIST_ROLE, true);
+        rolesAuthority.setUserRole(address(manager), MANGER_INTERNAL_ROLE, true);
+        rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
+        rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
+        rolesAuthority.setUserRole(address(this), BALANCER_VAULT_ROLE, true);
+        manager.setAuthority(rolesAuthority);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        leafs[0] = ManageLeaf(address(manager), false, "flashLoan(address,address[],uint256[],bytes)", new address[](2));
+        leafs[0].argumentAddresses[0] = address(manager);
+        leafs[0].argumentAddresses[1] = address(USDC);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[2][0]);
+        // Since the manager calls to itself to fulfill the flashloan, we need to set its root.
+        manager.setManageRoot(address(manager), manageTree[2][0]);
+
+        bytes memory userData = hex"DEAD";
+        address[] memory targets = new address[](1);
+        targets[0] = address(manager);
+
+        address[] memory tokensToBorrow = new address[](1);
+        tokensToBorrow[0] = address(USDC);
+        uint256[] memory amountsToBorrow = new uint256[](1);
+        amountsToBorrow[0] = 1_000_000e6;
+        bytes[] memory targetData = new bytes[](1);
+        targetData[0] = abi.encodeWithSelector(
+            BalancerVault.flashLoan.selector, address(manager), tokensToBorrow, amountsToBorrow, userData
+        );
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[0];
+
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        uint256[] memory values = new uint256[](1);
+        address[] memory decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+
+        // Try performing a flash loan where receiveFlashLoan is not called.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__FlashLoanNotExecuted.selector
+            )
+        );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        doNothing = false;
+
+        // Try performing a flash loan but with userData editted.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__BadFlashLoanIntentHash.selector
+            )
+        );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+    }
+
+    function testBalancerV2IntegrationReverts() external {
+        deal(address(WETH), address(boringVault), 1_000e18);
+        bytes32 poolId = 0x1e19cf2d73a72ef1332c882f20534b6519be0276000200000000000000000112;
+        // Make sure the vault can
+        // swap wETH -> rETH
+        // add liquidity rETH/wETH
+        // add to an existing position rETH/wETH
+        // stake in balancer
+        // unstake from balancer
+        // stake in aura
+        // unstake from aura
+        // remove liquidity from rETH/wETH
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = vault;
+        leafs[1] = ManageLeaf(
+            vault,
+            false,
+            "swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)",
+            new address[](5)
+        );
+        leafs[1].argumentAddresses[0] = address(rETH_wETH);
+        leafs[1].argumentAddresses[1] = address(WETH);
+        leafs[1].argumentAddresses[2] = address(RETH);
+        leafs[1].argumentAddresses[3] = address(boringVault);
+        leafs[1].argumentAddresses[4] = address(boringVault);
+        leafs[2] = ManageLeaf(address(RETH), false, "approve(address,uint256)", new address[](1));
+        leafs[2].argumentAddresses[0] = vault;
+        leafs[3] = ManageLeaf(
+            vault, false, "joinPool(bytes32,address,address,(address[],uint256[],bytes,bool))", new address[](5)
+        );
+        leafs[3].argumentAddresses[0] = address(rETH_wETH);
+        leafs[3].argumentAddresses[1] = address(boringVault);
+        leafs[3].argumentAddresses[2] = address(boringVault);
+        leafs[3].argumentAddresses[3] = address(RETH);
+        leafs[3].argumentAddresses[4] = address(WETH);
+        leafs[4] = ManageLeaf(address(rETH_wETH), false, "approve(address,uint256)", new address[](1));
+        leafs[4].argumentAddresses[0] = rETH_wETH_gauge;
+        leafs[5] = ManageLeaf(rETH_wETH_gauge, false, "deposit(uint256,address)", new address[](1));
+        leafs[5].argumentAddresses[0] = address(boringVault);
+        leafs[6] = ManageLeaf(rETH_wETH_gauge, false, "withdraw(uint256)", new address[](0));
+        leafs[7] = ManageLeaf(address(rETH_wETH), false, "approve(address,uint256)", new address[](1));
+        leafs[7].argumentAddresses[0] = aura_reth_weth;
+        leafs[8] = ManageLeaf(aura_reth_weth, false, "deposit(uint256,address)", new address[](1));
+        leafs[8].argumentAddresses[0] = address(boringVault);
+        leafs[9] = ManageLeaf(aura_reth_weth, false, "withdraw(uint256,address,address)", new address[](2));
+        leafs[9].argumentAddresses[0] = address(boringVault);
+        leafs[9].argumentAddresses[1] = address(boringVault);
+        leafs[10] = ManageLeaf(
+            vault, false, "exitPool(bytes32,address,address,(address[],uint256[],bytes,bool))", new address[](5)
+        );
+        leafs[10].argumentAddresses[0] = address(rETH_wETH);
+        leafs[10].argumentAddresses[1] = address(boringVault);
+        leafs[10].argumentAddresses[2] = address(boringVault);
+        leafs[10].argumentAddresses[3] = address(RETH);
+        leafs[10].argumentAddresses[4] = address(WETH);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](11);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+        manageLeafs[5] = leafs[5];
+        manageLeafs[6] = leafs[6];
+        manageLeafs[7] = leafs[7];
+        manageLeafs[8] = leafs[8];
+        manageLeafs[9] = leafs[9];
+        manageLeafs[10] = leafs[10];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](11);
+        targets[0] = address(WETH);
+        targets[1] = vault;
+        targets[2] = address(RETH);
+        targets[3] = vault;
+        targets[4] = address(rETH_wETH);
+        targets[5] = rETH_wETH_gauge;
+        targets[6] = rETH_wETH_gauge;
+        targets[7] = address(rETH_wETH);
+        targets[8] = aura_reth_weth;
+        targets[9] = aura_reth_weth;
+        targets[10] = vault;
+        // targets[7] = uniswapV3NonFungiblePositionManager;
+
+        // Build targetData but add data to userData.
+        bytes[] memory targetData = new bytes[](11);
+        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", vault, type(uint256).max);
+        DecoderCustomTypes.SingleSwap memory singleSwap = DecoderCustomTypes.SingleSwap({
+            poolId: poolId,
+            kind: DecoderCustomTypes.SwapKind.GIVEN_IN,
+            assetIn: address(WETH),
+            assetOut: address(RETH),
+            amount: 500e18,
+            userData: hex"DEAD"
+        });
+        DecoderCustomTypes.FundManagement memory funds = DecoderCustomTypes.FundManagement({
+            sender: address(boringVault),
+            fromInternalBalance: false,
+            recipient: address(boringVault),
+            toInternalBalance: false
+        });
+        targetData[1] = abi.encodeWithSelector(BalancerV2DecoderAndSanitizer.swap.selector, singleSwap, funds, 0);
+        targetData[2] = abi.encodeWithSignature("approve(address,uint256)", vault, type(uint256).max);
+        DecoderCustomTypes.JoinPoolRequest memory joinRequest = DecoderCustomTypes.JoinPoolRequest({
+            assets: new address[](2),
+            maxAmountsIn: new uint256[](2),
+            userData: hex"",
+            fromInternalBalance: false
+        });
+        joinRequest.assets[0] = address(RETH);
+        joinRequest.assets[1] = address(WETH);
+        joinRequest.maxAmountsIn[0] = 100e18;
+        joinRequest.maxAmountsIn[1] = 100e18;
+        joinRequest.userData = abi.encode(1, joinRequest.maxAmountsIn, 0); // EXACT_TOKENS_IN_FOR_BPT_OUT, [100e18,100e18], 0
+        targetData[3] = abi.encodeWithSelector(
+            BalancerV2DecoderAndSanitizer.joinPool.selector,
+            poolId,
+            address(boringVault),
+            address(boringVault),
+            joinRequest
+        );
+        targetData[4] = abi.encodeWithSignature("approve(address,uint256)", rETH_wETH_gauge, type(uint256).max);
+        targetData[5] = abi.encodeWithSignature("deposit(uint256,address)", 203690537881715311640, address(boringVault));
+        targetData[6] = abi.encodeWithSignature("withdraw(uint256)", 203690537881715311640, address(boringVault));
+        targetData[7] = abi.encodeWithSignature("approve(address,uint256)", aura_reth_weth, type(uint256).max);
+        targetData[8] = abi.encodeWithSignature("deposit(uint256,address)", 203690537881715311640, address(boringVault));
+        targetData[9] = abi.encodeWithSignature(
+            "withdraw(uint256,address,address)", 203690537881715311640, address(boringVault), address(boringVault)
+        );
+        DecoderCustomTypes.ExitPoolRequest memory exitRequest = DecoderCustomTypes.ExitPoolRequest({
+            assets: new address[](2),
+            minAmountsOut: new uint256[](2),
+            userData: hex"",
+            toInternalBalance: false
+        });
+        exitRequest.assets[0] = address(RETH);
+        exitRequest.assets[1] = address(WETH);
+        exitRequest.userData = abi.encode(1, 203690537881715311640); // EXACT_BPT_IN_FOR_TOKENS_OUT, 203690537881715311640
+        targetData[10] = abi.encodeWithSelector(
+            BalancerV2DecoderAndSanitizer.exitPool.selector,
+            poolId,
+            address(boringVault),
+            address(boringVault),
+            exitRequest
+        );
+        address[] memory decodersAndSanitizers = new address[](11);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[7] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[8] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[9] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[10] = rawDataDecoderAndSanitizer;
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                BalancerV2DecoderAndSanitizer.BalancerV2DecoderAndSanitizer__SingleSwapUserDataLengthNonZero.selector
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](11)
+        );
+
+        // Fix swap userData, but set fromInternalBalance to true.
+        singleSwap = DecoderCustomTypes.SingleSwap({
+            poolId: poolId,
+            kind: DecoderCustomTypes.SwapKind.GIVEN_IN,
+            assetIn: address(WETH),
+            assetOut: address(RETH),
+            amount: 500e18,
+            userData: hex""
+        });
+        funds = DecoderCustomTypes.FundManagement({
+            sender: address(boringVault),
+            fromInternalBalance: true,
+            recipient: address(boringVault),
+            toInternalBalance: false
+        });
+        targetData[1] = abi.encodeWithSelector(BalancerV2DecoderAndSanitizer.swap.selector, singleSwap, funds, 0);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                BalancerV2DecoderAndSanitizer.BalancerV2DecoderAndSanitizer__InternalBalancesNotSupported.selector
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](11)
+        );
+
+        // Fix swap fromInternalBalance, but set toInternalBalance to true.
+        singleSwap = DecoderCustomTypes.SingleSwap({
+            poolId: poolId,
+            kind: DecoderCustomTypes.SwapKind.GIVEN_IN,
+            assetIn: address(WETH),
+            assetOut: address(RETH),
+            amount: 500e18,
+            userData: hex""
+        });
+        funds = DecoderCustomTypes.FundManagement({
+            sender: address(boringVault),
+            fromInternalBalance: false,
+            recipient: address(boringVault),
+            toInternalBalance: true
+        });
+        targetData[1] = abi.encodeWithSelector(BalancerV2DecoderAndSanitizer.swap.selector, singleSwap, funds, 0);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                BalancerV2DecoderAndSanitizer.BalancerV2DecoderAndSanitizer__InternalBalancesNotSupported.selector
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](11)
+        );
+
+        // Fix swap data.
+        singleSwap = DecoderCustomTypes.SingleSwap({
+            poolId: poolId,
+            kind: DecoderCustomTypes.SwapKind.GIVEN_IN,
+            assetIn: address(WETH),
+            assetOut: address(RETH),
+            amount: 500e18,
+            userData: hex""
+        });
+        funds = DecoderCustomTypes.FundManagement({
+            sender: address(boringVault),
+            fromInternalBalance: false,
+            recipient: address(boringVault),
+            toInternalBalance: false
+        });
+        targetData[1] = abi.encodeWithSelector(BalancerV2DecoderAndSanitizer.swap.selector, singleSwap, funds, 0);
+
+        // Set joinPool fromInternalBalance to true.
+        joinRequest = DecoderCustomTypes.JoinPoolRequest({
+            assets: new address[](2),
+            maxAmountsIn: new uint256[](2),
+            userData: hex"",
+            fromInternalBalance: true
+        });
+        joinRequest.assets[0] = address(RETH);
+        joinRequest.assets[1] = address(WETH);
+        joinRequest.maxAmountsIn[0] = 100e18;
+        joinRequest.maxAmountsIn[1] = 100e18;
+        joinRequest.userData = abi.encode(1, joinRequest.maxAmountsIn, 0); // EXACT_TOKENS_IN_FOR_BPT_OUT, [100e18,100e18], 0
+        targetData[3] = abi.encodeWithSelector(
+            BalancerV2DecoderAndSanitizer.joinPool.selector,
+            poolId,
+            address(boringVault),
+            address(boringVault),
+            joinRequest
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                BalancerV2DecoderAndSanitizer.BalancerV2DecoderAndSanitizer__InternalBalancesNotSupported.selector
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](11)
+        );
+
+        // Fix joinPool.
+        joinRequest = DecoderCustomTypes.JoinPoolRequest({
+            assets: new address[](2),
+            maxAmountsIn: new uint256[](2),
+            userData: hex"",
+            fromInternalBalance: false
+        });
+        joinRequest.assets[0] = address(RETH);
+        joinRequest.assets[1] = address(WETH);
+        joinRequest.maxAmountsIn[0] = 100e18;
+        joinRequest.maxAmountsIn[1] = 100e18;
+        joinRequest.userData = abi.encode(1, joinRequest.maxAmountsIn, 0); // EXACT_TOKENS_IN_FOR_BPT_OUT, [100e18,100e18], 0
+        targetData[3] = abi.encodeWithSelector(
+            BalancerV2DecoderAndSanitizer.joinPool.selector,
+            poolId,
+            address(boringVault),
+            address(boringVault),
+            joinRequest
+        );
+
+        // Set exitPool toInternalBalance to true.
+        exitRequest = DecoderCustomTypes.ExitPoolRequest({
+            assets: new address[](2),
+            minAmountsOut: new uint256[](2),
+            userData: hex"",
+            toInternalBalance: true
+        });
+        exitRequest.assets[0] = address(RETH);
+        exitRequest.assets[1] = address(WETH);
+        exitRequest.userData = abi.encode(1, 203690537881715311640); // EXACT_BPT_IN_FOR_TOKENS_OUT, 203690537881715311640
+        targetData[10] = abi.encodeWithSelector(
+            BalancerV2DecoderAndSanitizer.exitPool.selector,
+            poolId,
+            address(boringVault),
+            address(boringVault),
+            exitRequest
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                BalancerV2DecoderAndSanitizer.BalancerV2DecoderAndSanitizer__InternalBalancesNotSupported.selector
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](11)
+        );
+
+        // Fix exitPool
+        exitRequest = DecoderCustomTypes.ExitPoolRequest({
+            assets: new address[](2),
+            minAmountsOut: new uint256[](2),
+            userData: hex"",
+            toInternalBalance: false
+        });
+        exitRequest.assets[0] = address(RETH);
+        exitRequest.assets[1] = address(WETH);
+        exitRequest.userData = abi.encode(1, 203690537881715311640); // EXACT_BPT_IN_FOR_TOKENS_OUT, 203690537881715311640
+        targetData[10] = abi.encodeWithSelector(
+            BalancerV2DecoderAndSanitizer.exitPool.selector,
+            poolId,
+            address(boringVault),
+            address(boringVault),
+            exitRequest
+        );
+
+        // Call no works.
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](11)
+        );
+    }
+
+    function testMorphoBlueIntegrationReverts() external {
+        deal(address(WETH), address(boringVault), 100e18);
+        deal(address(WEETH), address(boringVault), 100e18);
+
+        // supply weth
+        // withdraw weth
+        // supply weeth
+        // borrow weth
+        // repay weth
+        // withdraw weeth.
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = morphoBlue;
+        leafs[1] = ManageLeaf(
+            morphoBlue,
+            false,
+            "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            new address[](5)
+        );
+        leafs[1].argumentAddresses[0] = address(WETH);
+        leafs[1].argumentAddresses[1] = address(WEETH);
+        leafs[1].argumentAddresses[2] = weEthOracle;
+        leafs[1].argumentAddresses[3] = weEthIrm;
+        leafs[1].argumentAddresses[4] = address(boringVault);
+        leafs[2] = ManageLeaf(
+            morphoBlue,
+            false,
+            "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+            new address[](6)
+        );
+        leafs[2].argumentAddresses[0] = address(WETH);
+        leafs[2].argumentAddresses[1] = address(WEETH);
+        leafs[2].argumentAddresses[2] = weEthOracle;
+        leafs[2].argumentAddresses[3] = weEthIrm;
+        leafs[2].argumentAddresses[4] = address(boringVault);
+        leafs[2].argumentAddresses[5] = address(boringVault);
+        leafs[3] = ManageLeaf(address(WEETH), false, "approve(address,uint256)", new address[](1));
+        leafs[3].argumentAddresses[0] = morphoBlue;
+        leafs[4] = ManageLeaf(
+            morphoBlue,
+            false,
+            "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)",
+            new address[](5)
+        );
+        leafs[4].argumentAddresses[0] = address(WETH);
+        leafs[4].argumentAddresses[1] = address(WEETH);
+        leafs[4].argumentAddresses[2] = weEthOracle;
+        leafs[4].argumentAddresses[3] = weEthIrm;
+        leafs[4].argumentAddresses[4] = address(boringVault);
+        leafs[5] = ManageLeaf(
+            morphoBlue,
+            false,
+            "borrow((address,address,address,address,uint256),uint256,uint256,address,address)",
+            new address[](6)
+        );
+        leafs[5].argumentAddresses[0] = address(WETH);
+        leafs[5].argumentAddresses[1] = address(WEETH);
+        leafs[5].argumentAddresses[2] = weEthOracle;
+        leafs[5].argumentAddresses[3] = weEthIrm;
+        leafs[5].argumentAddresses[4] = address(boringVault);
+        leafs[5].argumentAddresses[5] = address(boringVault);
+        leafs[6] = ManageLeaf(
+            morphoBlue,
+            false,
+            "repay((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            new address[](5)
+        );
+        leafs[6].argumentAddresses[0] = address(WETH);
+        leafs[6].argumentAddresses[1] = address(WEETH);
+        leafs[6].argumentAddresses[2] = weEthOracle;
+        leafs[6].argumentAddresses[3] = weEthIrm;
+        leafs[6].argumentAddresses[4] = address(boringVault);
+        leafs[7] = ManageLeaf(
+            morphoBlue,
+            false,
+            "withdrawCollateral((address,address,address,address,uint256),uint256,address,address)",
+            new address[](6)
+        );
+        leafs[7].argumentAddresses[0] = address(WETH);
+        leafs[7].argumentAddresses[1] = address(WEETH);
+        leafs[7].argumentAddresses[2] = weEthOracle;
+        leafs[7].argumentAddresses[3] = weEthIrm;
+        leafs[7].argumentAddresses[4] = address(boringVault);
+        leafs[7].argumentAddresses[5] = address(boringVault);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](8);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+        manageLeafs[5] = leafs[5];
+        manageLeafs[6] = leafs[6];
+        manageLeafs[7] = leafs[7];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](8);
+        targets[0] = address(WETH);
+        targets[1] = morphoBlue;
+        targets[2] = morphoBlue;
+        targets[3] = address(WEETH);
+        targets[4] = morphoBlue;
+        targets[5] = morphoBlue;
+        targets[6] = morphoBlue;
+        targets[7] = morphoBlue;
+
+        bytes[] memory targetData = new bytes[](8);
+        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", morphoBlue, type(uint256).max);
+        DecoderCustomTypes.MarketParams memory params =
+            DecoderCustomTypes.MarketParams(address(WETH), address(WEETH), weEthOracle, weEthIrm, 0.86e18);
+        targetData[1] = abi.encodeWithSignature(
+            "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            params,
+            100e18,
+            0,
+            address(boringVault),
+            hex""
+        );
+        targetData[2] = abi.encodeWithSignature(
+            "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+            params,
+            100e18 - 1,
+            0,
+            address(boringVault),
+            address(boringVault)
+        );
+        targetData[3] = abi.encodeWithSignature("approve(address,uint256)", morphoBlue, type(uint256).max);
+        targetData[4] = abi.encodeWithSignature(
+            "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)",
+            params,
+            100e18,
+            address(boringVault),
+            hex""
+        );
+        targetData[5] = abi.encodeWithSignature(
+            "borrow((address,address,address,address,uint256),uint256,uint256,address,address)",
+            params,
+            10e18,
+            0,
+            address(boringVault),
+            address(boringVault)
+        );
+        targetData[6] = abi.encodeWithSignature(
+            "repay((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            params,
+            10e18,
+            0,
+            address(boringVault),
+            hex""
+        );
+        targetData[7] = abi.encodeWithSignature(
+            "withdrawCollateral((address,address,address,address,uint256),uint256,address,address)",
+            params,
+            90e18,
+            address(boringVault),
+            address(boringVault)
+        );
+
+        address[] memory decodersAndSanitizers = new address[](8);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[7] = rawDataDecoderAndSanitizer;
+
+        // Pass in callback data to supply.
+        targetData[1] = abi.encodeWithSignature(
+            "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            params,
+            100e18,
+            0,
+            address(boringVault),
+            hex"DEAD"
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                MorphoBlueDecoderAndSanitizer.MorphoBlueDecoderAndSanitizer__CallbackNotSupported.selector
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
+        );
+
+        // Fix supply call.
+        targetData[1] = abi.encodeWithSignature(
+            "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            params,
+            100e18,
+            0,
+            address(boringVault),
+            hex""
+        );
+
+        // Pass in callback data to supply collateral
+        targetData[4] = abi.encodeWithSignature(
+            "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)",
+            params,
+            100e18,
+            address(boringVault),
+            hex"DEAD"
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                MorphoBlueDecoderAndSanitizer.MorphoBlueDecoderAndSanitizer__CallbackNotSupported.selector
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
+        );
+
+        // Fix supply collateral call
+        targetData[4] = abi.encodeWithSignature(
+            "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)",
+            params,
+            100e18,
+            address(boringVault),
+            hex""
+        );
+
+        // Pass in callback data to repay
+        targetData[6] = abi.encodeWithSignature(
+            "repay((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            params,
+            10e18,
+            0,
+            address(boringVault),
+            hex"DEAD"
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                MorphoBlueDecoderAndSanitizer.MorphoBlueDecoderAndSanitizer__CallbackNotSupported.selector
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
+        );
+
+        // Fix repay call
+        targetData[6] = abi.encodeWithSignature(
+            "repay((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            params,
+            10e18,
+            0,
+            address(boringVault),
+            hex""
+        );
+
+        // Call now works.
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
+        );
+    }
+
+    function testUniswapV3IntegrationReverts() external {
+        deal(address(WETH), address(boringVault), 100e18);
+        deal(address(WEETH), address(boringVault), 100e18);
+        // Make sure the vault can
+        // swap wETH -> rETH
+        // create a new position rETH/weETH
+        // add to an existing position rETH/weETH
+        // pull from an existing position rETH/weETH
+        // collect from a position rETH/weETH
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = uniV3Router;
+        leafs[1] =
+            ManageLeaf(uniV3Router, false, "exactInput((bytes,address,uint256,uint256,uint256))", new address[](3));
+        leafs[1].argumentAddresses[0] = address(WETH);
+        leafs[1].argumentAddresses[1] = address(RETH);
+        leafs[1].argumentAddresses[2] = address(boringVault);
+        leafs[2] = ManageLeaf(address(RETH), false, "approve(address,uint256)", new address[](1));
+        leafs[2].argumentAddresses[0] = uniswapV3NonFungiblePositionManager;
+        leafs[3] = ManageLeaf(address(WEETH), false, "approve(address,uint256)", new address[](1));
+        leafs[3].argumentAddresses[0] = uniswapV3NonFungiblePositionManager;
+        leafs[4] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager,
+            false,
+            "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
+            new address[](3)
+        );
+        leafs[4].argumentAddresses[0] = address(RETH);
+        leafs[4].argumentAddresses[1] = address(WEETH);
+        leafs[4].argumentAddresses[2] = address(boringVault);
+        leafs[5] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager,
+            false,
+            "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+            new address[](0)
+        );
+        leafs[6] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager,
+            false,
+            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
+            new address[](0)
+        );
+        leafs[7] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager, false, "collect((uint256,address,uint128,uint128))", new address[](1)
+        );
+        leafs[7].argumentAddresses[0] = address(boringVault);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](8);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+        manageLeafs[5] = leafs[5];
+        manageLeafs[6] = leafs[6];
+        manageLeafs[7] = leafs[7];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](8);
+        targets[0] = address(WETH);
+        targets[1] = uniV3Router;
+        targets[2] = address(RETH);
+        targets[3] = address(WEETH);
+        targets[4] = uniswapV3NonFungiblePositionManager;
+        targets[5] = uniswapV3NonFungiblePositionManager;
+        targets[6] = uniswapV3NonFungiblePositionManager;
+        targets[7] = uniswapV3NonFungiblePositionManager;
+        bytes[] memory targetData = new bytes[](8);
+        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", uniV3Router, type(uint256).max);
+        DecoderCustomTypes.ExactInputParams memory exactInputParams = DecoderCustomTypes.ExactInputParams(
+            abi.encodePacked(WETH, uint24(100), RETH), address(boringVault), block.timestamp, 100e18, 0
+        );
+        targetData[1] = abi.encodeWithSignature("exactInput((bytes,address,uint256,uint256,uint256))", exactInputParams);
+        targetData[2] =
+            abi.encodeWithSignature("approve(address,uint256)", uniswapV3NonFungiblePositionManager, type(uint256).max);
+        targetData[3] =
+            abi.encodeWithSignature("approve(address,uint256)", uniswapV3NonFungiblePositionManager, type(uint256).max);
+
+        DecoderCustomTypes.MintParams memory mintParams = DecoderCustomTypes.MintParams(
+            address(RETH),
+            address(WEETH),
+            uint24(100),
+            int24(600), // lower tick
+            int24(700), // upper tick
+            45e18,
+            45e18,
+            0,
+            0,
+            address(boringVault),
+            block.timestamp
+        );
+        targetData[4] = abi.encodeWithSignature(
+            "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))", mintParams
+        );
+        uint256 expectedTokenId = 688183;
+        DecoderCustomTypes.IncreaseLiquidityParams memory increaseLiquidityParams =
+            DecoderCustomTypes.IncreaseLiquidityParams(expectedTokenId, 45e18, 45e18, 0, 0, block.timestamp);
+        targetData[5] = abi.encodeWithSignature(
+            "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))", increaseLiquidityParams
+        );
+        uint128 expectedLiquidity = 17435811346020121907400;
+        DecoderCustomTypes.DecreaseLiquidityParams memory decreaseLiquidityParams =
+            DecoderCustomTypes.DecreaseLiquidityParams(expectedTokenId, expectedLiquidity, 0, 0, block.timestamp);
+        targetData[6] = abi.encodeWithSignature(
+            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))", decreaseLiquidityParams
+        );
+
+        DecoderCustomTypes.CollectParams memory collectParams = DecoderCustomTypes.CollectParams(
+            expectedTokenId, address(boringVault), type(uint128).max, type(uint128).max
+        );
+        targetData[7] = abi.encodeWithSignature("collect((uint256,address,uint128,uint128))", collectParams);
+
+        address[] memory decodersAndSanitizers = new address[](8);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[7] = rawDataDecoderAndSanitizer;
+
+        // Make swap path data malformed.
+        exactInputParams = DecoderCustomTypes.ExactInputParams(
+            abi.encodePacked(WETH, uint32(100), RETH), address(boringVault), block.timestamp, 100e18, 0
+        );
+        targetData[1] = abi.encodeWithSignature("exactInput((bytes,address,uint256,uint256,uint256))", exactInputParams);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(UniswapV3DecoderAndSanitizer.UniswapV3DecoderAndSanitizer__BadPathFormat.selector)
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
+        );
+
+        // Fix swap path data.
+        exactInputParams = DecoderCustomTypes.ExactInputParams(
+            abi.encodePacked(WETH, uint24(100), RETH), address(boringVault), block.timestamp, 100e18, 0
+        );
+        targetData[1] = abi.encodeWithSignature("exactInput((bytes,address,uint256,uint256,uint256))", exactInputParams);
+
+        // Try adding liquidity to a token not owned by the boring vault.
+        increaseLiquidityParams =
+            DecoderCustomTypes.IncreaseLiquidityParams(expectedTokenId - 1, 45e18, 45e18, 0, 0, block.timestamp);
+        targetData[5] = abi.encodeWithSignature(
+            "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))", increaseLiquidityParams
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(UniswapV3DecoderAndSanitizer.UniswapV3DecoderAndSanitizer__BadTokenId.selector)
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
+        );
+
+        // Fix increase liquidity, but change decreaseLiquidity tokenId.
+        increaseLiquidityParams =
+            DecoderCustomTypes.IncreaseLiquidityParams(expectedTokenId, 45e18, 45e18, 0, 0, block.timestamp);
+        targetData[5] = abi.encodeWithSignature(
+            "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))", increaseLiquidityParams
+        );
+
+        decreaseLiquidityParams =
+            DecoderCustomTypes.DecreaseLiquidityParams(expectedTokenId - 1, expectedLiquidity, 0, 0, block.timestamp);
+        targetData[6] = abi.encodeWithSignature(
+            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))", decreaseLiquidityParams
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(UniswapV3DecoderAndSanitizer.UniswapV3DecoderAndSanitizer__BadTokenId.selector)
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
+        );
+
+        // Fix decrease liquidity but change collect tokenId.
+        decreaseLiquidityParams =
+            DecoderCustomTypes.DecreaseLiquidityParams(expectedTokenId, expectedLiquidity, 0, 0, block.timestamp);
+        targetData[6] = abi.encodeWithSignature(
+            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))", decreaseLiquidityParams
+        );
+
+        collectParams = DecoderCustomTypes.CollectParams(
+            expectedTokenId - 1, address(boringVault), type(uint128).max, type(uint128).max
+        );
+        targetData[7] = abi.encodeWithSignature("collect((uint256,address,uint128,uint128))", collectParams);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(UniswapV3DecoderAndSanitizer.UniswapV3DecoderAndSanitizer__BadTokenId.selector)
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
+        );
+
+        // Fix collect tokenId.
+        collectParams = DecoderCustomTypes.CollectParams(
+            expectedTokenId, address(boringVault), type(uint128).max, type(uint128).max
+        );
+        targetData[7] = abi.encodeWithSignature("collect((uint256,address,uint128,uint128))", collectParams);
+
+        // Call now works.
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
+        );
+    }
+
     // ========================================= HELPER FUNCTIONS =========================================
+    bool doNothing = true;
+
+    function flashLoan(address, address[] calldata tokens, uint256[] calldata amounts, bytes memory userData)
+        external
+    {
+        if (doNothing) {
+            return;
+        } else {
+            // Edit userData.
+            userData = hex"DEAD01";
+            manager.receiveFlashLoan(tokens, amounts, amounts, userData);
+        }
+    }
+
     bool iDidSomething = false;
 
     // Call this function approve, so that we can use the standard decoder.
