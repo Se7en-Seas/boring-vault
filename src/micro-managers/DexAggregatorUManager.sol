@@ -9,7 +9,6 @@ import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {PriceRouter} from "src/interfaces/PriceRouter.sol";
 
 // TODO should this implement some swap rate limiting logic?
-// TODO should this just handle lingering approvals by haing caller pass in revoke approval proof?
 /**
  * Required Merkle Root Leaves
  * - ERC20 approves with `router` spender.
@@ -33,7 +32,6 @@ contract DexAggregatorUManager is Auth {
 
     error DexAggregatorUManager__Slippage();
     error DexAggregatorUManager__NewSlippageTooLarge();
-    error DexAggregatorUManager__AllowanceNotUsed();
 
     //============================== EVENTS ===============================
 
@@ -123,8 +121,23 @@ contract DexAggregatorUManager is Auth {
             revert DexAggregatorUManager__Slippage();
         }
 
-        // Check that full allowance was used.
-        if (tokenIn.allowance(boringVault, address(router)) > 0) revert DexAggregatorUManager__AllowanceNotUsed();
+        // Check that full allowance was used, if not reuse the first proof and revoke it.
+        if (tokenIn.allowance(boringVault, address(router)) > 0) {
+            bytes32[][] memory revokeApproveProof = new bytes32[][](1);
+            revokeApproveProof[0] = manageProofs[0];
+            address[] memory revokeApproveDecodersAndSanitizers = new address[](1);
+            revokeApproveDecodersAndSanitizers[0] = decodersAndSanitizers[0];
+            targets = new address[](1);
+            targetData = new bytes[](1);
+            values = new uint256[](1);
+            targets[0] = address(tokenIn);
+            targetData[0] = abi.encodeWithSelector(ERC20.approve.selector, address(router), 0);
+
+            // Revoke unused approval.
+            manager.manageVaultWithMerkleVerification(
+                revokeApproveProof, revokeApproveDecodersAndSanitizers, targets, targetData, values
+            );
+        }
     }
 
     /**

@@ -147,12 +147,10 @@ contract DexAggregatorUManagerTest is Test, MainnetAddresses {
         // But if allowedSlippage is raised, call succeeds.
         dexAggregatorUManager.setAllowedSlippage(0.02e4);
 
-        // However if caller tries to get excess approvall, call fails.
-        vm.expectRevert(abi.encodeWithSelector(DexAggregatorUManager.DexAggregatorUManager__AllowanceNotUsed.selector));
+        // The swap works. Even with excess amount.
         dexAggregatorUManager.swapWith1Inch(manageProofs, decodersAndSanitizers, WETH, 101e18, WEETH, swapData);
 
-        // This swap is acceptable if caller changes amount
-        dexAggregatorUManager.swapWith1Inch(manageProofs, decodersAndSanitizers, WETH, 100e18, WEETH, swapData);
+        assertEq(WETH.allowance(address(boringVault), aggregationRouterV5), 0, "Allowance should have been revoked.");
 
         // uManager should also be able to revoke approvals to router.
         manageLeafs = new ManageLeaf[](1);
