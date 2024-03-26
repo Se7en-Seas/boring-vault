@@ -13,6 +13,7 @@ import {EtherFiDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protoco
 import {NativeWrapperDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/NativeWrapperDecoderAndSanitizer.sol";
 import {OneInchDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/OneInchDecoderAndSanitizer.sol";
+import {GearboxDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/GearboxDecoderAndSanitizer.sol";
 
 contract EtherFiLiquidDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
@@ -24,7 +25,8 @@ contract EtherFiLiquidDecoderAndSanitizer is
     ConvexDecoderAndSanitizer,
     EtherFiDecoderAndSanitizer,
     NativeWrapperDecoderAndSanitizer,
-    OneInchDecoderAndSanitizer
+    OneInchDecoderAndSanitizer,
+    GearboxDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
@@ -59,13 +61,18 @@ contract EtherFiLiquidDecoderAndSanitizer is
     }
 
     /**
-     * @notice BalancerV2, NativeWrapper, and Curve all specify a `withdraw(uint256)`,
+     * @notice BalancerV2, NativeWrapper, Curve, and Gearbox all specify a `withdraw(uint256)`,
      *         all cases are handled the same way.
      */
     function withdraw(uint256)
         external
         pure
-        override(BalancerV2DecoderAndSanitizer, CurveDecoderAndSanitizer, NativeWrapperDecoderAndSanitizer)
+        override(
+            BalancerV2DecoderAndSanitizer,
+            CurveDecoderAndSanitizer,
+            NativeWrapperDecoderAndSanitizer,
+            GearboxDecoderAndSanitizer
+        )
         returns (bytes memory addressesFound)
     {
         // Nothing to sanitize or return

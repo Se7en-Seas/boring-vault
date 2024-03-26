@@ -957,6 +957,76 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         );
     }
 
+    function testGearboxIntegration() external {
+        deal(address(WETH), address(boringVault), 1_000e18);
+
+        // get dWETHV3
+        // get sdWETHV3
+        // claim rewards
+        // sell sdWETHV3
+        // sell dWETHV3
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = dWETHV3;
+        leafs[1] = ManageLeaf(dWETHV3, false, "deposit(uint256,address)", new address[](1));
+        leafs[1].argumentAddresses[0] = address(boringVault);
+        leafs[2] = ManageLeaf(dWETHV3, false, "approve(address,uint256)", new address[](1));
+        leafs[2].argumentAddresses[0] = sdWETHV3;
+        leafs[3] = ManageLeaf(sdWETHV3, false, "deposit(uint256)", new address[](0));
+        leafs[4] = ManageLeaf(sdWETHV3, false, "claim()", new address[](0));
+        leafs[5] = ManageLeaf(sdWETHV3, false, "withdraw(uint256)", new address[](0));
+        leafs[6] = ManageLeaf(dWETHV3, false, "withdraw(uint256,address,address)", new address[](2));
+        leafs[6].argumentAddresses[0] = address(boringVault);
+        leafs[6].argumentAddresses[1] = address(boringVault);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](7);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+        manageLeafs[5] = leafs[5];
+        manageLeafs[6] = leafs[6];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](7);
+        targets[0] = address(WETH);
+        targets[1] = dWETHV3;
+        targets[2] = dWETHV3;
+        targets[3] = sdWETHV3;
+        targets[4] = sdWETHV3;
+        targets[5] = sdWETHV3;
+        targets[6] = dWETHV3;
+
+        bytes[] memory targetData = new bytes[](7);
+        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", dWETHV3, type(uint256).max);
+        targetData[1] = abi.encodeWithSignature("deposit(uint256,address)", 1_000e18, address(boringVault));
+        targetData[2] = abi.encodeWithSignature("approve(address,uint256)", sdWETHV3, type(uint256).max);
+        targetData[3] = abi.encodeWithSignature("deposit(uint256)", 100e18);
+        targetData[4] = abi.encodeWithSignature("claim()");
+        targetData[5] = abi.encodeWithSignature("withdraw(uint256)", 100e18);
+        targetData[6] = abi.encodeWithSignature(
+            "withdraw(uint256,address,address)", 1_000e18 - 1, address(boringVault), address(boringVault)
+        );
+
+        address[] memory decodersAndSanitizers = new address[](7);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
+
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](7)
+        );
+    }
+
     function testReverts() external {
         bytes32[][] memory manageProofs;
         address[] memory targets;
