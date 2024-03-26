@@ -48,6 +48,11 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
     uint64 public shareLockPeriod;
 
     /**
+     * @notice Used to pause calls to `deposit` and `depositWithPermit`.
+     */
+    bool public isPaused;
+
+    /**
      * @dev Maps deposit nonce to keccak256(address receiver, address depositAsset, uint256 depositAmount, uint256 shareAmount, uint256 timestamp, uint256 shareLockPeriod).
      */
     mapping(uint256 => bytes32) public publicDepositHistory;
@@ -67,9 +72,12 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
     error TellerWithMultiAssetSupport__PermitFailedAndAllowanceTooLow();
     error TellerWithMultiAssetSupport__ZeroShares();
     error TellerWithMultiAssetSupport__DualDeposit();
+    error TellerWithMultiAssetSupport__Paused();
 
     //============================== EVENTS ===============================
 
+    event Paused();
+    event Unpaused();
     event AssetAdded(address asset);
     event AssetRemoved(address asset);
     event Deposit(
@@ -117,6 +125,22 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
     }
 
     // ========================================= ADMIN FUNCTIONS =========================================
+
+    /**
+     * @notice Pause this contract, which prevents future calls to `deposit` and `depositWithPermit`.
+     */
+    function pause() external requiresAuth {
+        isPaused = true;
+        emit Paused();
+    }
+
+    /**
+     * @notice Unpause this contract, which allows future calls to `deposit` and `depositWithPermit`.
+     */
+    function unpause() external requiresAuth {
+        isPaused = false;
+        emit Unpaused();
+    }
 
     /**
      * @notice Adds this asset as a deposit asset.
@@ -205,6 +229,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
         requiresAuth
         returns (uint256 shares)
     {
+        if (isPaused) revert TellerWithMultiAssetSupport__Paused();
         if (!isSupported[depositAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
 
         if (address(depositAsset) == NATIVE) {
@@ -236,6 +261,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
         bytes32 r,
         bytes32 s
     ) external requiresAuth returns (uint256 shares) {
+        if (isPaused) revert TellerWithMultiAssetSupport__Paused();
         if (!isSupported[depositAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
 
         try depositAsset.permit(msg.sender, address(vault), depositAmount, deadline, v, r, s) {}

@@ -348,6 +348,21 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
     }
 
     function testReverts() external {
+        // Test pause logic
+        teller.pause();
+
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__Paused.selector)
+        );
+        teller.deposit(WETH, 0, 0);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__Paused.selector)
+        );
+        teller.depositWithPermit(WETH, 0, 0, 0, 0, bytes32(0), bytes32(0));
+
+        teller.unpause();
+
         teller.removeAsset(WETH);
 
         vm.expectRevert(
