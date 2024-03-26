@@ -371,4 +371,8 @@ contract MainnetAddresses {
     address public aggregationRouterV5 = 0x1111111254EEB25477B68fb85Ed929f73A960582;
     address public oneInchExecutor = 0xE37e799D5077682FA0a244D46E5649F71457BD09;
     address public wETHweETH5bps = 0x7A415B19932c0105c82FDB6b720bb01B0CC2CAe3;
+
+    // Gearbox
+    address public dWETHV3 = 0xda0002859B2d05F66a753d8241fCDE8623f26F4f;
+    address public sdWETHV3 = 0x0418fEB7d0B25C411EB77cD654305d29FcbFf685;
 }
