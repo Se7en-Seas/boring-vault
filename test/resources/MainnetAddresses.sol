@@ -375,4 +375,16 @@ contract MainnetAddresses {
     // Gearbox
     address public dWETHV3 = 0xda0002859B2d05F66a753d8241fCDE8623f26F4f;
     address public sdWETHV3 = 0x0418fEB7d0B25C411EB77cD654305d29FcbFf685;
+
+    // Pendle
+    address public pendleMarketFactory = 0x1A6fCc85557BC4fB7B534ed835a03EF056552D52;
+    address public pendleRouter = 0x00000000005BBB0EF59571E58418F9a4357b68A0;
+    address public pendleOracle = 0x66a1096C6366b2529274dF4f5D8247827fe4CEA8;
+
+    address public pendleWeETHMarket = 0xF32e58F92e60f4b0A37A69b95d642A471365EAe8;
+    address public pendleWeethSy = 0xAC0047886a985071476a1186bE89222659970d65;
+    address public pendleEethPt = 0xc69Ad9baB1dEE23F4605a82b3354F8E40d1E5966;
+    address public pendleEethYt = 0xfb35Fd0095dD1096b1Ca49AD44d8C5812A201677;
+
+    address public pendleSwethMarket = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303;
 }
