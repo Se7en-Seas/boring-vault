@@ -8,7 +8,6 @@ import {AggregationRouterV5} from "src/interfaces/AggregationRouterV5.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {PriceRouter} from "src/interfaces/PriceRouter.sol";
 
-// TODO should this implement some swap rate limiting logic?
 /**
  * Required Merkle Root Leaves
  * - ERC20 approves with `router` spender.
