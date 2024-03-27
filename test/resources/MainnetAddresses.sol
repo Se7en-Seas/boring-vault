@@ -387,4 +387,7 @@ contract MainnetAddresses {
     address public pendleEethYt = 0xfb35Fd0095dD1096b1Ca49AD44d8C5812A201677;
 
     address public pendleSwethMarket = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303;
+
+    // Aave V3
+    address public v3Pool = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
 }

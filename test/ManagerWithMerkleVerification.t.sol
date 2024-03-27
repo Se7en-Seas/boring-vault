@@ -1229,6 +1229,96 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 
+    function testAaveV3Integration() external {
+        deal(address(WSTETH), address(boringVault), 1_000e18);
+        deal(address(WETH), address(boringVault), 1_000e18);
+
+        // Approve WSTETH
+        // Approve WETH
+        // Supply WSTETH
+        // Borrow WETH
+        // Repay WETH
+        // Withdraw WSTETH
+        // Call setUserUseReserveAsCollateral
+        // Call setUserEMode
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        leafs[0] = ManageLeaf(address(WSTETH), false, "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = v3Pool;
+        leafs[1] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
+        leafs[1].argumentAddresses[0] = v3Pool;
+        leafs[2] = ManageLeaf(v3Pool, false, "supply(address,uint256,address,uint16)", new address[](2));
+        leafs[2].argumentAddresses[0] = address(WSTETH);
+        leafs[2].argumentAddresses[1] = address(boringVault);
+        leafs[3] = ManageLeaf(v3Pool, false, "borrow(address,uint256,uint256,uint16,address)", new address[](2));
+        leafs[3].argumentAddresses[0] = address(WETH);
+        leafs[3].argumentAddresses[1] = address(boringVault);
+        leafs[4] = ManageLeaf(v3Pool, false, "repay(address,uint256,uint256,address)", new address[](2));
+        leafs[4].argumentAddresses[0] = address(WETH);
+        leafs[4].argumentAddresses[1] = address(boringVault);
+        leafs[5] = ManageLeaf(v3Pool, false, "withdraw(address,uint256,address)", new address[](2));
+        leafs[5].argumentAddresses[0] = address(WSTETH);
+        leafs[5].argumentAddresses[1] = address(boringVault);
+        leafs[6] = ManageLeaf(v3Pool, false, "setUserUseReserveAsCollateral(address,bool)", new address[](1));
+        leafs[6].argumentAddresses[0] = address(WSTETH);
+        leafs[7] = ManageLeaf(v3Pool, false, "setUserEMode(uint8)", new address[](0));
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](8);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+        manageLeafs[5] = leafs[5];
+        manageLeafs[6] = leafs[6];
+        manageLeafs[7] = leafs[7];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](8);
+        targets[0] = address(WSTETH);
+        targets[1] = address(WETH);
+        targets[2] = v3Pool;
+        targets[3] = v3Pool;
+        targets[4] = v3Pool;
+        targets[5] = v3Pool;
+        targets[6] = v3Pool;
+        targets[7] = v3Pool;
+
+        bytes[] memory targetData = new bytes[](8);
+        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", v3Pool, type(uint256).max);
+        targetData[1] = abi.encodeWithSignature("approve(address,uint256)", v3Pool, type(uint256).max);
+        targetData[2] = abi.encodeWithSignature(
+            "supply(address,uint256,address,uint16)", address(WSTETH), 1_000e18, address(boringVault), 0
+        );
+        targetData[3] = abi.encodeWithSignature(
+            "borrow(address,uint256,uint256,uint16,address)", address(WETH), 100e18, 2, 0, address(boringVault)
+        );
+        targetData[4] = abi.encodeWithSignature(
+            "repay(address,uint256,uint256,address)", address(WETH), type(uint256).max, 2, address(boringVault)
+        );
+        targetData[5] = abi.encodeWithSignature(
+            "withdraw(address,uint256,address)", address(WSTETH), 1_000e18 - 1, address(boringVault)
+        );
+        targetData[6] = abi.encodeWithSignature("setUserUseReserveAsCollateral(address,bool)", address(WSTETH), true);
+        targetData[7] = abi.encodeWithSignature("setUserEMode(uint8)", 0);
+
+        address[] memory decodersAndSanitizers = new address[](8);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[7] = rawDataDecoderAndSanitizer;
+
+        uint256[] memory values = new uint256[](8);
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+    }
+
     function testReverts() external {
         bytes32[][] memory manageProofs;
         address[] memory targets;
