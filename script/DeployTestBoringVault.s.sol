@@ -55,7 +55,7 @@ contract DeployTestBoringVaultScript is Script {
         rawDataDecoderAndSanitizer = address(
             new EtherFiLiquidDecoderAndSanitizer(address(boring_vault), 0xC36442b4a4522E871399CD717aBDD847Ab11FE88)
         );
-        rolesAuthority = new RolesAuthority(owner, Authority(address(0)));
+        // rolesAuthority = new RolesAuthority(owner, Authority(address(0)));
 
         vm.stopBroadcast();
     }
