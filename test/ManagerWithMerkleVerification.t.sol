@@ -1027,6 +1027,9 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         );
     }
 
+    // TODO
+    function testPendleRouterIntegration() external {}
+
     function testReverts() external {
         bytes32[][] memory manageProofs;
         address[] memory targets;
@@ -2002,6 +2005,9 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
         );
     }
+
+    // TODO
+    function testPendleRouterReverts() external {}
 
     // ========================================= HELPER FUNCTIONS =========================================
     bool doNothing = true;
