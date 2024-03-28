@@ -1300,7 +1300,7 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
 
         string memory filePath = "./leafs/TestStrategistLeafs.json";
 
-        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0]);
+        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 
     function testGenerateMerkleRoot() external {
@@ -1421,10 +1421,15 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
 
         string memory filePath = "./leafs/example.json";
 
-        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0]);
+        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 
-    function _generateLeafs(string memory filePath, ManageLeaf[] memory leafs, bytes32 manageRoot) internal {
+    function _generateLeafs(
+        string memory filePath,
+        ManageLeaf[] memory leafs,
+        bytes32 manageRoot,
+        bytes32[][] memory manageTree
+    ) internal {
         if (vm.exists(filePath)) {
             // Need to delete it
             vm.removeFile(filePath);
@@ -1473,7 +1478,28 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
                 vm.writeLine(filePath, ",");
             }
         }
-        vm.writeLine(filePath, "]}");
+        vm.writeLine(filePath, "],");
+
+        string memory merkleTreeName = "MerkleTree";
+        string[][] memory merkleTree = new string[][](manageTree.length);
+        for (uint256 k; k < manageTree.length; ++k) {
+            merkleTree[k] = new string[](manageTree[k].length);
+        }
+
+        for (uint256 i; i < manageTree.length; ++i) {
+            for (uint256 j; j < manageTree[i].length; ++j) {
+                merkleTree[i][j] = Strings.toHexString(uint256(manageTree[i][j]));
+            }
+        }
+
+        string memory finalMerkleTree;
+        for (uint256 i; i < merkleTree.length; ++i) {
+            string memory layer = Strings.toString(merkleTree.length - (i + 1));
+            finalMerkleTree = vm.serializeString(merkleTreeName, layer, merkleTree[i]);
+        }
+        vm.writeLine(filePath, "\"MerkleTree\": ");
+        vm.writeLine(filePath, finalMerkleTree);
+        vm.writeLine(filePath, "}");
     }
 
     // ========================================= HELPER FUNCTIONS =========================================
