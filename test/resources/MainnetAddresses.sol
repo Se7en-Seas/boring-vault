@@ -290,6 +290,10 @@ contract MainnetAddresses {
     address public weETH_wETH_Curve_Gauge = 0x1CAC1a0Ed47E2e0A313c712b2dcF85994021a365;
     address public weETH_wETH_Convex_Reward = 0x2D159E01A5cEe7498F84Be68276a5266b3cb3774;
 
+    address public ezETH_wETH_Curve_Pool = 0x85dE3ADd465a219EE25E04d22c39aB027cF5C12E;
+    address public weETH_rswETH_Curve_Pool = 0x278cfB6f06B1EFc09d34fC7127d6060C61d629Db;
+    address public rswETH_wETH_Curve_Pool = 0xeE04382c4cA6c450213923fE0f0daB19b0ff3939;
+
     address public WethMkUsdPool = 0xc89570207c5BA1B0E3cD372172cCaEFB173DB270;
 
     // Convex-Curve Platform Specifics
@@ -396,6 +400,11 @@ contract MainnetAddresses {
     address public pendleWeethSy = 0xAC0047886a985071476a1186bE89222659970d65;
     address public pendleEethPt = 0xc69Ad9baB1dEE23F4605a82b3354F8E40d1E5966;
     address public pendleEethYt = 0xfb35Fd0095dD1096b1Ca49AD44d8C5812A201677;
+
+    address public pendleEzEthMarket = 0xDe715330043799D7a80249660d1e6b61eB3713B3;
+    address public pendleEzEthSy = 0x22E12A50e3ca49FB183074235cB1db84Fe4C716D;
+    address public pendleEzEthPt = 0xeEE8aED1957ca1545a0508AfB51b53cCA7e3c0d1;
+    address public pendleEzEthYt = 0x256Fb830945141f7927785c06b65dAbc3744213c;
 
     address public pendleSwethMarket = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303;
 
