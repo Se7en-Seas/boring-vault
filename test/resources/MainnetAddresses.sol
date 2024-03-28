@@ -64,6 +64,7 @@ contract MainnetAddresses {
     ERC20 public EZETH = ERC20(0xbf5495Efe5DB9ce00f80364C8B423567e58d2110);
     ERC20 public RSETH = ERC20(0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7);
     ERC20 public OSETH = ERC20(0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38);
+    ERC20 public RSWETH = ERC20(0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0);
 
     // Rate providers
     address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
@@ -149,6 +150,14 @@ contract MainnetAddresses {
     ERC20 public rETH_wETH = ERC20(0x1E19CF2D73a72Ef1332C882F20534B6519Be0276);
     address public rETH_wETH_gauge = 0x79eF6103A513951a3b25743DB509E267685726B7;
     address public aura_reth_weth = 0xDd1fE5AD401D4777cE89959b7fa587e569Bf125D;
+
+    ERC20 public ezETH_weETH_rswETH = ERC20(0x848a5564158d84b8A8fb68ab5D004Fae11619A54);
+    address public ezETH_weETH_rswETH_gauge = 0x253ED65fff980AEE7E94a0dC57BE304426048b35;
+    address public aura_ezETH_weETH_rswETH = 0xce98eb8b2Fb98049b3F2dB0A212Ba7ca3Efd63b0;
+
+    // ERC20 public ezETH_wETH = ERC20(0x596192bB6e41802428Ac943D2f1476C1Af25CC0E);
+    // address public ezETH_wETH_gauge = 0xa8B309a75f0D64ED632d45A003c68A30e59A1D8b;
+    // address public aura_ezETH_wETH = 0x95eC73Baa0eCF8159b4EE897D973E41f51978E50;
 
     // Linear Pools.
     ERC20 public bb_a_dai = ERC20(0x6667c6fa9f2b3Fc1Cc8D85320b62703d938E4385);
@@ -364,6 +373,8 @@ contract MainnetAddresses {
     address public cometRewards = 0x1B0e765F6224C21223AeA2af16c1C46E38885a40;
     // Morpho Blue
     address public morphoBlue = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb;
+    address public ezEthOracle = 0x61025e2B0122ac8bE4e37365A4003d87ad888Cc3;
+    address public ezEthIrm = 0x870aC11D48B15DB9a138Cf899d20F13F79Ba00BC;
 
     address public uniswapV3PositionManager = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
 
