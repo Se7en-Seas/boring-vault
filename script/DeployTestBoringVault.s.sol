@@ -8,7 +8,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
-import {EtherFiLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
+import {RenzoLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/RenzoLiquidDecoderAndSanitizer.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
@@ -17,7 +17,7 @@ import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 
 /**
- *  source .env && forge script script/DeployTestBoringVault.s.sol:DeployTestBoringVaultScript --with-gas-price 100000000 --slow --broadcast
+ *  source .env && forge script script/DeployTestBoringVault.s.sol:DeployTestBoringVaultScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployTestBoringVaultScript is Script {
@@ -53,7 +53,7 @@ contract DeployTestBoringVaultScript is Script {
         teller = new TellerWithMultiAssetSupport(owner, address(boring_vault), address(accountant), WETH);
 
         rawDataDecoderAndSanitizer = address(
-            new EtherFiLiquidDecoderAndSanitizer(address(boring_vault), 0xC36442b4a4522E871399CD717aBDD847Ab11FE88)
+            new RenzoLiquidDecoderAndSanitizer(address(boring_vault), 0xC36442b4a4522E871399CD717aBDD847Ab11FE88)
         );
         // rolesAuthority = new RolesAuthority(owner, Authority(address(0)));
 

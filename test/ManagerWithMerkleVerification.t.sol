@@ -15,6 +15,7 @@ import {
     PendleRouterDecoderAndSanitizer
 } from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
 import {RenzoLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/RenzoLiquidDecoderAndSanitizer.sol";
+import {LidoLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/LidoLiquidDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {IUniswapV3Router} from "src/interfaces/IUniswapV3Router.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
@@ -1355,6 +1356,123 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
         assertGt(EZETH.balanceOf(address(boringVault)), 0, "BoringVault should have ezETH.");
+    }
+
+    function testLidoIntegration() external {
+        deal(address(boringVault), 1_000e18);
+
+        // update DecoderAndSanitizer
+        rawDataDecoderAndSanitizer =
+            address(new LidoLiquidDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
+
+        // Call submit
+        // call approve
+        // wrap it
+        // unwrap it
+        // Request a withdrawal
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        leafs[0] = ManageLeaf(address(STETH), true, "submit(address)", new address[](1));
+        leafs[0].argumentAddresses[0] = address(0);
+        leafs[1] = ManageLeaf(address(STETH), false, "approve(address,uint256)", new address[](1));
+        leafs[1].argumentAddresses[0] = address(WSTETH);
+        leafs[2] = ManageLeaf(address(WSTETH), false, "wrap(uint256)", new address[](0));
+        leafs[3] = ManageLeaf(address(WSTETH), false, "unwrap(uint256)", new address[](0));
+        leafs[4] = ManageLeaf(address(STETH), false, "approve(address,uint256)", new address[](1));
+        leafs[4].argumentAddresses[0] = unstETH;
+        leafs[5] = ManageLeaf(unstETH, false, "requestWithdrawals(uint256[],address)", new address[](1));
+        leafs[5].argumentAddresses[0] = address(boringVault);
+        leafs[6] = ManageLeaf(unstETH, false, "claimWithdrawal(uint256)", new address[](0));
+        leafs[7] = ManageLeaf(unstETH, false, "claimWithdrawals(uint256[],uint256[])", new address[](0));
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](6);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+        manageLeafs[5] = leafs[5];
+
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](6);
+        targets[0] = address(STETH);
+        targets[1] = address(STETH);
+        targets[2] = address(WSTETH);
+        targets[3] = address(WSTETH);
+        targets[4] = address(STETH);
+        targets[5] = unstETH;
+
+        bytes[] memory targetData = new bytes[](6);
+        targetData[0] = abi.encodeWithSignature("submit(address)", address(0));
+        targetData[1] = abi.encodeWithSignature("approve(address,uint256)", address(WSTETH), type(uint256).max);
+        targetData[2] = abi.encodeWithSignature("wrap(uint256)", 100e18);
+        targetData[3] = abi.encodeWithSignature("unwrap(uint256)", 10e18);
+        targetData[4] = abi.encodeWithSignature("approve(address,uint256)", unstETH, type(uint256).max);
+        uint256[] memory amounts = new uint256[](3);
+        amounts[0] = 100e18;
+        amounts[1] = 100e18;
+        amounts[2] = 100e18;
+        targetData[5] = abi.encodeWithSignature("requestWithdrawals(uint256[],address)", amounts, address(boringVault));
+
+        address[] memory decodersAndSanitizers = new address[](6);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+
+        uint256[] memory values = new uint256[](6);
+        values[0] = 1_000e18;
+
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        // Finalize withdraw requests.
+        address admin = IUNSTETH(unstETH).getRoleMember(IUNSTETH(unstETH).FINALIZE_ROLE(), 0);
+        deal(admin, 300e18);
+        vm.startPrank(admin);
+        IUNSTETH(unstETH).finalize{value: 100e18}(28_791, type(uint256).max);
+        IUNSTETH(unstETH).finalize{value: 100e18}(28_792, type(uint256).max);
+        IUNSTETH(unstETH).finalize{value: 100e18}(28_793, type(uint256).max);
+        vm.stopPrank();
+
+        manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[6];
+        manageLeafs[1] = leafs[7];
+
+        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        targets = new address[](2);
+        targets[0] = unstETH;
+        targets[1] = unstETH;
+
+        targetData = new bytes[](2);
+        targetData[0] = abi.encodeWithSignature("claimWithdrawal(uint256)", 28_791);
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = 28_792;
+        ids[1] = 28_793;
+        uint256[] memory hints =
+            IUNSTETH(unstETH).findCheckpointHints(ids, 100, IUNSTETH(unstETH).getLastCheckpointIndex());
+        targetData[1] = abi.encodeWithSignature("claimWithdrawals(uint256[],uint256[])", ids, hints);
+
+        decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
+        values = new uint256[](2);
+
+        uint256 boringVaultETHBalance = address(boringVault).balance;
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        assertEq(
+            address(boringVault).balance - boringVaultETHBalance,
+            300e18,
+            "BoringVault should have received 300 ETH from withdrawals"
+        );
     }
 
     function testReverts() external {
@@ -2782,4 +2900,19 @@ interface ILiquidityPool {
     function etherFiAdminContract() external view returns (address);
 
     function addEthAmountLockedForWithdrawal(uint128 _amount) external;
+}
+
+interface IUNSTETH {
+    function finalize(uint256 _lastRequestIdToBeFinalized, uint256 _maxShareRate) external payable;
+
+    function getRoleMember(bytes32 role, uint256 index) external view returns (address);
+
+    function FINALIZE_ROLE() external view returns (bytes32);
+
+    function findCheckpointHints(uint256[] memory requestIds, uint256 firstIndex, uint256 lastIndex)
+        external
+        view
+        returns (uint256[] memory);
+
+    function getLastCheckpointIndex() external view returns (uint256);
 }
