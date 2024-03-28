@@ -1429,7 +1429,7 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
             // Need to delete it
             vm.removeFile(filePath);
         }
-        vm.writeLine(filePath, "{ metadata: ");
+        vm.writeLine(filePath, "{ \"metadata\": ");
         string[] memory composition = new string[](5);
         composition[0] = "Bytes20(DECODER_AND_SANITIZER_ADDRESS)";
         composition[1] = "Bytes20(TARGET_ADDRESS)";
@@ -1443,7 +1443,7 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
 
         vm.writeLine(filePath, finalMetadata);
         vm.writeLine(filePath, ",");
-        vm.writeLine(filePath, "leafs: [");
+        vm.writeLine(filePath, "\"leafs\": [");
 
         for (uint256 i; i < leafs.length; ++i) {
             string memory leaf = "leaf";
@@ -1469,7 +1469,9 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
 
             // vm.writeJson(finalJson, filePath);
             vm.writeLine(filePath, finalJson);
-            vm.writeLine(filePath, ",");
+            if (i != leafs.length - 1) {
+                vm.writeLine(filePath, ",");
+            }
         }
         vm.writeLine(filePath, "]}");
     }
