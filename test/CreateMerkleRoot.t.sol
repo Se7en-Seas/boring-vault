@@ -19,7 +19,7 @@ import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {IUniswapV3Router} from "src/interfaces/IUniswapV3Router.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
-
+import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
 contract CreateMerkleRootTest is Test, MainnetAddresses {
@@ -108,8 +108,7 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
     }
 
     function testGenerateMerkleRoot() external {
-        deal(address(WETH), address(boringVault), 1_000e18);
-        bytes32 poolId = 0x1e19cf2d73a72ef1332c882f20534b6519be0276000200000000000000000112;
+        address decoderAndSanitizer = address(1);
         // Make sure the vault can
         // swap wETH -> rETH
         // add liquidity rETH/wETH
@@ -120,43 +119,111 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
         // unstake from aura
         // remove liquidity from rETH/wETH
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
-        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
+        leafs[0] = ManageLeaf(
+            address(WETH),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve Balancer Vault to spend wETH",
+            decoderAndSanitizer
+        );
         leafs[0].argumentAddresses[0] = vault;
         leafs[1] = ManageLeaf(
             vault,
             false,
             "swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)",
-            new address[](5)
+            new address[](5),
+            "Swap wETH -> rETH using Balancer",
+            decoderAndSanitizer
         );
         leafs[1].argumentAddresses[0] = address(rETH_wETH);
         leafs[1].argumentAddresses[1] = address(WETH);
         leafs[1].argumentAddresses[2] = address(RETH);
         leafs[1].argumentAddresses[3] = address(boringVault);
         leafs[1].argumentAddresses[4] = address(boringVault);
-        leafs[2] = ManageLeaf(address(RETH), false, "approve(address,uint256)", new address[](1));
+        leafs[2] = ManageLeaf(
+            address(RETH),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve Balancer Vault to spend rETH",
+            decoderAndSanitizer
+        );
         leafs[2].argumentAddresses[0] = vault;
         leafs[3] = ManageLeaf(
-            vault, false, "joinPool(bytes32,address,address,(address[],uint256[],bytes,bool))", new address[](5)
+            vault,
+            false,
+            "joinPool(bytes32,address,address,(address[],uint256[],bytes,bool))",
+            new address[](5),
+            "Join rETH-wETH Balancer pool",
+            decoderAndSanitizer
         );
         leafs[3].argumentAddresses[0] = address(rETH_wETH);
         leafs[3].argumentAddresses[1] = address(boringVault);
         leafs[3].argumentAddresses[2] = address(boringVault);
         leafs[3].argumentAddresses[3] = address(RETH);
         leafs[3].argumentAddresses[4] = address(WETH);
-        leafs[4] = ManageLeaf(address(rETH_wETH), false, "approve(address,uint256)", new address[](1));
+        leafs[4] = ManageLeaf(
+            address(rETH_wETH),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve Balancer rETH-wETH gauge to spend rETH-wETH bpts",
+            decoderAndSanitizer
+        );
         leafs[4].argumentAddresses[0] = rETH_wETH_gauge;
-        leafs[5] = ManageLeaf(rETH_wETH_gauge, false, "deposit(uint256,address)", new address[](1));
+        leafs[5] = ManageLeaf(
+            rETH_wETH_gauge,
+            false,
+            "deposit(uint256,address)",
+            new address[](1),
+            "Deposit rETH-wETH bpts into Balancer gauge",
+            decoderAndSanitizer
+        );
         leafs[5].argumentAddresses[0] = address(boringVault);
-        leafs[6] = ManageLeaf(rETH_wETH_gauge, false, "withdraw(uint256)", new address[](0));
-        leafs[7] = ManageLeaf(address(rETH_wETH), false, "approve(address,uint256)", new address[](1));
+        leafs[6] = ManageLeaf(
+            rETH_wETH_gauge,
+            false,
+            "withdraw(uint256)",
+            new address[](0),
+            "Withdraw rETH-wETH bpts from Balancer gauge",
+            decoderAndSanitizer
+        );
+        leafs[7] = ManageLeaf(
+            address(rETH_wETH),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve Aura rETH-wETH gauge to spend rETH-wETH bpts",
+            decoderAndSanitizer
+        );
         leafs[7].argumentAddresses[0] = aura_reth_weth;
-        leafs[8] = ManageLeaf(aura_reth_weth, false, "deposit(uint256,address)", new address[](1));
+        leafs[8] = ManageLeaf(
+            aura_reth_weth,
+            false,
+            "deposit(uint256,address)",
+            new address[](1),
+            "Deposit rETH-wETH bpts into Aura gauge",
+            decoderAndSanitizer
+        );
         leafs[8].argumentAddresses[0] = address(boringVault);
-        leafs[9] = ManageLeaf(aura_reth_weth, false, "withdraw(uint256,address,address)", new address[](2));
+        leafs[9] = ManageLeaf(
+            aura_reth_weth,
+            false,
+            "withdraw(uint256,address,address)",
+            new address[](2),
+            "Withdraw rETH-wETH bpts from Aura gauge",
+            decoderAndSanitizer
+        );
         leafs[9].argumentAddresses[0] = address(boringVault);
         leafs[9].argumentAddresses[1] = address(boringVault);
         leafs[10] = ManageLeaf(
-            vault, false, "exitPool(bytes32,address,address,(address[],uint256[],bytes,bool))", new address[](5)
+            vault,
+            false,
+            "exitPool(bytes32,address,address,(address[],uint256[],bytes,bool))",
+            new address[](5),
+            "Exit rETH-wETH Balancer pool",
+            decoderAndSanitizer
         );
         leafs[10].argumentAddresses[0] = address(rETH_wETH);
         leafs[10].argumentAddresses[1] = address(boringVault);
@@ -166,95 +233,73 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
+        string memory filePath = "./leafs/StrategistLeavesV0.json";
+
         // address target;
         // bool canSendValue;
         // string signature;
         // address[] argumentAddresses;
-        vm.removeFile("./jsonOutput/example.json");
-        vm.writeLine("./jsonOutput/example.json", "{ leafs: [");
+        if (vm.exists(filePath)) {
+            // Need to delete it
+            vm.removeFile(filePath);
+        }
+        vm.writeLine(filePath, "{ metadata: ");
+        // string memory rootAsString = Strings.toHexString(uint256(manageTree[manageTree.length - 1][0]));
+        string[] memory composition = new string[](5);
+        composition[0] = "Bytes20(DECODER_AND_SANITIZER)";
+        composition[1] = "Bytes20(TARGET_ADDRESS)";
+        composition[2] = "Bytes1(CAN_SEND_VALUE)";
+        composition[3] = "Bytes4(TARGET_FUNCTION_SELECTOR)";
+        composition[4] = "Bytes{N*20}(ADDRESS_ARGUMENT_0,...ADDRESS_ARGUMENT_N)";
+        string memory metadata = "ManageRoot";
+        vm.serializeUint(metadata, "LeafCount", leafs.length);
+        vm.serializeString(metadata, "DigestComposition", composition);
+        string memory finalMetadata = vm.serializeBytes32(metadata, "manageRoot", manageTree[manageTree.length - 1][0]);
+
+        vm.writeLine(filePath, finalMetadata);
+        vm.writeLine(filePath, ",");
+        vm.writeLine(filePath, "leafs: [");
 
         for (uint256 i; i < leafs.length; ++i) {
             string memory leaf = "leaf";
             vm.serializeAddress(leaf, "TargetAddress", leafs[i].target);
             vm.serializeBool(leaf, "CanSendValue", leafs[i].canSendValue);
             vm.serializeString(leaf, "FunctionSignature", leafs[i].signature);
+            bytes4 sel = bytes4(keccak256(abi.encodePacked(leafs[i].signature)));
+            string memory selector = Strings.toHexString(uint32(sel), 4);
+            vm.serializeString(leaf, "FunctionSelector", selector);
             bytes memory packedData;
-            for (uint256 i; i < leafs[i].argumentAddresses.length; ++i) {
-                packedData = abi.encodePacked(packedData, leafs[i].argumentAddresses[i]);
+            for (uint256 j; j < leafs[i].argumentAddresses.length; ++j) {
+                packedData = abi.encodePacked(packedData, leafs[i].argumentAddresses[j]);
             }
             vm.serializeBytes(leaf, "PackedArgumentAddresses", packedData);
+            vm.serializeAddress(leaf, "AddressArguments", leafs[i].argumentAddresses);
+            bytes32 digest = keccak256(
+                abi.encodePacked(leafs[i].decoderAndSanitizer, leafs[i].target, leafs[i].canSendValue, sel, packedData)
+            );
+            vm.serializeBytes32(leaf, "LeafDigest", digest);
 
-            string memory finalJson = vm.serializeString(leaf, "description", "This is doing an approve");
+            string memory finalJson = vm.serializeString(leaf, "Description", leafs[i].description);
 
-            // vm.writeJson(finalJson, "./jsonOutput/example.json");
-            vm.writeLine("./jsonOutput/example.json", finalJson);
-            vm.writeLine("./jsonOutput/example.json", ",");
+            // vm.writeJson(finalJson, filePath);
+            vm.writeLine(filePath, finalJson);
+            vm.writeLine(filePath, ",");
         }
-        vm.writeLine("./jsonOutput/example.json", "]}");
+        vm.writeLine(filePath, "]}");
+    }
+
+    function sliceString(string calldata ss) external pure returns (string memory s) {
+        s = ss[:8];
     }
 
     // ========================================= HELPER FUNCTIONS =========================================
-    bool doNothing = true;
-
-    function flashLoan(address, address[] calldata tokens, uint256[] calldata amounts, bytes memory userData)
-        external
-    {
-        if (doNothing) {
-            return;
-        } else {
-            // Edit userData.
-            userData = hex"DEAD01";
-            manager.receiveFlashLoan(tokens, amounts, amounts, userData);
-        }
-    }
-
-    bool iDidSomething = false;
-
-    // Call this function approve, so that we can use the standard decoder.
-    function approve(ERC20 token, uint256 amount) external {
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        token.safeTransfer(msg.sender, amount);
-        iDidSomething = true;
-    }
-
-    function _generateProof(bytes32 leaf, bytes32[][] memory tree) internal pure returns (bytes32[] memory proof) {
-        // The length of each proof is the height of the tree - 1.
-        uint256 tree_length = tree.length;
-        proof = new bytes32[](tree_length - 1);
-
-        // Build the proof
-        for (uint256 i; i < tree_length - 1; ++i) {
-            // For each layer we need to find the leaf.
-            for (uint256 j; j < tree[i].length; ++j) {
-                if (leaf == tree[i][j]) {
-                    // We have found the leaf, so now figure out if the proof needs the next leaf or the previous one.
-                    proof[i] = j % 2 == 0 ? tree[i][j + 1] : tree[i][j - 1];
-                    leaf = _hashPair(leaf, proof[i]);
-                    break;
-                }
-            }
-        }
-    }
-
-    function _getProofsUsingTree(ManageLeaf[] memory manageLeafs, bytes32[][] memory tree)
-        internal
-        view
-        returns (bytes32[][] memory proofs)
-    {
-        proofs = new bytes32[][](manageLeafs.length);
-        for (uint256 i; i < manageLeafs.length; ++i) {
-            // Generate manage proof.
-            bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(
-                rawDataDecoderAndSanitizer, manageLeafs[i].target, manageLeafs[i].canSendValue, selector
-            );
-            uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
-            for (uint256 j; j < argumentAddressesLength; ++j) {
-                rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
-            }
-            bytes32 leaf = keccak256(rawDigest);
-            proofs[i] = _generateProof(leaf, tree);
-        }
+    struct ManageLeaf {
+        address target;
+        bool canSendValue;
+        string signature;
+        address[] argumentAddresses;
+        string description;
+        address decoderAndSanitizer;
     }
 
     function _buildTrees(bytes32[][] memory merkleTreeIn) internal pure returns (bytes32[][] memory merkleTreeOut) {
@@ -289,13 +334,6 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
             // We need to process the next layer of leaves.
             merkleTreeOut = _buildTrees(merkleTreeOut);
         }
-    }
-
-    struct ManageLeaf {
-        address target;
-        bool canSendValue;
-        string signature;
-        address[] argumentAddresses;
     }
 
     function _generateMerkleTree(ManageLeaf[] memory manageLeafs) internal view returns (bytes32[][] memory tree) {
