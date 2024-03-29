@@ -5,24 +5,28 @@ import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
-import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
+import "forge-std/Script.sol";
 
-contract CreateMerkleRootTest is Test, MainnetAddresses {
+/**
+ * forge script script/CreateMerkleRoot.s.sol:CreateMerkleRootScript
+ */
+contract CreateMerkleRootScript is Script, MainnetAddresses {
     using FixedPointMathLib for uint256;
-    using stdStorage for StdStorage;
 
     address public boringVault = address(1);
     address public rawDataDecoderAndSanitizer = address(2);
     address public managerAddress = address(3);
 
-    function setUp() external {
-        // Setup forked environment.
-        string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 19369928;
-        _startFork(rpcKey, blockNumber);
+    function setUp() external {}
+
+    function run() external {
+        generateAdminRenzoStrategistMerkleRoot();
+        generateProductionRenzoStrategistMerkleRoot();
+        generateProductionRenzoDexAggregatorMicroManager();
+        generateProductionRenzoDexSwapperMicroManager();
     }
 
-    function testGenerateAdminRenzoStrategistMerkleRoot() external {
+    function generateAdminRenzoStrategistMerkleRoot() public {
         ManageLeaf[] memory leafs = new ManageLeaf[](128);
 
         // uniswap v3
@@ -1303,7 +1307,7 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 
-    function testGenerateProductionRenzoStrategistMerkleRoot() external {
+    function generateProductionRenzoStrategistMerkleRoot() public {
         ManageLeaf[] memory leafs = new ManageLeaf[](128);
 
         // uniswap v3
@@ -2232,7 +2236,7 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 
-    function testGenerateProductionRenzoDexAggregatorMicroManager() external {
+    function generateProductionRenzoDexAggregatorMicroManager() public {
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
 
         // swap with 1inch -> move to other root
@@ -2428,7 +2432,7 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 
-    function testGenerateProductionRenzoDexSwapperMicroManager() external {
+    function generateProductionRenzoDexSwapperMicroManager() public {
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
 
         // swap with uniV3 -> move to other root
@@ -2756,61 +2760,4 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
             value := keccak256(0x00, 0x40)
         }
     }
-
-    function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
-        forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
-        vm.selectFork(forkId);
-    }
-
-    function _finalizeRequest(uint256 requestId, uint256 amount) internal {
-        // Spoof unstEth contract into finalizing our request.
-        IWithdrawRequestNft w = IWithdrawRequestNft(withdrawalRequestNft);
-        address owner = w.owner();
-        vm.startPrank(owner);
-        w.updateAdmin(address(this), true);
-        vm.stopPrank();
-
-        ILiquidityPool lp = ILiquidityPool(EETH_LIQUIDITY_POOL);
-
-        deal(address(this), amount);
-        lp.deposit{value: amount}();
-        address admin = lp.etherFiAdminContract();
-
-        vm.startPrank(admin);
-        lp.addEthAmountLockedForWithdrawal(uint128(amount));
-        vm.stopPrank();
-
-        w.finalizeRequests(requestId);
-    }
-}
-
-interface IWithdrawRequestNft {
-    struct WithdrawRequest {
-        uint96 amountOfEEth;
-        uint96 shareOfEEth;
-        bool isValid;
-        uint32 feeGwei;
-    }
-
-    function claimWithdraw(uint256 tokenId) external;
-
-    function getRequest(uint256 requestId) external view returns (WithdrawRequest memory);
-
-    function finalizeRequests(uint256 requestId) external;
-
-    function owner() external view returns (address);
-
-    function updateAdmin(address admin, bool isAdmin) external;
-}
-
-interface ILiquidityPool {
-    function deposit() external payable returns (uint256);
-
-    function requestWithdraw(address recipient, uint256 amount) external returns (uint256);
-
-    function amountForShare(uint256 shares) external view returns (uint256);
-
-    function etherFiAdminContract() external view returns (address);
-
-    function addEthAmountLockedForWithdrawal(uint128 _amount) external;
 }
