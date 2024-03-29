@@ -22,7 +22,7 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
         _startFork(rpcKey, blockNumber);
     }
 
-    function testGenerateTestRenzoStrategistMerkleRoot() external {
+    function testGenerateAdminRenzoStrategistMerkleRoot() external {
         ManageLeaf[] memory leafs = new ManageLeaf[](128);
 
         // uniswap v3
@@ -1298,7 +1298,7 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        string memory filePath = "./leafs/TestStrategistLeafs.json";
+        string memory filePath = "./leafs/AdminStrategistLeafs.json";
 
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
