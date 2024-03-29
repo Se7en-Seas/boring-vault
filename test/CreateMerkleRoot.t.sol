@@ -22,7 +22,7 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
         _startFork(rpcKey, blockNumber);
     }
 
-    function testGenerateRenzoStrategistMerkleRoot() external {
+    function testGenerateTestRenzoStrategistMerkleRoot() external {
         ManageLeaf[] memory leafs = new ManageLeaf[](128);
 
         // uniswap v3
