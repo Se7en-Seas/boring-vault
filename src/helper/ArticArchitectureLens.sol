@@ -2,7 +2,6 @@
 pragma solidity 0.8.21;
 
 import {BoringVault, ERC20} from "src/base/BoringVault.sol";
-import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVerification.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
@@ -24,25 +23,64 @@ contract ArticArchitectureLens {
     }
 
     function previewDeposit(
-        BoringVault boringVault,
-        AccountantWithRateProviders accountant,
         ERC20 depositAsset,
-        uint256 depositAmount
+        uint256 depositAmount,
+        BoringVault boringVault,
+        AccountantWithRateProviders accountant
     ) external view returns (uint256 shares) {
         uint8 shareDecimals = boringVault.decimals();
 
         shares = depositAmount.mulDivDown(10 ** shareDecimals, accountant.getRateInQuote(depositAsset));
     }
 
-    function balanceOf(address account) external view returns (uint256 shares) {}
-    function balanceOfInAssets(address account) external view returns (uint256 assets) {}
-    function pendingBalanceOf(address account) external view returns (uint256 shares) {}
-    // useful for net value
-    function pendingBalanceOfInAssets(address account) external view returns (uint256 assets) {}
-    function exchangeRate() external view returns (uint256 rate) {}
+    function balanceOf(address account, BoringVault boringVault) external view returns (uint256 shares) {
+        shares = boringVault.balanceOf(account);
+    }
+
+    function balanceOfInAssets(address account, BoringVault boringVault, AccountantWithRateProviders accountant)
+        external
+        view
+        returns (uint256 assets)
+    {
+        uint256 shares = boringVault.balanceOf(account);
+        uint256 rate = accountant.getRate();
+        uint8 shareDecimals = boringVault.decimals();
+
+        assets = shares.mulDivDown(rate, 10 ** shareDecimals);
+    }
+
+    function exchangeRate(AccountantWithRateProviders accountant) external view returns (uint256 rate) {
+        rate = accountant.getRate();
+    }
     // Functions check if contract is paused, if deposit asset is good, and if users allowance is good, also user balance
-    function checkUserDeposit() external view returns (bool) {}
-    function checkUserDepositWithPermit() external view returns (bool) {}
-    // when user shares are unlocked
-    function userUnlockTime() external view returns (uint256) {}
+
+    function checkUserDeposit(
+        address account,
+        ERC20 depositAsset,
+        uint256 depositAmount,
+        BoringVault boringVault,
+        TellerWithMultiAssetSupport teller
+    ) external view returns (bool) {
+        if (depositAsset.balanceOf(account) < depositAmount) return false;
+        if (depositAsset.allowance(account, address(boringVault)) < depositAmount) return false;
+        if (teller.isPaused()) return false;
+        if (!teller.isSupported(depositAsset)) return false;
+        return true;
+    }
+
+    function checkUserDepositWithPermit(
+        address account,
+        ERC20 depositAsset,
+        uint256 depositAmount,
+        TellerWithMultiAssetSupport teller
+    ) external view returns (bool) {
+        if (depositAsset.balanceOf(account) < depositAmount) return false;
+        if (teller.isPaused()) return false;
+        if (!teller.isSupported(depositAsset)) return false;
+        return true;
+    }
+
+    function userUnlockTime(address account, TellerWithMultiAssetSupport teller) external view returns (uint256 time) {
+        time = teller.shareUnlockTime(account);
+    }
 }
