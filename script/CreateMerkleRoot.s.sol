@@ -19,11 +19,14 @@ contract CreateMerkleRootScript is Script, MainnetAddresses {
 
     function setUp() external {}
 
+    /**
+     * @notice Uncomment which script you want to run.
+     */
     function run() external {
-        generateAdminRenzoStrategistMerkleRoot();
-        generateProductionRenzoStrategistMerkleRoot();
-        generateProductionRenzoDexAggregatorMicroManager();
-        generateProductionRenzoDexSwapperMicroManager();
+        // generateAdminRenzoStrategistMerkleRoot();
+        // generateProductionRenzoStrategistMerkleRoot();
+        // generateProductionRenzoDexAggregatorMicroManager();
+        // generateProductionRenzoDexSwapperMicroManager();
     }
 
     function generateAdminRenzoStrategistMerkleRoot() public {
