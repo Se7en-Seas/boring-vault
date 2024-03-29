@@ -15,4 +15,4 @@ docs/
 .env
 
 *.DS_Store
-*.json
+broadcast/*
