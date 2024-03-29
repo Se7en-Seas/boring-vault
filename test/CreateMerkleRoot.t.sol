@@ -1488,7 +1488,7 @@ contract CreateMerkleRootTest is Test, MainnetAddresses {
 
         for (uint256 i; i < manageTree.length; ++i) {
             for (uint256 j; j < manageTree[i].length; ++j) {
-                merkleTree[i][j] = Strings.toHexString(uint256(manageTree[i][j]));
+                merkleTree[i][j] = vm.toString(manageTree[i][j]);
             }
         }
 
