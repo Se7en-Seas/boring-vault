@@ -6,7 +6,7 @@ import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSu
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 
-contract ArticArchitectureLens {
+contract ArcticArchitectureLens {
     using FixedPointMathLib for uint256;
 
     function totalAssets(BoringVault boringVault, AccountantWithRateProviders accountant)
