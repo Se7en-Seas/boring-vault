@@ -42,6 +42,8 @@ interface IWEETH {
     function wrap(uint256 amount) external returns (uint256);
 
     function unwrap(uint256 amount) external returns (uint256);
+
+    function getRate() external view returns (uint256);
 }
 
 // Kelp DAO

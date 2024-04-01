@@ -16,6 +16,8 @@ import {Deployer} from "src/helper/Deployer.sol";
 import {ArcticArchitectureLens} from "src/helper/ArcticArchitectureLens.sol";
 import {DexAggregatorUManager} from "src/micro-managers/DexAggregatorUManager.sol";
 import {DexSwapperUManager} from "src/micro-managers/DexSwapperUManager.sol";
+import {AtomicQueue} from "src/atomic-queue/AtomicQueue.sol";
+import {AtomicSolverV2} from "src/atomic-queue/AtomicSolverV2.sol";
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
@@ -38,17 +40,22 @@ contract DeployBoringVaultArcticScript is Script {
     AccountantWithRateProviders public accountant;
     DexAggregatorUManager public dexAggregatorUManager;
     DexSwapperUManager public dexSwapperUManager;
+    AtomicQueue public atomicQueue;
+    AtomicSolverV2 public atomicSolver;
 
     // Deployment parameters
     string public boringVaultName = "Test Boring Vault";
     string public boringVaultSymbol = "BV";
     uint8 public boringVaultDecimals = 18;
     address public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address public eETH = 0x35fA164735182de50811E8e2E824cFb9B6118ac2;
+    address public weETH = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
     address public uniswapV3NonFungiblePositionManager = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     address public owner = 0x552acA1343A6383aF32ce1B7c7B1b47959F7ad90;
     address public balancerVault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     address public oneInchAggregatorV5 = 0x1111111254EEB25477B68fb85Ed929f73A960582;
     address public uniswapV3Router = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+    address public sevenSeasAuthority; // TODO
     address public priceRouter; // TODO
 
     // Roles
@@ -72,30 +79,64 @@ contract DeployBoringVaultArcticScript is Script {
     }
 
     function run() external {
+        bytes memory creationCode;
+        bytes memory constructorArgs;
         vm.startBroadcast(privateKey);
 
-        // TODO change all deployments to use the Deployer
-        rolesAuthority = new RolesAuthority(owner, Authority(address(0)));
-        deployer = new Deployer(owner, rolesAuthority);
-        lens = new ArcticArchitectureLens();
+        deployer = new Deployer(owner, Authority(address(0)));
+        creationCode = type(RolesAuthority).creationCode;
+        constructorArgs = abi.encode(owner, Authority(address(0)));
+        rolesAuthority =
+            RolesAuthority(deployer.deployContract("Roles Authority V0.0", creationCode, constructorArgs, 0));
+        deployer.setAuthority(rolesAuthority);
+        creationCode = type(ArcticArchitectureLens).creationCode;
+        lens = ArcticArchitectureLens(deployer.deployContract("Arctic Architecture Lens V0.0", creationCode, hex"", 0));
 
-        boringVault = new BoringVault(owner, boringVaultName, boringVaultSymbol, boringVaultDecimals);
+        creationCode = type(BoringVault).creationCode;
+        constructorArgs = abi.encode(owner, boringVaultName, boringVaultSymbol, boringVaultDecimals);
+        boringVault =
+            BoringVault(payable(deployer.deployContract("Boring Vault V0.0", creationCode, constructorArgs, 0)));
 
-        manager = new ManagerWithMerkleVerification(owner, address(boringVault), balancerVault);
-
-        accountant = new AccountantWithRateProviders(
-            owner, address(boringVault), owner, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0
+        creationCode = type(ManagerWithMerkleVerification).creationCode;
+        constructorArgs = abi.encode(owner, address(boringVault), balancerVault);
+        manager = ManagerWithMerkleVerification(
+            deployer.deployContract("Manager With Merkle Verification V0.0", creationCode, constructorArgs, 0)
         );
 
-        teller = new TellerWithMultiAssetSupport(owner, address(boringVault), address(accountant), WETH);
+        creationCode = type(AccountantWithRateProviders).creationCode;
+        constructorArgs = abi.encode(owner, address(boringVault), owner, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0);
+        accountant = AccountantWithRateProviders(
+            deployer.deployContract("Accountant With Rate Providers V0.0", creationCode, constructorArgs, 0)
+        );
 
+        creationCode = type(TellerWithMultiAssetSupport).creationCode;
+        constructorArgs = abi.encode(owner, address(boringVault), address(accountant), WETH);
+        teller = TellerWithMultiAssetSupport(
+            payable(deployer.deployContract("Teller With Multi Asset Support V0.0", creationCode, constructorArgs, 0))
+        );
+
+        creationCode = type(RenzoLiquidDecoderAndSanitizer).creationCode;
+        constructorArgs = abi.encode(address(boringVault), uniswapV3NonFungiblePositionManager);
         rawDataDecoderAndSanitizer =
-            address(new RenzoLiquidDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
+            deployer.deployContract("Renzo Liquid Decoder and Sanitizer V0.0", creationCode, constructorArgs, 0);
 
-        dexAggregatorUManager =
-            new DexAggregatorUManager(owner, address(manager), address(boringVault), oneInchAggregatorV5, priceRouter);
+        creationCode = type(DexAggregatorUManager).creationCode;
+        constructorArgs = abi.encode(owner, address(manager), address(boringVault), oneInchAggregatorV5, priceRouter);
+        dexAggregatorUManager = DexAggregatorUManager(
+            deployer.deployContract("DEX Aggregator uManager V0.0", creationCode, constructorArgs, 0)
+        );
+
+        creationCode = type(DexSwapperUManager).creationCode;
+        constructorArgs = abi.encode(owner, address(manager), address(boringVault), uniswapV3Router, priceRouter);
         dexSwapperUManager =
-            new DexSwapperUManager(owner, address(manager), address(boringVault), uniswapV3Router, priceRouter);
+            DexSwapperUManager(deployer.deployContract("DEX Swapper uManager V0.0", creationCode, constructorArgs, 0));
+
+        creationCode = type(AtomicQueue).creationCode;
+        atomicQueue = AtomicQueue(deployer.deployContract("Atomic Queue V0.0", creationCode, hex"", 0));
+
+        creationCode = type(AtomicSolverV2).creationCode;
+        constructorArgs = abi.encode(owner, Authority(sevenSeasAuthority));
+        atomicSolver = AtomicSolverV2(deployer.deployContract("Atomic Solver V0.0", creationCode, constructorArgs, 0));
 
         // Setup roles.
         // MANAGER_ROLE
@@ -245,8 +286,18 @@ contract DeployBoringVaultArcticScript is Script {
         );
 
         // Give roles to appropriate contracts
+        rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
+        rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
+        rolesAuthority.setUserRole(address(manager), MANAGER_INTERNAL_ROLE, true);
+        rolesAuthority.setUserRole(balancerVault, BALANCER_VAULT_ROLE, true);
+        rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
+        rolesAuthority.setUserRole(address(dexSwapperUManager), MICRO_MANAGER_ROLE, true);
+        rolesAuthority.setUserRole(address(dexAggregatorUManager), MICRO_MANAGER_ROLE, true);
+        rolesAuthority.setUserRole(address(atomicSolver), SOLVER_ROLE, true);
 
-        // Setup rate providers
+        // Setup rate providers.
+        accountant.setRateProviderData(ERC20(eETH), true, address(0));
+        accountant.setRateProviderData(ERC20(weETH), false, weETH);
 
         vm.stopBroadcast();
     }
