@@ -1302,6 +1302,15 @@ contract CreateMerkleRootScript is Script, MainnetAddresses {
         leafs[123].argumentAddresses[2] = address(WETH);
         leafs[123].argumentAddresses[3] = oneInchExecutor;
         leafs[123].argumentAddresses[4] = boringVault;
+        leafs[124] = ManageLeaf(
+            aggregationRouterV5,
+            false,
+            "uniswapV3Swap(uint256,uint256,uint256[])",
+            new address[](1),
+            "Swap rswETH for wETH using 1inch router",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[124].argumentAddresses[0] = wETH_weETH_05;
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 

@@ -410,4 +410,7 @@ contract MainnetAddresses {
 
     // Aave V3
     address public v3Pool = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
+
+    // Uniswap V3 Pools
+    address public wETH_weETH_05 = 0x7A415B19932c0105c82FDB6b720bb01B0CC2CAe3;
 }
