@@ -16,6 +16,7 @@ contract CreateMerkleRootScript is Script, MainnetAddresses {
     address public boringVault = address(1);
     address public rawDataDecoderAndSanitizer = address(2);
     address public managerAddress = address(3);
+    address public accountantAddress = address(4);
 
     function setUp() external {}
 
@@ -23,14 +24,14 @@ contract CreateMerkleRootScript is Script, MainnetAddresses {
      * @notice Uncomment which script you want to run.
      */
     function run() external {
-        // generateAdminRenzoStrategistMerkleRoot();
+        generateAdminRenzoStrategistMerkleRoot();
         // generateProductionRenzoStrategistMerkleRoot();
         // generateProductionRenzoDexAggregatorMicroManager();
         // generateProductionRenzoDexSwapperMicroManager();
     }
 
     function generateAdminRenzoStrategistMerkleRoot() public {
-        ManageLeaf[] memory leafs = new ManageLeaf[](128);
+        ManageLeaf[] memory leafs = new ManageLeaf[](256);
 
         // uniswap v3
         leafs[0] = ManageLeaf(
@@ -1307,10 +1308,301 @@ contract CreateMerkleRootScript is Script, MainnetAddresses {
             false,
             "uniswapV3Swap(uint256,uint256,uint256[])",
             new address[](1),
-            "Swap rswETH for wETH using 1inch router",
+            "Swap between wETH and wstETH on UniswapV3 using 1inch router",
             rawDataDecoderAndSanitizer
         );
         leafs[124].argumentAddresses[0] = wETH_weETH_05;
+
+        leafs[125] = ManageLeaf(
+            aggregationRouterV5,
+            false,
+            "uniswapV3Swap(uint256,uint256,uint256[])",
+            new address[](1),
+            "Swap between wstETH and wETH on UniswapV3 using 1inch router",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[125].argumentAddresses[0] = wstETH_wETH_01;
+
+        leafs[126] = ManageLeaf(
+            aggregationRouterV5,
+            false,
+            "uniswapV3Swap(uint256,uint256,uint256[])",
+            new address[](1),
+            "Swap between rETH and wETH on UniswapV3 using 1inch router",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[126].argumentAddresses[0] = rETH_wETH_01;
+
+        leafs[127] = ManageLeaf(
+            aggregationRouterV5,
+            false,
+            "uniswapV3Swap(uint256,uint256,uint256[])",
+            new address[](1),
+            "Swap between rETH and wETH on UniswapV3 using 1inch router",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[127].argumentAddresses[0] = rETH_wETH_05;
+
+        leafs[128] = ManageLeaf(
+            aggregationRouterV5,
+            false,
+            "uniswapV3Swap(uint256,uint256,uint256[])",
+            new address[](1),
+            "Swap between wstETH and rETH on UniswapV3 using 1inch router",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[128].argumentAddresses[0] = wstETH_rETH_05;
+
+        leafs[129] = ManageLeaf(
+            aggregationRouterV5,
+            false,
+            "uniswapV3Swap(uint256,uint256,uint256[])",
+            new address[](1),
+            "Swap between wETH and rswETH on UniswapV3 using 1inch router",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[129].argumentAddresses[0] = wETH_rswETH_05;
+
+        leafs[130] = ManageLeaf(
+            aggregationRouterV5,
+            false,
+            "uniswapV3Swap(uint256,uint256,uint256[])",
+            new address[](1),
+            "Swap between wETH and rswETH on UniswapV3 using 1inch router",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[130].argumentAddresses[0] = wETH_rswETH_30;
+
+        leafs[131] = ManageLeaf(
+            aggregationRouterV5,
+            false,
+            "uniswapV3Swap(uint256,uint256,uint256[])",
+            new address[](1),
+            "Swap between ezETH and wETH on UniswapV3 using 1inch router",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[131].argumentAddresses[0] = ezETH_wETH_01;
+
+        // Swap BAL using balancer
+        leafs[132] = ManageLeaf(
+            address(BAL),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve Balancer Vault to spend BAL",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[132].argumentAddresses[0] = vault;
+
+        leafs[133] = ManageLeaf(
+            vault,
+            false,
+            "swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)",
+            new address[](5),
+            "Swap BAL for wETH using BAL-wETH Balancer pool",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[133].argumentAddresses[0] = address(BAL_wETH);
+        leafs[133].argumentAddresses[1] = address(BAL);
+        leafs[133].argumentAddresses[2] = address(WETH);
+        leafs[133].argumentAddresses[3] = address(boringVault);
+        leafs[133].argumentAddresses[4] = address(boringVault);
+
+        // Swap BAL using 1inch
+        leafs[134] = ManageLeaf(
+            address(BAL),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve 1inch router to spend BAL",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[134].argumentAddresses[0] = aggregationRouterV5;
+        leafs[135] = ManageLeaf(
+            aggregationRouterV5,
+            false,
+            "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+            new address[](5),
+            "Swap BAL for wETH using 1inch router",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[135].argumentAddresses[0] = oneInchExecutor;
+        leafs[135].argumentAddresses[1] = address(BAL);
+        leafs[135].argumentAddresses[2] = address(WETH);
+        leafs[135].argumentAddresses[3] = oneInchExecutor;
+        leafs[135].argumentAddresses[4] = boringVault;
+
+        // Swap PENDLE using 1inch
+        leafs[136] = ManageLeaf(
+            address(PENDLE),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve 1inch router to spend PENDLE",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[136].argumentAddresses[0] = aggregationRouterV5;
+        leafs[137] = ManageLeaf(
+            aggregationRouterV5,
+            false,
+            "uniswapV3Swap(uint256,uint256,uint256[])",
+            new address[](1),
+            "Swap between PENDLE and wETH on UniswapV3 using 1inch router",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[137].argumentAddresses[0] = PENDLE_wETH_30;
+
+        leafs[138] = ManageLeaf(
+            aggregationRouterV5,
+            false,
+            "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+            new address[](5),
+            "Swap PENDLE for wETH using 1inch router",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[138].argumentAddresses[0] = oneInchExecutor;
+        leafs[138].argumentAddresses[1] = address(PENDLE);
+        leafs[138].argumentAddresses[2] = address(WETH);
+        leafs[138].argumentAddresses[3] = oneInchExecutor;
+        leafs[138].argumentAddresses[4] = boringVault;
+
+        // Swap PENDLE using balancer
+        leafs[139] = ManageLeaf(
+            address(PENDLE),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve Balancer Vault to spend PENDLE",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[139].argumentAddresses[0] = vault;
+
+        leafs[140] = ManageLeaf(
+            vault,
+            false,
+            "swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)",
+            new address[](5),
+            "Swap PENDLE for wETH using PENDLE-wETH Balancer pool",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[140].argumentAddresses[0] = address(PENDLE_wETH);
+        leafs[140].argumentAddresses[1] = address(PENDLE);
+        leafs[140].argumentAddresses[2] = address(WETH);
+        leafs[140].argumentAddresses[3] = address(boringVault);
+        leafs[140].argumentAddresses[4] = address(boringVault);
+
+        // Swap AURA using balancer
+        leafs[141] = ManageLeaf(
+            address(AURA),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve Balancer Vault to spend AURA",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[141].argumentAddresses[0] = vault;
+
+        leafs[142] = ManageLeaf(
+            vault,
+            false,
+            "swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)",
+            new address[](5),
+            "Swap AURA for wETH using wETH-AURA Balancer pool",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[142].argumentAddresses[0] = address(wETH_AURA);
+        leafs[142].argumentAddresses[1] = address(AURA);
+        leafs[142].argumentAddresses[2] = address(WETH);
+        leafs[142].argumentAddresses[3] = address(boringVault);
+        leafs[142].argumentAddresses[4] = address(boringVault);
+
+        // Swap Aura using 1inch
+        leafs[143] = ManageLeaf(
+            address(AURA),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve 1inch router to spend AURA",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[143].argumentAddresses[0] = aggregationRouterV5;
+
+        leafs[144] = ManageLeaf(
+            aggregationRouterV5,
+            false,
+            "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+            new address[](5),
+            "Swap AURA for wETH using 1inch router",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[144].argumentAddresses[0] = oneInchExecutor;
+        leafs[144].argumentAddresses[1] = address(AURA);
+        leafs[144].argumentAddresses[2] = address(WETH);
+        leafs[144].argumentAddresses[3] = oneInchExecutor;
+        leafs[144].argumentAddresses[4] = boringVault;
+
+        // Setup leafs to claim fees.
+        leafs[145] = ManageLeaf(
+            address(WETH),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve AccountantWithRateProviders to spend wETH",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[145].argumentAddresses[0] = accountantAddress;
+
+        // Approve AccountantWithRateProviders to spend eETH
+        leafs[146] = ManageLeaf(
+            address(EETH),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve AccountantWithRateProviders to spend eETH",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[146].argumentAddresses[0] = accountantAddress;
+
+        // Approve AccountantWithRateProviders to spend weETH
+        leafs[147] = ManageLeaf(
+            address(WEETH),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve AccountantWithRateProviders to spend weETH",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[147].argumentAddresses[0] = accountantAddress;
+
+        leafs[148] = ManageLeaf(
+            accountantAddress,
+            false,
+            "claimFees(address)",
+            new address[](1),
+            "Claim Fees with wETH",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[148].argumentAddresses[0] = address(WETH);
+
+        leafs[149] = ManageLeaf(
+            accountantAddress,
+            false,
+            "claimFees(address)",
+            new address[](1),
+            "Claim Fees with eETH",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[149].argumentAddresses[0] = address(EETH);
+
+        leafs[150] = ManageLeaf(
+            accountantAddress,
+            false,
+            "claimFees(address)",
+            new address[](1),
+            "Claim Fees with weETH",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[150].argumentAddresses[0] = address(WEETH);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
