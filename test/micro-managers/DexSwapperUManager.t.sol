@@ -53,7 +53,7 @@ contract DexSwapperUManagerTest is Test, MainnetAddresses {
             address(new EtherFiLiquidDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
 
         dexSwapperUManager = new DexSwapperUManager(
-            address(this), address(manager), address(boringVault), uniV3Router, address(priceRouter)
+            address(this), address(manager), address(boringVault), uniV3Router, vault, address(priceRouter)
         );
 
         rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
@@ -105,11 +105,11 @@ contract DexSwapperUManagerTest is Test, MainnetAddresses {
         rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
         rolesAuthority.setUserRole(vault, BALANCER_VAULT_ROLE, true);
 
-        // Allow the boring vault to receive ETH.
-        rolesAuthority.setPublicCapability(address(boringVault), bytes4(0), true);
+        dexSwapperUManager.setSwapPeriod(300);
+        dexSwapperUManager.setAllowedSwapsPerPeriod(10);
     }
 
-    function testDexSwapperUManager() external {
+    function testSwapWithUniswapV3() external {
         deal(address(WEETH), address(boringVault), 10_000e18);
         // Make sure the vault can
         // swap weETH -> wETH
@@ -144,6 +144,9 @@ contract DexSwapperUManagerTest is Test, MainnetAddresses {
         // This swap is acceptable.
         dexSwapperUManager.swapWithUniswapV3(manageProofs, decodersAndSanitizers, path, fees, 10e18, 0, block.timestamp);
 
+        uint256 swapCount = dexSwapperUManager.swapCountPerPeriod(block.timestamp % 300);
+        assertEq(swapCount, 1, "Swap count should have been incremented.");
+
         // But if strategist tries to perform a high slippage swap it reverts.
         vm.expectRevert(abi.encodeWithSelector(DexSwapperUManager.DexSwapperUManager__Slippage.selector));
         dexSwapperUManager.swapWithUniswapV3(
@@ -165,6 +168,100 @@ contract DexSwapperUManagerTest is Test, MainnetAddresses {
         dexSwapperUManager.revokeTokenApproval(manageProofs, decodersAndSanitizers, path, spenders);
     }
 
+    function testSwapWithBalancerV2() external {
+        dexSwapperUManager.setAllowedSlippage(0.01e4);
+
+        deal(address(WETH), address(boringVault), 100_000e18);
+        bytes32 poolId = 0x1e19cf2d73a72ef1332c882f20534b6519be0276000200000000000000000112;
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](2);
+        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = vault;
+        leafs[1] = ManageLeaf(
+            vault,
+            false,
+            "swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)",
+            new address[](5)
+        );
+        leafs[1].argumentAddresses[0] = address(rETH_wETH);
+        leafs[1].argumentAddresses[1] = address(WETH);
+        leafs[1].argumentAddresses[2] = address(RETH);
+        leafs[1].argumentAddresses[3] = address(boringVault);
+        leafs[1].argumentAddresses[4] = address(boringVault);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(dexSwapperUManager), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        DecoderCustomTypes.SingleSwap memory singleSwap = DecoderCustomTypes.SingleSwap({
+            poolId: poolId,
+            kind: DecoderCustomTypes.SwapKind.GIVEN_IN,
+            assetIn: address(WETH),
+            assetOut: address(RETH),
+            amount: 1e18,
+            userData: hex""
+        });
+        DecoderCustomTypes.FundManagement memory funds = DecoderCustomTypes.FundManagement({
+            sender: address(boringVault),
+            fromInternalBalance: false,
+            recipient: address(boringVault),
+            toInternalBalance: false
+        });
+
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
+        dexSwapperUManager.swapWithBalancerV2(
+            manageProofs, decodersAndSanitizers, singleSwap, funds, 0, block.timestamp
+        );
+
+        singleSwap.amount = 99_000e18;
+        // But if strategist tries to perform a high slippage swap it reverts.
+        vm.expectRevert(abi.encodeWithSelector(DexSwapperUManager.DexSwapperUManager__Slippage.selector));
+        dexSwapperUManager.swapWithBalancerV2(
+            manageProofs, decodersAndSanitizers, singleSwap, funds, 0, block.timestamp
+        );
+    }
+
+    function testSwapWithCurve() external {
+        dexSwapperUManager.setAllowedSlippage(0.01e4);
+        deal(address(WETH), address(boringVault), 100_000e18);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](2);
+        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = weETH_wETH_Curve_LP;
+        leafs[1] = ManageLeaf(weETH_wETH_Curve_LP, false, "exchange(int128,int128,uint256,uint256)", new address[](0));
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(dexSwapperUManager), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
+        DexSwapperUManager.CurveInfo memory info = DexSwapperUManager.CurveInfo(
+            weETH_wETH_Curve_LP, WETH, WEETH, bytes4(abi.encodeWithSignature("exchange(int128,int128,uint256,uint256)"))
+        );
+        dexSwapperUManager.swapWithCurve(manageProofs, decodersAndSanitizers, info, 1, 0, 50e18, 0);
+
+        // But if strategist tries to perform a high slippage swap it reverts.
+        vm.expectRevert(abi.encodeWithSelector(DexSwapperUManager.DexSwapperUManager__Slippage.selector));
+        dexSwapperUManager.swapWithCurve(manageProofs, decodersAndSanitizers, info, 1, 0, 99_000e18, 0);
+    }
+
     function testSetAllowedSlippage() external {
         // Call should work.
         dexSwapperUManager.setAllowedSlippage(0.05e4);
@@ -172,6 +269,58 @@ contract DexSwapperUManagerTest is Test, MainnetAddresses {
         // Call should revert.
         vm.expectRevert(abi.encodeWithSelector(DexSwapperUManager.DexSwapperUManager__NewSlippageTooLarge.selector));
         dexSwapperUManager.setAllowedSlippage(0.1001e4);
+    }
+
+    function testSetSwapPeriod() external {
+        dexSwapperUManager.setSwapPeriod(900);
+
+        assertEq(dexSwapperUManager.swapPeriod(), 900, "Swap period should have been updated.");
+    }
+
+    function testSetAllowedSwapsPerPeriod() external {
+        dexSwapperUManager.setAllowedSwapsPerPeriod(20);
+
+        assertEq(dexSwapperUManager.allowedSwapsPerPeriod(), 20, "Allowed swaps per period should have been updated.");
+    }
+
+    function testRateLimitRevert() external {
+        // Set allowed swaps per period to zero.
+        dexSwapperUManager.setAllowedSwapsPerPeriod(0);
+
+        deal(address(WEETH), address(boringVault), 10_000e18);
+        // Make sure the vault can
+        // swap weETH -> wETH
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        leafs[0] = ManageLeaf(address(WEETH), false, "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = uniV3Router;
+        leafs[1] =
+            ManageLeaf(uniV3Router, false, "exactInput((bytes,address,uint256,uint256,uint256))", new address[](3));
+        leafs[1].argumentAddresses[0] = address(WEETH);
+        leafs[1].argumentAddresses[1] = address(WETH);
+        leafs[1].argumentAddresses[2] = address(boringVault);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(dexSwapperUManager), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
+        ERC20[] memory path = new ERC20[](2);
+        path[0] = WEETH;
+        path[1] = WETH;
+        uint24[] memory fees = new uint24[](1);
+        fees[0] = 500;
+
+        // Rate limit set to zero, so call reverts.
+        vm.expectRevert(abi.encodeWithSelector(DexSwapperUManager.DexSwapperUManager__SwapCountExceeded.selector));
+        dexSwapperUManager.swapWithUniswapV3(manageProofs, decodersAndSanitizers, path, fees, 10e18, 0, block.timestamp);
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

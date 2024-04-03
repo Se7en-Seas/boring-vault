@@ -106,8 +106,8 @@ contract DexAggregatorUManagerTest is Test, MainnetAddresses {
         rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
         rolesAuthority.setUserRole(vault, BALANCER_VAULT_ROLE, true);
 
-        // Allow the boring vault to receive ETH.
-        rolesAuthority.setPublicCapability(address(boringVault), bytes4(0), true);
+        dexAggregatorUManager.setSwapPeriod(300);
+        dexAggregatorUManager.setAllowedSwapsPerPeriod(10);
     }
 
     function testDexAggregatorUManager() external {
@@ -152,6 +152,14 @@ contract DexAggregatorUManagerTest is Test, MainnetAddresses {
 
         assertEq(WETH.allowance(address(boringVault), aggregationRouterV5), 0, "Allowance should have been revoked.");
 
+        uint256 swapCount = dexAggregatorUManager.swapCountPerPeriod(block.timestamp % 300);
+        assertEq(swapCount, 1, "Swap count should have been incremented.");
+
+        // Check rate limit reverts.
+        dexAggregatorUManager.setAllowedSwapsPerPeriod(1);
+        vm.expectRevert(abi.encodeWithSelector(DexAggregatorUManager.DexAggregatorUManager__SwapCountExceeded.selector));
+        dexAggregatorUManager.swapWith1Inch(manageProofs, decodersAndSanitizers, WETH, 100e18, WEETH, swapData);
+
         // uManager should also be able to revoke approvals to router.
         manageLeafs = new ManageLeaf[](1);
         manageLeafs[0] = leafs[0];
@@ -176,6 +184,20 @@ contract DexAggregatorUManagerTest is Test, MainnetAddresses {
             abi.encodeWithSelector(DexAggregatorUManager.DexAggregatorUManager__NewSlippageTooLarge.selector)
         );
         dexAggregatorUManager.setAllowedSlippage(0.1001e4);
+    }
+
+    function testSetSwapPeriod() external {
+        dexAggregatorUManager.setSwapPeriod(900);
+
+        assertEq(dexAggregatorUManager.swapPeriod(), 900, "Swap period should have been updated.");
+    }
+
+    function testSetAllowedSwapsPerPeriod() external {
+        dexAggregatorUManager.setAllowedSwapsPerPeriod(20);
+
+        assertEq(
+            dexAggregatorUManager.allowedSwapsPerPeriod(), 20, "Allowed swaps per period should have been updated."
+        );
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

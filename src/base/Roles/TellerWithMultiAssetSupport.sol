@@ -81,7 +81,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
     event AssetAdded(address asset);
     event AssetRemoved(address asset);
     event Deposit(
-        uint256 nonce,
+        uint256 indexed nonce,
         address receiver,
         address depositAsset,
         uint256 depositAmount,

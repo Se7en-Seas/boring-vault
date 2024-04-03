@@ -27,14 +27,40 @@ contract DexAggregatorUManager is Auth {
      */
     uint16 public allowedSlippage = 0.0005e4;
 
+    /**
+     * @notice The period in seconds for the swap limit.
+     */
+    uint16 public swapPeriod;
+
+    /**
+     * @notice The number of swaps allowed per period.
+     */
+    uint16 public allowedSwapsPerPeriod;
+
+    /**
+     * @notice The number of swaps made in the current period.
+     */
+    mapping(uint256 => uint256) public swapCountPerPeriod;
+
     //============================== ERRORS ===============================
 
     error DexAggregatorUManager__Slippage();
     error DexAggregatorUManager__NewSlippageTooLarge();
+    error DexAggregatorUManager__SwapCountExceeded();
 
     //============================== EVENTS ===============================
 
     event SlippageUpdated(uint16 oldSlippage, uint16 newSlippage);
+
+    //============================== MODIFIERS ===============================
+
+    modifier checkSwapCount() {
+        swapCountPerPeriod[block.timestamp % swapPeriod]++;
+        if (swapCountPerPeriod[block.timestamp % swapPeriod] > allowedSwapsPerPeriod) {
+            revert DexAggregatorUManager__SwapCountExceeded();
+        }
+        _;
+    }
 
     //============================== IMMUTABLES ===============================
 
@@ -79,6 +105,20 @@ contract DexAggregatorUManager is Auth {
     }
 
     /**
+     * @notice Sets the duration of the swapPeriod.
+     */
+    function setSwapPeriod(uint16 _swapPeriod) external requiresAuth {
+        swapPeriod = _swapPeriod;
+    }
+
+    /**
+     * @notice Sets the number of swaps allowed per period.
+     */
+    function setAllowedSwapsPerPeriod(uint16 _allowedSwapsPerPeriod) external requiresAuth {
+        allowedSwapsPerPeriod = _allowedSwapsPerPeriod;
+    }
+
+    /**
      * @notice Performs a swap using the 1inch Router, and enforces a slippage check.
      * @param manageProofs 2 manage proofs, the first one for the ERC20 approval, and the second
      *        for the router swap call
@@ -92,7 +132,7 @@ contract DexAggregatorUManager is Auth {
         uint256 amountIn,
         ERC20 tokenOut,
         bytes calldata data
-    ) external requiresAuth {
+    ) external requiresAuth checkSwapCount {
         address[] memory targets = new address[](2);
         bytes[] memory targetData = new bytes[](2);
         uint256[] memory values = new uint256[](2);
