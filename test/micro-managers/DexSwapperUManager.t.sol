@@ -142,11 +142,13 @@ contract DexSwapperUManagerTest is Test, MainnetAddresses {
         fees[0] = 500;
 
         // This swap is acceptable.
-        dexSwapperUManager.swapWithUniswapV3(manageProofs, decodersAndSanitizers, path, fees, 10e18, 0);
+        dexSwapperUManager.swapWithUniswapV3(manageProofs, decodersAndSanitizers, path, fees, 10e18, 0, block.timestamp);
 
         // But if strategist tries to perform a high slippage swap it reverts.
         vm.expectRevert(abi.encodeWithSelector(DexSwapperUManager.DexSwapperUManager__Slippage.selector));
-        dexSwapperUManager.swapWithUniswapV3(manageProofs, decodersAndSanitizers, path, fees, 9_990e18, 0);
+        dexSwapperUManager.swapWithUniswapV3(
+            manageProofs, decodersAndSanitizers, path, fees, 9_990e18, 0, block.timestamp
+        );
 
         // uManager should also be able to revoke approvals to router.
         manageLeafs = new ManageLeaf[](1);

@@ -31,6 +31,7 @@ contract DexSwapperUManager is Auth {
 
     error DexSwapperUManager__Slippage();
     error DexSwapperUManager__NewSlippageTooLarge();
+    error DexSwapperUManager__UniswapV3BadPathOrFees();
 
     //============================== EVENTS ===============================
 
@@ -88,6 +89,7 @@ contract DexSwapperUManager is Auth {
      * @param fees the fees to specify which pools to swap with
      * @param amountIn the amount of path[0] to swap
      * @param amountOutMinimum the minimum amount of path[path.length - 1] to get out from the swap
+     * @param deadline the swap deadline
      */
     function swapWithUniswapV3(
         bytes32[][] calldata manageProofs,
@@ -95,7 +97,8 @@ contract DexSwapperUManager is Auth {
         ERC20[] memory path,
         uint24[] memory fees,
         uint256 amountIn,
-        uint256 amountOutMinimum
+        uint256 amountOutMinimum,
+        uint256 deadline
     ) external requiresAuth {
         address[] memory targets = new address[](2);
         bytes[] memory targetData = new bytes[](2);
@@ -107,7 +110,7 @@ contract DexSwapperUManager is Auth {
 
         // Build ExactInputParams.
         {
-            if (path.length - 1 != fees.length) revert("Bad path/fees");
+            if (path.length - 1 != fees.length) revert DexSwapperUManager__UniswapV3BadPathOrFees();
             bytes memory packedPath = abi.encodePacked(path[0]);
             for (uint256 i; i < fees.length; ++i) {
                 packedPath = abi.encodePacked(packedPath, fees[i], path[i + 1]);
@@ -115,7 +118,7 @@ contract DexSwapperUManager is Auth {
             IUniswapV3Router.ExactInputParams memory params = IUniswapV3Router.ExactInputParams({
                 path: packedPath,
                 recipient: boringVault,
-                deadline: block.timestamp,
+                deadline: deadline,
                 amountIn: amountIn,
                 amountOutMinimum: amountOutMinimum
             });
