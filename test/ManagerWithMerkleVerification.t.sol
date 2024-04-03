@@ -444,8 +444,11 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             uniswapV3NonFungiblePositionManager,
             false,
             "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
-            new address[](0)
+            new address[](3)
         );
+        leafs[5].argumentAddresses[0] = address(0);
+        leafs[5].argumentAddresses[1] = address(RETH);
+        leafs[5].argumentAddresses[2] = address(WEETH);
         leafs[6] = ManageLeaf(
             uniswapV3NonFungiblePositionManager,
             false,
@@ -2275,8 +2278,11 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             uniswapV3NonFungiblePositionManager,
             false,
             "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
-            new address[](0)
+            new address[](3)
         );
+        leafs[5].argumentAddresses[0] = address(0);
+        leafs[5].argumentAddresses[1] = address(RETH);
+        leafs[5].argumentAddresses[2] = address(WEETH);
         leafs[6] = ManageLeaf(
             uniswapV3NonFungiblePositionManager,
             false,
