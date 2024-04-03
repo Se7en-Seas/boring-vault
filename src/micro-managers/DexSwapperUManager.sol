@@ -140,6 +140,24 @@ contract DexSwapperUManager is Auth {
         if (tokenOutQuotedInTokenIn < amountIn.mulDivDown(1e4 - allowedSlippage, 1e4)) {
             revert DexSwapperUManager__Slippage();
         }
+
+        // Check that full allowance was used, if not reuse the first proof and revoke it.
+        if (path[0].allowance(boringVault, address(router)) > 0) {
+            bytes32[][] memory revokeApproveProof = new bytes32[][](1);
+            revokeApproveProof[0] = manageProofs[0];
+            address[] memory revokeApproveDecodersAndSanitizers = new address[](1);
+            revokeApproveDecodersAndSanitizers[0] = decodersAndSanitizers[0];
+            targets = new address[](1);
+            targetData = new bytes[](1);
+            values = new uint256[](1);
+            targets[0] = address(path[0]);
+            targetData[0] = abi.encodeWithSelector(ERC20.approve.selector, address(router), 0);
+
+            // Revoke unused approval.
+            manager.manageVaultWithMerkleVerification(
+                revokeApproveProof, revokeApproveDecodersAndSanitizers, targets, targetData, values
+            );
+        }
     }
 
     /**
