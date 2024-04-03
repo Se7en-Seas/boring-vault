@@ -9,8 +9,9 @@ import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
+import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
 
-contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
+contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuard {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
     using SafeTransferLib for WETH;
@@ -227,6 +228,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
         public
         payable
         requiresAuth
+        nonReentrant
         returns (uint256 shares)
     {
         if (isPaused) revert TellerWithMultiAssetSupport__Paused();
@@ -260,7 +262,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external requiresAuth returns (uint256 shares) {
+    ) external requiresAuth nonReentrant returns (uint256 shares) {
         if (isPaused) revert TellerWithMultiAssetSupport__Paused();
         if (!isSupported[depositAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
 
@@ -282,6 +284,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
     function bulkDeposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint, address to)
         external
         requiresAuth
+        nonReentrant
         returns (uint256 shares)
     {
         shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, to);
