@@ -287,6 +287,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         nonReentrant
         returns (uint256 shares)
     {
+        if (!isSupported[depositAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
         shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, to);
         emit BulkDeposit(address(depositAsset), depositAmount);
     }
