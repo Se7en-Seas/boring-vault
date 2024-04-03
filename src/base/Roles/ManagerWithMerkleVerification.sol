@@ -41,6 +41,11 @@ contract ManagerWithMerkleVerification is Auth {
      */
     bytes32 internal flashLoanIntentHash = bytes32(0);
 
+    /**
+     * @notice Used to pause calls to `manageVaultWithMerkleVerification`.
+     */
+    bool public isPaused;
+
     //============================== ERRORS ===============================
 
     error ManagerWithMerkleVerification__InvalidManageProofLength();
@@ -51,11 +56,14 @@ contract ManagerWithMerkleVerification is Auth {
     error ManagerWithMerkleVerification__FlashLoanNotInProgress();
     error ManagerWithMerkleVerification__BadFlashLoanIntentHash();
     error ManagerWithMerkleVerification__FailedToVerifyManageProof();
+    error ManagerWithMerkleVerification__Paused();
 
     //============================== EVENTS ===============================
 
     event ManageRootUpdated(address strategist, bytes32 oldRoot, bytes32 newRoot);
     event BoringVaultManaged(uint256 callsMade);
+    event Paused();
+    event Unpaused();
 
     //============================== IMMUTABLES ===============================
 
@@ -85,6 +93,22 @@ contract ManagerWithMerkleVerification is Auth {
         emit ManageRootUpdated(strategist, oldRoot, _manageRoot);
     }
 
+    /**
+     * @notice Pause this contract, which prevents future calls to `manageVaultWithMerkleVerification`.
+     */
+    function pause() external requiresAuth {
+        isPaused = true;
+        emit Paused();
+    }
+
+    /**
+     * @notice Unpause this contract, which allows future calls to `manageVaultWithMerkleVerification`.
+     */
+    function unpause() external requiresAuth {
+        isPaused = false;
+        emit Unpaused();
+    }
+
     // ========================================= STRATEGIST FUNCTIONS =========================================
 
     /**
@@ -98,6 +122,7 @@ contract ManagerWithMerkleVerification is Auth {
         bytes[] calldata targetData,
         uint256[] calldata values
     ) external requiresAuth {
+        if (isPaused) revert ManagerWithMerkleVerification__Paused();
         uint256 targetsLength = targets.length;
         if (targetsLength != manageProofs.length) revert ManagerWithMerkleVerification__InvalidManageProofLength();
         if (targetsLength != targetData.length) revert ManagerWithMerkleVerification__InvalidTargetDataLength();
