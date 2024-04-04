@@ -24,8 +24,8 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
 
     //============================== EVENTS ===============================
 
-    event Enter(address from, address asset, uint256 amount, address to, uint256 shares);
-    event Exit(address to, address asset, uint256 amount, address from, uint256 shares);
+    event Enter(address indexed from, address indexed asset, uint256 amount, address indexed to, uint256 shares);
+    event Exit(address indexed to, address indexed asset, uint256 amount, address indexed from, uint256 shares);
 
     //============================== CONSTRUCTOR ===============================
 

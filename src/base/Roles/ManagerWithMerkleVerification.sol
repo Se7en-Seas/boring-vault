@@ -60,7 +60,7 @@ contract ManagerWithMerkleVerification is Auth {
 
     //============================== EVENTS ===============================
 
-    event ManageRootUpdated(address strategist, bytes32 oldRoot, bytes32 newRoot);
+    event ManageRootUpdated(address indexed strategist, bytes32 oldRoot, bytes32 newRoot);
     event BoringVaultManaged(uint256 callsMade);
     event Paused();
     event Unpaused();

@@ -87,7 +87,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     event PayoutAddressUpdated(address oldPayout, address newPayout);
     event RateProviderUpdated(address asset, bool isPegged, address rateProvider);
     event ExchangeRateUpdated(uint96 oldRate, uint96 newRate, uint64 currentTime);
-    event FeesClaimed(address feeAsset, uint256 amount);
+    event FeesClaimed(address indexed feeAsset, uint256 amount);
 
     //============================== IMMUTABLES ===============================
 

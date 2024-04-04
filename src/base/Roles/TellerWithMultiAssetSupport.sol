@@ -79,20 +79,20 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
 
     event Paused();
     event Unpaused();
-    event AssetAdded(address asset);
-    event AssetRemoved(address asset);
+    event AssetAdded(address indexed asset);
+    event AssetRemoved(address indexed asset);
     event Deposit(
         uint256 indexed nonce,
-        address receiver,
-        address depositAsset,
+        address indexed receiver,
+        address indexed depositAsset,
         uint256 depositAmount,
         uint256 shareAmount,
         uint256 depositTimestamp,
         uint256 shareLockPeriodAtTimeOfDeposit
     );
-    event BulkDeposit(address asset, uint256 depositAmount);
-    event BulkWithdraw(address asset, uint256 shareAmount);
-    event DepositRefunded(uint256 nonce, bytes32 depositHash, address user);
+    event BulkDeposit(address indexed asset, uint256 depositAmount);
+    event BulkWithdraw(address indexed asset, uint256 shareAmount);
+    event DepositRefunded(uint256 indexed nonce, bytes32 depositHash, address indexed user);
 
     //============================== IMMUTABLES ===============================
 
