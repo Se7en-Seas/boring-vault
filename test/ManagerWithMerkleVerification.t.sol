@@ -1524,7 +1524,10 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ManagerWithMerkleVerification.ManagerWithMerkleVerification__FailedToVerifyManageProof.selector
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__FailedToVerifyManageProof.selector,
+                targets[0],
+                targetData[0],
+                values[0]
             )
         );
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);

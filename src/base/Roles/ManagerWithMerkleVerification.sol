@@ -55,7 +55,7 @@ contract ManagerWithMerkleVerification is Auth {
     error ManagerWithMerkleVerification__FlashLoanNotExecuted();
     error ManagerWithMerkleVerification__FlashLoanNotInProgress();
     error ManagerWithMerkleVerification__BadFlashLoanIntentHash();
-    error ManagerWithMerkleVerification__FailedToVerifyManageProof();
+    error ManagerWithMerkleVerification__FailedToVerifyManageProof(address target, bytes targetData, uint256 value);
     error ManagerWithMerkleVerification__Paused();
 
     //============================== EVENTS ===============================
@@ -240,7 +240,7 @@ contract ManagerWithMerkleVerification is Auth {
                 packedArgumentAddresses
             )
         ) {
-            revert ManagerWithMerkleVerification__FailedToVerifyManageProof();
+            revert ManagerWithMerkleVerification__FailedToVerifyManageProof(target, targetData, value);
         }
     }
 
