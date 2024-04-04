@@ -127,10 +127,13 @@ contract CreateMerkleRootScript is Script, MainnetAddresses {
             uniswapV3NonFungiblePositionManager,
             false,
             "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
-            new address[](0),
-            "Add liquidity to UniswapV3 position",
+            new address[](3),
+            "Add liquidity to UniswapV3 ezETH wETH position",
             rawDataDecoderAndSanitizer
         );
+        leafs[9].argumentAddresses[0] = address(0);
+        leafs[9].argumentAddresses[1] = address(EZETH);
+        leafs[9].argumentAddresses[2] = address(WETH);
         leafs[10] = ManageLeaf(
             uniswapV3NonFungiblePositionManager,
             false,
@@ -1604,6 +1607,55 @@ contract CreateMerkleRootScript is Script, MainnetAddresses {
         );
         leafs[150].argumentAddresses[0] = address(WEETH);
 
+        leafs[151] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager,
+            false,
+            "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+            new address[](3),
+            "Add liquidity to UniswapV3 wstETH ezETH position",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[151].argumentAddresses[0] = address(0);
+        leafs[151].argumentAddresses[1] = address(WSTETH);
+        leafs[151].argumentAddresses[2] = address(EZETH);
+
+        leafs[152] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager,
+            false,
+            "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+            new address[](3),
+            "Add liquidity to UniswapV3 rETH ezETH position",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[152].argumentAddresses[0] = address(0);
+        leafs[152].argumentAddresses[1] = address(RETH);
+        leafs[152].argumentAddresses[2] = address(EZETH);
+
+        leafs[153] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager,
+            false,
+            "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+            new address[](3),
+            "Add liquidity to UniswapV3 ezETH weETH position",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[153].argumentAddresses[0] = address(0);
+        leafs[153].argumentAddresses[1] = address(EZETH);
+        leafs[153].argumentAddresses[2] = address(WEETH);
+
+        leafs[154] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager,
+            false,
+            "redeemDueInterestAndRewards(address,address[],address[],address[])",
+            new address[](4),
+            "Redeem due interest and rewards for ezETH Pendle.",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[154].argumentAddresses[0] = boringVault;
+        leafs[154].argumentAddresses[1] = pendleEzEthSy;
+        leafs[154].argumentAddresses[2] = pendleEzEthYt;
+        leafs[154].argumentAddresses[3] = pendleEzEthMarket;
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/AdminStrategistLeafs.json";
@@ -2930,7 +2982,17 @@ contract CreateMerkleRootScript is Script, MainnetAddresses {
         composition[3] = "Bytes4(TARGET_FUNCTION_SELECTOR)";
         composition[4] = "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)";
         string memory metadata = "ManageRoot";
-        vm.serializeUint(metadata, "LeafCount", leafs.length);
+        {
+            // Determine how many leafs are used.
+            uint256 usedLeafCount;
+            for (uint256 i; i < leafs.length; ++i) {
+                if (leafs[i].target != address(0)) {
+                    usedLeafCount++;
+                }
+            }
+            vm.serializeUint(metadata, "LeafCount", usedLeafCount);
+        }
+        vm.serializeUint(metadata, "TreeCapacity", leafs.length);
         vm.serializeString(metadata, "DigestComposition", composition);
         string memory finalMetadata = vm.serializeBytes32(metadata, "ManageRoot", manageRoot);
 
