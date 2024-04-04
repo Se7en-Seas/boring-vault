@@ -288,6 +288,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         returns (uint256 shares)
     {
         if (!isSupported[depositAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
+
         shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, to);
         emit BulkDeposit(address(depositAsset), depositAmount);
     }
@@ -300,6 +301,8 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         requiresAuth
         returns (uint256 assetsOut)
     {
+        if (!isSupported[withdrawAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
+
         if (shareAmount == 0) revert TellerWithMultiAssetSupport__ZeroShares();
         assetsOut = shareAmount.mulDivDown(accountant.getRateInQuoteSafe(withdrawAsset), ONE_SHARE);
         if (assetsOut < minimumAssets) revert TellerWithMultiAssetSupport__MinimumAssetsNotMet();
