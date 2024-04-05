@@ -172,12 +172,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
 
         teller.deposit{value: amount}(ERC20(NATIVE), 0, 0);
 
-        (bool ok,) = address(teller).call{value: amount}("");
-        assertTrue(ok, "Failed to deposit with native");
-
-        uint256 expected_shares = 2 * amount;
-
-        assertEq(boringVault.balanceOf(address(this)), expected_shares, "Should have received expected shares");
+        assertEq(boringVault.balanceOf(address(this)), amount, "Should have received expected shares");
     }
 
     function testUserPermitDeposit(uint256 amount) external {

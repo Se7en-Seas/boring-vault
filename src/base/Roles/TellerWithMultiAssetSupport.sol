@@ -310,13 +310,6 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         emit BulkWithdraw(address(withdrawAsset), shareAmount);
     }
 
-    /**
-     * @dev Depositing this way means users can not set a min value out.
-     */
-    receive() external payable {
-        deposit(ERC20(NATIVE), msg.value, 0);
-    }
-
     // ========================================= INTERNAL HELPER FUNCTIONS =========================================
 
     /**
