@@ -225,7 +225,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
      * @notice Allows users to deposit into the BoringVault, if this contract is not paused.
      */
     function deposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint)
-        public
+        external
         payable
         requiresAuth
         nonReentrant
