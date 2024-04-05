@@ -13,10 +13,10 @@ import "forge-std/Script.sol";
 contract CreateMerkleRootScript is Script, MainnetAddresses {
     using FixedPointMathLib for uint256;
 
-    address public boringVault = address(1);
-    address public rawDataDecoderAndSanitizer = address(2);
-    address public managerAddress = address(3);
-    address public accountantAddress = address(4);
+    address public boringVault = 0xc79cC44DC8A91330872D7815aE9CFB04405952ea;
+    address public rawDataDecoderAndSanitizer = 0xdADc9DE5d8C9E2a34875A2CEa0cd415751E1791b;
+    address public managerAddress = 0x048a5002E57166a78Dd060B3B36DEd2f404D0a17;
+    address public accountantAddress = 0xc6f89cc0551c944CEae872997A4060DC95622D8F;
 
     function setUp() external {}
 
@@ -2994,6 +2994,10 @@ contract CreateMerkleRootScript is Script, MainnetAddresses {
         }
         vm.serializeUint(metadata, "TreeCapacity", leafs.length);
         vm.serializeString(metadata, "DigestComposition", composition);
+        vm.serializeAddress(metadata, "BoringVaultAddress", boringVault);
+        vm.serializeAddress(metadata, "DecoderAndSanitizerAddress", rawDataDecoderAndSanitizer);
+        vm.serializeAddress(metadata, "ManagerAddress", managerAddress);
+        vm.serializeAddress(metadata, "AccountantAddress", accountantAddress);
         string memory finalMetadata = vm.serializeBytes32(metadata, "ManageRoot", manageRoot);
 
         vm.writeLine(filePath, finalMetadata);
