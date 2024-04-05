@@ -172,7 +172,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     // ========================================= BeforeTransferHook FUNCTIONS =========================================
 
     /**
-     * @notice Implement
+     * @notice Implement beforeTransfer hook to check if shares are locked.
      */
     function beforeTransfer(address from) external view {
         if (shareUnlockTime[from] >= block.timestamp) revert TellerWithMultiAssetSupport__SharesAreLocked();
@@ -186,7 +186,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
      * @dev It is possible the admin does not setup the BoringVault to call the transfer hook,
      *      but this contract can still be saving share lock state. In the event this happens
      *      deposits are still refundable if the user has not transferred their shares.
-     *      But there is no guarantee that the user has no transferred their shares.
+     *      But there is no guarantee that the user has not transferred their shares.
      */
     function refundDeposit(
         uint256 nonce,
