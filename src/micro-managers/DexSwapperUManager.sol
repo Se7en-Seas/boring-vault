@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
-import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
-import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVerification.sol";
-import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {UManager, FixedPointMathLib, ManagerWithMerkleVerification, ERC20} from "src/micro-managers/UManager.sol";
 import {IUniswapV3Router} from "src/interfaces/IUniswapV3Router.sol";
-import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {PriceRouter} from "src/interfaces/PriceRouter.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
@@ -15,7 +12,7 @@ import {BalancerVault} from "src/interfaces/BalancerVault.sol";
  * - ERC20 approves with `router` spender.
  * - IUniswapV3Router.exactInput(params), with all desired paths.
  */
-contract DexSwapperUManager is Auth {
+contract DexSwapperUManager is UManager {
     using FixedPointMathLib for uint256;
 
     // ========================================= STRUCTS =========================================
@@ -41,53 +38,17 @@ contract DexSwapperUManager is Auth {
      */
     uint16 public allowedSlippage = 0.0005e4;
 
-    /**
-     * @notice The period in seconds for the swap limit.
-     */
-    uint16 public swapPeriod;
-
-    /**
-     * @notice The number of swaps allowed per period.
-     */
-    uint16 public allowedSwapsPerPeriod;
-
-    /**
-     * @notice The number of swaps made in the current period.
-     */
-    mapping(uint256 => uint256) public swapCountPerPeriod;
-
     //============================== ERRORS ===============================
 
     error DexSwapperUManager__Slippage();
     error DexSwapperUManager__NewSlippageTooLarge();
     error DexSwapperUManager__UniswapV3BadPathOrFees();
-    error DexSwapperUManager__SwapCountExceeded();
 
     //============================== EVENTS ===============================
 
     event SlippageUpdated(uint16 oldSlippage, uint16 newSlippage);
 
-    //============================== MODIFIERS ===============================
-
-    modifier checkSwapCount() {
-        swapCountPerPeriod[block.timestamp % swapPeriod]++;
-        if (swapCountPerPeriod[block.timestamp % swapPeriod] > allowedSwapsPerPeriod) {
-            revert DexSwapperUManager__SwapCountExceeded();
-        }
-        _;
-    }
-
     //============================== IMMUTABLES ===============================
-
-    /**
-     * @notice The ManagerWithMerkleVerification this uManager works with.
-     */
-    ManagerWithMerkleVerification internal immutable manager;
-
-    /**
-     * @notice The BoringVault this uManager works with.
-     */
-    address internal immutable boringVault;
 
     /**
      * @notice The UniswapV3 Router.
@@ -111,9 +72,7 @@ contract DexSwapperUManager is Auth {
         address _router,
         address _balancerVault,
         address _priceRouter
-    ) Auth(_owner, Authority(address(0))) {
-        manager = ManagerWithMerkleVerification(_manager);
-        boringVault = _boringVault;
+    ) UManager(_owner, _manager, _boringVault) {
         router = IUniswapV3Router(_router);
         balancerVault = BalancerVault(_balancerVault);
         priceRouter = PriceRouter(_priceRouter);
@@ -128,20 +87,6 @@ contract DexSwapperUManager is Auth {
         if (_allowedSlippage > MAX_SLIPPAGE) revert DexSwapperUManager__NewSlippageTooLarge();
         emit SlippageUpdated(allowedSlippage, _allowedSlippage);
         allowedSlippage = _allowedSlippage;
-    }
-
-    /**
-     * @notice Sets the duration of the swapPeriod.
-     */
-    function setSwapPeriod(uint16 _swapPeriod) external requiresAuth {
-        swapPeriod = _swapPeriod;
-    }
-
-    /**
-     * @notice Sets the number of swaps allowed per period.
-     */
-    function setAllowedSwapsPerPeriod(uint16 _allowedSwapsPerPeriod) external requiresAuth {
-        allowedSwapsPerPeriod = _allowedSwapsPerPeriod;
     }
 
     /**
@@ -164,7 +109,7 @@ contract DexSwapperUManager is Auth {
         uint256 amountIn,
         uint256 amountOutMinimum,
         uint256 deadline
-    ) external requiresAuth checkSwapCount {
+    ) external requiresAuth enforceRateLimit {
         address[] memory targets = new address[](2);
         bytes[] memory targetData = new bytes[](2);
         uint256[] memory values = new uint256[](2);
@@ -241,7 +186,7 @@ contract DexSwapperUManager is Auth {
         DecoderCustomTypes.FundManagement calldata funds,
         uint256 limit,
         uint256 deadline
-    ) external requiresAuth checkSwapCount {
+    ) external requiresAuth enforceRateLimit {
         address[] memory targets = new address[](2);
         bytes[] memory targetData = new bytes[](2);
         uint256[] memory values = new uint256[](2);
@@ -314,7 +259,7 @@ contract DexSwapperUManager is Auth {
         uint256 j,
         uint256 dx,
         uint256 min_dy
-    ) external requiresAuth checkSwapCount {
+    ) external requiresAuth enforceRateLimit {
         address[] memory targets = new address[](2);
         bytes[] memory targetData = new bytes[](2);
         uint256[] memory values = new uint256[](2);
@@ -356,29 +301,5 @@ contract DexSwapperUManager is Auth {
                 revokeApproveProof, revokeApproveDecodersAndSanitizers, targets, targetData, values
             );
         }
-    }
-
-    /**
-     * @notice Allows auth to set token approvals to zero.
-     */
-    function revokeTokenApproval(
-        bytes32[][] calldata manageProofs,
-        address[] calldata decodersAndSanitizers,
-        ERC20[] calldata tokens,
-        address[] calldata spenders
-    ) external requiresAuth {
-        uint256 tokensLength = tokens.length;
-        address[] memory targets = new address[](tokensLength);
-        bytes[] memory targetData = new bytes[](tokensLength);
-        uint256[] memory values = new uint256[](tokensLength);
-
-        for (uint256 i; i < tokensLength; ++i) {
-            targets[i] = address(tokens[i]);
-            targetData[i] = abi.encodeWithSelector(ERC20.approve.selector, spenders[i], 0);
-            // values[i] = 0;
-        }
-
-        // Make the manage call.
-        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 }

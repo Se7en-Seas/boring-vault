@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
-import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
-import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVerification.sol";
-import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {UManager, FixedPointMathLib, ManagerWithMerkleVerification, ERC20} from "src/micro-managers/UManager.sol";
 import {AggregationRouterV5} from "src/interfaces/AggregationRouterV5.sol";
-import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {PriceRouter} from "src/interfaces/PriceRouter.sol";
 
 /**
@@ -13,7 +10,7 @@ import {PriceRouter} from "src/interfaces/PriceRouter.sol";
  * - ERC20 approves with `router` spender.
  * - AggregationRouterV5.swap, with all desired addresses.
  */
-contract DexAggregatorUManager is Auth {
+contract DexAggregatorUManager is UManager {
     using FixedPointMathLib for uint256;
 
     // ========================================= CONSTANTS =========================================
@@ -27,52 +24,16 @@ contract DexAggregatorUManager is Auth {
      */
     uint16 public allowedSlippage = 0.0005e4;
 
-    /**
-     * @notice The period in seconds for the swap limit.
-     */
-    uint16 public swapPeriod;
-
-    /**
-     * @notice The number of swaps allowed per period.
-     */
-    uint16 public allowedSwapsPerPeriod;
-
-    /**
-     * @notice The number of swaps made in the current period.
-     */
-    mapping(uint256 => uint256) public swapCountPerPeriod;
-
     //============================== ERRORS ===============================
 
     error DexAggregatorUManager__Slippage();
     error DexAggregatorUManager__NewSlippageTooLarge();
-    error DexAggregatorUManager__SwapCountExceeded();
 
     //============================== EVENTS ===============================
 
     event SlippageUpdated(uint16 oldSlippage, uint16 newSlippage);
 
-    //============================== MODIFIERS ===============================
-
-    modifier checkSwapCount() {
-        swapCountPerPeriod[block.timestamp % swapPeriod]++;
-        if (swapCountPerPeriod[block.timestamp % swapPeriod] > allowedSwapsPerPeriod) {
-            revert DexAggregatorUManager__SwapCountExceeded();
-        }
-        _;
-    }
-
     //============================== IMMUTABLES ===============================
-
-    /**
-     * @notice The ManagerWithMerkleVerification this uManager works with.
-     */
-    ManagerWithMerkleVerification internal immutable manager;
-
-    /**
-     * @notice The BoringVault this uManager works with.
-     */
-    address internal immutable boringVault;
 
     /**
      * @notice The 1Inch Router.
@@ -85,10 +46,8 @@ contract DexAggregatorUManager is Auth {
     PriceRouter internal immutable priceRouter;
 
     constructor(address _owner, address _manager, address _boringVault, address _router, address _priceRouter)
-        Auth(_owner, Authority(address(0)))
+        UManager(_owner, _manager, _boringVault)
     {
-        manager = ManagerWithMerkleVerification(_manager);
-        boringVault = _boringVault;
         router = AggregationRouterV5(_router);
         priceRouter = PriceRouter(_priceRouter);
     }
@@ -105,20 +64,6 @@ contract DexAggregatorUManager is Auth {
     }
 
     /**
-     * @notice Sets the duration of the swapPeriod.
-     */
-    function setSwapPeriod(uint16 _swapPeriod) external requiresAuth {
-        swapPeriod = _swapPeriod;
-    }
-
-    /**
-     * @notice Sets the number of swaps allowed per period.
-     */
-    function setAllowedSwapsPerPeriod(uint16 _allowedSwapsPerPeriod) external requiresAuth {
-        allowedSwapsPerPeriod = _allowedSwapsPerPeriod;
-    }
-
-    /**
      * @notice Performs a swap using the 1inch Router, and enforces a slippage check.
      * @param manageProofs 2 manage proofs, the first one for the ERC20 approval, and the second
      *        for the router swap call
@@ -132,7 +77,7 @@ contract DexAggregatorUManager is Auth {
         uint256 amountIn,
         ERC20 tokenOut,
         bytes calldata data
-    ) external requiresAuth checkSwapCount {
+    ) external requiresAuth enforceRateLimit {
         address[] memory targets = new address[](2);
         bytes[] memory targetData = new bytes[](2);
         uint256[] memory values = new uint256[](2);
@@ -177,29 +122,5 @@ contract DexAggregatorUManager is Auth {
                 revokeApproveProof, revokeApproveDecodersAndSanitizers, targets, targetData, values
             );
         }
-    }
-
-    /**
-     * @notice Allows auth to set token approvals to zero.
-     */
-    function revokeTokenApproval(
-        bytes32[][] calldata manageProofs,
-        address[] calldata decodersAndSanitizers,
-        ERC20[] calldata tokens,
-        address[] calldata spenders
-    ) external requiresAuth {
-        uint256 tokensLength = tokens.length;
-        address[] memory targets = new address[](tokensLength);
-        bytes[] memory targetData = new bytes[](tokensLength);
-        uint256[] memory values = new uint256[](tokensLength);
-
-        for (uint256 i; i < tokensLength; ++i) {
-            targets[i] = address(tokens[i]);
-            targetData[i] = abi.encodeWithSelector(ERC20.approve.selector, spenders[i], 0);
-            // values[i] = 0;
-        }
-
-        // Make the manage call.
-        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 }

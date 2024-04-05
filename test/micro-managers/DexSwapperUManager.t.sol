@@ -15,7 +15,7 @@ import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {IUniswapV3Router} from "src/interfaces/IUniswapV3Router.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
-import {DexSwapperUManager} from "src/micro-managers/DexSwapperUManager.sol";
+import {DexSwapperUManager, UManager} from "src/micro-managers/DexSwapperUManager.sol";
 import {PriceRouter} from "src/interfaces/PriceRouter.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
@@ -105,8 +105,8 @@ contract DexSwapperUManagerTest is Test, MainnetAddresses {
         rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
         rolesAuthority.setUserRole(vault, BALANCER_VAULT_ROLE, true);
 
-        dexSwapperUManager.setSwapPeriod(300);
-        dexSwapperUManager.setAllowedSwapsPerPeriod(10);
+        dexSwapperUManager.setPeriod(300);
+        dexSwapperUManager.setAllowedCallsPerPeriod(10);
     }
 
     function testSwapWithUniswapV3() external {
@@ -144,7 +144,7 @@ contract DexSwapperUManagerTest is Test, MainnetAddresses {
         // This swap is acceptable.
         dexSwapperUManager.swapWithUniswapV3(manageProofs, decodersAndSanitizers, path, fees, 10e18, 0, block.timestamp);
 
-        uint256 swapCount = dexSwapperUManager.swapCountPerPeriod(block.timestamp % 300);
+        uint256 swapCount = dexSwapperUManager.callCountPerPeriod(block.timestamp % 300);
         assertEq(swapCount, 1, "Swap count should have been incremented.");
 
         // But if strategist tries to perform a high slippage swap it reverts.
@@ -271,21 +271,21 @@ contract DexSwapperUManagerTest is Test, MainnetAddresses {
         dexSwapperUManager.setAllowedSlippage(0.1001e4);
     }
 
-    function testSetSwapPeriod() external {
-        dexSwapperUManager.setSwapPeriod(900);
+    function testsetPeriod() external {
+        dexSwapperUManager.setPeriod(900);
 
-        assertEq(dexSwapperUManager.swapPeriod(), 900, "Swap period should have been updated.");
+        assertEq(dexSwapperUManager.period(), 900, "Swap period should have been updated.");
     }
 
-    function testSetAllowedSwapsPerPeriod() external {
-        dexSwapperUManager.setAllowedSwapsPerPeriod(20);
+    function testsetAllowedCallsPerPeriod() external {
+        dexSwapperUManager.setAllowedCallsPerPeriod(20);
 
-        assertEq(dexSwapperUManager.allowedSwapsPerPeriod(), 20, "Allowed swaps per period should have been updated.");
+        assertEq(dexSwapperUManager.allowedCallsPerPeriod(), 20, "Allowed swaps per period should have been updated.");
     }
 
     function testRateLimitRevert() external {
         // Set allowed swaps per period to zero.
-        dexSwapperUManager.setAllowedSwapsPerPeriod(0);
+        dexSwapperUManager.setAllowedCallsPerPeriod(0);
 
         deal(address(WEETH), address(boringVault), 10_000e18);
         // Make sure the vault can
@@ -319,7 +319,7 @@ contract DexSwapperUManagerTest is Test, MainnetAddresses {
         fees[0] = 500;
 
         // Rate limit set to zero, so call reverts.
-        vm.expectRevert(abi.encodeWithSelector(DexSwapperUManager.DexSwapperUManager__SwapCountExceeded.selector));
+        vm.expectRevert(abi.encodeWithSelector(UManager.UManager__CallCountExceeded.selector));
         dexSwapperUManager.swapWithUniswapV3(manageProofs, decodersAndSanitizers, path, fees, 10e18, 0, block.timestamp);
     }
 
