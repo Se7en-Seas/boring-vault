@@ -23,7 +23,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @param allowedExchangeRateChangeLower the min allowed change to exchange rate from an update
      * @param lastUpdateTimestamp the block timestamp of the last exchange rate update
      * @param isPaused whether or not this contract is paused
-     * @param minimumUpdateDelayInHours the minimum amount of time that must pass between
+     * @param minimumUpdateDelayInSeconds the minimum amount of time that must pass between
      *        exchange rate updates, such that the update won't trigger the contract to be paused
      * @param managementFee the management fee
      */
@@ -36,7 +36,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         uint16 allowedExchangeRateChangeLower;
         uint64 lastUpdateTimestamp;
         bool isPaused;
-        uint8 minimumUpdateDelayInHours;
+        uint32 minimumUpdateDelayInSeconds;
         uint16 managementFee;
     }
 
@@ -48,13 +48,6 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         bool isPeggedToBase;
         IRateProvider rateProvider;
     }
-
-    // ========================================= CONSTANTS =========================================
-
-    /**
-     * @notice 1 hour.
-     */
-    uint256 internal constant ONE_HOUR = 3_600;
 
     // ========================================= STATE =========================================
 
@@ -80,7 +73,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     event Paused();
     event Unpaused();
-    event DelayInHoursUpdated(uint8 oldDelay, uint8 newDelay);
+    event DelayInSecondsUpdated(uint32 oldDelay, uint32 newDelay);
     event UpperBoundUpdated(uint16 oldBound, uint16 newBound);
     event LowerBoundUpdated(uint16 oldBound, uint16 newBound);
     event ManagementFeeUpdated(uint16 oldFee, uint16 newFee);
@@ -120,7 +113,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         address _base,
         uint16 allowedExchangeRateChangeUpper,
         uint16 allowedExchangeRateChangeLower,
-        uint8 minimumUpdateDelayInHours,
+        uint8 minimumUpdateDelayInSeconds,
         uint16 managementFee
     ) Auth(_owner, Authority(address(0))) {
         base = ERC20(_base);
@@ -136,7 +129,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
             allowedExchangeRateChangeLower: allowedExchangeRateChangeLower,
             lastUpdateTimestamp: uint64(block.timestamp),
             isPaused: false,
-            minimumUpdateDelayInHours: minimumUpdateDelayInHours,
+            minimumUpdateDelayInSeconds: minimumUpdateDelayInSeconds,
             managementFee: managementFee
         });
     }
@@ -165,10 +158,10 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @dev There are no input requirements, as it is possible the admin would want
      *      the exchange rate updated as frequently as needed.
      */
-    function updateDelay(uint8 minimumUpdateDelayInHours) external requiresAuth {
-        uint8 oldDelay = accountantState.minimumUpdateDelayInHours;
-        accountantState.minimumUpdateDelayInHours = minimumUpdateDelayInHours;
-        emit DelayInHoursUpdated(oldDelay, minimumUpdateDelayInHours);
+    function updateDelay(uint32 minimumUpdateDelayInSeconds) external requiresAuth {
+        uint32 oldDelay = accountantState.minimumUpdateDelayInSeconds;
+        accountantState.minimumUpdateDelayInSeconds = minimumUpdateDelayInSeconds;
+        emit DelayInSecondsUpdated(oldDelay, minimumUpdateDelayInSeconds);
     }
 
     /**
@@ -235,7 +228,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         uint256 currentExchangeRate = state.exchangeRate;
         uint256 currentTotalShares = vault.totalSupply();
         if (
-            currentTime < state.lastUpdateTimestamp + (state.minimumUpdateDelayInHours * ONE_HOUR)
+            currentTime < state.lastUpdateTimestamp + state.minimumUpdateDelayInSeconds
                 || newExchangeRate > currentExchangeRate.mulDivDown(state.allowedExchangeRateChangeUpper, 1e4)
                 || newExchangeRate < currentExchangeRate.mulDivDown(state.allowedExchangeRateChangeLower, 1e4)
         ) {
