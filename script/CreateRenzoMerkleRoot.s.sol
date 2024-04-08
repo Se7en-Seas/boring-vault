@@ -8,9 +8,9 @@ import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import "forge-std/Script.sol";
 
 /**
- * forge script script/CreateMerkleRoot.s.sol:CreateMerkleRootScript
+ * forge script script/CreateRenzoMerkleRoot.s.sol:CreateRenzoMerkleRootScript
  */
-contract CreateMerkleRootScript is Script, MainnetAddresses {
+contract CreateRenzoMerkleRootScript is Script, MainnetAddresses {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0xc79cC44DC8A91330872D7815aE9CFB04405952ea;

@@ -416,6 +416,9 @@ contract MainnetAddresses {
     // Aave V3
     address public v3Pool = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
 
+    // SparkLend
+    address public sparkLendPool = 0xC13e21B648A5Ee794902342038FF3aDAB66BE987;
+
     // Uniswap V3 Pools
     address public wETH_weETH_05 = 0x7A415B19932c0105c82FDB6b720bb01B0CC2CAe3;
     address public wstETH_wETH_01 = 0x109830a1AAaD605BbF02a9dFA7B0B92EC2FB7dAa;

@@ -14,8 +14,6 @@ import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSu
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
 import {Deployer} from "src/helper/Deployer.sol";
 import {ArcticArchitectureLens} from "src/helper/ArcticArchitectureLens.sol";
-import {DexAggregatorUManager} from "src/micro-managers/DexAggregatorUManager.sol";
-import {DexSwapperUManager} from "src/micro-managers/DexSwapperUManager.sol";
 import {AtomicQueue} from "src/atomic-queue/AtomicQueue.sol";
 import {AtomicSolverV2} from "src/atomic-queue/AtomicSolverV2.sol";
 
@@ -38,8 +36,6 @@ contract DeployBoringVaultArcticScript is Script {
     address public rawDataDecoderAndSanitizer;
     TellerWithMultiAssetSupport public teller;
     AccountantWithRateProviders public accountant;
-    DexAggregatorUManager public dexAggregatorUManager;
-    DexSwapperUManager public dexSwapperUManager;
     AtomicQueue public atomicQueue;
     AtomicSolverV2 public atomicSolver;
 
@@ -63,14 +59,11 @@ contract DeployBoringVaultArcticScript is Script {
     uint8 public constant MINTER_ROLE = 2;
     uint8 public constant BURNER_ROLE = 3;
     uint8 public constant MANAGER_INTERNAL_ROLE = 4;
-    uint8 public constant BORING_VAULT_ROLE = 5;
-    uint8 public constant BALANCER_VAULT_ROLE = 6;
     uint8 public constant SOLVER_ROLE = 12;
     uint8 public constant OWNER_ROLE = 8;
     uint8 public constant MULTISIG_ROLE = 9;
     uint8 public constant STRATEGIST_MULTISIG_ROLE = 10;
     uint8 public constant STRATEGIST_ROLE = 7;
-    uint8 public constant MICRO_MANAGER_ROLE = 13;
     uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 11;
 
     function setUp() external {
@@ -120,24 +113,6 @@ contract DeployBoringVaultArcticScript is Script {
         rawDataDecoderAndSanitizer =
             deployer.deployContract("Renzo Liquid Decoder and Sanitizer V0.0", creationCode, constructorArgs, 0);
 
-        creationCode = type(DexAggregatorUManager).creationCode;
-        constructorArgs = abi.encode(owner, address(manager), address(boringVault), oneInchAggregatorV5, priceRouter);
-        dexAggregatorUManager = DexAggregatorUManager(
-            deployer.deployContract("DEX Aggregator uManager V0.0", creationCode, constructorArgs, 0)
-        );
-
-        creationCode = type(DexSwapperUManager).creationCode;
-        constructorArgs = abi.encode(owner, address(manager), address(boringVault), uniswapV3Router, priceRouter);
-        dexSwapperUManager =
-            DexSwapperUManager(deployer.deployContract("DEX Swapper uManager V0.0", creationCode, constructorArgs, 0));
-
-        creationCode = type(AtomicQueue).creationCode;
-        atomicQueue = AtomicQueue(deployer.deployContract("Atomic Queue V0.0", creationCode, hex"", 0));
-
-        creationCode = type(AtomicSolverV2).creationCode;
-        constructorArgs = abi.encode(owner, Authority(sevenSeasAuthority));
-        atomicSolver = AtomicSolverV2(deployer.deployContract("Atomic Solver V0.0", creationCode, constructorArgs, 0));
-
         // Setup roles.
         // MANAGER_ROLE
         rolesAuthority.setRoleCapability(
@@ -159,14 +134,6 @@ contract DeployBoringVaultArcticScript is Script {
             address(manager),
             ManagerWithMerkleVerification.manageVaultWithMerkleVerification.selector,
             true
-        );
-        // BORING_VAULT_ROLE
-        rolesAuthority.setRoleCapability(
-            BORING_VAULT_ROLE, address(manager), ManagerWithMerkleVerification.flashLoan.selector, true
-        );
-        // BALANCER_VAULT_ROLE
-        rolesAuthority.setRoleCapability(
-            BALANCER_VAULT_ROLE, address(manager), ManagerWithMerkleVerification.receiveFlashLoan.selector, true
         );
         // SOLVER_ROLE
         rolesAuthority.setRoleCapability(
@@ -217,12 +184,6 @@ contract DeployBoringVaultArcticScript is Script {
         rolesAuthority.setRoleCapability(
             OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.setShareLockPeriod.selector, true
         );
-        rolesAuthority.setRoleCapability(OWNER_ROLE, address(dexAggregatorUManager), Auth.setAuthority.selector, true);
-        rolesAuthority.setRoleCapability(
-            OWNER_ROLE, address(dexAggregatorUManager), Auth.transferOwnership.selector, true
-        );
-        rolesAuthority.setRoleCapability(OWNER_ROLE, address(dexSwapperUManager), Auth.setAuthority.selector, true);
-        rolesAuthority.setRoleCapability(OWNER_ROLE, address(dexSwapperUManager), Auth.transferOwnership.selector, true);
         // MULTISIG_ROLE
         rolesAuthority.setRoleCapability(
             MULTISIG_ROLE, address(accountant), AccountantWithRateProviders.pause.selector, true
@@ -236,12 +197,6 @@ contract DeployBoringVaultArcticScript is Script {
         rolesAuthority.setRoleCapability(
             MULTISIG_ROLE, address(teller), TellerWithMultiAssetSupport.unpause.selector, true
         );
-        rolesAuthority.setRoleCapability(
-            MULTISIG_ROLE, address(dexAggregatorUManager), DexAggregatorUManager.setAllowedSlippage.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            MULTISIG_ROLE, address(dexSwapperUManager), DexSwapperUManager.setAllowedSlippage.selector, true
-        );
         // STRATEGIST_MULTISIG_ROLE
         rolesAuthority.setRoleCapability(
             STRATEGIST_MULTISIG_ROLE, address(teller), TellerWithMultiAssetSupport.refundDeposit.selector, true
@@ -249,25 +204,6 @@ contract DeployBoringVaultArcticScript is Script {
         // STRATEGIST_ROLE
         rolesAuthority.setRoleCapability(
             STRATEGIST_ROLE,
-            address(manager),
-            ManagerWithMerkleVerification.manageVaultWithMerkleVerification.selector,
-            true
-        );
-        rolesAuthority.setRoleCapability(
-            STRATEGIST_ROLE, address(dexAggregatorUManager), DexAggregatorUManager.swapWith1Inch.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            STRATEGIST_ROLE, address(dexAggregatorUManager), DexAggregatorUManager.revokeTokenApproval.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            STRATEGIST_ROLE, address(dexSwapperUManager), DexSwapperUManager.swapWithUniswapV3.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            STRATEGIST_ROLE, address(dexSwapperUManager), DexSwapperUManager.revokeTokenApproval.selector, true
-        );
-        // MICRO_MANAGER_ROLE
-        rolesAuthority.setRoleCapability(
-            MICRO_MANAGER_ROLE,
             address(manager),
             ManagerWithMerkleVerification.manageVaultWithMerkleVerification.selector,
             true
@@ -287,13 +223,8 @@ contract DeployBoringVaultArcticScript is Script {
 
         // Give roles to appropriate contracts
         rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
-        rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
         rolesAuthority.setUserRole(address(manager), MANAGER_INTERNAL_ROLE, true);
-        rolesAuthority.setUserRole(balancerVault, BALANCER_VAULT_ROLE, true);
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
-        rolesAuthority.setUserRole(address(dexSwapperUManager), MICRO_MANAGER_ROLE, true);
-        rolesAuthority.setUserRole(address(dexAggregatorUManager), MICRO_MANAGER_ROLE, true);
-        rolesAuthority.setUserRole(address(atomicSolver), SOLVER_ROLE, true);
 
         // Setup rate providers.
         accountant.setRateProviderData(ERC20(eETH), true, address(0));
