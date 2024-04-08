@@ -29,11 +29,6 @@ contract CellarMigrationAdaptor {
      */
     error CellarMigrationAdaptor__UserWithdrawsNotAllowed();
 
-    /**
-     * @notice Attempted swap has bad slippage.
-     */
-    error CellarMigrationAdaptor__Slippage();
-
     BoringVault internal immutable boringVault;
     AccountantWithRateProviders internal immutable accountant;
     TellerWithMultiAssetSupport internal immutable teller;
@@ -52,7 +47,7 @@ contract CellarMigrationAdaptor {
      * of the adaptor is more difficult.
      */
     function identifier() public pure virtual returns (bytes32) {
-        return keccak256(abi.encode("Base Adaptor V 0.0"));
+        return keccak256(abi.encode("Cellar Migration Adaptor V 0.0"));
     }
 
     //============================================ Implement Base Functions ===========================================

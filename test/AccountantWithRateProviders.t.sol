@@ -110,9 +110,9 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     function testUpdateDelay() external {
         accountant.updateDelay(2);
 
-        (,,,,,,,, uint8 delay_in_hours,) = accountant.accountantState();
+        (,,,,,,,, uint32 delay_in_seconds,) = accountant.accountantState();
 
-        assertEq(delay_in_hours, 2, "Delay should be 2 hours");
+        assertEq(delay_in_seconds, 2, "Delay should be 2 seconds");
     }
 
     function testUpdateUpper() external {
@@ -210,7 +210,6 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         assertTrue(is_paused == false, "Accountant should not be paused");
 
         // Trying to update before the minimum time should succeed but, pause the contract.
-        skip((1 days / 24) - 1);
         new_exchange_rate = uint96(1.0e18);
         accountant.updateExchangeRate(new_exchange_rate);
 
@@ -304,7 +303,11 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
 
         address attacker = vm.addr(1);
         vm.startPrank(attacker);
-        vm.expectRevert(bytes("UNAUTHORIZED"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AccountantWithRateProviders.AccountantWithRateProviders__OnlyCallableByBoringVault.selector
+            )
+        );
         accountant.claimFees(WETH);
         vm.stopPrank();
 
@@ -363,6 +366,13 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
             )
         );
         accountant.updateManagementFee(0.2001e4);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AccountantWithRateProviders.AccountantWithRateProviders__UpdateDelayTooLarge.selector
+            )
+        );
+        accountant.updateDelay(14 days + 1);
     }
 
     // ========================================= HELPER FUNCTIONS =========================================
