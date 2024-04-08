@@ -68,6 +68,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     error AccountantWithRateProviders__ManagementFeeTooLarge();
     error AccountantWithRateProviders__Paused();
     error AccountantWithRateProviders__ZeroFeesOwed();
+    error AccountantWithRateProviders__OnlyCallableByBoringVault();
 
     //============================== EVENTS ===============================
 
@@ -275,7 +276,9 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @notice Claim pending fees.
      * @dev This function must be called by the BoringVault.
      */
-    function claimFees(ERC20 feeAsset) external requiresAuth {
+    function claimFees(ERC20 feeAsset) external {
+        if (msg.sender != address(vault)) revert AccountantWithRateProviders__OnlyCallableByBoringVault();
+
         AccountantState storage state = accountantState;
         if (state.isPaused) revert AccountantWithRateProviders__Paused();
         if (state.feesOwedInBase == 0) revert AccountantWithRateProviders__ZeroFeesOwed();

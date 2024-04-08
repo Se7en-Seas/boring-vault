@@ -303,7 +303,11 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
 
         address attacker = vm.addr(1);
         vm.startPrank(attacker);
-        vm.expectRevert(bytes("UNAUTHORIZED"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AccountantWithRateProviders.AccountantWithRateProviders__OnlyCallableByBoringVault.selector
+            )
+        );
         accountant.claimFees(WETH);
         vm.stopPrank();
 
