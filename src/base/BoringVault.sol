@@ -24,8 +24,8 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
 
     //============================== EVENTS ===============================
 
-    event Enter(address from, address asset, uint256 amount, address to, uint256 shares);
-    event Exit(address to, address asset, uint256 amount, address from, uint256 shares);
+    event Enter(address indexed from, address indexed asset, uint256 amount, address indexed to, uint256 shares);
+    event Exit(address indexed to, address indexed asset, uint256 amount, address indexed from, uint256 shares);
 
     //============================== CONSTRUCTOR ===============================
 
@@ -38,21 +38,29 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
 
     /**
      * @notice Allows manager to make an arbitrary function call from this contract.
+     * @dev Callable by MANAGER_ROLE.
      */
-    function manage(address target, bytes calldata data, uint256 value) external requiresAuth {
-        target.functionCallWithValue(data, value);
+    function manage(address target, bytes calldata data, uint256 value)
+        external
+        requiresAuth
+        returns (bytes memory result)
+    {
+        result = target.functionCallWithValue(data, value);
     }
 
     /**
      * @notice Allows manager to make arbitrary function calls from this contract.
+     * @dev Callable by MANAGER_ROLE.
      */
     function manage(address[] calldata targets, bytes[] calldata data, uint256[] calldata values)
         external
         requiresAuth
+        returns (bytes[] memory results)
     {
         uint256 targetsLength = targets.length;
+        results = new bytes[](targetsLength);
         for (uint256 i; i < targetsLength; ++i) {
-            targets[i].functionCallWithValue(data[i], values[i]);
+            results[i] = targets[i].functionCallWithValue(data[i], values[i]);
         }
     }
 
@@ -61,6 +69,7 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
     /**
      * @notice Allows minter to mint shares, in exchange for assets.
      * @dev If assetAmount is zero, no assets are transferred in.
+     * @dev Callable by MINTER_ROLE.
      */
     function enter(address from, ERC20 asset, uint256 assetAmount, address to, uint256 shareAmount)
         external
@@ -80,6 +89,7 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
     /**
      * @notice Allows burner to burn shares, in exchange for assets.
      * @dev If assetAmount is zero, no assets are transferred out.
+     * @dev Callable by BURNER_ROLE.
      */
     function exit(address to, ERC20 asset, uint256 assetAmount, address from, uint256 shareAmount)
         external
@@ -98,6 +108,7 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
     /**
      * @notice Sets the share locker.
      * @notice If set to zero address, the share locker logic is disabled.
+     * @dev Callable by OWNER_ROLE.
      */
     function setBeforeTransferHook(address _hook) external requiresAuth {
         hook = BeforeTransferHook(_hook);

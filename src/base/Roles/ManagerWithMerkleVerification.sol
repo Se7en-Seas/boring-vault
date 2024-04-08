@@ -41,6 +41,11 @@ contract ManagerWithMerkleVerification is Auth {
      */
     bytes32 internal flashLoanIntentHash = bytes32(0);
 
+    /**
+     * @notice Used to pause calls to `manageVaultWithMerkleVerification`.
+     */
+    bool public isPaused;
+
     //============================== ERRORS ===============================
 
     error ManagerWithMerkleVerification__InvalidManageProofLength();
@@ -50,12 +55,17 @@ contract ManagerWithMerkleVerification is Auth {
     error ManagerWithMerkleVerification__FlashLoanNotExecuted();
     error ManagerWithMerkleVerification__FlashLoanNotInProgress();
     error ManagerWithMerkleVerification__BadFlashLoanIntentHash();
-    error ManagerWithMerkleVerification__FailedToVerifyManageProof();
+    error ManagerWithMerkleVerification__FailedToVerifyManageProof(address target, bytes targetData, uint256 value);
+    error ManagerWithMerkleVerification__Paused();
+    error ManagerWithMerkleVerification__OnlyCallableByBoringVault();
+    error ManagerWithMerkleVerification__OnlyCallableByBalancerVault();
 
     //============================== EVENTS ===============================
 
-    event ManageRootUpdated(address strategist, bytes32 oldRoot, bytes32 newRoot);
+    event ManageRootUpdated(address indexed strategist, bytes32 oldRoot, bytes32 newRoot);
     event BoringVaultManaged(uint256 callsMade);
+    event Paused();
+    event Unpaused();
 
     //============================== IMMUTABLES ===============================
 
@@ -78,6 +88,7 @@ contract ManagerWithMerkleVerification is Auth {
 
     /**
      * @notice Sets the manageRoot.
+     * @dev Callable by OWNER_ROLE.
      */
     function setManageRoot(address strategist, bytes32 _manageRoot) external requiresAuth {
         bytes32 oldRoot = manageRoot[strategist];
@@ -85,11 +96,32 @@ contract ManagerWithMerkleVerification is Auth {
         emit ManageRootUpdated(strategist, oldRoot, _manageRoot);
     }
 
+    /**
+     * @notice Pause this contract, which prevents future calls to `manageVaultWithMerkleVerification`.
+     * @dev Callable by MULTISIG_ROLE.
+     */
+    function pause() external requiresAuth {
+        isPaused = true;
+        emit Paused();
+    }
+
+    /**
+     * @notice Unpause this contract, which allows future calls to `manageVaultWithMerkleVerification`.
+     * @dev Callable by MULTISIG_ROLE.
+     */
+    function unpause() external requiresAuth {
+        isPaused = false;
+        emit Unpaused();
+    }
+
     // ========================================= STRATEGIST FUNCTIONS =========================================
 
     /**
      * @notice Allows strategist to manage the BoringVault.
      * @dev The strategist must provide a merkle proof for every call that verifiees they are allowed to make that call.
+     * @dev Callable by MANAGER_INTERNAL_ROLE.
+     * @dev Callable by STRATEGIST_ROLE.
+     * @dev Callable by MICRO_MANAGER_ROLE.
      */
     function manageVaultWithMerkleVerification(
         bytes32[][] calldata manageProofs,
@@ -98,6 +130,7 @@ contract ManagerWithMerkleVerification is Auth {
         bytes[] calldata targetData,
         uint256[] calldata values
     ) external requiresAuth {
+        if (isPaused) revert ManagerWithMerkleVerification__Paused();
         uint256 targetsLength = targets.length;
         if (targetsLength != manageProofs.length) revert ManagerWithMerkleVerification__InvalidManageProofLength();
         if (targetsLength != targetData.length) revert ManagerWithMerkleVerification__InvalidTargetDataLength();
@@ -131,7 +164,9 @@ contract ManagerWithMerkleVerification is Auth {
         address[] calldata tokens,
         uint256[] calldata amounts,
         bytes calldata userData
-    ) external requiresAuth {
+    ) external {
+        if (msg.sender != address(vault)) revert ManagerWithMerkleVerification__OnlyCallableByBoringVault();
+
         flashLoanIntentHash = keccak256(userData);
         performingFlashLoan = true;
         balancerVault.flashLoan(recipient, tokens, amounts, userData);
@@ -150,7 +185,8 @@ contract ManagerWithMerkleVerification is Auth {
         uint256[] calldata amounts,
         uint256[] calldata feeAmounts,
         bytes calldata userData
-    ) external requiresAuth {
+    ) external {
+        if (msg.sender != address(balancerVault)) revert ManagerWithMerkleVerification__OnlyCallableByBalancerVault();
         if (!performingFlashLoan) revert ManagerWithMerkleVerification__FlashLoanNotInProgress();
 
         // Validate userData using intentHash.
@@ -215,7 +251,7 @@ contract ManagerWithMerkleVerification is Auth {
                 packedArgumentAddresses
             )
         ) {
-            revert ManagerWithMerkleVerification__FailedToVerifyManageProof();
+            revert ManagerWithMerkleVerification__FailedToVerifyManageProof(target, targetData, value);
         }
     }
 

@@ -65,8 +65,10 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         if (uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
             revert UniswapV3DecoderAndSanitizer__BadTokenId();
         }
-        // No addresses in data
-        return addressesFound;
+        // Extract addresses from uniswapV3NonFungiblePositionManager.positions(params.tokenId).
+        (, address operator, address token0, address token1,,,,,,,,) =
+            uniswapV3NonFungiblePositionManager.positions(params.tokenId);
+        addressesFound = abi.encodePacked(operator, token0, token1);
     }
 
     function decreaseLiquidity(DecoderCustomTypes.DecreaseLiquidityParams calldata params)

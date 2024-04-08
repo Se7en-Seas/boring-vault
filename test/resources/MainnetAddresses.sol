@@ -64,6 +64,8 @@ contract MainnetAddresses {
     ERC20 public EZETH = ERC20(0xbf5495Efe5DB9ce00f80364C8B423567e58d2110);
     ERC20 public RSETH = ERC20(0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7);
     ERC20 public OSETH = ERC20(0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38);
+    ERC20 public RSWETH = ERC20(0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0);
+    ERC20 public PENDLE = ERC20(0x808507121B80c02388fAd14726482e061B8da827);
 
     // Rate providers
     address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
@@ -149,6 +151,18 @@ contract MainnetAddresses {
     ERC20 public rETH_wETH = ERC20(0x1E19CF2D73a72Ef1332C882F20534B6519Be0276);
     address public rETH_wETH_gauge = 0x79eF6103A513951a3b25743DB509E267685726B7;
     address public aura_reth_weth = 0xDd1fE5AD401D4777cE89959b7fa587e569Bf125D;
+
+    ERC20 public ezETH_weETH_rswETH = ERC20(0x848a5564158d84b8A8fb68ab5D004Fae11619A54);
+    address public ezETH_weETH_rswETH_gauge = 0x253ED65fff980AEE7E94a0dC57BE304426048b35;
+    address public aura_ezETH_weETH_rswETH = 0xce98eb8b2Fb98049b3F2dB0A212Ba7ca3Efd63b0;
+
+    ERC20 public BAL_wETH = ERC20(0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56);
+    ERC20 public PENDLE_wETH = ERC20(0xFD1Cf6FD41F229Ca86ada0584c63C49C3d66BbC9);
+    ERC20 public wETH_AURA = ERC20(0xCfCA23cA9CA720B6E98E3Eb9B6aa0fFC4a5C08B9);
+
+    // ERC20 public ezETH_wETH = ERC20(0x596192bB6e41802428Ac943D2f1476C1Af25CC0E);
+    // address public ezETH_wETH_gauge = 0xa8B309a75f0D64ED632d45A003c68A30e59A1D8b;
+    // address public aura_ezETH_wETH = 0x95eC73Baa0eCF8159b4EE897D973E41f51978E50;
 
     // Linear Pools.
     ERC20 public bb_a_dai = ERC20(0x6667c6fa9f2b3Fc1Cc8D85320b62703d938E4385);
@@ -281,6 +295,10 @@ contract MainnetAddresses {
     address public weETH_wETH_Curve_Gauge = 0x1CAC1a0Ed47E2e0A313c712b2dcF85994021a365;
     address public weETH_wETH_Convex_Reward = 0x2D159E01A5cEe7498F84Be68276a5266b3cb3774;
 
+    address public ezETH_wETH_Curve_Pool = 0x85dE3ADd465a219EE25E04d22c39aB027cF5C12E;
+    address public weETH_rswETH_Curve_Pool = 0x278cfB6f06B1EFc09d34fC7127d6060C61d629Db;
+    address public rswETH_wETH_Curve_Pool = 0xeE04382c4cA6c450213923fE0f0daB19b0ff3939;
+
     address public WethMkUsdPool = 0xc89570207c5BA1B0E3cD372172cCaEFB173DB270;
 
     // Convex-Curve Platform Specifics
@@ -364,6 +382,8 @@ contract MainnetAddresses {
     address public cometRewards = 0x1B0e765F6224C21223AeA2af16c1C46E38885a40;
     // Morpho Blue
     address public morphoBlue = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb;
+    address public ezEthOracle = 0x61025e2B0122ac8bE4e37365A4003d87ad888Cc3;
+    address public ezEthIrm = 0x870aC11D48B15DB9a138Cf899d20F13F79Ba00BC;
 
     address public uniswapV3PositionManager = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
 
@@ -386,8 +406,24 @@ contract MainnetAddresses {
     address public pendleEethPt = 0xc69Ad9baB1dEE23F4605a82b3354F8E40d1E5966;
     address public pendleEethYt = 0xfb35Fd0095dD1096b1Ca49AD44d8C5812A201677;
 
+    address public pendleEzEthMarket = 0xDe715330043799D7a80249660d1e6b61eB3713B3;
+    address public pendleEzEthSy = 0x22E12A50e3ca49FB183074235cB1db84Fe4C716D;
+    address public pendleEzEthPt = 0xeEE8aED1957ca1545a0508AfB51b53cCA7e3c0d1;
+    address public pendleEzEthYt = 0x256Fb830945141f7927785c06b65dAbc3744213c;
+
     address public pendleSwethMarket = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303;
 
     // Aave V3
     address public v3Pool = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
+
+    // Uniswap V3 Pools
+    address public wETH_weETH_05 = 0x7A415B19932c0105c82FDB6b720bb01B0CC2CAe3;
+    address public wstETH_wETH_01 = 0x109830a1AAaD605BbF02a9dFA7B0B92EC2FB7dAa;
+    address public rETH_wETH_01 = 0x553e9C493678d8606d6a5ba284643dB2110Df823;
+    address public rETH_wETH_05 = 0xa4e0faA58465A2D369aa21B3e42d43374c6F9613;
+    address public wstETH_rETH_05 = 0x18319135E02Aa6E02D412C98cCb16af3a0a9CB57;
+    address public wETH_rswETH_05 = 0xC410573Af188f56062Ee744cC3D6F2843f5bC13b;
+    address public wETH_rswETH_30 = 0xE62627326d7794E20bB7261B24985294de1579FE;
+    address public ezETH_wETH_01 = 0xBE80225f09645f172B079394312220637C440A63;
+    address public PENDLE_wETH_30 = 0x57aF956d3E2cCa3B86f3D8C6772C03ddca3eAacB;
 }

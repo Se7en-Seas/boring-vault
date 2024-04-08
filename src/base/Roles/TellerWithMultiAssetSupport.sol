@@ -9,8 +9,9 @@ import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
+import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
 
-contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
+contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuard {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
     using SafeTransferLib for WETH;
@@ -78,20 +79,20 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
 
     event Paused();
     event Unpaused();
-    event AssetAdded(address asset);
-    event AssetRemoved(address asset);
+    event AssetAdded(address indexed asset);
+    event AssetRemoved(address indexed asset);
     event Deposit(
-        uint256 nonce,
-        address receiver,
-        address depositAsset,
+        uint256 indexed nonce,
+        address indexed receiver,
+        address indexed depositAsset,
         uint256 depositAmount,
         uint256 shareAmount,
         uint256 depositTimestamp,
         uint256 shareLockPeriodAtTimeOfDeposit
     );
-    event BulkDeposit(address asset, uint256 depositAmount);
-    event BulkWithdraw(address asset, uint256 shareAmount);
-    event DepositRefunded(uint256 nonce, bytes32 depositHash, address user);
+    event BulkDeposit(address indexed asset, uint256 depositAmount);
+    event BulkWithdraw(address indexed asset, uint256 shareAmount);
+    event DepositRefunded(uint256 indexed nonce, bytes32 depositHash, address indexed user);
 
     //============================== IMMUTABLES ===============================
 
@@ -128,6 +129,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
 
     /**
      * @notice Pause this contract, which prevents future calls to `deposit` and `depositWithPermit`.
+     * @dev Callable by MULTISIG_ROLE.
      */
     function pause() external requiresAuth {
         isPaused = true;
@@ -136,6 +138,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
 
     /**
      * @notice Unpause this contract, which allows future calls to `deposit` and `depositWithPermit`.
+     * @dev Callable by MULTISIG_ROLE.
      */
     function unpause() external requiresAuth {
         isPaused = false;
@@ -145,6 +148,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
     /**
      * @notice Adds this asset as a deposit asset.
      * @dev The accountant must also support pricing this asset, else the `deposit` call will revert.
+     * @dev Callable by OWNER_ROLE.
      */
     function addAsset(ERC20 asset) external requiresAuth {
         isSupported[asset] = true;
@@ -153,6 +157,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
 
     /**
      * @notice Removes this asset as a deposit asset.
+     * @dev Callable by OWNER_ROLE.
      */
     function removeAsset(ERC20 asset) external requiresAuth {
         isSupported[asset] = false;
@@ -162,6 +167,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
     /**
      * @notice Sets the share lock period.
      * @dev This not only locks shares to the user address, but also serves as the pending deposit period, where deposits can be reverted.
+     * @dev Callable by OWNER_ROLE.
      */
     function setShareLockPeriod(uint64 _shareLockPeriod) external requiresAuth {
         if (_shareLockPeriod > MAX_SHARE_LOCK_PERIOD) revert TellerWithMultiAssetSupport__ShareLockPeriodTooLong();
@@ -171,7 +177,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
     // ========================================= BeforeTransferHook FUNCTIONS =========================================
 
     /**
-     * @notice Implement
+     * @notice Implement beforeTransfer hook to check if shares are locked.
      */
     function beforeTransfer(address from) external view {
         if (shareUnlockTime[from] >= block.timestamp) revert TellerWithMultiAssetSupport__SharesAreLocked();
@@ -185,7 +191,8 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
      * @dev It is possible the admin does not setup the BoringVault to call the transfer hook,
      *      but this contract can still be saving share lock state. In the event this happens
      *      deposits are still refundable if the user has not transferred their shares.
-     *      But there is no guarantee that the user has no transferred their shares.
+     *      But there is no guarantee that the user has not transferred their shares.
+     * @dev Callable by STRATEGIST_MULTISIG_ROLE.
      */
     function refundDeposit(
         uint256 nonce,
@@ -222,11 +229,13 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
 
     /**
      * @notice Allows users to deposit into the BoringVault, if this contract is not paused.
+     * @dev Publicly callable.
      */
     function deposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint)
-        public
+        external
         payable
         requiresAuth
+        nonReentrant
         returns (uint256 shares)
     {
         if (isPaused) revert TellerWithMultiAssetSupport__Paused();
@@ -251,6 +260,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
 
     /**
      * @notice Allows users to deposit into BoringVault using permit.
+     * @dev Publicly callable.
      */
     function depositWithPermit(
         ERC20 depositAsset,
@@ -260,7 +270,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external requiresAuth returns (uint256 shares) {
+    ) external requiresAuth nonReentrant returns (uint256 shares) {
         if (isPaused) revert TellerWithMultiAssetSupport__Paused();
         if (!isSupported[depositAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
 
@@ -278,36 +288,36 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook {
     /**
      * @notice Allows on ramp role to deposit into this contract.
      * @dev Does NOT support native deposits.
+     * @dev Callable by SOLVER_ROLE.
      */
     function bulkDeposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint, address to)
         external
         requiresAuth
+        nonReentrant
         returns (uint256 shares)
     {
+        if (!isSupported[depositAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
+
         shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, to);
         emit BulkDeposit(address(depositAsset), depositAmount);
     }
 
     /**
      * @notice Allows off ramp role to withdraw from this contract.
+     * @dev Callable by SOLVER_ROLE.
      */
     function bulkWithdraw(ERC20 withdrawAsset, uint256 shareAmount, uint256 minimumAssets, address to)
         external
         requiresAuth
         returns (uint256 assetsOut)
     {
+        if (!isSupported[withdrawAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
+
         if (shareAmount == 0) revert TellerWithMultiAssetSupport__ZeroShares();
         assetsOut = shareAmount.mulDivDown(accountant.getRateInQuoteSafe(withdrawAsset), ONE_SHARE);
         if (assetsOut < minimumAssets) revert TellerWithMultiAssetSupport__MinimumAssetsNotMet();
         vault.exit(to, withdrawAsset, assetsOut, msg.sender, shareAmount);
         emit BulkWithdraw(address(withdrawAsset), shareAmount);
-    }
-
-    /**
-     * @dev Depositing this way means users can not set a min value out.
-     */
-    receive() external payable {
-        deposit(ERC20(NATIVE), msg.value, 0);
     }
 
     // ========================================= INTERNAL HELPER FUNCTIONS =========================================

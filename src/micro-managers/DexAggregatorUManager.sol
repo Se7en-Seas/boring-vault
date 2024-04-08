@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
-import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
-import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVerification.sol";
-import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {UManager, FixedPointMathLib, ManagerWithMerkleVerification, ERC20} from "src/micro-managers/UManager.sol";
 import {AggregationRouterV5} from "src/interfaces/AggregationRouterV5.sol";
-import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {PriceRouter} from "src/interfaces/PriceRouter.sol";
 
 /**
@@ -13,7 +10,7 @@ import {PriceRouter} from "src/interfaces/PriceRouter.sol";
  * - ERC20 approves with `router` spender.
  * - AggregationRouterV5.swap, with all desired addresses.
  */
-contract DexAggregatorUManager is Auth {
+contract DexAggregatorUManager is UManager {
     using FixedPointMathLib for uint256;
 
     // ========================================= CONSTANTS =========================================
@@ -39,16 +36,6 @@ contract DexAggregatorUManager is Auth {
     //============================== IMMUTABLES ===============================
 
     /**
-     * @notice The ManagerWithMerkleVerification this uManager works with.
-     */
-    ManagerWithMerkleVerification internal immutable manager;
-
-    /**
-     * @notice The BoringVault this uManager works with.
-     */
-    address internal immutable boringVault;
-
-    /**
      * @notice The 1Inch Router.
      */
     AggregationRouterV5 internal immutable router;
@@ -59,10 +46,8 @@ contract DexAggregatorUManager is Auth {
     PriceRouter internal immutable priceRouter;
 
     constructor(address _owner, address _manager, address _boringVault, address _router, address _priceRouter)
-        Auth(_owner, Authority(address(0)))
+        UManager(_owner, _manager, _boringVault)
     {
-        manager = ManagerWithMerkleVerification(_manager);
-        boringVault = _boringVault;
         router = AggregationRouterV5(_router);
         priceRouter = PriceRouter(_priceRouter);
     }
@@ -71,6 +56,7 @@ contract DexAggregatorUManager is Auth {
 
     /**
      * @notice Sets the maximum allowed slippage during a swap.
+     * @dev Callable by MULTISIG_ROLE.
      */
     function setAllowedSlippage(uint16 _allowedSlippage) external requiresAuth {
         if (_allowedSlippage > MAX_SLIPPAGE) revert DexAggregatorUManager__NewSlippageTooLarge();
@@ -84,6 +70,7 @@ contract DexAggregatorUManager is Auth {
      *        for the router swap call
      * @param decodersAndSanitizers 2 DecodersAndSanitizers one that implements ERC20 approve, and one that
      *        implements AggregationRouterV5.swap
+     * @dev Callable by STRATEGIST_ROLE.
      */
     function swapWith1Inch(
         bytes32[][] calldata manageProofs,
@@ -92,7 +79,7 @@ contract DexAggregatorUManager is Auth {
         uint256 amountIn,
         ERC20 tokenOut,
         bytes calldata data
-    ) external requiresAuth {
+    ) external requiresAuth enforceRateLimit {
         address[] memory targets = new address[](2);
         bytes[] memory targetData = new bytes[](2);
         uint256[] memory values = new uint256[](2);
@@ -137,29 +124,5 @@ contract DexAggregatorUManager is Auth {
                 revokeApproveProof, revokeApproveDecodersAndSanitizers, targets, targetData, values
             );
         }
-    }
-
-    /**
-     * @notice Allows auth to set token approvals to zero.
-     */
-    function revokeTokenApproval(
-        bytes32[][] calldata manageProofs,
-        address[] calldata decodersAndSanitizers,
-        ERC20[] calldata tokens,
-        address[] calldata spenders
-    ) external requiresAuth {
-        uint256 tokensLength = tokens.length;
-        address[] memory targets = new address[](tokensLength);
-        bytes[] memory targetData = new bytes[](tokensLength);
-        uint256[] memory values = new uint256[](tokensLength);
-
-        for (uint256 i; i < tokensLength; ++i) {
-            targets[i] = address(tokens[i]);
-            targetData[i] = abi.encodeWithSelector(ERC20.approve.selector, spenders[i], 0);
-            // values[i] = 0;
-        }
-
-        // Make the manage call.
-        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 }
