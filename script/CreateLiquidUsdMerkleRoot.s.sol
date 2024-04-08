@@ -1787,6 +1787,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
             leafs[leafIndex].argumentAddresses[2] = pendleSUSDeYt;
             leafs[leafIndex].argumentAddresses[3] = pendleSUSDeMarket;
+
+            // TODO add weETH pendle market
         }
 
         // ========================== Ethena ==========================
@@ -2179,6 +2181,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
 
         // TODO curve swapping for USDe and sUSDe
         // TODO uniswapV3 swapping for USDe
+        // TODO 1inch swapping for USDe
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
