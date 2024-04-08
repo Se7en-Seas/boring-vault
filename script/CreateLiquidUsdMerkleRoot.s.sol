@@ -8,7 +8,7 @@ import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import "forge-std/Script.sol";
 
 /**
- * forge script script/CreateLiquidUsdMerkleRoot.s.sol:CreateLiquidUsdMerkleRootScript
+ *  source .env && forge script script/CreateLiquidUsdMerkleRoot.s.sol:CreateLiquidUsdMerkleRootScript --rpc-url $MAINNET_RPC_URL
  */
 contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
     using FixedPointMathLib for uint256;
@@ -30,6 +30,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
     function generateLiquidUsdStrategistMerkleRoot() public {
         ManageLeaf[] memory leafs = new ManageLeaf[](256);
 
+        uint256 leafIndex = 0;
+
         // ========================== Aave V3 ==========================
         /**
          * lend USDC, USDT, DAI, sDAI
@@ -37,7 +39,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          */
         {
             // Approvals
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex] = ManageLeaf(
                 address(USDC),
                 false,
                 "approve(address,uint256)",
@@ -45,8 +47,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Aave V3 Pool to spend USDC",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = v3Pool;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = v3Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(USDT),
                 false,
                 "approve(address,uint256)",
@@ -54,8 +57,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Aave V3 Pool to spend USDT",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = v3Pool;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = v3Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(DAI),
                 false,
                 "approve(address,uint256)",
@@ -63,8 +67,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Aave V3 Pool to spend DAI",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = v3Pool;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = v3Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(sDAI),
                 false,
                 "approve(address,uint256)",
@@ -72,8 +77,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Aave V3 Pool to spend sDAI",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = v3Pool;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = v3Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(WETH),
                 false,
                 "approve(address,uint256)",
@@ -81,8 +87,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Aave V3 Pool to spend wETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = v3Pool;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = v3Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(WSTETH),
                 false,
                 "approve(address,uint256)",
@@ -90,9 +97,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Aave V3 Pool to spend wstETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = v3Pool;
+            leafs[leafIndex].argumentAddresses[0] = v3Pool;
             // Lending
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "supply(address,uint256,address,uint16)",
@@ -100,9 +108,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply USDC to Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(USDC);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "supply(address,uint256,address,uint16)",
@@ -110,9 +119,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply USDT to Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(USDT);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "supply(address,uint256,address,uint16)",
@@ -120,9 +130,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply DAI to Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(DAI);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "supply(address,uint256,address,uint16)",
@@ -130,10 +141,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply sDAI to Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(sDAI);
-            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = address(sDAI);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
             // Withdrawing
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "withdraw(address,uint256,address)",
@@ -141,9 +153,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw USDC from Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(USDC);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "withdraw(address,uint256,address)",
@@ -151,9 +164,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw USDT from Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(USDT);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "withdraw(address,uint256,address)",
@@ -161,9 +175,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw DAI from Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(DAI);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "withdraw(address,uint256,address)",
@@ -171,10 +186,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw sDAI from Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(sDAI);
-            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = address(sDAI);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
             // Borrowing
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "borrow(address,uint256,uint256,uint16,address)",
@@ -182,9 +198,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Borrow wETH from Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(WETH);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(WETH);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "borrow(address,uint256,uint256,uint16,address)",
@@ -192,10 +209,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Borrow wstETH from Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(WSTETH);
-            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = address(WSTETH);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
             // Repaying
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "repay(address,uint256,uint256,address)",
@@ -203,9 +221,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Repay wETH to Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(WETH);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(WETH);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "repay(address,uint256,uint256,address)",
@@ -213,10 +232,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Repay wstETH to Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(WSTETH);
-            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = address(WSTETH);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
             // Misc
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "setUserUseReserveAsCollateral(address,bool)",
@@ -224,8 +244,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Toggle USDC as collateral in Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(USDC);
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "setUserUseReserveAsCollateral(address,bool)",
@@ -233,8 +254,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Toggle USDT as collateral in Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(USDT);
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "setUserUseReserveAsCollateral(address,bool)",
@@ -242,8 +264,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Toggle DAI as collateral in Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(DAI);
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "setUserUseReserveAsCollateral(address,bool)",
@@ -251,8 +274,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Toggle sDAI as collateral in Aave V3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(sDAI);
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(sDAI);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 v3Pool,
                 false,
                 "setUserEMode(uint8)",
@@ -269,7 +293,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          */
         {
             // Approvals
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(USDC),
                 false,
                 "approve(address,uint256)",
@@ -277,8 +302,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve SparkLend Pool to spend USDC",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = sparkLendPool;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = sparkLendPool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(USDT),
                 false,
                 "approve(address,uint256)",
@@ -286,8 +312,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve SparkLend Pool to spend USDT",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = sparkLendPool;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = sparkLendPool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(DAI),
                 false,
                 "approve(address,uint256)",
@@ -295,8 +322,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve SparkLend Pool to spend DAI",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = sparkLendPool;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = sparkLendPool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(sDAI),
                 false,
                 "approve(address,uint256)",
@@ -304,8 +332,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve SparkLend Pool to spend sDAI",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = sparkLendPool;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = sparkLendPool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(WETH),
                 false,
                 "approve(address,uint256)",
@@ -313,8 +342,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve SparkLend Pool to spend wETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = sparkLendPool;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = sparkLendPool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(WSTETH),
                 false,
                 "approve(address,uint256)",
@@ -322,9 +352,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve SparkLend Pool to spend wstETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = sparkLendPool;
+            leafs[leafIndex].argumentAddresses[0] = sparkLendPool;
             // Lending
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "supply(address,uint256,address,uint16)",
@@ -332,9 +363,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply USDC to SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(USDC);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "supply(address,uint256,address,uint16)",
@@ -342,9 +374,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply USDT to SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(USDT);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "supply(address,uint256,address,uint16)",
@@ -352,9 +385,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply DAI to SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(DAI);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "supply(address,uint256,address,uint16)",
@@ -362,10 +396,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply sDAI to SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(sDAI);
-            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = address(sDAI);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
             // Withdrawing
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "withdraw(address,uint256,address)",
@@ -373,9 +408,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw USDC from SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(USDC);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "withdraw(address,uint256,address)",
@@ -383,9 +419,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw USDT from SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(USDT);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "withdraw(address,uint256,address)",
@@ -393,9 +430,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw DAI from SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(DAI);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "withdraw(address,uint256,address)",
@@ -403,10 +441,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw sDAI from SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(sDAI);
-            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = address(sDAI);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
             // Borrowing
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "borrow(address,uint256,uint256,uint16,address)",
@@ -414,9 +453,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Borrow wETH from SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(WETH);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(WETH);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "borrow(address,uint256,uint256,uint16,address)",
@@ -424,10 +464,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Borrow wstETH from SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(WSTETH);
-            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = address(WSTETH);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
             // Repaying
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "repay(address,uint256,uint256,address)",
@@ -435,9 +476,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Repay wETH to SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(WETH);
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(WETH);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "repay(address,uint256,uint256,address)",
@@ -445,10 +487,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Repay wstETH to SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(WSTETH);
-            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = address(WSTETH);
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
             // Misc
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "setUserUseReserveAsCollateral(address,bool)",
@@ -456,8 +499,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Toggle USDC as collateral in SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(USDC);
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "setUserUseReserveAsCollateral(address,bool)",
@@ -465,8 +509,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Toggle USDT as collateral in SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(USDT);
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "setUserUseReserveAsCollateral(address,bool)",
@@ -474,8 +519,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Toggle DAI as collateral in SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(DAI);
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "setUserUseReserveAsCollateral(address,bool)",
@@ -483,8 +529,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Toggle sDAI as collateral in SparkLend",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(sDAI);
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(sDAI);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sparkLendPool,
                 false,
                 "setUserEMode(uint8)",
@@ -500,7 +547,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          */
         {
             // Approvals
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(STETH),
                 false,
                 "approve(address,uint256)",
@@ -508,8 +556,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve WSTETH to spend stETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(WSTETH);
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(WSTETH);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(STETH),
                 false,
                 "approve(address,uint256)",
@@ -517,9 +566,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve unstETH to spend stETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = unstETH;
+            leafs[leafIndex].argumentAddresses[0] = unstETH;
             // Staking
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(STETH),
                 true,
                 "submit(address)",
@@ -527,9 +577,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Stake ETH for stETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(0);
+            leafs[leafIndex].argumentAddresses[0] = address(0);
             // Unstaking
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 unstETH,
                 false,
                 "requestWithdrawals(uint256[],address)",
@@ -537,8 +588,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Request withdrawals from stETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 unstETH,
                 false,
                 "claimWithdrawal(uint256)",
@@ -546,7 +598,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Claim stETH withdrawal",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 unstETH,
                 false,
                 "claimWithdrawals(uint256[],uint256[])",
@@ -555,10 +608,12 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 rawDataDecoderAndSanitizer
             );
             // Wrapping
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(WSTETH), false, "wrap(uint256)", new address[](0), "Wrap stETH", rawDataDecoderAndSanitizer
             );
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(WSTETH), false, "unwrap(uint256)", new address[](0), "Unwrap wstETH", rawDataDecoderAndSanitizer
             );
         }
@@ -569,7 +624,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          */
         {
             // Approvals
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(EETH),
                 false,
                 "approve(address,uint256)",
@@ -577,8 +633,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve WEETH to spend eETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(WEETH);
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(WEETH);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(EETH),
                 false,
                 "approve(address,uint256)",
@@ -586,9 +643,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve EtherFi Liquidity Pool to spend eETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = EETH_LIQUIDITY_POOL;
+            leafs[leafIndex].argumentAddresses[0] = EETH_LIQUIDITY_POOL;
             // Staking
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 EETH_LIQUIDITY_POOL,
                 true,
                 "deposit()",
@@ -597,7 +655,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 rawDataDecoderAndSanitizer
             );
             // Unstaking
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 EETH_LIQUIDITY_POOL,
                 false,
                 "requestWithdraw(address,uint256)",
@@ -605,8 +664,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Request withdrawal from eETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 withdrawalRequestNft,
                 false,
                 "claimWithdraw(uint256)",
@@ -615,10 +675,12 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 rawDataDecoderAndSanitizer
             );
             // Wrapping
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(WEETH), false, "wrap(uint256)", new address[](0), "Wrap eETH", rawDataDecoderAndSanitizer
             );
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(WEETH), false, "unwrap(uint256)", new address[](0), "Unwrap weETH", rawDataDecoderAndSanitizer
             );
         }
@@ -629,10 +691,12 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          */
         {
             // Wrapping
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(WETH), true, "deposit()", new address[](0), "Wrap ETH for wETH", rawDataDecoderAndSanitizer
             );
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(WETH),
                 false,
                 "withdraw(uint256)",
@@ -648,7 +712,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          */
         {
             // Approvals
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(DAI),
                 false,
                 "approve(address,uint256)",
@@ -656,9 +721,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve sDAI to spend DAI",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(sDAI);
+            leafs[leafIndex].argumentAddresses[0] = address(sDAI);
             // Depositing
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(sDAI),
                 false,
                 "deposit(uint256,address)",
@@ -666,9 +732,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Deposit DAI for sDAI",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
             // Withdrawing
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(sDAI),
                 false,
                 "withdraw(uint256,address,address)",
@@ -676,8 +743,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw DAI from sDAI",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = boringVault;
-            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
         }
 
         // ========================== Gearbox ==========================
@@ -686,7 +753,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          */
         {
             // Approvals
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(USDC),
                 false,
                 "approve(address,uint256)",
@@ -694,8 +762,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve dUSDCV3 to spend USDC",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = dUSDCV3;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = dUSDCV3;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(DAI),
                 false,
                 "approve(address,uint256)",
@@ -703,8 +772,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve dDAIV3 to spend DAI",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = dDAIV3;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = dDAIV3;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(USDT),
                 false,
                 "approve(address,uint256)",
@@ -712,8 +782,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve dUSDTV3 to spend USDT",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = dUSDTV3;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = dUSDTV3;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 dUSDCV3,
                 false,
                 "approve(address,uint256)",
@@ -721,8 +792,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve sdUSDCV3 to spend dUSDCV3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = sdUSDCV3;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = sdUSDCV3;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 dDAIV3,
                 false,
                 "approve(address,uint256)",
@@ -730,8 +802,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve sdDAIV3 to spend dDAIV3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = sdDAIV3;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = sdDAIV3;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 dUSDTV3,
                 false,
                 "approve(address,uint256)",
@@ -739,9 +812,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve sdUSDTV3 to spend dUSDTV3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = sdUSDTV3;
+            leafs[leafIndex].argumentAddresses[0] = sdUSDTV3;
             // Depositing
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 dUSDCV3,
                 false,
                 "deposit(uint256,address)",
@@ -749,8 +823,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Deposit USDC for dUSDCV3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 dDAIV3,
                 false,
                 "deposit(uint256,address)",
@@ -758,8 +833,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Deposit DAI for dDAIV3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 dUSDTV3,
                 false,
                 "deposit(uint256,address)",
@@ -767,8 +843,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Deposit USDT for dUSDTV3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sdUSDCV3,
                 false,
                 "deposit(uint256)",
@@ -776,7 +853,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Deposit dUSDCV3 for sdUSDCV3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sdDAIV3,
                 false,
                 "deposit(uint256)",
@@ -784,7 +862,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Deposit dDAIV3 for sdDAIV3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sdUSDTV3,
                 false,
                 "deposit(uint256)",
@@ -793,7 +872,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 rawDataDecoderAndSanitizer
             );
             // Withdrawing
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(sDAI),
                 false,
                 "withdraw(uint256,address,address)",
@@ -801,9 +881,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw DAI from sDAI",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = boringVault;
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 dUSDCV3,
                 false,
                 "withdraw(uint256,address,address)",
@@ -811,9 +892,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw USDC from dUSDCV3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = boringVault;
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 dDAIV3,
                 false,
                 "withdraw(uint256,address,address)",
@@ -821,9 +903,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw DAI from dDAIV3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = boringVault;
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 dUSDTV3,
                 false,
                 "withdraw(uint256,address,address)",
@@ -831,9 +914,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw USDT from dUSDTV3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = boringVault;
-            leafs[0].argumentAddresses[1] = boringVault;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sdUSDCV3,
                 false,
                 "withdraw(uint256)",
@@ -841,7 +925,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw dUSDCV3 from sdUSDCV3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sdDAIV3,
                 false,
                 "withdraw(uint256)",
@@ -849,7 +934,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw dDAIV3 from sdDAIV3",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sdUSDTV3,
                 false,
                 "withdraw(uint256)",
@@ -858,13 +944,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 rawDataDecoderAndSanitizer
             );
             // Claiming
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sdUSDCV3, false, "claim()", new address[](0), "Claim rewards from sdUSDCV3", rawDataDecoderAndSanitizer
             );
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sdDAIV3, false, "claim()", new address[](0), "Claim rewards from sdDAIV3", rawDataDecoderAndSanitizer
             );
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 sdUSDTV3, false, "claim()", new address[](0), "Claim rewards from sdUSDTV3", rawDataDecoderAndSanitizer
             );
         }
@@ -888,7 +977,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          */
         {
             // Approvals
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(USDC),
                 false,
                 "approve(address,uint256)",
@@ -896,8 +986,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve MorhoBlue to spend USDC",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = morphoBlue;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = morphoBlue;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(DAI),
                 false,
                 "approve(address,uint256)",
@@ -905,8 +996,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve MorhoBlue to spend DAI",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = morphoBlue;
-            leafs[0] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = morphoBlue;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(USDT),
                 false,
                 "approve(address,uint256)",
@@ -914,12 +1006,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve MorhoBlue to spend USDT",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = morphoBlue;
+            leafs[leafIndex].argumentAddresses[0] = morphoBlue;
             // Supplying
             IMB.MarketParams memory marketParams;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xdc5333039bcf15f1237133f74d5806675d83d9cf19cfd4cfdd9be674842651bf);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
@@ -927,14 +1020,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply USDT to MorphoBlue sUSDe/USDT 91.50 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xcec858380cba2d9ca710fce3ce864d74c3f620d53826f69d08508902e09be86f);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
@@ -942,14 +1036,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply USDT to MorphoBlue USDe/USDT 91.50 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0x8e6aeb10c401de3279ac79b4b2ea15fc94b7d9cfc098d6c2a1ff7b2b26d9d02c);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
@@ -957,14 +1052,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply DAI to MorphoBlue USDe/DAI 91.50 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0x1247f1c237eceae0602eab1470a5061a6dd8f734ba88c7cdc5d6109fb0026b28);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
@@ -972,14 +1068,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply DAI to MorphoBlue sUSDe/DAI 91.50 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xdb760246f6859780f6c1b272d47a8f64710777121118e56e0cdb4b8b744a3094);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
@@ -987,14 +1084,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply DAI to MorphoBlue USDe/DAI 94.50 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xc581c5f70bd1afa283eed57d1418c6432cbff1d862f94eaf58fdd4e46afbb67f);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
@@ -1002,14 +1100,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply DAI to MorphoBlue USDe/DAI 86.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xfd8493f09eb6203615221378d89f53fcd92ff4f7d62cca87eece9a2fff59e86f);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
@@ -1017,14 +1116,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply DAI to MorphoBlue USDe/DAI 77.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0x7dde86a1e94561d9690ec678db673c1a6396365f7d1d65e129c5fff0990ff758);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
@@ -1032,14 +1132,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply USDC to MorphoBlue wETH/USDC 86.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xf9acc677910cc17f650416a22e2a14d5da7ccb9626db18f1bf94efe64f92b372);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
@@ -1047,14 +1148,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply USDC to MorphoBlue wETH/USDC 91.50 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0x42dcfb38bb98767afb6e38ccf90d59d0d3f0aa216beb3a234f12850323d17536);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
@@ -1062,14 +1164,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply DAI to MorphoBlue sUSDe/DAI 77.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0x39d11026eae1c6ec02aa4c0910778664089cdd97c3fd23f68f7cd05e2e95af48);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
@@ -1077,14 +1180,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply DAI to MorphoBlue sUSDe/DAI 86.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xe7e9694b754c4d4f7e21faf7223f6fa71abaeb10296a4c43a54a7977149687d2);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
@@ -1092,14 +1196,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply USDT to MorphoBlue wstETH/USDT 86.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xb323495f7e4148be5643a4ea4a8221eef163e4bccfdedc2a6f4696baacbc86cc);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
@@ -1107,15 +1212,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Supply USDC to MorphoBlue wstETH/USDC 86.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
             // Withdrawing
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xdc5333039bcf15f1237133f74d5806675d83d9cf19cfd4cfdd9be674842651bf);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
@@ -1123,15 +1229,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw USDT from MorphoBlue sUSDe/USDT 91.50 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
-            leafs[0].argumentAddresses[5] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[5] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xcec858380cba2d9ca710fce3ce864d74c3f620d53826f69d08508902e09be86f);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
@@ -1139,15 +1246,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw USDT from MorphoBlue USDe/USDT 91.50 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
-            leafs[0].argumentAddresses[5] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[5] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0x8e6aeb10c401de3279ac79b4b2ea15fc94b7d9cfc098d6c2a1ff7b2b26d9d02c);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
@@ -1155,15 +1263,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw DAI from MorphoBlue USDe/DAI 91.50 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
-            leafs[0].argumentAddresses[5] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[5] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0x1247f1c237eceae0602eab1470a5061a6dd8f734ba88c7cdc5d6109fb0026b28);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
@@ -1171,15 +1280,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw DAI from MorphoBlue sUSDe/DAI 91.50 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
-            leafs[0].argumentAddresses[5] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[5] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xdb760246f6859780f6c1b272d47a8f64710777121118e56e0cdb4b8b744a3094);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
@@ -1187,15 +1297,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw DAI from MorphoBlue USDe/DAI 94.50 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
-            leafs[0].argumentAddresses[5] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[5] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xc581c5f70bd1afa283eed57d1418c6432cbff1d862f94eaf58fdd4e46afbb67f);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
@@ -1203,15 +1314,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw DAI from MorphoBlue USDe/DAI 86.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
-            leafs[0].argumentAddresses[5] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[5] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xfd8493f09eb6203615221378d89f53fcd92ff4f7d62cca87eece9a2fff59e86f);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
@@ -1219,15 +1331,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw DAI from MorphoBlue USDe/DAI 77.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
-            leafs[0].argumentAddresses[5] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[5] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0x7dde86a1e94561d9690ec678db673c1a6396365f7d1d65e129c5fff0990ff758);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
@@ -1235,15 +1348,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw USDC from MorphoBlue wETH/USDC 86.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
-            leafs[0].argumentAddresses[5] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[5] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xf9acc677910cc17f650416a22e2a14d5da7ccb9626db18f1bf94efe64f92b372);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
@@ -1251,15 +1365,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw USDC from MorphoBlue wETH/USDC 91.50 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
-            leafs[0].argumentAddresses[5] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[5] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0x42dcfb38bb98767afb6e38ccf90d59d0d3f0aa216beb3a234f12850323d17536);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
@@ -1267,15 +1382,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw DAI from MorphoBlue sUSDe/DAI 77.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
-            leafs[0].argumentAddresses[5] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[5] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0x39d11026eae1c6ec02aa4c0910778664089cdd97c3fd23f68f7cd05e2e95af48);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
@@ -1283,15 +1399,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw DAI from MorphoBlue sUSDe/DAI 86.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
-            leafs[0].argumentAddresses[5] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[5] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xe7e9694b754c4d4f7e21faf7223f6fa71abaeb10296a4c43a54a7977149687d2);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
@@ -1299,15 +1416,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw USDT from MorphoBlue wstETH/USDT 86.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
-            leafs[0].argumentAddresses[5] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[5] = boringVault;
             marketParams =
                 IMB(morphoBlue).idToMarketParams(0xb323495f7e4148be5643a4ea4a8221eef163e4bccfdedc2a6f4696baacbc86cc);
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 morphoBlue,
                 false,
                 "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
@@ -1315,12 +1433,12 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw USDC from MorphoBlue wstETH/USDC 86.00 LLTV market",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = marketParams.loanToken;
-            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
-            leafs[0].argumentAddresses[2] = marketParams.oracle;
-            leafs[0].argumentAddresses[3] = marketParams.irm;
-            leafs[0].argumentAddresses[4] = boringVault;
-            leafs[0].argumentAddresses[5] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+            leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+            leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[5] = boringVault;
         }
 
         // ========================== Pendle ==========================
@@ -1330,7 +1448,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          */
         {
             // Approvals
-            leafs[56] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(USDE),
                 false,
                 "approve(address,uint256)",
@@ -1338,8 +1457,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Pendle router to spend USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[56].argumentAddresses[0] = pendleRouter;
-            leafs[56] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(SUSDE),
                 false,
                 "approve(address,uint256)",
@@ -1347,8 +1467,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Pendle router to spend sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[56].argumentAddresses[0] = pendleRouter;
-            leafs[57] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleUSDeSy,
                 false,
                 "approve(address,uint256)",
@@ -1356,8 +1477,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Pendle router to spend SY-USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[57].argumentAddresses[0] = pendleRouter;
-            leafs[57] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleSUSDeSy,
                 false,
                 "approve(address,uint256)",
@@ -1365,8 +1487,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Pendle router to spend SY-sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[57].argumentAddresses[0] = pendleRouter;
-            leafs[58] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleUSDePt,
                 false,
                 "approve(address,uint256)",
@@ -1374,8 +1497,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Pendle router to spend PT-USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[58].argumentAddresses[0] = pendleRouter;
-            leafs[58] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleSUSDePt,
                 false,
                 "approve(address,uint256)",
@@ -1383,8 +1507,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Pendle router to spend PT-sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[58].argumentAddresses[0] = pendleRouter;
-            leafs[59] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleUSDeYt,
                 false,
                 "approve(address,uint256)",
@@ -1392,8 +1517,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Pendle router to spend YT-USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[59].argumentAddresses[0] = pendleRouter;
-            leafs[59] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleSUSDeYt,
                 false,
                 "approve(address,uint256)",
@@ -1401,8 +1527,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Pendle router to spend YT-sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[59].argumentAddresses[0] = pendleRouter;
-            leafs[60] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleUSDeMarket,
                 false,
                 "approve(address,uint256)",
@@ -1410,8 +1537,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Pendle router to spend LP-USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[60].argumentAddresses[0] = pendleRouter;
-            leafs[60] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleSUSDeMarket,
                 false,
                 "approve(address,uint256)",
@@ -1419,9 +1547,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve Pendle router to spend LP-sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[60].argumentAddresses[0] = pendleRouter;
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
             // Mint SY using Token
-            leafs[61] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "mintSyFromToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
@@ -1429,13 +1558,14 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Mint SY-USDe using USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[61].argumentAddresses[0] = boringVault;
-            leafs[61].argumentAddresses[1] = pendleUSDeSy;
-            leafs[61].argumentAddresses[2] = address(USDE);
-            leafs[61].argumentAddresses[3] = address(USDE);
-            leafs[61].argumentAddresses[4] = address(0);
-            leafs[61].argumentAddresses[5] = address(0);
-            leafs[61] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleUSDeSy;
+            leafs[leafIndex].argumentAddresses[2] = address(USDE);
+            leafs[leafIndex].argumentAddresses[3] = address(USDE);
+            leafs[leafIndex].argumentAddresses[4] = address(0);
+            leafs[leafIndex].argumentAddresses[5] = address(0);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "mintSyFromToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
@@ -1443,13 +1573,14 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Mint SY-sUSDe using USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[61].argumentAddresses[0] = boringVault;
-            leafs[61].argumentAddresses[1] = pendleSUSDeSy;
-            leafs[61].argumentAddresses[2] = address(USDE);
-            leafs[61].argumentAddresses[3] = address(USDE);
-            leafs[61].argumentAddresses[4] = address(0);
-            leafs[61].argumentAddresses[5] = address(0);
-            leafs[61] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
+            leafs[leafIndex].argumentAddresses[2] = address(USDE);
+            leafs[leafIndex].argumentAddresses[3] = address(USDE);
+            leafs[leafIndex].argumentAddresses[4] = address(0);
+            leafs[leafIndex].argumentAddresses[5] = address(0);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "mintSyFromToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
@@ -1457,14 +1588,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Mint SY-sUSDe using sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[61].argumentAddresses[0] = boringVault;
-            leafs[61].argumentAddresses[1] = pendleSUSDeSy;
-            leafs[61].argumentAddresses[2] = address(SUSDE);
-            leafs[61].argumentAddresses[3] = address(SUSDE);
-            leafs[61].argumentAddresses[4] = address(0);
-            leafs[61].argumentAddresses[5] = address(0);
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
+            leafs[leafIndex].argumentAddresses[2] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[3] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[4] = address(0);
+            leafs[leafIndex].argumentAddresses[5] = address(0);
             // Mint PT and YT using SY
-            leafs[62] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "mintPyFromSy(address,address,uint256,uint256)",
@@ -1472,9 +1604,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Mint PT-USDe and YT-USDe from SY-USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[62].argumentAddresses[0] = boringVault;
-            leafs[62].argumentAddresses[1] = pendleUSDeYt;
-            leafs[62] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleUSDeYt;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "mintPyFromSy(address,address,uint256,uint256)",
@@ -1482,10 +1615,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Mint PT-sUSDe and YT-sUSDe from SY-sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[62].argumentAddresses[0] = boringVault;
-            leafs[62].argumentAddresses[1] = pendleSUSDeYt;
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeYt;
             // Swap between PT and YT
-            leafs[63] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "swapExactYtForPt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256))",
@@ -1493,9 +1627,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap YT-USDe for PT-USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[63].argumentAddresses[0] = boringVault;
-            leafs[63].argumentAddresses[1] = pendleUSDeMarket;
-            leafs[64] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleUSDeMarket;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "swapExactPtForYt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256))",
@@ -1503,9 +1638,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap PT-USDe for YT-USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[64].argumentAddresses[0] = boringVault;
-            leafs[64].argumentAddresses[1] = pendleUSDeMarket;
-            leafs[63] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleUSDeMarket;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "swapExactYtForPt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256))",
@@ -1513,9 +1649,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap YT-sUSDe for PT-sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[63].argumentAddresses[0] = boringVault;
-            leafs[63].argumentAddresses[1] = pendleSUSDeMarket;
-            leafs[64] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeMarket;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "swapExactPtForYt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256))",
@@ -1523,10 +1660,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap PT-sUSDe for YT-sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[64].argumentAddresses[0] = boringVault;
-            leafs[64].argumentAddresses[1] = pendleSUSDeMarket;
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeMarket;
             // Manage Liquidity
-            leafs[65] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "addLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
@@ -1534,9 +1672,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Mint LP-USDe using SY-USDe and PT-USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[65].argumentAddresses[0] = boringVault;
-            leafs[65].argumentAddresses[1] = pendleUSDeMarket;
-            leafs[66] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleUSDeMarket;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "removeLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
@@ -1544,9 +1683,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Burn LP-USDe for SY-USDe and PT-USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[66].argumentAddresses[0] = boringVault;
-            leafs[66].argumentAddresses[1] = pendleUSDeMarket;
-            leafs[65] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleUSDeMarket;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "addLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
@@ -1554,9 +1694,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Mint LP-sUSDe using SY-sUSDe and PT-sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[65].argumentAddresses[0] = boringVault;
-            leafs[65].argumentAddresses[1] = pendleSUSDeMarket;
-            leafs[66] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeMarket;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "removeLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
@@ -1564,10 +1705,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Burn LP-sUSDe for SY-sUSDe and PT-sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[66].argumentAddresses[0] = boringVault;
-            leafs[66].argumentAddresses[1] = pendleSUSDeMarket;
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeMarket;
             // Burn PT and YT for SY
-            leafs[67] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "redeemPyToSy(address,address,uint256,uint256)",
@@ -1575,9 +1717,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Burn PT-USDe and YT-USDe for SY-USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[67].argumentAddresses[0] = boringVault;
-            leafs[67].argumentAddresses[1] = pendleUSDeYt;
-            leafs[67] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleUSDeYt;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "redeemPyToSy(address,address,uint256,uint256)",
@@ -1585,10 +1728,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Burn PT-sUSDe and YT-sUSDe for SY-sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[67].argumentAddresses[0] = boringVault;
-            leafs[67].argumentAddresses[1] = pendleSUSDeYt;
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeYt;
             // Burn SY for Token
-            leafs[68] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "redeemSyToToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
@@ -1596,13 +1740,14 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Burn SY-USDe for USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[68].argumentAddresses[0] = address(boringVault);
-            leafs[68].argumentAddresses[1] = pendleUSDeSy;
-            leafs[68].argumentAddresses[2] = address(USDE);
-            leafs[68].argumentAddresses[3] = address(USDE);
-            leafs[68].argumentAddresses[4] = address(0);
-            leafs[68].argumentAddresses[5] = address(0);
-            leafs[68] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(boringVault);
+            leafs[leafIndex].argumentAddresses[1] = pendleUSDeSy;
+            leafs[leafIndex].argumentAddresses[2] = address(USDE);
+            leafs[leafIndex].argumentAddresses[3] = address(USDE);
+            leafs[leafIndex].argumentAddresses[4] = address(0);
+            leafs[leafIndex].argumentAddresses[5] = address(0);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "redeemSyToToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
@@ -1610,13 +1755,14 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Burn SY-sUSDe for sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[68].argumentAddresses[0] = address(boringVault);
-            leafs[68].argumentAddresses[1] = pendleSUSDeSy;
-            leafs[68].argumentAddresses[2] = address(SUSDE);
-            leafs[68].argumentAddresses[3] = address(SUSDE);
-            leafs[68].argumentAddresses[4] = address(0);
-            leafs[68].argumentAddresses[5] = address(0);
-            leafs[154] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = address(boringVault);
+            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
+            leafs[leafIndex].argumentAddresses[2] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[3] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[4] = address(0);
+            leafs[leafIndex].argumentAddresses[5] = address(0);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 uniswapV3NonFungiblePositionManager,
                 false,
                 "redeemDueInterestAndRewards(address,address[],address[],address[])",
@@ -1624,11 +1770,12 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Redeem due interest and rewards for USDe Pendle.",
                 rawDataDecoderAndSanitizer
             );
-            leafs[154].argumentAddresses[0] = boringVault;
-            leafs[154].argumentAddresses[1] = pendleUSDeSy;
-            leafs[154].argumentAddresses[2] = pendleUSDeYt;
-            leafs[154].argumentAddresses[3] = pendleUSDeMarket;
-            leafs[154] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleUSDeSy;
+            leafs[leafIndex].argumentAddresses[2] = pendleUSDeYt;
+            leafs[leafIndex].argumentAddresses[3] = pendleUSDeMarket;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 uniswapV3NonFungiblePositionManager,
                 false,
                 "redeemDueInterestAndRewards(address,address[],address[],address[])",
@@ -1636,10 +1783,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Redeem due interest and rewards for sUSDe Pendle.",
                 rawDataDecoderAndSanitizer
             );
-            leafs[154].argumentAddresses[0] = boringVault;
-            leafs[154].argumentAddresses[1] = pendleSUSDeSy;
-            leafs[154].argumentAddresses[2] = pendleSUSDeYt;
-            leafs[154].argumentAddresses[3] = pendleSUSDeMarket;
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
+            leafs[leafIndex].argumentAddresses[2] = pendleSUSDeYt;
+            leafs[leafIndex].argumentAddresses[3] = pendleSUSDeMarket;
         }
 
         // ========================== Ethena ==========================
@@ -1648,17 +1795,19 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          */
         {
             // Approvals
-            leafs[0] = ManageLeaf(
-                address(USDe),
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDE),
                 false,
                 "approve(address,uint256)",
                 new address[](1),
                 "Approve sUSDe to spend USDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = address(sUSDe);
+            leafs[leafIndex].argumentAddresses[0] = address(SUSDE);
             // Depositing
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(SUSDE),
                 false,
                 "deposit(uint256,address)",
@@ -1666,9 +1815,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Deposit USDe for sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
             // Withdrawing
-            leafs[0] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(SUSDE),
                 false,
                 "withdraw(uint256,address,address)",
@@ -1676,8 +1826,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Withdraw USDe from sUSDe",
                 rawDataDecoderAndSanitizer
             );
-            leafs[0].argumentAddresses[0] = boringVault;
-            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = boringVault;
         }
 
         // ========================== 1inch ==========================
@@ -1704,7 +1854,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          */
         {
             // Approvals
-            leafs[113] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(USDC),
                 false,
                 "approve(address,uint256)",
@@ -1712,8 +1863,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve 1inch router to spend USDC",
                 rawDataDecoderAndSanitizer
             );
-            leafs[113].argumentAddresses[0] = aggregationRouterV5;
-            leafs[113] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(USDT),
                 false,
                 "approve(address,uint256)",
@@ -1721,8 +1873,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve 1inch router to spend USDT",
                 rawDataDecoderAndSanitizer
             );
-            leafs[113].argumentAddresses[0] = aggregationRouterV5;
-            leafs[113] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(DAI),
                 false,
                 "approve(address,uint256)",
@@ -1730,8 +1883,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve 1inch router to spend DAI",
                 rawDataDecoderAndSanitizer
             );
-            leafs[113].argumentAddresses[0] = aggregationRouterV5;
-            leafs[113] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(GHO),
                 false,
                 "approve(address,uint256)",
@@ -1739,8 +1893,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve 1inch router to spend GHO",
                 rawDataDecoderAndSanitizer
             );
-            leafs[113].argumentAddresses[0] = aggregationRouterV5;
-            leafs[113] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(WETH),
                 false,
                 "approve(address,uint256)",
@@ -1748,8 +1903,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve 1inch router to spend wETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[113].argumentAddresses[0] = aggregationRouterV5;
-            leafs[113] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(WEETH),
                 false,
                 "approve(address,uint256)",
@@ -1757,8 +1913,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve 1inch router to spend weETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[113].argumentAddresses[0] = aggregationRouterV5;
-            leafs[113] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(WSTETH),
                 false,
                 "approve(address,uint256)",
@@ -1766,8 +1923,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve 1inch router to spend wstETH",
                 rawDataDecoderAndSanitizer
             );
-            leafs[113].argumentAddresses[0] = aggregationRouterV5;
-            leafs[113] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 address(GEAR),
                 false,
                 "approve(address,uint256)",
@@ -1775,9 +1933,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Approve 1inch router to spend GEAR",
                 rawDataDecoderAndSanitizer
             );
-            leafs[113].argumentAddresses[0] = aggregationRouterV5;
+            leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
             // Swapping
-            leafs[114] = ManageLeaf(
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1785,12 +1944,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap USDC for USDT using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(USDC);
-            leafs[114].argumentAddresses[2] = address(USDT);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = address(USDT);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1798,12 +1958,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap USDC for DAI using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(USDC);
-            leafs[114].argumentAddresses[2] = address(DAI);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = address(DAI);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1811,12 +1972,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap USDT for DAI using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(USDT);
-            leafs[114].argumentAddresses[2] = address(DAI);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDT);
+            leafs[leafIndex].argumentAddresses[2] = address(DAI);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1824,12 +1986,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap GHO for USDC using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(GHO);
-            leafs[114].argumentAddresses[2] = address(USDC);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(GHO);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1837,12 +2000,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap GHO for USDT using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(GHO);
-            leafs[114].argumentAddresses[2] = address(USDT);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(GHO);
+            leafs[leafIndex].argumentAddresses[2] = address(USDT);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1850,12 +2014,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap GHO for DAI using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(GHO);
-            leafs[114].argumentAddresses[2] = address(DAI);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(GHO);
+            leafs[leafIndex].argumentAddresses[2] = address(DAI);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1863,12 +2028,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap wETH for USDC using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(WETH);
-            leafs[114].argumentAddresses[2] = address(USDC);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(WETH);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1876,12 +2042,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap weETH for USDC using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(WEETH);
-            leafs[114].argumentAddresses[2] = address(USDC);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(WEETH);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1889,12 +2056,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap wstETH for USDC using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(WSTETH);
-            leafs[114].argumentAddresses[2] = address(USDC);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(WSTETH);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1902,12 +2070,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap USDT for USDC using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(USDT);
-            leafs[114].argumentAddresses[2] = address(USDC);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDT);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1915,12 +2084,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap DAI for USDC using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(DAI);
-            leafs[114].argumentAddresses[2] = address(USDC);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(DAI);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1928,12 +2098,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap wETH for weETH using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(WETH);
-            leafs[114].argumentAddresses[2] = address(WEETH);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(WETH);
+            leafs[leafIndex].argumentAddresses[2] = address(WEETH);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1941,12 +2112,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap wETH for wstETH using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(WETH);
-            leafs[114].argumentAddresses[2] = address(WSTETH);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(WETH);
+            leafs[leafIndex].argumentAddresses[2] = address(WSTETH);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1954,12 +2126,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap weETH for wstETH using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(WEETH);
-            leafs[114].argumentAddresses[2] = address(WSTETH);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(WEETH);
+            leafs[leafIndex].argumentAddresses[2] = address(WSTETH);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1967,12 +2140,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap GEAR for USDC using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(GEAR);
-            leafs[114].argumentAddresses[2] = address(USDC);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(GEAR);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1980,12 +2154,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap wstETH for wETH using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(WSTETH);
-            leafs[114].argumentAddresses[2] = address(WETH);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
-            leafs[114] = ManageLeaf(
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(WSTETH);
+            leafs[leafIndex].argumentAddresses[2] = address(WETH);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 aggregationRouterV5,
                 false,
                 "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
@@ -1993,11 +2168,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "Swap weETH for wstETH using 1inch router",
                 rawDataDecoderAndSanitizer
             );
-            leafs[114].argumentAddresses[0] = oneInchExecutor;
-            leafs[114].argumentAddresses[1] = address(WEETH);
-            leafs[114].argumentAddresses[2] = address(WSTETH);
-            leafs[114].argumentAddresses[3] = oneInchExecutor;
-            leafs[114].argumentAddresses[4] = boringVault;
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(WEETH);
+            leafs[leafIndex].argumentAddresses[2] = address(WSTETH);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
 
             // TODO swapping using the other function for valid uniswap V3 pools
         }
@@ -2007,7 +2182,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        string memory filePath = "./leafs/AdminStrategistLeafs.json";
+        string memory filePath = "./leafs/LiquidUsdStrategistLeafs.json";
 
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }

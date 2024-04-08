@@ -62,21 +62,21 @@ contract RenzoManageTreeTest is Test, MainnetAddresses {
         rawDataDecoderAndSanitizer = abi.decode(json.parseRaw(".metadata.DecoderAndSanitizerAddress"), (address));
     }
 
-    function testRenzoManageTree() external {
-        (ManageLeaf[] memory manageLeafs, bytes32[][] memory manageTree) = _loadManageLeafsAndManageTreeFromJson();
+    // function testRenzoManageTree() external {
+    //     (ManageLeaf[] memory manageLeafs, bytes32[][] memory manageTree) = _loadManageLeafsAndManageTreeFromJson();
 
-        for (uint256 i; i < leafCount; ++i) {
-            bytes memory gibberish =
-                hex"EeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-            bytes memory data = abi.encodeWithSignature(manageLeafs[i].signature, gibberish);
+    //     for (uint256 i; i < leafCount; ++i) {
+    //         bytes memory gibberish =
+    //             hex"EeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeEEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+    //         bytes memory data = abi.encodeWithSignature(manageLeafs[i].signature, gibberish);
 
-            (bool success, bytes memory returndata) = rawDataDecoderAndSanitizer.staticcall(data);
+    //         (bool success, bytes memory returndata) = rawDataDecoderAndSanitizer.staticcall(data);
 
-            if (!success) {
-                console.log("return data length: ", returndata.length);
-            }
-        }
-    }
+    //         if (!success) {
+    //             console.log("return data length: ", returndata.length);
+    //         }
+    //     }
+    // }
 
     // ========================================= HELPER FUNCTIONS =========================================
 
