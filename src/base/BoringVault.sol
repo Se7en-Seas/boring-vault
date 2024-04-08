@@ -39,8 +39,12 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
     /**
      * @notice Allows manager to make an arbitrary function call from this contract.
      */
-    function manage(address target, bytes calldata data, uint256 value) external requiresAuth {
-        target.functionCallWithValue(data, value);
+    function manage(address target, bytes calldata data, uint256 value)
+        external
+        requiresAuth
+        returns (bytes memory result)
+    {
+        result = target.functionCallWithValue(data, value);
     }
 
     /**
@@ -49,10 +53,12 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
     function manage(address[] calldata targets, bytes[] calldata data, uint256[] calldata values)
         external
         requiresAuth
+        returns (bytes[] memory results)
     {
         uint256 targetsLength = targets.length;
+        results = new bytes[](targetsLength);
         for (uint256 i; i < targetsLength; ++i) {
-            targets[i].functionCallWithValue(data[i], values[i]);
+            results[i] = targets[i].functionCallWithValue(data[i], values[i]);
         }
     }
 
