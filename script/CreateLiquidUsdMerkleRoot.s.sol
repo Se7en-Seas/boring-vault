@@ -524,22 +524,804 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 true,
                 "submit(address)",
                 new address[](1),
-                "Stake wETH for stETH",
+                "Stake ETH for stETH",
                 rawDataDecoderAndSanitizer
             );
             leafs[0].argumentAddresses[0] = address(0);
+            // Unstaking
+            leafs[0] = ManageLeaf(
+                unstETH,
+                false,
+                "requestWithdrawals(uint256[],address)",
+                new address[](1),
+                "Request withdrawals from stETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = boringVault;
+            leafs[0] = ManageLeaf(
+                unstETH,
+                false,
+                "claimWithdrawal(uint256)",
+                new address[](0),
+                "Claim stETH withdrawal",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0] = ManageLeaf(
+                unstETH,
+                false,
+                "claimWithdrawals(uint256[],uint256[])",
+                new address[](0),
+                "Claim stETH withdrawals",
+                rawDataDecoderAndSanitizer
+            );
+            // Wrapping
+            leafs[0] = ManageLeaf(
+                address(WSTETH), false, "wrap(uint256)", new address[](0), "Wrap stETH", rawDataDecoderAndSanitizer
+            );
+            leafs[0] = ManageLeaf(
+                address(WSTETH), false, "unwrap(uint256)", new address[](0), "Unwrap wstETH", rawDataDecoderAndSanitizer
+            );
         }
 
-        // EtherFi stake and unstake, wrap and unwrap
+        // ========================== EtherFi ==========================
+        /**
+         * stake, unstake, wrap, unwrap
+         */
+        {
+            // Approvals
+            leafs[0] = ManageLeaf(
+                address(EETH),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve WEETH to spend eETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = address(WEETH);
+            leafs[0] = ManageLeaf(
+                address(EETH),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve EtherFi Liquidity Pool to spend eETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = EETH_LIQUIDITY_POOL;
+            // Staking
+            leafs[0] = ManageLeaf(
+                EETH_LIQUIDITY_POOL,
+                true,
+                "deposit()",
+                new address[](0),
+                "Stake ETH for eETH",
+                rawDataDecoderAndSanitizer
+            );
+            // Unstaking
+            leafs[0] = ManageLeaf(
+                EETH_LIQUIDITY_POOL,
+                false,
+                "requestWithdraw(address,uint256)",
+                new address[](1),
+                "Request withdrawal from eETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = boringVault;
+            leafs[0] = ManageLeaf(
+                withdrawalRequestNft,
+                false,
+                "claimWithdraw(uint256)",
+                new address[](0),
+                "Claim eETH withdrawal",
+                rawDataDecoderAndSanitizer
+            );
+            // Wrapping
+            leafs[0] = ManageLeaf(
+                address(WEETH), false, "wrap(uint256)", new address[](0), "Wrap eETH", rawDataDecoderAndSanitizer
+            );
+            leafs[0] = ManageLeaf(
+                address(WEETH), false, "unwrap(uint256)", new address[](0), "Unwrap weETH", rawDataDecoderAndSanitizer
+            );
+        }
 
-        // MakerDAO
-        // ERC4626 sDAI interactions
+        // ========================== Native ==========================
+        /**
+         * wrap, unwrap
+         */
+        {
+            // Wrapping
+            leafs[0] = ManageLeaf(
+                address(WETH), true, "deposit()", new address[](0), "Wrap ETH for wETH", rawDataDecoderAndSanitizer
+            );
+            leafs[0] = ManageLeaf(
+                address(WETH),
+                false,
+                "withdraw(uint256)",
+                new address[](0),
+                "Unwrap wETH for ETH",
+                rawDataDecoderAndSanitizer
+            );
+        }
 
-        // Gearbox
-        // Lend USDC, GHO, USDT, DAI
+        // ========================== MakerDAO ==========================
+        /**
+         * deposit, withdraw
+         */
+        {
+            // Approvals
+            leafs[0] = ManageLeaf(
+                address(DAI),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve sDAI to spend DAI",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = address(sDAI);
+            // Depositing
+            leafs[0] = ManageLeaf(
+                address(sDAI),
+                false,
+                "deposit(uint256,address)",
+                new address[](1),
+                "Deposit DAI for sDAI",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = boringVault;
+            // Withdrawing
+            leafs[0] = ManageLeaf(
+                address(sDAI),
+                false,
+                "withdraw(uint256,address,address)",
+                new address[](2),
+                "Withdraw DAI from sDAI",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = boringVault;
+            leafs[0].argumentAddresses[1] = boringVault;
+        }
 
-        // Morpho Blue
-        // Supply DAI, USDT, USDC to serveral markets
+        // ========================== Gearbox ==========================
+        /**
+         * USDC, DAI, USDT deposit, withdraw,  dUSDCV3, dDAIV3 dUSDTV3 deposit, withdraw, claim
+         */
+        {
+            // Approvals
+            leafs[0] = ManageLeaf(
+                address(USDC),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve dUSDCV3 to spend USDC",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = dUSDCV3;
+            leafs[0] = ManageLeaf(
+                address(DAI),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve dDAIV3 to spend DAI",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = dDAIV3;
+            leafs[0] = ManageLeaf(
+                address(USDT),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve dUSDTV3 to spend USDT",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = dUSDTV3;
+            leafs[0] = ManageLeaf(
+                dUSDCV3,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve sdUSDCV3 to spend dUSDCV3",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = sdUSDCV3;
+            leafs[0] = ManageLeaf(
+                dDAIV3,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve sdDAIV3 to spend dDAIV3",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = sdDAIV3;
+            leafs[0] = ManageLeaf(
+                dUSDTV3,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve sdUSDTV3 to spend dUSDTV3",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = sdUSDTV3;
+            // Depositing
+            leafs[0] = ManageLeaf(
+                dUSDCV3,
+                false,
+                "deposit(uint256,address)",
+                new address[](1),
+                "Deposit USDC for dUSDCV3",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = boringVault;
+            leafs[0] = ManageLeaf(
+                dDAIV3,
+                false,
+                "deposit(uint256,address)",
+                new address[](1),
+                "Deposit DAI for dDAIV3",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = boringVault;
+            leafs[0] = ManageLeaf(
+                dUSDTV3,
+                false,
+                "deposit(uint256,address)",
+                new address[](1),
+                "Deposit USDT for dUSDTV3",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = boringVault;
+            leafs[0] = ManageLeaf(
+                sdUSDCV3,
+                false,
+                "deposit(uint256)",
+                new address[](0),
+                "Deposit dUSDCV3 for sdUSDCV3",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0] = ManageLeaf(
+                sdDAIV3,
+                false,
+                "deposit(uint256)",
+                new address[](0),
+                "Deposit dDAIV3 for sdDAIV3",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0] = ManageLeaf(
+                sdUSDTV3,
+                false,
+                "deposit(uint256)",
+                new address[](0),
+                "Deposit dUSDTV3 for sdUSDTV3",
+                rawDataDecoderAndSanitizer
+            );
+            // Withdrawing
+            leafs[0] = ManageLeaf(
+                address(sDAI),
+                false,
+                "withdraw(uint256,address,address)",
+                new address[](2),
+                "Withdraw DAI from sDAI",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = boringVault;
+            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[0] = ManageLeaf(
+                dUSDCV3,
+                false,
+                "withdraw(uint256,address,address)",
+                new address[](2),
+                "Withdraw USDC from dUSDCV3",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = boringVault;
+            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[0] = ManageLeaf(
+                dDAIV3,
+                false,
+                "withdraw(uint256,address,address)",
+                new address[](2),
+                "Withdraw DAI from dDAIV3",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = boringVault;
+            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[0] = ManageLeaf(
+                dUSDTV3,
+                false,
+                "withdraw(uint256,address,address)",
+                new address[](2),
+                "Withdraw USDT from dUSDTV3",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = boringVault;
+            leafs[0].argumentAddresses[1] = boringVault;
+            leafs[0] = ManageLeaf(
+                sdUSDCV3,
+                false,
+                "withdraw(uint256)",
+                new address[](0),
+                "Withdraw dUSDCV3 from sdUSDCV3",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0] = ManageLeaf(
+                sdDAIV3,
+                false,
+                "withdraw(uint256)",
+                new address[](0),
+                "Withdraw dDAIV3 from sdDAIV3",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0] = ManageLeaf(
+                sdUSDTV3,
+                false,
+                "withdraw(uint256)",
+                new address[](0),
+                "Withdraw dUSDTV3 from sdUSDTV3",
+                rawDataDecoderAndSanitizer
+            );
+            // Claiming
+            leafs[0] = ManageLeaf(
+                sdUSDCV3, false, "claim()", new address[](0), "Claim rewards from sdUSDCV3", rawDataDecoderAndSanitizer
+            );
+            leafs[0] = ManageLeaf(
+                sdDAIV3, false, "claim()", new address[](0), "Claim rewards from sdDAIV3", rawDataDecoderAndSanitizer
+            );
+            leafs[0] = ManageLeaf(
+                sdUSDTV3, false, "claim()", new address[](0), "Claim rewards from sdUSDTV3", rawDataDecoderAndSanitizer
+            );
+        }
+
+        // ========================== MorphoBlue ==========================
+        /**
+         * Supply, Withdraw DAI, USDT, USDC to/from
+         * sUSDe/USDT  91.50 LLTV market 0xdc5333039bcf15f1237133f74d5806675d83d9cf19cfd4cfdd9be674842651bf
+         * USDe/USDT   91.50 LLTV market 0xcec858380cba2d9ca710fce3ce864d74c3f620d53826f69d08508902e09be86f
+         * USDe/DAI    91.50 LLTV market 0x8e6aeb10c401de3279ac79b4b2ea15fc94b7d9cfc098d6c2a1ff7b2b26d9d02c
+         * sUSDe/DAI   91.50 LLTV market 0x1247f1c237eceae0602eab1470a5061a6dd8f734ba88c7cdc5d6109fb0026b28
+         * USDe/DAI    94.50 LLTV market 0xdb760246f6859780f6c1b272d47a8f64710777121118e56e0cdb4b8b744a3094
+         * USDe/DAI    86.00 LLTV market 0xc581c5f70bd1afa283eed57d1418c6432cbff1d862f94eaf58fdd4e46afbb67f
+         * USDe/DAI    77.00 LLTV market 0xfd8493f09eb6203615221378d89f53fcd92ff4f7d62cca87eece9a2fff59e86f
+         * wETH/USDC   86.00 LLTV market 0x7dde86a1e94561d9690ec678db673c1a6396365f7d1d65e129c5fff0990ff758
+         * wETH/USDC   91.50 LLTV market 0xf9acc677910cc17f650416a22e2a14d5da7ccb9626db18f1bf94efe64f92b372
+         * sUSDe/DAI   77.00 LLTV market 0x42dcfb38bb98767afb6e38ccf90d59d0d3f0aa216beb3a234f12850323d17536
+         * sUSDe/DAI   86.00 LLTV market 0x39d11026eae1c6ec02aa4c0910778664089cdd97c3fd23f68f7cd05e2e95af48
+         * wstETH/USDT 86.00 LLTV market 0xe7e9694b754c4d4f7e21faf7223f6fa71abaeb10296a4c43a54a7977149687d2
+         * wstETH/USDC 86.00 LLTV market 0xb323495f7e4148be5643a4ea4a8221eef163e4bccfdedc2a6f4696baacbc86cc
+         */
+        {
+            // Approvals
+            leafs[0] = ManageLeaf(
+                address(USDC),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve MorhoBlue to spend USDC",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = morphoBlue;
+            leafs[0] = ManageLeaf(
+                address(DAI),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve MorhoBlue to spend DAI",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = morphoBlue;
+            leafs[0] = ManageLeaf(
+                address(USDT),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve MorhoBlue to spend USDT",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = morphoBlue;
+            // Supplying
+            IMB.MarketParams memory marketParams;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xdc5333039bcf15f1237133f74d5806675d83d9cf19cfd4cfdd9be674842651bf);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+                new address[](5),
+                "Supply USDT to MorphoBlue sUSDe/USDT 91.50 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xcec858380cba2d9ca710fce3ce864d74c3f620d53826f69d08508902e09be86f);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+                new address[](5),
+                "Supply USDT to MorphoBlue USDe/USDT 91.50 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0x8e6aeb10c401de3279ac79b4b2ea15fc94b7d9cfc098d6c2a1ff7b2b26d9d02c);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+                new address[](5),
+                "Supply DAI to MorphoBlue USDe/DAI 91.50 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0x1247f1c237eceae0602eab1470a5061a6dd8f734ba88c7cdc5d6109fb0026b28);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+                new address[](5),
+                "Supply DAI to MorphoBlue sUSDe/DAI 91.50 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xdb760246f6859780f6c1b272d47a8f64710777121118e56e0cdb4b8b744a3094);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+                new address[](5),
+                "Supply DAI to MorphoBlue USDe/DAI 94.50 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xc581c5f70bd1afa283eed57d1418c6432cbff1d862f94eaf58fdd4e46afbb67f);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+                new address[](5),
+                "Supply DAI to MorphoBlue USDe/DAI 86.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xfd8493f09eb6203615221378d89f53fcd92ff4f7d62cca87eece9a2fff59e86f);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+                new address[](5),
+                "Supply DAI to MorphoBlue USDe/DAI 77.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0x7dde86a1e94561d9690ec678db673c1a6396365f7d1d65e129c5fff0990ff758);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+                new address[](5),
+                "Supply USDC to MorphoBlue wETH/USDC 86.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xf9acc677910cc17f650416a22e2a14d5da7ccb9626db18f1bf94efe64f92b372);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+                new address[](5),
+                "Supply USDC to MorphoBlue wETH/USDC 91.50 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0x42dcfb38bb98767afb6e38ccf90d59d0d3f0aa216beb3a234f12850323d17536);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+                new address[](5),
+                "Supply DAI to MorphoBlue sUSDe/DAI 77.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0x39d11026eae1c6ec02aa4c0910778664089cdd97c3fd23f68f7cd05e2e95af48);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+                new address[](5),
+                "Supply DAI to MorphoBlue sUSDe/DAI 86.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xe7e9694b754c4d4f7e21faf7223f6fa71abaeb10296a4c43a54a7977149687d2);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+                new address[](5),
+                "Supply USDT to MorphoBlue wstETH/USDT 86.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xb323495f7e4148be5643a4ea4a8221eef163e4bccfdedc2a6f4696baacbc86cc);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+                new address[](5),
+                "Supply USDC to MorphoBlue wstETH/USDC 86.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            // Withdrawing
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xdc5333039bcf15f1237133f74d5806675d83d9cf19cfd4cfdd9be674842651bf);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+                new address[](6),
+                "Withdraw USDT from MorphoBlue sUSDe/USDT 91.50 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[0].argumentAddresses[5] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xcec858380cba2d9ca710fce3ce864d74c3f620d53826f69d08508902e09be86f);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+                new address[](6),
+                "Withdraw USDT from MorphoBlue USDe/USDT 91.50 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[0].argumentAddresses[5] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0x8e6aeb10c401de3279ac79b4b2ea15fc94b7d9cfc098d6c2a1ff7b2b26d9d02c);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+                new address[](6),
+                "Withdraw DAI from MorphoBlue USDe/DAI 91.50 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[0].argumentAddresses[5] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0x1247f1c237eceae0602eab1470a5061a6dd8f734ba88c7cdc5d6109fb0026b28);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+                new address[](6),
+                "Withdraw DAI from MorphoBlue sUSDe/DAI 91.50 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[0].argumentAddresses[5] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xdb760246f6859780f6c1b272d47a8f64710777121118e56e0cdb4b8b744a3094);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+                new address[](6),
+                "Withdraw DAI from MorphoBlue USDe/DAI 94.50 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[0].argumentAddresses[5] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xc581c5f70bd1afa283eed57d1418c6432cbff1d862f94eaf58fdd4e46afbb67f);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+                new address[](6),
+                "Withdraw DAI from MorphoBlue USDe/DAI 86.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[0].argumentAddresses[5] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xfd8493f09eb6203615221378d89f53fcd92ff4f7d62cca87eece9a2fff59e86f);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+                new address[](6),
+                "Withdraw DAI from MorphoBlue USDe/DAI 77.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[0].argumentAddresses[5] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0x7dde86a1e94561d9690ec678db673c1a6396365f7d1d65e129c5fff0990ff758);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+                new address[](6),
+                "Withdraw USDC from MorphoBlue wETH/USDC 86.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[0].argumentAddresses[5] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xf9acc677910cc17f650416a22e2a14d5da7ccb9626db18f1bf94efe64f92b372);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+                new address[](6),
+                "Withdraw USDC from MorphoBlue wETH/USDC 91.50 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[0].argumentAddresses[5] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0x42dcfb38bb98767afb6e38ccf90d59d0d3f0aa216beb3a234f12850323d17536);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+                new address[](6),
+                "Withdraw DAI from MorphoBlue sUSDe/DAI 77.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[0].argumentAddresses[5] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0x39d11026eae1c6ec02aa4c0910778664089cdd97c3fd23f68f7cd05e2e95af48);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+                new address[](6),
+                "Withdraw DAI from MorphoBlue sUSDe/DAI 86.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[0].argumentAddresses[5] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xe7e9694b754c4d4f7e21faf7223f6fa71abaeb10296a4c43a54a7977149687d2);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+                new address[](6),
+                "Withdraw USDT from MorphoBlue wstETH/USDT 86.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[0].argumentAddresses[5] = boringVault;
+            marketParams =
+                IMB(morphoBlue).idToMarketParams(0xb323495f7e4148be5643a4ea4a8221eef163e4bccfdedc2a6f4696baacbc86cc);
+            leafs[0] = ManageLeaf(
+                morphoBlue,
+                false,
+                "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+                new address[](6),
+                "Withdraw USDC from MorphoBlue wstETH/USDC 86.00 LLTV market",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[0].argumentAddresses[0] = marketParams.loanToken;
+            leafs[0].argumentAddresses[1] = marketParams.collateralToken;
+            leafs[0].argumentAddresses[2] = marketParams.oracle;
+            leafs[0].argumentAddresses[3] = marketParams.irm;
+            leafs[0].argumentAddresses[4] = boringVault;
+            leafs[0].argumentAddresses[5] = boringVault;
+        }
 
         // Pendle
         // USDe, sUSDe LP, SY, PT, YT
@@ -565,6 +1347,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
         // wETH <-> wstETH,
         // weETH <-> wstETH,
         // weETH <-> wETH
+        // Swap GEAR -> USDC?
 
         // uniswap v3
         leafs[0] = ManageLeaf(
@@ -3125,378 +3908,6 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 
-    function generateProductionRenzoDexAggregatorMicroManager() public {
-        ManageLeaf[] memory leafs = new ManageLeaf[](16);
-
-        // swap with 1inch -> move to other root
-        leafs[0] = ManageLeaf(
-            address(WETH),
-            false,
-            "approve(address,uint256)",
-            new address[](1),
-            "Approve 1inch router to spend wETH",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[0].argumentAddresses[0] = aggregationRouterV5;
-        leafs[1] = ManageLeaf(
-            address(RETH),
-            false,
-            "approve(address,uint256)",
-            new address[](1),
-            "Approve 1inch router to spend rETH",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[1].argumentAddresses[0] = aggregationRouterV5;
-        leafs[2] = ManageLeaf(
-            address(WSTETH),
-            false,
-            "approve(address,uint256)",
-            new address[](1),
-            "Approve 1inch router to spend wstETH",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[2].argumentAddresses[0] = aggregationRouterV5;
-        leafs[3] = ManageLeaf(
-            address(WEETH),
-            false,
-            "approve(address,uint256)",
-            new address[](1),
-            "Approve 1inch router to spend weETH",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[3].argumentAddresses[0] = aggregationRouterV5;
-        leafs[4] = ManageLeaf(
-            address(RSWETH),
-            false,
-            "approve(address,uint256)",
-            new address[](1),
-            "Approve 1inch router to spend rswETH",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[4].argumentAddresses[0] = aggregationRouterV5;
-        leafs[5] = ManageLeaf(
-            address(EZETH),
-            false,
-            "approve(address,uint256)",
-            new address[](1),
-            "Approve 1inch router to spend ezETH",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[5].argumentAddresses[0] = aggregationRouterV5;
-        leafs[6] = ManageLeaf(
-            aggregationRouterV5,
-            false,
-            "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
-            new address[](5),
-            "Swap wETH for ezETH using 1inch router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[6].argumentAddresses[0] = oneInchExecutor;
-        leafs[6].argumentAddresses[1] = address(WETH);
-        leafs[6].argumentAddresses[2] = address(EZETH);
-        leafs[6].argumentAddresses[3] = oneInchExecutor;
-        leafs[6].argumentAddresses[4] = boringVault;
-        leafs[7] = ManageLeaf(
-            aggregationRouterV5,
-            false,
-            "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
-            new address[](5),
-            "Swap wETH for weETH using 1inch router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[7].argumentAddresses[0] = oneInchExecutor;
-        leafs[7].argumentAddresses[1] = address(WETH);
-        leafs[7].argumentAddresses[2] = address(WEETH);
-        leafs[7].argumentAddresses[3] = oneInchExecutor;
-        leafs[7].argumentAddresses[4] = boringVault;
-        leafs[8] = ManageLeaf(
-            aggregationRouterV5,
-            false,
-            "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
-            new address[](5),
-            "Swap wETH for wstETH using 1inch router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[8].argumentAddresses[0] = oneInchExecutor;
-        leafs[8].argumentAddresses[1] = address(WETH);
-        leafs[8].argumentAddresses[2] = address(WSTETH);
-        leafs[8].argumentAddresses[3] = oneInchExecutor;
-        leafs[8].argumentAddresses[4] = boringVault;
-        leafs[9] = ManageLeaf(
-            aggregationRouterV5,
-            false,
-            "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
-            new address[](5),
-            "Swap wETH for rETH using 1inch router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[9].argumentAddresses[0] = oneInchExecutor;
-        leafs[9].argumentAddresses[1] = address(WETH);
-        leafs[9].argumentAddresses[2] = address(RETH);
-        leafs[9].argumentAddresses[3] = oneInchExecutor;
-        leafs[9].argumentAddresses[4] = boringVault;
-        leafs[10] = ManageLeaf(
-            aggregationRouterV5,
-            false,
-            "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
-            new address[](5),
-            "Swap wETH for rswETH using 1inch router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[10].argumentAddresses[0] = oneInchExecutor;
-        leafs[10].argumentAddresses[1] = address(WETH);
-        leafs[10].argumentAddresses[2] = address(RSWETH);
-        leafs[10].argumentAddresses[3] = oneInchExecutor;
-        leafs[10].argumentAddresses[4] = boringVault;
-        leafs[11] = ManageLeaf(
-            aggregationRouterV5,
-            false,
-            "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
-            new address[](5),
-            "Swap ezETH for wETH using 1inch router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[11].argumentAddresses[0] = oneInchExecutor;
-        leafs[11].argumentAddresses[1] = address(EZETH);
-        leafs[11].argumentAddresses[2] = address(WETH);
-        leafs[11].argumentAddresses[3] = oneInchExecutor;
-        leafs[11].argumentAddresses[4] = boringVault;
-        leafs[12] = ManageLeaf(
-            aggregationRouterV5,
-            false,
-            "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
-            new address[](5),
-            "Swap wstETH for wETH using 1inch router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[12].argumentAddresses[0] = oneInchExecutor;
-        leafs[12].argumentAddresses[1] = address(WSTETH);
-        leafs[12].argumentAddresses[2] = address(WETH);
-        leafs[12].argumentAddresses[3] = oneInchExecutor;
-        leafs[12].argumentAddresses[4] = boringVault;
-        leafs[13] = ManageLeaf(
-            aggregationRouterV5,
-            false,
-            "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
-            new address[](5),
-            "Swap rETH for wETH using 1inch router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[13].argumentAddresses[0] = oneInchExecutor;
-        leafs[13].argumentAddresses[1] = address(RETH);
-        leafs[13].argumentAddresses[2] = address(WETH);
-        leafs[13].argumentAddresses[3] = oneInchExecutor;
-        leafs[13].argumentAddresses[4] = boringVault;
-        leafs[14] = ManageLeaf(
-            aggregationRouterV5,
-            false,
-            "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
-            new address[](5),
-            "Swap weETH for wETH using 1inch router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[14].argumentAddresses[0] = oneInchExecutor;
-        leafs[14].argumentAddresses[1] = address(WEETH);
-        leafs[14].argumentAddresses[2] = address(WETH);
-        leafs[14].argumentAddresses[3] = oneInchExecutor;
-        leafs[14].argumentAddresses[4] = boringVault;
-        leafs[15] = ManageLeaf(
-            aggregationRouterV5,
-            false,
-            "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
-            new address[](5),
-            "Swap rswETH for wETH using 1inch router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[15].argumentAddresses[0] = oneInchExecutor;
-        leafs[15].argumentAddresses[1] = address(RSWETH);
-        leafs[15].argumentAddresses[2] = address(WETH);
-        leafs[15].argumentAddresses[3] = oneInchExecutor;
-        leafs[15].argumentAddresses[4] = boringVault;
-
-        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-
-        string memory filePath = "./leafs/RenzoDexAggregatorMicroManagerLeafs.json";
-
-        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
-    }
-
-    function generateProductionRenzoDexSwapperMicroManager() public {
-        ManageLeaf[] memory leafs = new ManageLeaf[](16);
-
-        // swap with uniV3 -> move to other root
-        leafs[0] = ManageLeaf(
-            address(WETH),
-            false,
-            "approve(address,uint256)",
-            new address[](1),
-            "Approve UniswapV3 router to spend wETH",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[0].argumentAddresses[0] = uniV3Router;
-        leafs[1] = ManageLeaf(
-            address(RETH),
-            false,
-            "approve(address,uint256)",
-            new address[](1),
-            "Approve UniswapV3 router to spend rETH",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[1].argumentAddresses[0] = uniV3Router;
-        leafs[2] = ManageLeaf(
-            address(WSTETH),
-            false,
-            "approve(address,uint256)",
-            new address[](1),
-            "Approve UniswapV3 router to spend wstETH",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[2].argumentAddresses[0] = uniV3Router;
-        leafs[3] = ManageLeaf(
-            address(WEETH),
-            false,
-            "approve(address,uint256)",
-            new address[](1),
-            "Approve UniswapV3 router to spend weETH",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[3].argumentAddresses[0] = uniV3Router;
-        leafs[4] = ManageLeaf(
-            address(RSWETH),
-            false,
-            "approve(address,uint256)",
-            new address[](1),
-            "Approve UniswapV3 router to spend rswETH",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[4].argumentAddresses[0] = uniV3Router;
-        leafs[5] = ManageLeaf(
-            address(EZETH),
-            false,
-            "approve(address,uint256)",
-            new address[](1),
-            "Approve UniswapV3 router to spend ezETH",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[5].argumentAddresses[0] = uniV3Router;
-        leafs[6] = ManageLeaf(
-            uniV3Router,
-            false,
-            "exactInput((bytes,address,uint256,uint256,uint256))",
-            new address[](3),
-            "Swap wETH for wstETH using UniswapV3 router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[6].argumentAddresses[0] = address(WETH);
-        leafs[6].argumentAddresses[1] = address(WSTETH);
-        leafs[6].argumentAddresses[2] = address(boringVault);
-        leafs[7] = ManageLeaf(
-            uniV3Router,
-            false,
-            "exactInput((bytes,address,uint256,uint256,uint256))",
-            new address[](3),
-            "Swap wETH for rETH using UniswapV3 router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[7].argumentAddresses[0] = address(WETH);
-        leafs[7].argumentAddresses[1] = address(RETH);
-        leafs[7].argumentAddresses[2] = address(boringVault);
-        leafs[8] = ManageLeaf(
-            uniV3Router,
-            false,
-            "exactInput((bytes,address,uint256,uint256,uint256))",
-            new address[](3),
-            "Swap wETH for ezETH using UniswapV3 router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[8].argumentAddresses[0] = address(WETH);
-        leafs[8].argumentAddresses[1] = address(EZETH);
-        leafs[8].argumentAddresses[2] = address(boringVault);
-        leafs[9] = ManageLeaf(
-            uniV3Router,
-            false,
-            "exactInput((bytes,address,uint256,uint256,uint256))",
-            new address[](3),
-            "Swap wETH for weETH using UniswapV3 router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[9].argumentAddresses[0] = address(WETH);
-        leafs[9].argumentAddresses[1] = address(WEETH);
-        leafs[9].argumentAddresses[2] = address(boringVault);
-        leafs[10] = ManageLeaf(
-            uniV3Router,
-            false,
-            "exactInput((bytes,address,uint256,uint256,uint256))",
-            new address[](3),
-            "Swap wETH for rswETH using UniswapV3 router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[10].argumentAddresses[0] = address(WETH);
-        leafs[10].argumentAddresses[1] = address(RSWETH);
-        leafs[10].argumentAddresses[2] = address(boringVault);
-        leafs[11] = ManageLeaf(
-            uniV3Router,
-            false,
-            "exactInput((bytes,address,uint256,uint256,uint256))",
-            new address[](3),
-            "Swap wstETH for wETH using UniswapV3 router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[11].argumentAddresses[0] = address(WSTETH);
-        leafs[11].argumentAddresses[1] = address(WETH);
-        leafs[11].argumentAddresses[2] = address(boringVault);
-        leafs[12] = ManageLeaf(
-            uniV3Router,
-            false,
-            "exactInput((bytes,address,uint256,uint256,uint256))",
-            new address[](3),
-            "Swap rETH for wETH using UniswapV3 router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[12].argumentAddresses[0] = address(RETH);
-        leafs[12].argumentAddresses[1] = address(WETH);
-        leafs[12].argumentAddresses[2] = address(boringVault);
-        leafs[13] = ManageLeaf(
-            uniV3Router,
-            false,
-            "exactInput((bytes,address,uint256,uint256,uint256))",
-            new address[](3),
-            "Swap ezETH for wETH using UniswapV3 router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[13].argumentAddresses[0] = address(EZETH);
-        leafs[13].argumentAddresses[1] = address(WETH);
-        leafs[13].argumentAddresses[2] = address(boringVault);
-        leafs[14] = ManageLeaf(
-            uniV3Router,
-            false,
-            "exactInput((bytes,address,uint256,uint256,uint256))",
-            new address[](3),
-            "Swap weETH for wETH using UniswapV3 router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[14].argumentAddresses[0] = address(WEETH);
-        leafs[14].argumentAddresses[1] = address(WETH);
-        leafs[14].argumentAddresses[2] = address(boringVault);
-        leafs[15] = ManageLeaf(
-            uniV3Router,
-            false,
-            "exactInput((bytes,address,uint256,uint256,uint256))",
-            new address[](3),
-            "Swap rswETH for wETH using UniswapV3 router",
-            rawDataDecoderAndSanitizer
-        );
-        leafs[15].argumentAddresses[0] = address(RSWETH);
-        leafs[15].argumentAddresses[1] = address(WETH);
-        leafs[15].argumentAddresses[2] = address(boringVault);
-
-        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-
-        string memory filePath = "./leafs/RenzoDexSwapperMicroManagerLeafs.json";
-
-        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
-    }
-
     function _generateLeafs(
         string memory filePath,
         ManageLeaf[] memory leafs,
@@ -3663,4 +4074,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             value := keccak256(0x00, 0x40)
         }
     }
+}
+
+interface IMB {
+    struct MarketParams {
+        address loanToken;
+        address collateralToken;
+        address oracle;
+        address irm;
+        uint256 lltv;
+    }
+
+    function idToMarketParams(bytes32 id) external view returns (MarketParams memory);
 }
