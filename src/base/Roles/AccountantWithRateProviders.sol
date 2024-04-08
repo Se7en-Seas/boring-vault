@@ -138,6 +138,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     /**
      * @notice Pause this contract, which prevents future calls to `updateExchangeRate`, and any safe rate
      *         calls will revert.
+     * @dev Callable by MULTISIG_ROLE.
      */
     function pause() external requiresAuth {
         accountantState.isPaused = true;
@@ -147,6 +148,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     /**
      * @notice Unpause this contract, which allows future calls to `updateExchangeRate`, and any safe rate
      *         calls will stop reverting.
+     * @dev Callable by MULTISIG_ROLE.
      */
     function unpause() external requiresAuth {
         accountantState.isPaused = false;
@@ -157,6 +159,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @notice Update the minimum time delay between `updateExchangeRate` calls.
      * @dev There are no input requirements, as it is possible the admin would want
      *      the exchange rate updated as frequently as needed.
+     * @dev Callable by OWNER_ROLE.
      */
     function updateDelay(uint32 minimumUpdateDelayInSeconds) external requiresAuth {
         uint32 oldDelay = accountantState.minimumUpdateDelayInSeconds;
@@ -166,6 +169,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Update the allowed upper bound change of exchange rate between `updateExchangeRateCalls`.
+     * @dev Callable by OWNER_ROLE.
      */
     function updateUpper(uint16 allowedExchangeRateChangeUpper) external requiresAuth {
         if (allowedExchangeRateChangeUpper < 1e4) revert AccountantWithRateProviders__UpperBoundTooSmall();
@@ -176,6 +180,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Update the allowed lower bound change of exchange rate between `updateExchangeRateCalls`.
+     * @dev Callable by OWNER_ROLE.
      */
     function updateLower(uint16 allowedExchangeRateChangeLower) external requiresAuth {
         if (allowedExchangeRateChangeLower > 1e4) revert AccountantWithRateProviders__LowerBoundTooLarge();
@@ -186,6 +191,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Update the management fee to a new value.
+     * @dev Callable by OWNER_ROLE.
      */
     function updateManagementFee(uint16 managementFee) external requiresAuth {
         if (managementFee > 0.2e4) revert AccountantWithRateProviders__ManagementFeeTooLarge();
@@ -196,6 +202,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Update the payout address fees are sent to.
+     * @dev Callable by OWNER_ROLE.
      */
     function updatePayoutAddress(address payoutAddress) external requiresAuth {
         address oldPayout = accountantState.payoutAddress;
@@ -207,6 +214,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @notice Update the rate provider data for a specific `asset`.
      * @dev Rate providers must return rates in terms of `base` and
      *      they must use the same decimals as `base`.
+     * @dev Callable by OWNER_ROLE.
      */
     function setRateProviderData(ERC20 asset, bool isPeggedToBase, address rateProvider) external requiresAuth {
         rateProviderData[asset] =
@@ -220,6 +228,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @notice Updates this contract exchangeRate.
      * @dev If new exchange rate is outside of accepted bounds, or if not enough time has passed, this
      *      will pause the contract, and this function will NOT calculate fees owed.
+     * @dev Callable by UPDATE_EXCHANGE_RATE_ROLE.
      */
     function updateExchangeRate(uint96 newExchangeRate) external requiresAuth {
         AccountantState storage state = accountantState;

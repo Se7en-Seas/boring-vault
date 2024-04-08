@@ -129,6 +129,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
 
     /**
      * @notice Pause this contract, which prevents future calls to `deposit` and `depositWithPermit`.
+     * @dev Callable by MULTISIG_ROLE.
      */
     function pause() external requiresAuth {
         isPaused = true;
@@ -137,6 +138,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
 
     /**
      * @notice Unpause this contract, which allows future calls to `deposit` and `depositWithPermit`.
+     * @dev Callable by MULTISIG_ROLE.
      */
     function unpause() external requiresAuth {
         isPaused = false;
@@ -146,6 +148,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     /**
      * @notice Adds this asset as a deposit asset.
      * @dev The accountant must also support pricing this asset, else the `deposit` call will revert.
+     * @dev Callable by OWNER_ROLE.
      */
     function addAsset(ERC20 asset) external requiresAuth {
         isSupported[asset] = true;
@@ -154,6 +157,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
 
     /**
      * @notice Removes this asset as a deposit asset.
+     * @dev Callable by OWNER_ROLE.
      */
     function removeAsset(ERC20 asset) external requiresAuth {
         isSupported[asset] = false;
@@ -163,6 +167,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     /**
      * @notice Sets the share lock period.
      * @dev This not only locks shares to the user address, but also serves as the pending deposit period, where deposits can be reverted.
+     * @dev Callable by OWNER_ROLE.
      */
     function setShareLockPeriod(uint64 _shareLockPeriod) external requiresAuth {
         if (_shareLockPeriod > MAX_SHARE_LOCK_PERIOD) revert TellerWithMultiAssetSupport__ShareLockPeriodTooLong();
@@ -187,6 +192,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
      *      but this contract can still be saving share lock state. In the event this happens
      *      deposits are still refundable if the user has not transferred their shares.
      *      But there is no guarantee that the user has not transferred their shares.
+     * @dev Callable by STRATEGIST_MULTISIG_ROLE.
      */
     function refundDeposit(
         uint256 nonce,
@@ -223,6 +229,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
 
     /**
      * @notice Allows users to deposit into the BoringVault, if this contract is not paused.
+     * @dev Publicly callable.
      */
     function deposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint)
         external
@@ -253,6 +260,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
 
     /**
      * @notice Allows users to deposit into BoringVault using permit.
+     * @dev Publicly callable.
      */
     function depositWithPermit(
         ERC20 depositAsset,
@@ -280,6 +288,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     /**
      * @notice Allows on ramp role to deposit into this contract.
      * @dev Does NOT support native deposits.
+     * @dev Callable by SOLVER_ROLE.
      */
     function bulkDeposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint, address to)
         external
@@ -295,6 +304,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
 
     /**
      * @notice Allows off ramp role to withdraw from this contract.
+     * @dev Callable by SOLVER_ROLE.
      */
     function bulkWithdraw(ERC20 withdrawAsset, uint256 shareAmount, uint256 minimumAssets, address to)
         external

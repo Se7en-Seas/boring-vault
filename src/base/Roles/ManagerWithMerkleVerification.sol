@@ -88,6 +88,7 @@ contract ManagerWithMerkleVerification is Auth {
 
     /**
      * @notice Sets the manageRoot.
+     * @dev Callable by OWNER_ROLE.
      */
     function setManageRoot(address strategist, bytes32 _manageRoot) external requiresAuth {
         bytes32 oldRoot = manageRoot[strategist];
@@ -97,6 +98,7 @@ contract ManagerWithMerkleVerification is Auth {
 
     /**
      * @notice Pause this contract, which prevents future calls to `manageVaultWithMerkleVerification`.
+     * @dev Callable by MULTISIG_ROLE.
      */
     function pause() external requiresAuth {
         isPaused = true;
@@ -105,6 +107,7 @@ contract ManagerWithMerkleVerification is Auth {
 
     /**
      * @notice Unpause this contract, which allows future calls to `manageVaultWithMerkleVerification`.
+     * @dev Callable by MULTISIG_ROLE.
      */
     function unpause() external requiresAuth {
         isPaused = false;
@@ -116,6 +119,9 @@ contract ManagerWithMerkleVerification is Auth {
     /**
      * @notice Allows strategist to manage the BoringVault.
      * @dev The strategist must provide a merkle proof for every call that verifiees they are allowed to make that call.
+     * @dev Callable by MANAGER_INTERNAL_ROLE.
+     * @dev Callable by STRATEGIST_ROLE.
+     * @dev Callable by MICRO_MANAGER_ROLE.
      */
     function manageVaultWithMerkleVerification(
         bytes32[][] calldata manageProofs,

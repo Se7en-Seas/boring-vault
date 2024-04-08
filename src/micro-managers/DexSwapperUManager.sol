@@ -82,6 +82,7 @@ contract DexSwapperUManager is UManager {
 
     /**
      * @notice Sets the maximum allowed slippage during a swap.
+     * @dev Callable by MULTISIG_ROLE.
      */
     function setAllowedSlippage(uint16 _allowedSlippage) external requiresAuth {
         if (_allowedSlippage > MAX_SLIPPAGE) revert DexSwapperUManager__NewSlippageTooLarge();
@@ -100,6 +101,7 @@ contract DexSwapperUManager is UManager {
      * @param amountIn the amount of path[0] to swap
      * @param amountOutMinimum the minimum amount of path[path.length - 1] to get out from the swap
      * @param deadline the swap deadline
+     * @dev Callable by STRATEGIST_ROLE.
      */
     function swapWithUniswapV3(
         bytes32[][] calldata manageProofs,
@@ -178,6 +180,7 @@ contract DexSwapperUManager is UManager {
      * @param funds the fund management data
      * @param limit the maximum amount of assetIn to swap, or the minimum amount of assets out to receive
      * @param deadline the swap deadline
+     * @dev Callable by STRATEGIST_ROLE.
      */
     function swapWithBalancerV2(
         bytes32[][] calldata manageProofs,
@@ -250,6 +253,7 @@ contract DexSwapperUManager is UManager {
      * @param j the index of the token to swap to
      * @param dx the amount of token i to swap
      * @param min_dy the minimum amount of token j to receive
+     * @dev Callable by STRATEGIST_ROLE.
      */
     function swapWithCurve(
         bytes32[][] memory manageProofs,

@@ -38,6 +38,7 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
 
     /**
      * @notice Allows manager to make an arbitrary function call from this contract.
+     * @dev Callable by MANAGER_ROLE.
      */
     function manage(address target, bytes calldata data, uint256 value)
         external
@@ -49,6 +50,7 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
 
     /**
      * @notice Allows manager to make arbitrary function calls from this contract.
+     * @dev Callable by MANAGER_ROLE.
      */
     function manage(address[] calldata targets, bytes[] calldata data, uint256[] calldata values)
         external
@@ -67,6 +69,7 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
     /**
      * @notice Allows minter to mint shares, in exchange for assets.
      * @dev If assetAmount is zero, no assets are transferred in.
+     * @dev Callable by MINTER_ROLE.
      */
     function enter(address from, ERC20 asset, uint256 assetAmount, address to, uint256 shareAmount)
         external
@@ -86,6 +89,7 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
     /**
      * @notice Allows burner to burn shares, in exchange for assets.
      * @dev If assetAmount is zero, no assets are transferred out.
+     * @dev Callable by BURNER_ROLE.
      */
     function exit(address to, ERC20 asset, uint256 assetAmount, address from, uint256 shareAmount)
         external
@@ -104,6 +108,7 @@ contract BoringVault is ERC20, Auth, ERC721Holder, ERC1155Holder {
     /**
      * @notice Sets the share locker.
      * @notice If set to zero address, the share locker logic is disabled.
+     * @dev Callable by OWNER_ROLE.
      */
     function setBeforeTransferHook(address _hook) external requiresAuth {
         hook = BeforeTransferHook(_hook);

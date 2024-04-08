@@ -56,6 +56,7 @@ contract DexAggregatorUManager is UManager {
 
     /**
      * @notice Sets the maximum allowed slippage during a swap.
+     * @dev Callable by MULTISIG_ROLE.
      */
     function setAllowedSlippage(uint16 _allowedSlippage) external requiresAuth {
         if (_allowedSlippage > MAX_SLIPPAGE) revert DexAggregatorUManager__NewSlippageTooLarge();
@@ -69,6 +70,7 @@ contract DexAggregatorUManager is UManager {
      *        for the router swap call
      * @param decodersAndSanitizers 2 DecodersAndSanitizers one that implements ERC20 approve, and one that
      *        implements AggregationRouterV5.swap
+     * @dev Callable by STRATEGIST_ROLE.
      */
     function swapWith1Inch(
         bytes32[][] calldata manageProofs,

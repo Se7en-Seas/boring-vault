@@ -71,6 +71,7 @@ abstract contract UManager is Auth {
 
     /**
      * @notice Sets the duration of the period.
+     * @dev Callable by MULTISIG_ROLE.
      */
     function setPeriod(uint16 _period) external requiresAuth {
         emit PeriodUpdated(period, _period);
@@ -79,6 +80,7 @@ abstract contract UManager is Auth {
 
     /**
      * @notice Sets the number of calls allowed per period.
+     * @dev Callable by MULTISIG_ROLE.
      */
     function setAllowedCallsPerPeriod(uint16 _allowedCallsPerPeriod) external requiresAuth {
         emit AllowedCallsPeriodUpdated(allowedCallsPerPeriod, _allowedCallsPerPeriod);
@@ -87,6 +89,7 @@ abstract contract UManager is Auth {
 
     /**
      * @notice Allows auth to set token approvals to zero.
+     * @dev Callable by STRATEGIST_ROLE.
      */
     function revokeTokenApproval(
         bytes32[][] calldata manageProofs,
