@@ -66,6 +66,9 @@ contract MainnetAddresses {
     ERC20 public OSETH = ERC20(0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38);
     ERC20 public RSWETH = ERC20(0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0);
     ERC20 public PENDLE = ERC20(0x808507121B80c02388fAd14726482e061B8da827);
+    ERC20 public SUSDE = ERC20(0x9D39A5DE30e57443BfF2A8307A4256c8797A3497);
+    ERC20 public USDE = ERC20(0x4c9EDD5852cd905f086C759E8383e09bff1E68B3);
+    ERC20 public GEAR = ERC20(0xBa3335588D9403515223F109EdC4eB7269a9Ab5D);
 
     // Rate providers
     address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
@@ -412,10 +415,15 @@ contract MainnetAddresses {
     address public pendleEethPt = 0xc69Ad9baB1dEE23F4605a82b3354F8E40d1E5966;
     address public pendleEethYt = 0xfb35Fd0095dD1096b1Ca49AD44d8C5812A201677;
 
-    address public pendleEzEthMarket = 0xDe715330043799D7a80249660d1e6b61eB3713B3;
-    address public pendleEzEthSy = 0x22E12A50e3ca49FB183074235cB1db84Fe4C716D;
-    address public pendleEzEthPt = 0xeEE8aED1957ca1545a0508AfB51b53cCA7e3c0d1;
-    address public pendleEzEthYt = 0x256Fb830945141f7927785c06b65dAbc3744213c;
+    address public pendleUSDeMarket = 0xb4460e76D99eCaD95030204D3C25fb33C4833997;
+    address public pendleUSDeSy = 0x248d83f7Ac03CEbCC06d5C1A52c9B5d0EbB9936e;
+    address public pendleUSDePt = 0x0869055C098Fe927E1816CAAfb16E9133e5258FE;
+    address public pendleUSDeYt = 0xA99A4329c49369fB41e6CB6852535Bbf3d4f749b;
+
+    address public pendleSUSDeMarket = 0x8f7627bD46B30E296Aa3AAbe1dF9Bfac10920B6E;
+    address public pendleSUSDeSy = 0x22E12A50e3ca49FB183074235cB1db84Fe4C716D;
+    address public pendleSUSDePt = 0x215a61deaD7e1303b8571Bb429491aeAc5f2061e;
+    address public pendleSUSDeYt = 0x20c8Cf9714339fd018898cB5De84c089e48d1c87;
 
     address public pendleSwethMarket = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303;
 
