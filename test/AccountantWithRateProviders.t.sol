@@ -366,6 +366,13 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
             )
         );
         accountant.updateManagementFee(0.2001e4);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AccountantWithRateProviders.AccountantWithRateProviders__UpdateDelayTooLarge.selector
+            )
+        );
+        accountant.updateDelay(14 days + 1);
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

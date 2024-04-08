@@ -69,6 +69,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     error AccountantWithRateProviders__Paused();
     error AccountantWithRateProviders__ZeroFeesOwed();
     error AccountantWithRateProviders__OnlyCallableByBoringVault();
+    error AccountantWithRateProviders__UpdateDelayTooLarge();
 
     //============================== EVENTS ===============================
 
@@ -163,6 +164,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @dev Callable by OWNER_ROLE.
      */
     function updateDelay(uint32 minimumUpdateDelayInSeconds) external requiresAuth {
+        if (minimumUpdateDelayInSeconds > 14 days) revert AccountantWithRateProviders__UpdateDelayTooLarge();
         uint32 oldDelay = accountantState.minimumUpdateDelayInSeconds;
         accountantState.minimumUpdateDelayInSeconds = minimumUpdateDelayInSeconds;
         emit DelayInSecondsUpdated(oldDelay, minimumUpdateDelayInSeconds);
