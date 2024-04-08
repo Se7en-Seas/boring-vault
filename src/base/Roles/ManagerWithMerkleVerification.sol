@@ -57,6 +57,8 @@ contract ManagerWithMerkleVerification is Auth {
     error ManagerWithMerkleVerification__BadFlashLoanIntentHash();
     error ManagerWithMerkleVerification__FailedToVerifyManageProof(address target, bytes targetData, uint256 value);
     error ManagerWithMerkleVerification__Paused();
+    error ManagerWithMerkleVerification__OnlyCallableByBoringVault();
+    error ManagerWithMerkleVerification__OnlyCallableByBalancerVault();
 
     //============================== EVENTS ===============================
 
@@ -156,7 +158,9 @@ contract ManagerWithMerkleVerification is Auth {
         address[] calldata tokens,
         uint256[] calldata amounts,
         bytes calldata userData
-    ) external requiresAuth {
+    ) external {
+        if (msg.sender != address(vault)) revert ManagerWithMerkleVerification__OnlyCallableByBoringVault();
+
         flashLoanIntentHash = keccak256(userData);
         performingFlashLoan = true;
         balancerVault.flashLoan(recipient, tokens, amounts, userData);
@@ -175,7 +179,8 @@ contract ManagerWithMerkleVerification is Auth {
         uint256[] calldata amounts,
         uint256[] calldata feeAmounts,
         bytes calldata userData
-    ) external requiresAuth {
+    ) external {
+        if (msg.sender != address(balancerVault)) revert ManagerWithMerkleVerification__OnlyCallableByBalancerVault();
         if (!performingFlashLoan) revert ManagerWithMerkleVerification__FlashLoanNotInProgress();
 
         // Validate userData using intentHash.

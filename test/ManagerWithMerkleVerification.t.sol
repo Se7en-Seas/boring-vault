@@ -1541,14 +1541,27 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         // Call now works.
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
-        // Check `receiveFlashLoan`
+        // Check `flashLoan`
         address[] memory tokens;
         uint256[] memory amounts;
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__OnlyCallableByBoringVault.selector
+            )
+        );
+        manager.flashLoan(address(this), tokens, amounts, abi.encode(0));
+
+        // Check `receiveFlashLoan`
         uint256[] memory feeAmounts;
 
         address attacker = vm.addr(1);
         vm.startPrank(attacker);
-        vm.expectRevert(bytes("UNAUTHORIZED"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__OnlyCallableByBalancerVault.selector
+            )
+        );
         manager.receiveFlashLoan(tokens, amounts, feeAmounts, abi.encode(0));
         vm.stopPrank();
 
