@@ -170,7 +170,7 @@ contract AccountantWithRateProvidersUsingDifferentDecimalTest is Test, MainnetAd
 
         rateInQuote = accountant.getRateInQuote(SDAI);
         expected_rate = uint256(1e18).mulDivDown(1e18, IRateProvider(sDaiRateProvider).getRate());
-        assertEq(rateInQuote, expected_rate, "Rate should be expected rate");
+        assertEq(rateInQuote, expected_rate, "Rate should be expected rate for sDAI");
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

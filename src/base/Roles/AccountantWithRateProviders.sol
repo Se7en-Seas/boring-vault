@@ -278,6 +278,8 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     /**
      * @notice Claim pending fees.
      * @dev This function must be called by the BoringVault.
+     * @dev This function will lose precision if the exchange rate
+     *      decimals is greater than the feeAsset's decimals.
      */
     function claimFees(ERC20 feeAsset) external {
         if (msg.sender != address(vault)) revert AccountantWithRateProviders__OnlyCallableByBoringVault();
@@ -331,6 +333,8 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     /**
      * @notice Get this BoringVault's current rate in the provided quote.
      * @dev `quote` must have its RateProviderData set, else this will revert.
+     * @dev This function will lose precision if the exchange rate
+     *      decimals is greater than the quote's decimals.
      */
     function getRateInQuote(ERC20 quote) public view returns (uint256 rateInQuote) {
         if (address(quote) == address(base)) {
