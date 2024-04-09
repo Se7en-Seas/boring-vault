@@ -329,11 +329,12 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
             rateInQuote = accountantState.exchangeRate;
         } else {
             RateProviderData memory data = rateProviderData[quote];
+            uint8 quoteDecimals = ERC20(quote).decimals();
             if (data.isPeggedToBase) {
-                rateInQuote = accountantState.exchangeRate;
+                rateInQuote = changeDecimals(accountantState.exchangeRate, decimals, quoteDecimals);
             } else {
                 uint256 quoteRate = data.rateProvider.getRate();
-                uint256 oneQuote = 10 ** ERC20(quote).decimals();
+                uint256 oneQuote = 10 ** quoteDecimals;
                 rateInQuote = oneQuote.mulDivDown(accountantState.exchangeRate, quoteRate);
             }
         }
@@ -347,5 +348,19 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     function getRateInQuoteSafe(ERC20 quote) external view returns (uint256 rateInQuote) {
         if (accountantState.isPaused) revert AccountantWithRateProviders__Paused();
         rateInQuote = getRateInQuote(quote);
+    }
+
+    // ========================================= INTERNAL HELPER FUNCTIONS =========================================
+    /**
+     * @notice Used to change the decimals of precision used for an amount.
+     */
+    function changeDecimals(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {
+        if (fromDecimals == toDecimals) {
+            return amount;
+        } else if (fromDecimals < toDecimals) {
+            return amount * 10 ** (toDecimals - fromDecimals);
+        } else {
+            return amount / 10 ** (fromDecimals - toDecimals);
+        }
     }
 }

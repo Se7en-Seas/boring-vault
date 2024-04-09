@@ -8,7 +8,8 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
-import {RenzoLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/RenzoLiquidDecoderAndSanitizer.sol";
+import {EtherFiLiquidUsdDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
@@ -40,14 +41,13 @@ contract DeployBoringVaultArcticScript is Script, MainnetAddresses {
     AtomicSolverV2 public atomicSolver;
 
     // Deployment parameters
-    string public boringVaultName = "Test Boring Vault";
-    string public boringVaultSymbol = "BV";
+    string public boringVaultName = "EtherFi Liquid USD";
+    string public boringVaultSymbol = "liquidUSD";
     uint8 public boringVaultDecimals = 18;
-    address public owner = 0x552acA1343A6383aF32ce1B7c7B1b47959F7ad90;
+    address public owner = 0x59bAE9c3d121152B27A2B5a46bD917574Ca18142;
     address public balancerVault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     address public oneInchAggregatorV5 = 0x1111111254EEB25477B68fb85Ed929f73A960582;
     address public uniswapV3Router = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
-    address public sevenSeasAuthority; // TODO
 
     // Roles
     uint8 public constant MANAGER_ROLE = 1;
@@ -91,7 +91,7 @@ contract DeployBoringVaultArcticScript is Script, MainnetAddresses {
         );
 
         creationCode = type(AccountantWithRateProviders).creationCode;
-        constructorArgs = abi.encode(owner, address(boringVault), owner, 1e18, address(USDC), 1.001e4, 0.999e4, 1, 0);
+        constructorArgs = abi.encode(owner, address(boringVault), owner, 1e18, address(DAI), 1.001e4, 0.999e4, 1, 0);
         accountant = AccountantWithRateProviders(
             deployer.deployContract("Accountant With Rate Providers V0.0", creationCode, constructorArgs, 0)
         );
@@ -102,10 +102,10 @@ contract DeployBoringVaultArcticScript is Script, MainnetAddresses {
             payable(deployer.deployContract("Teller With Multi Asset Support V0.0", creationCode, constructorArgs, 0))
         );
 
-        creationCode = type(RenzoLiquidDecoderAndSanitizer).creationCode;
+        creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
         constructorArgs = abi.encode(address(boringVault), uniswapV3NonFungiblePositionManager);
         rawDataDecoderAndSanitizer =
-            deployer.deployContract("Renzo Liquid Decoder and Sanitizer V0.0", creationCode, constructorArgs, 0);
+            deployer.deployContract("EtherFi Liquid USD Decoder and Sanitizer V0.0", creationCode, constructorArgs, 0);
 
         // Setup roles.
         // MANAGER_ROLE
@@ -221,8 +221,8 @@ contract DeployBoringVaultArcticScript is Script, MainnetAddresses {
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
 
         // Setup rate providers.
-        // accountant.setRateProviderData(ERC20(eETH), true, address(0));
-        // accountant.setRateProviderData(ERC20(weETH), false, weETH);
+        accountant.setRateProviderData(USDC, true, address(0));
+        accountant.setRateProviderData(USDT, true, address(0));
 
         vm.stopBroadcast();
     }
