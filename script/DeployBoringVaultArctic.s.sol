@@ -24,11 +24,11 @@ import "forge-std/StdJson.sol";
  *  source .env && forge script script/DeployBoringVaultArctic.s.sol:DeployBoringVaultArcticScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployBoringVaultArcticScript is Script {
+contract DeployBoringVaultArcticScript is Script, MainnetAddresses {
     uint256 public privateKey;
 
     // Contracts to deploy
-    Deployer public deployer;
+    Deployer public deployer = Deployer(deployerAddress);
     ArcticArchitectureLens public lens;
     ManagerWithMerkleVerification public manager;
     BoringVault public boringVault;
@@ -43,16 +43,11 @@ contract DeployBoringVaultArcticScript is Script {
     string public boringVaultName = "Test Boring Vault";
     string public boringVaultSymbol = "BV";
     uint8 public boringVaultDecimals = 18;
-    address public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address public eETH = 0x35fA164735182de50811E8e2E824cFb9B6118ac2;
-    address public weETH = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
-    address public uniswapV3NonFungiblePositionManager = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     address public owner = 0x552acA1343A6383aF32ce1B7c7B1b47959F7ad90;
     address public balancerVault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     address public oneInchAggregatorV5 = 0x1111111254EEB25477B68fb85Ed929f73A960582;
     address public uniswapV3Router = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
     address public sevenSeasAuthority; // TODO
-    address public priceRouter; // TODO
 
     // Roles
     uint8 public constant MANAGER_ROLE = 1;
@@ -76,7 +71,6 @@ contract DeployBoringVaultArcticScript is Script {
         bytes memory constructorArgs;
         vm.startBroadcast(privateKey);
 
-        deployer = new Deployer(owner, Authority(address(0)));
         creationCode = type(RolesAuthority).creationCode;
         constructorArgs = abi.encode(owner, Authority(address(0)));
         rolesAuthority =
@@ -97,7 +91,7 @@ contract DeployBoringVaultArcticScript is Script {
         );
 
         creationCode = type(AccountantWithRateProviders).creationCode;
-        constructorArgs = abi.encode(owner, address(boringVault), owner, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0);
+        constructorArgs = abi.encode(owner, address(boringVault), owner, 1e18, address(USDC), 1.001e4, 0.999e4, 1, 0);
         accountant = AccountantWithRateProviders(
             deployer.deployContract("Accountant With Rate Providers V0.0", creationCode, constructorArgs, 0)
         );
@@ -227,8 +221,8 @@ contract DeployBoringVaultArcticScript is Script {
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
 
         // Setup rate providers.
-        accountant.setRateProviderData(ERC20(eETH), true, address(0));
-        accountant.setRateProviderData(ERC20(weETH), false, weETH);
+        // accountant.setRateProviderData(ERC20(eETH), true, address(0));
+        // accountant.setRateProviderData(ERC20(weETH), false, weETH);
 
         vm.stopBroadcast();
     }
