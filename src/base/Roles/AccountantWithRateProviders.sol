@@ -215,8 +215,9 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Update the rate provider data for a specific `asset`.
-     * @dev Rate providers must return rates in terms of `base` and
-     *      they must use the same decimals as `base`.
+     * @dev Rate providers must return rates in terms of `base` or
+     * an asset pegged to base and they must use the same decimals
+     * as `asset`.
      * @dev Callable by OWNER_ROLE.
      */
     function setRateProviderData(ERC20 asset, bool isPeggedToBase, address rateProvider) external requiresAuth {
@@ -288,11 +289,18 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         // Determine amount of fees owed in feeAsset.
         uint256 feesOwedInFeeAsset;
         RateProviderData memory data = rateProviderData[feeAsset];
-        if (address(feeAsset) == address(base) || data.isPeggedToBase) {
+        if (address(feeAsset) == address(base)) {
             feesOwedInFeeAsset = state.feesOwedInBase;
         } else {
-            uint256 rate = data.rateProvider.getRate();
-            feesOwedInFeeAsset = uint256(state.feesOwedInBase).mulDivDown(rate, 10 ** decimals);
+            uint8 feeAssetDecimals = ERC20(feeAsset).decimals();
+            uint256 feesOwedInBaseUsingFeeAssetDecimals =
+                changeDecimals(state.feesOwedInBase, decimals, feeAssetDecimals);
+            if (data.isPeggedToBase) {
+                feesOwedInFeeAsset = feesOwedInBaseUsingFeeAssetDecimals;
+            } else {
+                uint256 rate = data.rateProvider.getRate();
+                feesOwedInFeeAsset = feesOwedInBaseUsingFeeAssetDecimals.mulDivDown(10 ** feeAssetDecimals, rate);
+            }
         }
         // Zero out fees owed.
         state.feesOwedInBase = 0;
@@ -330,12 +338,13 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         } else {
             RateProviderData memory data = rateProviderData[quote];
             uint8 quoteDecimals = ERC20(quote).decimals();
+            uint256 exchangeRateInQuoteDecimals = changeDecimals(accountantState.exchangeRate, decimals, quoteDecimals);
             if (data.isPeggedToBase) {
-                rateInQuote = changeDecimals(accountantState.exchangeRate, decimals, quoteDecimals);
+                rateInQuote = exchangeRateInQuoteDecimals;
             } else {
                 uint256 quoteRate = data.rateProvider.getRate();
                 uint256 oneQuote = 10 ** quoteDecimals;
-                rateInQuote = oneQuote.mulDivDown(accountantState.exchangeRate, quoteRate);
+                rateInQuote = oneQuote.mulDivDown(exchangeRateInQuoteDecimals, quoteRate);
             }
         }
     }
