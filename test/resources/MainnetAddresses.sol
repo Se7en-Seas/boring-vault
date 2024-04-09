@@ -69,6 +69,7 @@ contract MainnetAddresses {
     ERC20 public SUSDE = ERC20(0x9D39A5DE30e57443BfF2A8307A4256c8797A3497);
     ERC20 public USDE = ERC20(0x4c9EDD5852cd905f086C759E8383e09bff1E68B3);
     ERC20 public GEAR = ERC20(0xBa3335588D9403515223F109EdC4eB7269a9Ab5D);
+    ERC20 public SDAI = ERC20(0x83F20F44975D03b1b09e64809B757c47f942BEeA);
 
     // Rate providers
     address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
@@ -194,6 +195,7 @@ contract MainnetAddresses {
     // Rate Providers
     address public cbethRateProvider = 0x7311E4BB8a72e7B300c5B8BDE4de6CdaA822a5b1;
     address public rethRateProvider = 0x1a8F81c256aee9C640e14bB0453ce247ea0DFE6F;
+    address public sDaiRateProvider = 0xc7177B6E18c1Abd725F5b75792e5F7A3bA5DBC2c;
 
     // Compound V2
     // CErc20 public cDAI = CErc20(0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643);
