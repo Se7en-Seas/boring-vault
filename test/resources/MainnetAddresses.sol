@@ -4,20 +4,10 @@ pragma solidity 0.8.21;
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 contract MainnetAddresses {
-    // Sommelier
-    address public gravityBridgeAddress = 0x69592e6f9d21989a043646fE8225da2600e5A0f7;
-    // address public strategist = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A;
-    address public devStrategist = 0xeeF7b7205CAF2Bcd71437D9acDE3874C3388c138;
-    address public cosmos = address(0xCAAA);
-    // address public multisig = 0x7340D1FeCD4B64A4ac34f826B21c945d44d7407F;
-    address public ryusdRegistry = 0x2Cbd27E034FEE53f79b607430dA7771B22050741;
-    address public ryusdRegistryOwner = 0xaDa78a5E01325B91Bc7879a63c309F7D54d42950;
-    address public deployerAddress = 0xdAFAe2FfB48F1b5b710DD71FBaf8E6C7a67aBF89;
-    address public dev0Address = 0x552acA1343A6383aF32ce1B7c7B1b47959F7ad90;
-
-    address public priceRouterV1 = 0x138a6d8c49428D4c71dD7596571fbd4699C7D3DA;
-    address public priceRouterV2 = 0xA1A0bc3D59e4ee5840c9530e49Bdc2d1f88AaF92;
-    address public ryusdAddress = 0x97e6E0a40a3D02F12d1cEC30ebfbAE04e37C119E;
+    // Liquid Ecosystem
+    address public deployerAddress;
+    address public dev0Address = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b;
+    address public dev1Address = 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1;
 
     // DeFi Ecosystem
     address public ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -303,6 +293,9 @@ contract MainnetAddresses {
     address public ezETH_wETH_Curve_Pool = 0x85dE3ADd465a219EE25E04d22c39aB027cF5C12E;
     address public weETH_rswETH_Curve_Pool = 0x278cfB6f06B1EFc09d34fC7127d6060C61d629Db;
     address public rswETH_wETH_Curve_Pool = 0xeE04382c4cA6c450213923fE0f0daB19b0ff3939;
+    address public USDe_USDC_Curve_Pool = 0x02950460E2b9529D0E00284A5fA2d7bDF3fA4d72;
+    address public USDe_DAI_Curve_Pool = 0xF36a4BA50C603204c3FC6d2dA8b78A7b69CBC67d;
+    address public sDAI_sUSDe_Curve_Pool = 0x167478921b907422F8E88B43C4Af2B8BEa278d3A;
 
     address public WethMkUsdPool = 0xc89570207c5BA1B0E3cD372172cCaEFB173DB270;
 
@@ -450,4 +443,15 @@ contract MainnetAddresses {
     address public wETH_rswETH_30 = 0xE62627326d7794E20bB7261B24985294de1579FE;
     address public ezETH_wETH_01 = 0xBE80225f09645f172B079394312220637C440A63;
     address public PENDLE_wETH_30 = 0x57aF956d3E2cCa3B86f3D8C6772C03ddca3eAacB;
+    address public USDe_USDT_01 = 0x435664008F38B0650fBC1C9fc971D0A3Bc2f1e47;
+    address public USDe_USDC_01 = 0xE6D7EbB9f1a9519dc06D557e03C522d53520e76A;
+    address public USDe_DAI_01 = 0x5B3a0f1acBE8594a079FaFeB1c84DEA9372A5Aad;
+    address public sUSDe_USDT_05 = 0x867B321132B18B5BF3775c0D9040D1872979422E;
+    address public GEAR_wETH_100 = 0xaEf52f72583E6c4478B220Da82321a6a023eEE50;
+    address public GEAR_USDT_30 = 0x349eE001D80f896F24571616932f54cBD66B18C9;
+    address public DAI_USDC_01 = 0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168;
+    address public DAI_USDC_05 = 0x6c6Bc977E13Df9b0de53b251522280BB72383700;
+    address public USDC_USDT_01 = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6;
+    address public USDC_USDT_05 = 0x7858E59e0C01EA06Df3aF3D20aC7B0003275D4Bf;
+    address public USDC_wETH_05 = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
 }

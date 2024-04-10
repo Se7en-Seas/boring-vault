@@ -17,6 +17,7 @@ import {Deployer} from "src/helper/Deployer.sol";
 import {ArcticArchitectureLens} from "src/helper/ArcticArchitectureLens.sol";
 import {AtomicQueue} from "src/atomic-queue/AtomicQueue.sol";
 import {AtomicSolverV2} from "src/atomic-queue/AtomicSolverV2.sol";
+import {ContractNames} from "resources/ContractNames.sol";
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
@@ -25,7 +26,7 @@ import "forge-std/StdJson.sol";
  *  source .env && forge script script/DeployBoringVaultArctic.s.sol:DeployBoringVaultArcticScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployBoringVaultArcticScript is Script, MainnetAddresses {
+contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresses {
     uint256 public privateKey;
 
     // Contracts to deploy
@@ -43,7 +44,7 @@ contract DeployBoringVaultArcticScript is Script, MainnetAddresses {
     // Deployment parameters
     string public boringVaultName = "EtherFi Liquid USD";
     string public boringVaultSymbol = "liquidUSD";
-    uint8 public boringVaultDecimals = 18;
+    uint8 public boringVaultDecimals = 6;
     address public owner = 0x59bAE9c3d121152B27A2B5a46bD917574Ca18142;
     address public balancerVault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     address public oneInchAggregatorV5 = 0x1111111254EEB25477B68fb85Ed929f73A960582;
@@ -62,7 +63,7 @@ contract DeployBoringVaultArcticScript is Script, MainnetAddresses {
     uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 11;
 
     function setUp() external {
-        privateKey = vm.envUint("PRIVATE_KEY");
+        privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
         vm.createSelectFork("mainnet");
     }
 
@@ -73,39 +74,41 @@ contract DeployBoringVaultArcticScript is Script, MainnetAddresses {
 
         creationCode = type(RolesAuthority).creationCode;
         constructorArgs = abi.encode(owner, Authority(address(0)));
-        rolesAuthority =
-            RolesAuthority(deployer.deployContract("Roles Authority V0.0", creationCode, constructorArgs, 0));
+        rolesAuthority = RolesAuthority(
+            deployer.deployContract(EtherFiLiquidUsdRolesAuthorityName, creationCode, constructorArgs, 0)
+        );
         deployer.setAuthority(rolesAuthority);
         creationCode = type(ArcticArchitectureLens).creationCode;
-        lens = ArcticArchitectureLens(deployer.deployContract("Arctic Architecture Lens V0.0", creationCode, hex"", 0));
+        lens = ArcticArchitectureLens(deployer.deployContract(ArcticArchitectureLensName, creationCode, hex"", 0));
 
         creationCode = type(BoringVault).creationCode;
         constructorArgs = abi.encode(owner, boringVaultName, boringVaultSymbol, boringVaultDecimals);
         boringVault =
-            BoringVault(payable(deployer.deployContract("Boring Vault V0.0", creationCode, constructorArgs, 0)));
+            BoringVault(payable(deployer.deployContract(EtherFiLiquidUsdName, creationCode, constructorArgs, 0)));
 
         creationCode = type(ManagerWithMerkleVerification).creationCode;
         constructorArgs = abi.encode(owner, address(boringVault), balancerVault);
         manager = ManagerWithMerkleVerification(
-            deployer.deployContract("Manager With Merkle Verification V0.0", creationCode, constructorArgs, 0)
+            deployer.deployContract(EtherFiLiquidUsdManagerName, creationCode, constructorArgs, 0)
         );
 
         creationCode = type(AccountantWithRateProviders).creationCode;
-        constructorArgs = abi.encode(owner, address(boringVault), owner, 1e18, address(DAI), 1.001e4, 0.999e4, 1, 0);
+        constructorArgs =
+            abi.encode(owner, address(boringVault), owner, 1e6, address(USDC), 1.001e4, 0.999e4, 1 days / 4, 0);
         accountant = AccountantWithRateProviders(
-            deployer.deployContract("Accountant With Rate Providers V0.0", creationCode, constructorArgs, 0)
+            deployer.deployContract(EtherFiLiquidUsdAccountantName, creationCode, constructorArgs, 0)
         );
 
         creationCode = type(TellerWithMultiAssetSupport).creationCode;
         constructorArgs = abi.encode(owner, address(boringVault), address(accountant), WETH);
         teller = TellerWithMultiAssetSupport(
-            payable(deployer.deployContract("Teller With Multi Asset Support V0.0", creationCode, constructorArgs, 0))
+            payable(deployer.deployContract(EtherFiLiquidUsdTellerName, creationCode, constructorArgs, 0))
         );
 
         creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
         constructorArgs = abi.encode(address(boringVault), uniswapV3NonFungiblePositionManager);
         rawDataDecoderAndSanitizer =
-            deployer.deployContract("EtherFi Liquid USD Decoder and Sanitizer V0.0", creationCode, constructorArgs, 0);
+            deployer.deployContract(EtherFiLiquidUsdDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
         // Setup roles.
         // MANAGER_ROLE
@@ -223,6 +226,10 @@ contract DeployBoringVaultArcticScript is Script, MainnetAddresses {
         // Setup rate providers.
         accountant.setRateProviderData(USDC, true, address(0));
         accountant.setRateProviderData(USDT, true, address(0));
+
+        // Setup Teller deposit assets.
+        teller.addAsset(USDC);
+        teller.addAsset(USDT);
 
         vm.stopBroadcast();
     }

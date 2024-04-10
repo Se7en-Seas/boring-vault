@@ -28,7 +28,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
     }
 
     function generateLiquidUsdStrategistMerkleRoot() public {
-        ManageLeaf[] memory leafs = new ManageLeaf[](256);
+        ManageLeaf[] memory leafs = new ManageLeaf[](512);
 
         uint256 leafIndex = 0;
 
@@ -1470,6 +1470,26 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[0] = pendleRouter;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
+                address(EETH),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Pendle router to spend eETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(WEETH),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Pendle router to spend weETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleUSDeSy,
                 false,
                 "approve(address,uint256)",
@@ -1485,6 +1505,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "approve(address,uint256)",
                 new address[](1),
                 "Approve Pendle router to spend SY-sUSDe",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pendleWeethSy,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Pendle router to spend SY-weETH",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = pendleRouter;
@@ -1510,6 +1540,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[0] = pendleRouter;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
+                pendleEethPt,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Pendle router to spend PT-eETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleUSDeYt,
                 false,
                 "approve(address,uint256)",
@@ -1530,6 +1570,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[0] = pendleRouter;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
+                pendleEethYt,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Pendle router to spend YT-eETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
                 pendleUSDeMarket,
                 false,
                 "approve(address,uint256)",
@@ -1545,6 +1595,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "approve(address,uint256)",
                 new address[](1),
                 "Approve Pendle router to spend LP-sUSDe",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = pendleRouter;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pendleWeETHMarket,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Pendle router to spend LP-weETH",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = pendleRouter;
@@ -1594,6 +1654,36 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[3] = address(SUSDE);
             leafs[leafIndex].argumentAddresses[4] = address(0);
             leafs[leafIndex].argumentAddresses[5] = address(0);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pendleRouter,
+                false,
+                "mintSyFromToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
+                new address[](6),
+                "Mint SY-weETH using eETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
+            leafs[leafIndex].argumentAddresses[2] = address(EETH);
+            leafs[leafIndex].argumentAddresses[3] = address(EETH);
+            leafs[leafIndex].argumentAddresses[4] = address(0);
+            leafs[leafIndex].argumentAddresses[5] = address(0);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pendleRouter,
+                false,
+                "mintSyFromToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
+                new address[](6),
+                "Mint SY-weETH using weETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
+            leafs[leafIndex].argumentAddresses[2] = address(WEETH);
+            leafs[leafIndex].argumentAddresses[3] = address(WEETH);
+            leafs[leafIndex].argumentAddresses[4] = address(0);
+            leafs[leafIndex].argumentAddresses[5] = address(0);
             // Mint PT and YT using SY
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -1617,6 +1707,17 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
             leafs[leafIndex].argumentAddresses[1] = pendleSUSDeYt;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pendleRouter,
+                false,
+                "mintPyFromSy(address,address,uint256,uint256)",
+                new address[](2),
+                "Mint PT-eETH and YT-eETH from SY-weETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleEethYt;
             // Swap between PT and YT
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -1662,6 +1763,28 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
             leafs[leafIndex].argumentAddresses[1] = pendleSUSDeMarket;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pendleRouter,
+                false,
+                "swapExactYtForPt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256))",
+                new address[](2),
+                "Swap YT-eETH for PT-eETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleWeETHMarket;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pendleRouter,
+                false,
+                "swapExactPtForYt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256))",
+                new address[](2),
+                "Swap PT-eETH for YT-eETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleWeETHMarket;
             // Manage Liquidity
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -1707,6 +1830,28 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
             leafs[leafIndex].argumentAddresses[1] = pendleSUSDeMarket;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pendleRouter,
+                false,
+                "addLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
+                new address[](2),
+                "Mint LP-weETH using SY-weETH and PT-eETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleWeETHMarket;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pendleRouter,
+                false,
+                "removeLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
+                new address[](2),
+                "Burn LP-weETH for SY-weETH and PT-eETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleWeETHMarket;
             // Burn PT and YT for SY
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -1730,6 +1875,17 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
             leafs[leafIndex].argumentAddresses[1] = pendleSUSDeYt;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pendleRouter,
+                false,
+                "redeemPyToSy(address,address,uint256,uint256)",
+                new address[](2),
+                "Burn PT-eETH and YT-eETH for SY-weETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleEethYt;
             // Burn SY for Token
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -1763,7 +1919,37 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[5] = address(0);
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
-                uniswapV3NonFungiblePositionManager,
+                pendleRouter,
+                false,
+                "redeemSyToToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
+                new address[](6),
+                "Burn SY-weETH for eETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(boringVault);
+            leafs[leafIndex].argumentAddresses[1] = pendleWeethSy;
+            leafs[leafIndex].argumentAddresses[2] = address(EETH);
+            leafs[leafIndex].argumentAddresses[3] = address(EETH);
+            leafs[leafIndex].argumentAddresses[4] = address(0);
+            leafs[leafIndex].argumentAddresses[5] = address(0);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pendleRouter,
+                false,
+                "redeemSyToToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
+                new address[](6),
+                "Burn SY-weETH for weETH",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(boringVault);
+            leafs[leafIndex].argumentAddresses[1] = pendleWeethSy;
+            leafs[leafIndex].argumentAddresses[2] = address(WEETH);
+            leafs[leafIndex].argumentAddresses[3] = address(WEETH);
+            leafs[leafIndex].argumentAddresses[4] = address(0);
+            leafs[leafIndex].argumentAddresses[5] = address(0);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pendleRouter,
                 false,
                 "redeemDueInterestAndRewards(address,address[],address[],address[])",
                 new address[](4),
@@ -1776,7 +1962,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[3] = pendleUSDeMarket;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
-                uniswapV3NonFungiblePositionManager,
+                pendleRouter,
                 false,
                 "redeemDueInterestAndRewards(address,address[],address[],address[])",
                 new address[](4),
@@ -1787,8 +1973,19 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
             leafs[leafIndex].argumentAddresses[2] = pendleSUSDeYt;
             leafs[leafIndex].argumentAddresses[3] = pendleSUSDeMarket;
-
-            // TODO add weETH pendle market
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pendleRouter,
+                false,
+                "redeemDueInterestAndRewards(address,address[],address[],address[])",
+                new address[](4),
+                "Redeem due interest and rewards for weETH Pendle.",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
+            leafs[leafIndex].argumentAddresses[1] = pendleWeethSy;
+            leafs[leafIndex].argumentAddresses[2] = pendleEethYt;
+            leafs[leafIndex].argumentAddresses[3] = pendleWeETHMarket;
         }
 
         // ========================== Ethena ==========================
@@ -1830,6 +2027,255 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
             leafs[leafIndex].argumentAddresses[1] = boringVault;
+        }
+
+        // ========================== UniswapV3 ==========================
+        /**
+         * Full position management for USDC, USDT, DAI, USDe, sUSDe.
+         */
+        {
+            // Approvals
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDC),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve UniswapV3 NonFungible Position Manager to spend USDC",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = uniswapV3NonFungiblePositionManager;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDT),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve UniswapV3 NonFungible Position Manager to spend USDT",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = uniswapV3NonFungiblePositionManager;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(DAI),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve UniswapV3 NonFungible Position Manager to spend DAI",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = uniswapV3NonFungiblePositionManager;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDE),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve UniswapV3 NonFungible Position Manager to spend USDe",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = uniswapV3NonFungiblePositionManager;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(SUSDE),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve UniswapV3 NonFungible Position Manager to spend sUSDe",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = uniswapV3NonFungiblePositionManager;
+            // Minting
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
+                new address[](3),
+                "Mint UniswapV3 USDC USDT position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = address(USDT);
+            leafs[leafIndex].argumentAddresses[2] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
+                new address[](3),
+                "Mint UniswapV3 DAI USDC position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
+                new address[](3),
+                "Mint UniswapV3 DAI USDT position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            leafs[leafIndex].argumentAddresses[1] = address(USDT);
+            leafs[leafIndex].argumentAddresses[2] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
+                new address[](3),
+                "Mint UniswapV3 USDe USDC position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDE);
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
+                new address[](3),
+                "Mint UniswapV3 sUSDe USDC position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
+                new address[](3),
+                "Mint UniswapV3 USDe USDT position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDE);
+            leafs[leafIndex].argumentAddresses[1] = address(USDT);
+            leafs[leafIndex].argumentAddresses[2] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
+                new address[](3),
+                "Mint UniswapV3 sUSDe USDT position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[1] = address(USDT);
+            leafs[leafIndex].argumentAddresses[2] = boringVault;
+            // Increase liquidity
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+                new address[](3),
+                "Add liquidity to UniswapV3 USDC USDT position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(0);
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = address(USDT);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+                new address[](3),
+                "Add liquidity to UniswapV3 DAI USDC position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(0);
+            leafs[leafIndex].argumentAddresses[1] = address(DAI);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+                new address[](3),
+                "Add liquidity to UniswapV3 DAI USDT position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(0);
+            leafs[leafIndex].argumentAddresses[1] = address(DAI);
+            leafs[leafIndex].argumentAddresses[2] = address(USDT);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+                new address[](3),
+                "Add liquidity to UniswapV3 USDe USDC position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(0);
+            leafs[leafIndex].argumentAddresses[1] = address(USDE);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+                new address[](3),
+                "Add liquidity to UniswapV3 sUSDe USDC position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(0);
+            leafs[leafIndex].argumentAddresses[1] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+                new address[](3),
+                "Add liquidity to UniswapV3 USDe USDT position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(0);
+            leafs[leafIndex].argumentAddresses[1] = address(USDE);
+            leafs[leafIndex].argumentAddresses[2] = address(USDT);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+                new address[](3),
+                "Add liquidity to UniswapV3 sUSDe USDT position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(0);
+            leafs[leafIndex].argumentAddresses[1] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[2] = address(USDT);
+            // Decrease liquidity
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
+                new address[](0),
+                "Remove liquidity from UniswapV3 position",
+                rawDataDecoderAndSanitizer
+            );
+            // Collect from positions
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniswapV3NonFungiblePositionManager,
+                false,
+                "collect((uint256,address,uint128,uint128))",
+                new address[](1),
+                "Collect fees from UniswapV3 position",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = boringVault;
         }
 
         // ========================== 1inch ==========================
@@ -1933,6 +2379,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "approve(address,uint256)",
                 new address[](1),
                 "Approve 1inch router to spend GEAR",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDE),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve 1inch router to spend USDe",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
@@ -2175,13 +2631,546 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[2] = address(WSTETH);
             leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
             leafs[leafIndex].argumentAddresses[4] = boringVault;
-
-            // TODO swapping using the other function for valid uniswap V3 pools
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap USDC for USDe using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = address(USDE);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap USDT for USDe using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDT);
+            leafs[leafIndex].argumentAddresses[2] = address(USDE);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap USDe for USDC using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDE);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap USDe for USDT using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDE);
+            leafs[leafIndex].argumentAddresses[2] = address(USDT);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between wstETH and wETH on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = wstETH_wETH_01;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between rETH and wETH on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = rETH_wETH_01;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between rETH and wETH on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = rETH_wETH_05;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between wstETH and rETH on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = wstETH_rETH_05;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between PENDLE and wETH on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = PENDLE_wETH_30;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between wETH and weETH on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = wETH_weETH_05;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between USDe and USDT on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = USDe_USDT_01;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between USDe and USDC on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = USDe_USDC_01;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between USDe and DAI on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = USDe_DAI_01;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between sUSDe and USDT on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = sUSDe_USDT_05;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between GEAR and wETH on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = GEAR_wETH_100;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between GEAR and USDT on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = GEAR_USDT_30;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between DAI and USDC on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = DAI_USDC_01;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between DAI and USDC on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = DAI_USDC_05;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between USDC and USDT on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = USDC_USDT_01;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between USDC and USDT on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = USDC_USDT_05;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between USDC and wETH on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = USDC_wETH_05;
         }
 
-        // TODO curve swapping for USDe and sUSDe
-        // TODO uniswapV3 swapping for USDe
-        // TODO 1inch swapping for USDe
+        // ========================== Curve Swapping ==========================
+        /**
+         * USDe <-> USDC,
+         * USDe <-> DAI,
+         * sDAI <-> sUSDe,
+         */
+        {
+            // Approvals
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDC),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Curve USDe USDC to spend USDC",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = USDe_USDC_Curve_Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDE),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Curve USDe USDC to spend USDe",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = USDe_USDC_Curve_Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(DAI),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Curve USDe DAI to spend DAI",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = USDe_DAI_Curve_Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDE),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Curve USDe DAI to spend USDe",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = USDe_DAI_Curve_Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(sDAI),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Curve sDAI sUSDe to spend sDAI",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = sDAI_sUSDe_Curve_Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(SUSDE),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Curve sDAI sUSDe to spend sUSDe",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = sDAI_sUSDe_Curve_Pool;
+            // Swapping
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                USDe_USDC_Curve_Pool,
+                false,
+                "exchange(int128,int128,uint256,uint256)",
+                new address[](0),
+                "Swap using Curve USDe/USDC pool",
+                rawDataDecoderAndSanitizer
+            );
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                USDe_DAI_Curve_Pool,
+                false,
+                "exchange(int128,int128,uint256,uint256)",
+                new address[](0),
+                "Swap using Curve USDe/DAI pool",
+                rawDataDecoderAndSanitizer
+            );
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                sDAI_sUSDe_Curve_Pool,
+                false,
+                "exchange(int128,int128,uint256,uint256)",
+                new address[](0),
+                "Swap using Curve sDAI/sUSDe pool",
+                rawDataDecoderAndSanitizer
+            );
+        }
+
+        // ========================== UniswapV3 Swapping ==========================
+        /**
+         * Full position management for USDC, USDT, DAI, USDe, sUSDe.
+         */
+        {
+            // Approvals
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDC),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve UniswapV3 router to spend USDC",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = uniV3Router;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDT),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve UniswapV3 router to spend USDT",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = uniV3Router;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(DAI),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve UniswapV3 router to spend DAI",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = uniV3Router;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDE),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve UniswapV3 router to spend USDe",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = uniV3Router;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(SUSDE),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve UniswapV3 router to spend sUSDe",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = uniV3Router;
+            // Swapping
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap USDC for USDT using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = address(USDT);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap USDC for DAI using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = address(DAI);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap USDC for USDe using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = address(USDE);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap USDC for sUSDe using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap USDT for DAI using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            leafs[leafIndex].argumentAddresses[1] = address(DAI);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap USDT for USDe using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            leafs[leafIndex].argumentAddresses[1] = address(USDE);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap USDT for sUSDe using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            leafs[leafIndex].argumentAddresses[1] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap USDT for USDC using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap DAI for USDC using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap USDe for USDC using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDE);
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap sUSDe for USDC using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap USDe for USDT using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDE);
+            leafs[leafIndex].argumentAddresses[1] = address(USDT);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap sUSDe for USDT using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[1] = address(USDT);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+        }
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
