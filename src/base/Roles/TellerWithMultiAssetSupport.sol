@@ -167,6 +167,10 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     /**
      * @notice Sets the share lock period.
      * @dev This not only locks shares to the user address, but also serves as the pending deposit period, where deposits can be reverted.
+     * @dev If a new shorter share lock period is set, users with pending share locks could make a new deposit to receive 1 wei shares,
+     *      and have their shares unlock sooner than their original deposit allows. This state would allow for the user deposit to be refunded,
+     *      but only if they have not transferred their shares out of there wallet. This is an accepted limitation, and should be known when decreasing
+     *      the share lock period.
      * @dev Callable by OWNER_ROLE.
      */
     function setShareLockPeriod(uint64 _shareLockPeriod) external requiresAuth {
