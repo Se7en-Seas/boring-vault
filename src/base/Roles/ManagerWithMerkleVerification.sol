@@ -59,6 +59,7 @@ contract ManagerWithMerkleVerification is Auth {
     error ManagerWithMerkleVerification__Paused();
     error ManagerWithMerkleVerification__OnlyCallableByBoringVault();
     error ManagerWithMerkleVerification__OnlyCallableByBalancerVault();
+    error ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringManagement();
 
     //============================== EVENTS ===============================
 
@@ -139,14 +140,17 @@ contract ManagerWithMerkleVerification is Auth {
             revert ManagerWithMerkleVerification__InvalidDecodersAndSanitizersLength();
         }
 
-        // Read state and save it in memory.
         bytes32 strategistManageRoot = manageRoot[msg.sender];
+        uint256 totalSupply = vault.totalSupply();
 
         for (uint256 i; i < targetsLength; ++i) {
             _verifyCallData(
                 strategistManageRoot, manageProofs[i], decodersAndSanitizers[i], targets[i], values[i], targetData[i]
             );
             vault.manage(targets[i], targetData[i], values[i]);
+        }
+        if (totalSupply != vault.totalSupply()) {
+            revert ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringManagement();
         }
         emit BoringVaultManaged(targetsLength);
     }
