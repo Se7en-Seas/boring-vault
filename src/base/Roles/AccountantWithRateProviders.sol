@@ -215,8 +215,9 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Update the rate provider data for a specific `asset`.
-     * @dev Rate providers must return rates in terms of `base` and
-     *      they must use the same decimals as `base`.
+     * @dev Rate providers must return rates in terms of `base` or
+     * an asset pegged to base and they must use the same decimals
+     * as `asset`.
      * @dev Callable by OWNER_ROLE.
      */
     function setRateProviderData(ERC20 asset, bool isPeggedToBase, address rateProvider) external requiresAuth {
@@ -277,6 +278,8 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     /**
      * @notice Claim pending fees.
      * @dev This function must be called by the BoringVault.
+     * @dev This function will lose precision if the exchange rate
+     *      decimals is greater than the feeAsset's decimals.
      */
     function claimFees(ERC20 feeAsset) external {
         if (msg.sender != address(vault)) revert AccountantWithRateProviders__OnlyCallableByBoringVault();
@@ -288,11 +291,18 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         // Determine amount of fees owed in feeAsset.
         uint256 feesOwedInFeeAsset;
         RateProviderData memory data = rateProviderData[feeAsset];
-        if (address(feeAsset) == address(base) || data.isPeggedToBase) {
+        if (address(feeAsset) == address(base)) {
             feesOwedInFeeAsset = state.feesOwedInBase;
         } else {
-            uint256 rate = data.rateProvider.getRate();
-            feesOwedInFeeAsset = uint256(state.feesOwedInBase).mulDivDown(rate, 10 ** decimals);
+            uint8 feeAssetDecimals = ERC20(feeAsset).decimals();
+            uint256 feesOwedInBaseUsingFeeAssetDecimals =
+                changeDecimals(state.feesOwedInBase, decimals, feeAssetDecimals);
+            if (data.isPeggedToBase) {
+                feesOwedInFeeAsset = feesOwedInBaseUsingFeeAssetDecimals;
+            } else {
+                uint256 rate = data.rateProvider.getRate();
+                feesOwedInFeeAsset = feesOwedInBaseUsingFeeAssetDecimals.mulDivDown(10 ** feeAssetDecimals, rate);
+            }
         }
         // Zero out fees owed.
         state.feesOwedInBase = 0;
@@ -323,18 +333,22 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     /**
      * @notice Get this BoringVault's current rate in the provided quote.
      * @dev `quote` must have its RateProviderData set, else this will revert.
+     * @dev This function will lose precision if the exchange rate
+     *      decimals is greater than the quote's decimals.
      */
     function getRateInQuote(ERC20 quote) public view returns (uint256 rateInQuote) {
         if (address(quote) == address(base)) {
             rateInQuote = accountantState.exchangeRate;
         } else {
             RateProviderData memory data = rateProviderData[quote];
+            uint8 quoteDecimals = ERC20(quote).decimals();
+            uint256 exchangeRateInQuoteDecimals = changeDecimals(accountantState.exchangeRate, decimals, quoteDecimals);
             if (data.isPeggedToBase) {
-                rateInQuote = accountantState.exchangeRate;
+                rateInQuote = exchangeRateInQuoteDecimals;
             } else {
                 uint256 quoteRate = data.rateProvider.getRate();
-                uint256 oneQuote = 10 ** ERC20(quote).decimals();
-                rateInQuote = oneQuote.mulDivDown(accountantState.exchangeRate, quoteRate);
+                uint256 oneQuote = 10 ** quoteDecimals;
+                rateInQuote = oneQuote.mulDivDown(exchangeRateInQuoteDecimals, quoteRate);
             }
         }
     }
@@ -347,5 +361,19 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     function getRateInQuoteSafe(ERC20 quote) external view returns (uint256 rateInQuote) {
         if (accountantState.isPaused) revert AccountantWithRateProviders__Paused();
         rateInQuote = getRateInQuote(quote);
+    }
+
+    // ========================================= INTERNAL HELPER FUNCTIONS =========================================
+    /**
+     * @notice Used to change the decimals of precision used for an amount.
+     */
+    function changeDecimals(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {
+        if (fromDecimals == toDecimals) {
+            return amount;
+        } else if (fromDecimals < toDecimals) {
+            return amount * 10 ** (toDecimals - fromDecimals);
+        } else {
+            return amount / 10 ** (fromDecimals - toDecimals);
+        }
     }
 }
