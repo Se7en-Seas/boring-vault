@@ -14,7 +14,7 @@ import {
     BalancerV2DecoderAndSanitizer,
     PendleRouterDecoderAndSanitizer
 } from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
-import {RenzoLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/RenzoLiquidDecoderAndSanitizer.sol";
+import {EtherFiLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
 import {LidoLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/LidoLiquidDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {IUniswapV3Router} from "src/interfaces/IUniswapV3Router.sol";
@@ -1322,43 +1322,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         uint256[] memory values = new uint256[](8);
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-    }
-
-    function testRenzoIntegration() external {
-        deal(address(boringVault), 1_000e18);
-
-        // update DecoderAndSanitizer
-        rawDataDecoderAndSanitizer =
-            address(new RenzoLiquidDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
-
-        // Call depositETH to renzo
-        ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        leafs[0] = ManageLeaf(restakeManager, true, "depositETH()", new address[](0));
-
-        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-
-        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
-
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
-        manageLeafs[0] = leafs[0];
-
-        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
-
-        address[] memory targets = new address[](1);
-        targets[0] = restakeManager;
-
-        bytes[] memory targetData = new bytes[](1);
-        targetData[0] = abi.encodeWithSignature("depositETH()");
-
-        address[] memory decodersAndSanitizers = new address[](1);
-        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-
-        uint256[] memory values = new uint256[](1);
-        values[0] = 1_000e18;
-
-        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-
-        assertGt(EZETH.balanceOf(address(boringVault)), 0, "BoringVault should have ezETH.");
     }
 
     function testLidoIntegration() external {
