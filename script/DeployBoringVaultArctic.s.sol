@@ -45,10 +45,7 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
     string public boringVaultName = "EtherFi Liquid USD";
     string public boringVaultSymbol = "liquidUSD";
     uint8 public boringVaultDecimals = 6;
-    address public owner = 0x59bAE9c3d121152B27A2B5a46bD917574Ca18142;
-    address public balancerVault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
-    address public oneInchAggregatorV5 = 0x1111111254EEB25477B68fb85Ed929f73A960582;
-    address public uniswapV3Router = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+    address public owner = dev0Address;
 
     // Roles
     uint8 public constant MANAGER_ROLE = 1;
@@ -212,7 +209,7 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
             AccountantWithRateProviders.updateExchangeRate.selector,
             true
         );
-        // Publically callable functions
+        // Publicly callable functions
         rolesAuthority.setPublicCapability(address(teller), TellerWithMultiAssetSupport.deposit.selector, true);
         rolesAuthority.setPublicCapability(
             address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
@@ -226,10 +223,15 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         // Setup rate providers.
         accountant.setRateProviderData(USDC, true, address(0));
         accountant.setRateProviderData(USDT, true, address(0));
+        accountant.setRateProviderData(DAI, true, address(0));
 
         // Setup Teller deposit assets.
         teller.addAsset(USDC);
         teller.addAsset(USDT);
+        teller.addAsset(DAI);
+
+        // Setup share lock period.
+        teller.setShareLockPeriod(300);
 
         vm.stopBroadcast();
     }

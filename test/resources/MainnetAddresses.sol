@@ -5,7 +5,7 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 contract MainnetAddresses {
     // Liquid Ecosystem
-    address public deployerAddress;
+    address public deployerAddress = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d;
     address public dev0Address = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b;
     address public dev1Address = 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1;
 
@@ -169,6 +169,7 @@ contract MainnetAddresses {
 
     // Mainnet Balancer Specific Addresses
     address public vault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+    address public balancerVault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     address public relayer = 0xfeA793Aa415061C483D2390414275AD314B3F621;
     address public minter = 0x239e55F427D44C3cc793f49bFB507ebe76638a2b;
     ERC20 public USDC_DAI_USDT_BPT = ERC20(0x79c58f70905F734641735BC61e45c19dD9Ad60bC);

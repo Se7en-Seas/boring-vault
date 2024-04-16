@@ -115,7 +115,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         address _base,
         uint16 allowedExchangeRateChangeUpper,
         uint16 allowedExchangeRateChangeLower,
-        uint8 minimumUpdateDelayInSeconds,
+        uint32 minimumUpdateDelayInSeconds,
         uint16 managementFee
     ) Auth(_owner, Authority(address(0))) {
         base = ERC20(_base);
