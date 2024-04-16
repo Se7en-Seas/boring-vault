@@ -42,10 +42,10 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
     AtomicSolverV2 public atomicSolver;
 
     // Deployment parameters
-    string public boringVaultName = "EtherFi Liquid USD";
+    string public boringVaultName = "Ether.Fi Liquid USD";
     string public boringVaultSymbol = "liquidUSD";
     uint8 public boringVaultDecimals = 6;
-    address public owner = dev0Address;
+    address public owner = dev1Address;
 
     // Roles
     uint8 public constant MANAGER_ROLE = 1;
@@ -91,7 +91,7 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
 
         creationCode = type(AccountantWithRateProviders).creationCode;
         constructorArgs =
-            abi.encode(owner, address(boringVault), owner, 1e6, address(USDC), 1.001e4, 0.999e4, 1 days / 4, 0);
+            abi.encode(owner, address(boringVault), owner, 1e6, address(USDC), 1.002e4, 0.998e4, 1 days / 4, 0.02e4);
         accountant = AccountantWithRateProviders(
             deployer.deployContract(EtherFiLiquidUsdAccountantName, creationCode, constructorArgs, 0)
         );
@@ -225,19 +225,22 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
         rolesAuthority.setUserRole(address(manager), MANAGER_INTERNAL_ROLE, true);
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
+        rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
 
         // Setup rate providers.
         accountant.setRateProviderData(USDC, true, address(0));
         accountant.setRateProviderData(USDT, true, address(0));
         accountant.setRateProviderData(DAI, true, address(0));
+        accountant.setRateProviderData(USDE, true, address(0));
 
         // Setup Teller deposit assets.
         teller.addAsset(USDC);
         teller.addAsset(USDT);
         teller.addAsset(DAI);
+        teller.addAsset(USDE);
 
         // Setup share lock period.
-        teller.setShareLockPeriod(300);
+        teller.setShareLockPeriod(1 days);
 
         // Set all RolesAuthorities.
         boringVault.setAuthority(rolesAuthority);
@@ -257,7 +260,6 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
         rolesAuthority.setUserRole(dev1Address, STRATEGIST_ROLE, true);
-        // TODO could optionally give dev1Address the remaining roles for testing, but not necessary for deployment
 
         vm.stopBroadcast();
     }
