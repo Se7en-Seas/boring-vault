@@ -8,7 +8,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
-import {RenzoLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/RenzoLiquidDecoderAndSanitizer.sol";
+import {EtherFiLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
@@ -53,7 +53,7 @@ contract DeployTestBoringVaultScript is Script {
         teller = new TellerWithMultiAssetSupport(owner, address(boring_vault), address(accountant), WETH);
 
         rawDataDecoderAndSanitizer = address(
-            new RenzoLiquidDecoderAndSanitizer(address(boring_vault), 0xC36442b4a4522E871399CD717aBDD847Ab11FE88)
+            new EtherFiLiquidDecoderAndSanitizer(address(boring_vault), 0xC36442b4a4522E871399CD717aBDD847Ab11FE88)
         );
         // rolesAuthority = new RolesAuthority(owner, Authority(address(0)));
 
