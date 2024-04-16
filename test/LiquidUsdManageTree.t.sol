@@ -12,13 +12,14 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {ILiquidityPool} from "src/interfaces/IStaking.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
-import {RenzoLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/RenzoLiquidDecoderAndSanitizer.sol";
+import {EtherFiLiquidUsdDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 import "@forge-std/StdJson.sol";
 
-contract RenzoManageTreeTest is Test, MainnetAddresses {
+contract LiquidUsdManageTreeTest is Test, MainnetAddresses {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -62,7 +63,7 @@ contract RenzoManageTreeTest is Test, MainnetAddresses {
         rawDataDecoderAndSanitizer = abi.decode(json.parseRaw(".metadata.DecoderAndSanitizerAddress"), (address));
     }
 
-    // function testRenzoManageTree() external {
+    // function testLiquidManageTree() external {
     //     (ManageLeaf[] memory manageLeafs, bytes32[][] memory manageTree) = _loadManageLeafsAndManageTreeFromJson();
 
     //     for (uint256 i; i < leafCount; ++i) {
