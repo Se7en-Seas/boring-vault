@@ -74,7 +74,7 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         rolesAuthority = RolesAuthority(
             deployer.deployContract(EtherFiLiquidUsdRolesAuthorityName, creationCode, constructorArgs, 0)
         );
-        deployer.setAuthority(rolesAuthority);
+
         creationCode = type(ArcticArchitectureLens).creationCode;
         lens = ArcticArchitectureLens(deployer.deployContract(ArcticArchitectureLensName, creationCode, hex"", 0));
 
@@ -191,6 +191,12 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         rolesAuthority.setRoleCapability(
             MULTISIG_ROLE, address(teller), TellerWithMultiAssetSupport.unpause.selector, true
         );
+        rolesAuthority.setRoleCapability(
+            MULTISIG_ROLE, address(manager), ManagerWithMerkleVerification.pause.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            MULTISIG_ROLE, address(manager), ManagerWithMerkleVerification.unpause.selector, true
+        );
         // STRATEGIST_MULTISIG_ROLE
         rolesAuthority.setRoleCapability(
             STRATEGIST_MULTISIG_ROLE, address(teller), TellerWithMultiAssetSupport.refundDeposit.selector, true
@@ -232,6 +238,26 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
 
         // Setup share lock period.
         teller.setShareLockPeriod(300);
+
+        // Set all RolesAuthorities.
+        boringVault.setAuthority(rolesAuthority);
+        manager.setAuthority(rolesAuthority);
+        accountant.setAuthority(rolesAuthority);
+        teller.setAuthority(rolesAuthority);
+
+        // Renounce ownership
+        boringVault.transferOwnership(address(0));
+        manager.transferOwnership(address(0));
+        accountant.transferOwnership(address(0));
+        teller.transferOwnership(address(0));
+
+        // Setup roles.
+        rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
+        rolesAuthority.setUserRole(address(manager), MANAGER_INTERNAL_ROLE, true);
+        rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
+        rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
+        rolesAuthority.setUserRole(dev1Address, STRATEGIST_ROLE, true);
+        // TODO could optionally give dev1Address the remaining roles for testing, but not necessary for deployment
 
         vm.stopBroadcast();
     }
