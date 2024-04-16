@@ -14,7 +14,7 @@ import {
     BalancerV2DecoderAndSanitizer,
     PendleRouterDecoderAndSanitizer
 } from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
-import {RenzoLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/RenzoLiquidDecoderAndSanitizer.sol";
+import {EtherFiLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
 import {LidoLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/LidoLiquidDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {IUniswapV3Router} from "src/interfaces/IUniswapV3Router.sol";
@@ -1324,43 +1324,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 
-    function testRenzoIntegration() external {
-        deal(address(boringVault), 1_000e18);
-
-        // update DecoderAndSanitizer
-        rawDataDecoderAndSanitizer =
-            address(new RenzoLiquidDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
-
-        // Call depositETH to renzo
-        ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        leafs[0] = ManageLeaf(restakeManager, true, "depositETH()", new address[](0));
-
-        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-
-        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
-
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
-        manageLeafs[0] = leafs[0];
-
-        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
-
-        address[] memory targets = new address[](1);
-        targets[0] = restakeManager;
-
-        bytes[] memory targetData = new bytes[](1);
-        targetData[0] = abi.encodeWithSignature("depositETH()");
-
-        address[] memory decodersAndSanitizers = new address[](1);
-        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-
-        uint256[] memory values = new uint256[](1);
-        values[0] = 1_000e18;
-
-        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-
-        assertGt(EZETH.balanceOf(address(boringVault)), 0, "BoringVault should have ezETH.");
-    }
-
     function testLidoIntegration() external {
         deal(address(boringVault), 1_000e18);
 
@@ -1574,6 +1537,41 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         );
         manager.receiveFlashLoan(tokens, amounts, feeAmounts, abi.encode(0));
         vm.stopPrank();
+    }
+
+    function testManagementMintingSharesRevert() external {
+        deal(address(boringVault), 1_000e18);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](2);
+        leafs[0] = ManageLeaf(address(this), false, "withdraw(uint256)", new address[](0));
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[0];
+
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](1);
+        targets[0] = address(this);
+
+        bytes[] memory targetData = new bytes[](1);
+        targetData[0] = abi.encodeWithSignature("withdraw(uint256)", 1);
+
+        address[] memory decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification
+                    .ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringManagement
+                    .selector
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](1)
+        );
     }
 
     function testFlashLoanReverts() external {
@@ -2890,6 +2888,10 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         vm.stopPrank();
 
         w.finalizeRequests(requestId);
+    }
+
+    function withdraw(uint256 amount) external {
+        boringVault.enter(address(0), ERC20(address(0)), 0, address(this), amount);
     }
 }
 
