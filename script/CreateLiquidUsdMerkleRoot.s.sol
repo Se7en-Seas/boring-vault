@@ -18,6 +18,21 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
     address public managerAddress = 0x048a5002E57166a78Dd060B3B36DEd2f404D0a17;
     address public accountantAddress = 0xc6f89cc0551c944CEae872997A4060DC95622D8F;
 
+    address public itbAaveV3Usdc;
+    address public itbAaveV3Dai;
+    address public itbAaveV3Usdt;
+    address public itbGearboxUsdc;
+    address public itbGearboxDai;
+    address public itbGearboxUsdt;
+    address public itbCurveConvex_PyUsdUsdc;
+    address public itbCurveConvexs_DaisUsde;
+    address public itbCurveConvex_FraxUsdc;
+    address public itbCurveConvex_crvUsdUsdc;
+    address public itbDecoderAndSanitizer;
+
+    // TODO setup for ITB Curve Convex contracts
+    // TODO could add swapping for FRAX in uniswap pools
+
     function setUp() external {}
 
     /**
@@ -2299,6 +2314,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          * weETH <-> wstETH,
          * weETH <-> wETH
          * Swap GEAR -> USDC
+         * Swap crvUSD <-> USDC
+         * Swap crvUSD <-> USDT
+         * Swap crvUSD <-> USDe
+         * Swap FRAX <-> USDC
+         * Swap FRAX <-> USDT
+         * Swap FRAX <-> DAI
+         * Swap PYUSD <-> USDC
+         * Swap PYUSD <-> FRAX
+         * Swap PYUSD <-> crvUSD
          */
         {
             // Approvals
@@ -2389,6 +2413,36 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 "approve(address,uint256)",
                 new address[](1),
                 "Approve 1inch router to spend USDe",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(CRVUSD),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve 1inch router to spend crvUSD",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(FRAX),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve 1inch router to spend FRAX",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(PYUSD),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve 1inch router to spend PYUSD",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = aggregationRouterV5;
@@ -2685,6 +2739,258 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
             leafs[leafIndex].argumentAddresses[1] = address(USDE);
             leafs[leafIndex].argumentAddresses[2] = address(USDT);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap crvUSD for USDC using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(CRVUSD);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap USDC for crvUSD using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = address(CRVUSD);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap crvUSD for USDT using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(CRVUSD);
+            leafs[leafIndex].argumentAddresses[2] = address(USDT);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap USDT for crvUSD using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDT);
+            leafs[leafIndex].argumentAddresses[2] = address(CRVUSD);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap crvUSD for USDe using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(CRVUSD);
+            leafs[leafIndex].argumentAddresses[2] = address(USDE);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap USDe for crvUSD using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDE);
+            leafs[leafIndex].argumentAddresses[2] = address(CRVUSD);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap USDC for FRAX using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = address(FRAX);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap FRAX for USDC using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(FRAX);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap USDT for FRAX using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDT);
+            leafs[leafIndex].argumentAddresses[2] = address(FRAX);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap FRAX for USDT using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(FRAX);
+            leafs[leafIndex].argumentAddresses[2] = address(USDT);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap DAI for FRAX using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(DAI);
+            leafs[leafIndex].argumentAddresses[2] = address(FRAX);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap FRAX for DAI using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(FRAX);
+            leafs[leafIndex].argumentAddresses[2] = address(DAI);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap PYUSD for FRAX using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[2] = address(FRAX);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap FRAX for PYUSD using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(FRAX);
+            leafs[leafIndex].argumentAddresses[2] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap PYUSD for USDC using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[2] = address(USDC);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap USDC for PYUSD using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap PYUSD for crvUSD using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[2] = address(CRVUSD);
+            leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[4] = boringVault;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+                new address[](5),
+                "Swap crvUSD for PYUSD using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = oneInchExecutor;
+            leafs[leafIndex].argumentAddresses[1] = address(CRVUSD);
+            leafs[leafIndex].argumentAddresses[2] = address(PYUSD);
             leafs[leafIndex].argumentAddresses[3] = oneInchExecutor;
             leafs[leafIndex].argumentAddresses[4] = boringVault;
             leafIndex++;
@@ -3170,6 +3476,566 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[0] = address(SUSDE);
             leafs[leafIndex].argumentAddresses[1] = address(USDT);
             leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+        }
+        // ========================== ITB Aave V3 USDC ==========================
+        /**
+         * acceptOwnership() of itbAaveV3Usdc
+         * transfer USDC to itbAaveV3Usdc
+         * withdraw USDC from itbAaveV3Usdc
+         * withdrawAll USDC from itbAaveV3Usdc
+         * deposit USDC to itbAaveV3Usdc
+         * withdraw USDC supply from itbAaveV3Usdc
+         * withdrawAll USDC supply from itbAaveV3Usdc
+         */
+        {
+            // acceptOwnership
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Usdc,
+                false,
+                "acceptOwnership()",
+                new address[](0),
+                "Accept ownership of the ITB Aave V3 USDC contract",
+                itbDecoderAndSanitizer
+            );
+            // Transfer
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDC),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                "Transfer USDC to the ITB Aave V3 USDC contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = itbAaveV3Usdc;
+            // Withdraw
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Usdc,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                "Withdraw USDC from the ITB Aave V3 USDC contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            // WithdrawAll
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Usdc,
+                false,
+                "withdrawAll(address)",
+                new address[](1),
+                "Withdraw all USDC from the ITB Aave V3 USDC contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            // Deposit
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Usdc,
+                false,
+                "deposit(address,uint256)",
+                new address[](1),
+                "Deposit USDC to the ITB Aave V3 USDC contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            // Withdraw Supply
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Usdc,
+                false,
+                "withdrawSupply(address,uint256)",
+                new address[](1),
+                "Withdraw USDC supply from the ITB Aave V3 USDC contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            // Withdraw All Supply
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Usdc,
+                false,
+                "withdrawAllSupply(address)",
+                new address[](1),
+                "Withdraw all USDC supply from the ITB Aave V3 USDC contract",
+                itbDecoderAndSanitizer
+            );
+        }
+        // ========================== ITB Aave V3 DAI ==========================
+        /**
+         * acceptOwnership() of itbAaveV3Dai
+         * transfer DAI to itbAaveV3Dai
+         * withdraw DAI from itbAaveV3Dai
+         * withdrawAll DAI from itbAaveV3Dai
+         * deposit DAI to itbAaveV3Dai
+         * withdraw DAI supply from itbAaveV3Dai
+         * withdrawAll DAI supply from itbAaveV3Dai
+         */
+        {
+            // acceptOwnership
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Dai,
+                false,
+                "acceptOwnership()",
+                new address[](0),
+                "Accept ownership of the ITB Aave V3 DAI contract",
+                itbDecoderAndSanitizer
+            );
+            // Transfer
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(DAI),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                "Transfer DAI to the ITB Aave V3 DAI contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = itbAaveV3Dai;
+            // Withdraw
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Dai,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                "Withdraw DAI from the ITB Aave V3 DAI contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            // WithdrawAll
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Dai,
+                false,
+                "withdrawAll(address)",
+                new address[](1),
+                "Withdraw all DAI from the ITB Aave V3 DAI contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            // Deposit
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Dai,
+                false,
+                "deposit(address,uint256)",
+                new address[](1),
+                "Deposit DAI to the ITB Aave V3 DAI contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            // Withdraw Supply
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Dai,
+                false,
+                "withdrawSupply(address,uint256)",
+                new address[](1),
+                "Withdraw DAI supply from the ITB Aave V3 DAI contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            // Withdraw All Supply
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Dai,
+                false,
+                "withdrawAllSupply(address)",
+                new address[](1),
+                "Withdraw all DAI supply from the ITB Aave V3 DAI contract",
+                itbDecoderAndSanitizer
+            );
+        }
+        // ========================== ITB Aave V3 USDT ==========================
+        /**
+         * acceptOwnership() of itbAaveV3Usdt
+         * transfer USDT to itbAaveV3Usdt
+         * withdraw USDT from itbAaveV3Usdt
+         * withdrawAll USDT from itbAaveV3Usdt
+         * deposit USDT to itbAaveV3Usdt
+         * withdraw USDT supply from itbAaveV3Usdt
+         * withdrawAll USDT supply from itbAaveV3Usdt
+         */
+        {
+            // acceptOwnership
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Usdt,
+                false,
+                "acceptOwnership()",
+                new address[](0),
+                "Accept ownership of the ITB Aave V3 USDT contract",
+                itbDecoderAndSanitizer
+            );
+            // Transfer
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDT),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                "Transfer USDT to the ITB Aave V3 USDT contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = itbAaveV3Usdt;
+            // Withdraw
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Usdt,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                "Withdraw USDT from the ITB Aave V3 USDT contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            // WithdrawAll
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Usdt,
+                false,
+                "withdrawAll(address)",
+                new address[](1),
+                "Withdraw all USDT from the ITB Aave V3 USDT contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            // Deposit
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Usdt,
+                false,
+                "deposit(address,uint256)",
+                new address[](1),
+                "Deposit USDT to the ITB Aave V3 USDT contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            // Withdraw Supply
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Usdt,
+                false,
+                "withdrawSupply(address,uint256)",
+                new address[](1),
+                "Withdraw USDT supply from the ITB Aave V3 USDT contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            // Withdraw All Supply
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbAaveV3Usdt,
+                false,
+                "withdrawAllSupply(address)",
+                new address[](1),
+                "Withdraw all USDT supply from the ITB Aave V3 USDT contract",
+                itbDecoderAndSanitizer
+            );
+        }
+        // ========================== ITB Gearbox USDC ==========================
+        /**
+         * acceptOwnership() of itbGearboxUsdc
+         * transfer USDC to itbGearboxUsdc
+         * withdraw USDC from itbGearboxUsdc
+         * withdrawAll USDC from itbGearboxUsdc
+         * deposit USDC to dUSDCV3
+         * withdraw USDC from dUSDCV3
+         * stake dUSDCV3 into sdUSDCV3
+         * unstake dUSDCV3 from sdUSDCV3
+         */
+        {
+            // acceptOwnership
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdc,
+                false,
+                "acceptOwnership()",
+                new address[](0),
+                "Accept ownership of the ITB Gearbox USDC contract",
+                itbDecoderAndSanitizer
+            );
+            // Transfer
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDC),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                "Transfer USDC to the ITB Gearbox USDC contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = itbGearboxUsdc;
+            // Withdraw
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdc,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                "Withdraw USDC from the ITB Gearbox USDC contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            // WithdrawAll
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdc,
+                false,
+                "withdrawAll(address)",
+                new address[](1),
+                "Withdraw all USDC from the ITB Gearbox USDC contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            // Deposit
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdc,
+                false,
+                "deposit(uint256,uint256)",
+                new address[](0),
+                "Deposit USDC into Gearbox dUSDCV3 contract",
+                itbDecoderAndSanitizer
+            );
+            // Withdraw
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdc,
+                false,
+                "withdrawSupply(uint256,uint256)",
+                new address[](0),
+                "Withdraw USDC from Gearbox dUSDCV3 contract",
+                itbDecoderAndSanitizer
+            );
+            // Stake
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdc,
+                false,
+                "stake(uint256)",
+                new address[](0),
+                "Stake dUSDCV3 into Gearbox sdUSDCV3 contract",
+                itbDecoderAndSanitizer
+            );
+            // Unstake
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdc,
+                false,
+                "unstake(uint256)",
+                new address[](0),
+                "Unstake dUSDCV3 from Gearbox sdUSDCV3 contract",
+                itbDecoderAndSanitizer
+            );
+        }
+        // ========================== ITB Gearbox DAI ==========================
+        /**
+         * acceptOwnership() of itbGearboxDai
+         * transfer DAI to itbGearboxDai
+         * withdraw DAI from itbGearboxDai
+         * withdrawAll DAI from itbGearboxDai
+         * deposit DAI to dDAIV3
+         * withdraw DAI from dDAIV3
+         * stake dDAIV3 into sdDAIV3
+         * unstake dDAIV3 from sdDAIV3
+         */
+        {
+            // acceptOwnership
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxDai,
+                false,
+                "acceptOwnership()",
+                new address[](0),
+                "Accept ownership of the ITB Gearbox DAI contract",
+                itbDecoderAndSanitizer
+            );
+            // Transfer
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(DAI),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                "Transfer DAI to the ITB Gearbox DAI contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = itbGearboxDai;
+            // Withdraw
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxDai,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                "Withdraw DAI from the ITB Gearbox DAI contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            // WithdrawAll
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxDai,
+                false,
+                "withdrawAll(address)",
+                new address[](1),
+                "Withdraw all DAI from the ITB Gearbox DAI contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            // Deposit
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxDai,
+                false,
+                "deposit(uint256,uint256)",
+                new address[](0),
+                "Deposit DAI into Gearbox dDAIV3 contract",
+                itbDecoderAndSanitizer
+            );
+            // Withdraw
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxDai,
+                false,
+                "withdrawSupply(uint256,uint256)",
+                new address[](0),
+                "Withdraw DAI from Gearbox dDAIV3 contract",
+                itbDecoderAndSanitizer
+            );
+            // Stake
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxDai,
+                false,
+                "stake(uint256)",
+                new address[](0),
+                "Stake dDAIV3 into Gearbox sdDAIV3 contract",
+                itbDecoderAndSanitizer
+            );
+            // Unstake
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxDai,
+                false,
+                "unstake(uint256)",
+                new address[](0),
+                "Unstake dDAIV3 from Gearbox sdDAIV3 contract",
+                itbDecoderAndSanitizer
+            );
+        }
+        // ========================== ITB Gearbox USDT ==========================
+        /**
+         * acceptOwnership() of itbGearboxUsdt
+         * transfer USDT to itbGearboxUsdt
+         * withdraw USDT from itbGearboxUsdt
+         * withdrawAll USDT from itbGearboxUsdt
+         * deposit USDT to dUSDTV3
+         * withdraw USDT from dUSDTV3
+         * stake dUSDTV3 into sdUSDTV3
+         * unstake dUSDTV3 from sdUSDTV3
+         */
+        {
+            // acceptOwnership
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdt,
+                false,
+                "acceptOwnership()",
+                new address[](0),
+                "Accept ownership of the ITB Gearbox USDT contract",
+                itbDecoderAndSanitizer
+            );
+            // Transfer
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDT),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                "Transfer USDT to the ITB Gearbox USDT contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = itbGearboxUsdt;
+            // Withdraw
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdt,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                "Withdraw USDT from the ITB Gearbox USDT contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            // WithdrawAll
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdt,
+                false,
+                "withdrawAll(address)",
+                new address[](1),
+                "Withdraw all USDT from the ITB Gearbox USDT contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            // Deposit
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdt,
+                false,
+                "deposit(uint256,uint256)",
+                new address[](0),
+                "Deposit USDT into Gearbox dUSDTV3 contract",
+                itbDecoderAndSanitizer
+            );
+            // Withdraw
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdt,
+                false,
+                "withdrawSupply(uint256,uint256)",
+                new address[](0),
+                "Withdraw USDT from Gearbox dUSDTV3 contract",
+                itbDecoderAndSanitizer
+            );
+            // Stake
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdt,
+                false,
+                "stake(uint256)",
+                new address[](0),
+                "Stake dUSDTV3 into Gearbox sdUSDTV3 contract",
+                itbDecoderAndSanitizer
+            );
+            // Unstake
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdt,
+                false,
+                "unstake(uint256)",
+                new address[](0),
+                "Unstake dUSDTV3 from Gearbox sdUSDTV3 contract",
+                itbDecoderAndSanitizer
+            );
+        }
+
+        // ========================== ITB Curve/Convex ==========================
+        /**
+         * transfer both tokens to the pool
+         * withdraw and withdraw all both tokens
+         * addLiquidityAllCoinsAndStakeConvex
+         * unstakeAndRemoveLiquidityAllCoinsConvex
+         */
+        {
+            // TODO
         }
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
