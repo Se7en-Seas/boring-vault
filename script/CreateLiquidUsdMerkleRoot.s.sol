@@ -18,17 +18,17 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
     address public managerAddress = 0x048a5002E57166a78Dd060B3B36DEd2f404D0a17;
     address public accountantAddress = 0xc6f89cc0551c944CEae872997A4060DC95622D8F;
 
-    address public itbAaveV3Usdc;
-    address public itbAaveV3Dai;
-    address public itbAaveV3Usdt;
-    address public itbGearboxUsdc;
-    address public itbGearboxDai;
-    address public itbGearboxUsdt;
-    address public itbCurveConvex_PyUsdUsdc;
-    address public itbCurve_sDai_sUsde;
-    address public itbCurveConvex_FraxUsdc;
-    address public itbCurveConvex_UsdcCrvUsd;
-    address public itbDecoderAndSanitizer;
+    address public itbAaveV3Usdc = address(65);
+    address public itbAaveV3Dai = address(65);
+    address public itbAaveV3Usdt = address(65);
+    address public itbGearboxUsdc = address(65);
+    address public itbGearboxDai = address(65);
+    address public itbGearboxUsdt = address(65);
+    address public itbCurveConvex_PyUsdUsdc = address(65);
+    address public itbCurve_sDai_sUsde = address(65);
+    address public itbCurveConvex_FraxUsdc = address(65);
+    address public itbCurveConvex_UsdcCrvUsd = address(65);
+    address public itbDecoderAndSanitizer = address(65);
 
     function setUp() external {}
 
@@ -3591,7 +3591,6 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          * withdrawAll USDC from itbAaveV3Usdc
          * deposit USDC to itbAaveV3Usdc
          * withdraw USDC supply from itbAaveV3Usdc
-         * withdrawAll USDC supply from itbAaveV3Usdc
          */
         {
             // acceptOwnership
@@ -3659,16 +3658,6 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 itbDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = address(USDC);
-            // Withdraw All Supply
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Usdc,
-                false,
-                "withdrawSupplyAll(address)",
-                new address[](1),
-                "Withdraw all USDC supply from the ITB Aave V3 USDC contract",
-                itbDecoderAndSanitizer
-            );
         }
         // ========================== ITB Aave V3 DAI ==========================
         /**
@@ -3678,7 +3667,6 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          * withdrawAll DAI from itbAaveV3Dai
          * deposit DAI to itbAaveV3Dai
          * withdraw DAI supply from itbAaveV3Dai
-         * withdrawAll DAI supply from itbAaveV3Dai
          */
         {
             // acceptOwnership
@@ -3746,16 +3734,6 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 itbDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = address(DAI);
-            // Withdraw All Supply
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Dai,
-                false,
-                "withdrawSupplyAll(address)",
-                new address[](1),
-                "Withdraw all DAI supply from the ITB Aave V3 DAI contract",
-                itbDecoderAndSanitizer
-            );
         }
         // ========================== ITB Aave V3 USDT ==========================
         /**
@@ -3765,7 +3743,6 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          * withdrawAll USDT from itbAaveV3Usdt
          * deposit USDT to itbAaveV3Usdt
          * withdraw USDT supply from itbAaveV3Usdt
-         * withdrawAll USDT supply from itbAaveV3Usdt
          */
         {
             // acceptOwnership
@@ -3833,16 +3810,6 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 itbDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = address(USDT);
-            // Withdraw All Supply
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Usdt,
-                false,
-                "withdrawSupplyAll(address)",
-                new address[](1),
-                "Withdraw all USDT supply from the ITB Aave V3 USDT contract",
-                itbDecoderAndSanitizer
-            );
         }
         // ========================== ITB Gearbox USDC ==========================
         /**
@@ -3877,6 +3844,29 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 itbDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = itbGearboxUsdc;
+            // Approvals
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdc,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Gearbox dUSDCV3 to spend USDC",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = address(dUSDCV3);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdc,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Gearbox sdUSDCV3 to spend dUSDCV3",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(dUSDCV3);
+            leafs[leafIndex].argumentAddresses[1] = address(sdUSDCV3);
             // Withdraw
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -3973,6 +3963,29 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 itbDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = itbGearboxDai;
+            // Approvals
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxDai,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Gearbox dDAIV3 to spend DAI",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            leafs[leafIndex].argumentAddresses[1] = address(dDAIV3);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxDai,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Gearbox sdDAIV3 to spend dDAIV3",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(dDAIV3);
+            leafs[leafIndex].argumentAddresses[1] = address(sdDAIV3);
             // Withdraw
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -4069,6 +4082,29 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 itbDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = itbGearboxUsdt;
+            // Approvals
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdt,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Gearbox dUSDTV3 to spend USDT",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            leafs[leafIndex].argumentAddresses[1] = address(dUSDTV3);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbGearboxUsdt,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Gearbox sdUSDTV3 to spend dUSDTV3",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(dUSDTV3);
+            leafs[leafIndex].argumentAddresses[1] = address(sdUSDTV3);
             // Withdraw
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -4174,6 +4210,40 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 itbDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = itbCurveConvex_PyUsdUsdc;
+            // Approvals
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurveConvex_PyUsdUsdc,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Curve pool to spend PYUSD",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[1] = pyUsd_Usdc_Curve_Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurveConvex_PyUsdUsdc,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Curve pool to spend USDC",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = pyUsd_Usdc_Curve_Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurveConvex_PyUsdUsdc,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Convex to spend Curve LP",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = pyUsd_Usdc_Curve_Pool;
+            leafs[leafIndex].argumentAddresses[1] = convexCurveMainnetBooster;
             // Withdraw both tokens
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -4242,7 +4312,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[1] = pyUsd_Usdc_Convex_Id;
         }
 
-        // ========================== ITB Curve/Convex PYUSD/USDC ==========================
+        // ========================== ITB Curve/Convex FRAX/USDC ==========================
         /**
          * itbCurveConvex_FraxUsdc
          * acceptOwnership() of itbCurveConvex_FraxUsdc
@@ -4283,6 +4353,40 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 itbDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = itbCurveConvex_FraxUsdc;
+            // Approvals
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurveConvex_FraxUsdc,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Curve pool to spend FRAX",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(FRAX);
+            leafs[leafIndex].argumentAddresses[1] = frax_Usdc_Curve_Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurveConvex_FraxUsdc,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Curve pool to spend USDC",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = frax_Usdc_Curve_Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurveConvex_FraxUsdc,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Convex to spend Curve LP",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = frax_Usdc_Curve_Pool;
+            leafs[leafIndex].argumentAddresses[1] = convexCurveMainnetBooster;
             // Withdraw both tokens
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -4392,6 +4496,40 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 itbDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = itbCurveConvex_UsdcCrvUsd;
+            // Approvals
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurveConvex_UsdcCrvUsd,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Curve pool to spend USDC",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = usdc_CrvUsd_Curve_Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurveConvex_UsdcCrvUsd,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Curve pool to spend crvUSD",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(CRVUSD);
+            leafs[leafIndex].argumentAddresses[1] = usdc_CrvUsd_Curve_Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurveConvex_UsdcCrvUsd,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Convex to spend Curve LP",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = usdc_CrvUsd_Curve_Pool;
+            leafs[leafIndex].argumentAddresses[1] = convexCurveMainnetBooster;
             // Withdraw both tokens
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -4500,6 +4638,40 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 itbDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = itbCurve_sDai_sUsde;
+            // Approvals
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurve_sDai_sUsde,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Curve pool to spend sDAI",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(sDAI);
+            leafs[leafIndex].argumentAddresses[1] = sDai_sUsde_Curve_Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurve_sDai_sUsde,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Curve pool to spend sUSDe",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[1] = sDai_sUsde_Curve_Pool;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurve_sDai_sUsde,
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                "Approve Curve gauge to spend Curve LP",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = sDai_sUsde_Curve_Pool;
+            leafs[leafIndex].argumentAddresses[1] = sDai_sUsde_Curve_Gauge;
             // Withdraw both tokens
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
