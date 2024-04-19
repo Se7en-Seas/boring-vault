@@ -292,6 +292,13 @@ contract MainnetAddresses {
     address public weETH_wETH_Curve_Gauge = 0x1CAC1a0Ed47E2e0A313c712b2dcF85994021a365;
     address public weETH_wETH_Convex_Reward = 0x2D159E01A5cEe7498F84Be68276a5266b3cb3774;
 
+    address public pyUsd_Usdc_Curve_Pool = 0x383E6b4437b59fff47B619CBA855CA29342A8559;
+    address public pyUsd_Usdc_Convex_Id = address(270);
+    address public frax_Usdc_Curve_Pool = 0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2;
+    address public frax_Usdc_Convex_Id = address(100);
+    address public usdc_CrvUsd_Curve_Pool = 0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E;
+    address public usdc_CrvUsd_Convex_Id = address(182);
+
     address public ezETH_wETH_Curve_Pool = 0x85dE3ADd465a219EE25E04d22c39aB027cF5C12E;
     address public weETH_rswETH_Curve_Pool = 0x278cfB6f06B1EFc09d34fC7127d6060C61d629Db;
     address public rswETH_wETH_Curve_Pool = 0xeE04382c4cA6c450213923fE0f0daB19b0ff3939;
