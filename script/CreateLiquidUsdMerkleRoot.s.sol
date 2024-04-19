@@ -31,7 +31,6 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
     address public itbDecoderAndSanitizer;
 
     // TODO setup for ITB Curve Convex contracts
-    // TODO could add swapping for FRAX in uniswap pools
 
     function setUp() external {}
 
@@ -2293,6 +2292,75 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[0] = boringVault;
         }
 
+        // ========================== Fee Claiming ==========================
+        /**
+         * Claim fees in USDC, DAI, and USDT
+         */
+        {
+            // Approvals
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDC),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Accountant to spend USDC",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = accountantAddress;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(DAI),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Accountant to spend DAI",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = accountantAddress;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(USDT),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve Accountant to spend USDT",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = accountantAddress;
+            // Claiming
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                accountantAddress,
+                false,
+                "claimFees(address)",
+                new address[](1),
+                "Claim fees in USDC",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                accountantAddress,
+                false,
+                "claimFees(address)",
+                new address[](1),
+                "Claim fees in DAI",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                accountantAddress,
+                false,
+                "claimFees(address)",
+                new address[](1),
+                "Claim fees in USDT",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+        }
+
         // ========================== 1inch ==========================
         /**
          * USDC <-> USDT,
@@ -3163,6 +3231,46 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = USDC_wETH_05;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between FRAX and USDC on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = FRAX_USDC_05;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between FRAX and USDC on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = FRAX_USDC_01;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between DAI and FRAX on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = DAI_FRAX_05;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                aggregationRouterV5,
+                false,
+                "uniswapV3Swap(uint256,uint256,uint256[])",
+                new address[](1),
+                "Swap between FRAX and USDT on UniswapV3 using 1inch router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = FRAX_USDT_05;
         }
 
         // ========================== Curve Swapping ==========================
@@ -4181,14 +4289,14 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
         }
     }
 
-    function _generateMerkleTree(ManageLeaf[] memory manageLeafs) internal view returns (bytes32[][] memory tree) {
+    function _generateMerkleTree(ManageLeaf[] memory manageLeafs) internal pure returns (bytes32[][] memory tree) {
         uint256 leafsLength = manageLeafs.length;
         bytes32[][] memory leafs = new bytes32[][](1);
         leafs[0] = new bytes32[](leafsLength);
         for (uint256 i; i < leafsLength; ++i) {
             bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
             bytes memory rawDigest = abi.encodePacked(
-                rawDataDecoderAndSanitizer, manageLeafs[i].target, manageLeafs[i].canSendValue, selector
+                manageLeafs[i].decoderAndSanitizer, manageLeafs[i].target, manageLeafs[i].canSendValue, selector
             );
             uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
             for (uint256 j; j < argumentAddressesLength; ++j) {
