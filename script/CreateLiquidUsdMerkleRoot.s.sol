@@ -25,7 +25,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
     address public itbGearboxDai;
     address public itbGearboxUsdt;
     address public itbCurveConvex_PyUsdUsdc;
-    // address public itbCurveConvexs_DaisUsde; // TODO No convex position exists
+    address public itbCurve_sDai_sUsde;
     address public itbCurveConvex_FraxUsdc;
     address public itbCurveConvex_UsdcCrvUsd;
     address public itbDecoderAndSanitizer;
@@ -4458,6 +4458,114 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             );
             leafs[leafIndex].argumentAddresses[0] = usdc_CrvUsd_Curve_Pool;
             leafs[leafIndex].argumentAddresses[1] = usdc_CrvUsd_Convex_Id;
+        }
+
+        // ========================== ITB Curve sDAI/sUSDe ==========================
+        /**
+         * acceptOwnership() of itbCurve_sDai_sUsde
+         * transfer both tokens to the pool
+         * withdraw and withdraw all both tokens
+         * addLiquidityAllCoinsAndStake
+         * unstakeAndRemoveLiquidityAllCoins
+         */
+        {
+            // acceptOwnership
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurve_sDai_sUsde,
+                false,
+                "acceptOwnership()",
+                new address[](0),
+                "Accept ownership of the ITB Curve sDAI/sUSDe contract",
+                itbDecoderAndSanitizer
+            );
+            // Transfer both tokens to the pool
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(sDAI),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                "Transfer sDAI to the ITB Curve sDAI/sUSDe contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = itbCurve_sDai_sUsde;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(SUSDE),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                "Transfer sUSDe to the ITB Curve sDAI/sUSDe contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = itbCurve_sDai_sUsde;
+            // Withdraw both tokens
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurve_sDai_sUsde,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                "Withdraw sDAI from the ITB Curve sDAI/sUSDe contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(sDAI);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurve_sDai_sUsde,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                "Withdraw sUSDe from the ITB Curve sDAI/sUSDe contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(SUSDE);
+            // WithdrawAll both tokens
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurve_sDai_sUsde,
+                false,
+                "withdrawAll(address)",
+                new address[](1),
+                "Withdraw all sDAI from the ITB Curve sDAI/sUSDe contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(sDAI);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurve_sDai_sUsde,
+                false,
+                "withdrawAll(address)",
+                new address[](1),
+                "Withdraw all sUSDe from the ITB Curve sDAI/sUSDe contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(SUSDE);
+            // Add liquidity and stake
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurve_sDai_sUsde,
+                false,
+                "addLiquidityAllCoinsAndStake(address,uint256[],address,uint256)",
+                new address[](2),
+                "Add liquidity and stake to the ITB Curve sDAI/sUSDe contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = sDai_sUsde_Curve_Pool;
+            leafs[leafIndex].argumentAddresses[1] = sDai_sUsde_Curve_Gauge;
+            // Unstake and remove liquidity
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbCurve_sDai_sUsde,
+                false,
+                "unstakeAndRemoveLiquidityAllCoins(address,uint256,address,uint256[])",
+                new address[](2),
+                "Unstake and remove liquidity from the ITB Curve sDAI/sUSDe contract",
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = sDai_sUsde_Curve_Pool;
+            leafs[leafIndex].argumentAddresses[1] = sDai_sUsde_Curve_Gauge;
         }
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);

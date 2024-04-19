@@ -298,6 +298,8 @@ contract MainnetAddresses {
     address public frax_Usdc_Convex_Id = address(100);
     address public usdc_CrvUsd_Curve_Pool = 0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E;
     address public usdc_CrvUsd_Convex_Id = address(182);
+    address public sDai_sUsde_Curve_Pool = 0x167478921b907422F8E88B43C4Af2B8BEa278d3A;
+    address public sDai_sUsde_Curve_Gauge = 0x330Cfd12e0E97B0aDF46158D2A81E8Bd2985c6cB;
 
     address public ezETH_wETH_Curve_Pool = 0x85dE3ADd465a219EE25E04d22c39aB027cF5C12E;
     address public weETH_rswETH_Curve_Pool = 0x278cfB6f06B1EFc09d34fC7127d6060C61d629Db;
