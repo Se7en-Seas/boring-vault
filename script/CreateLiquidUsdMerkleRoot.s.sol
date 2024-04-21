@@ -1512,11 +1512,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[0] = pendleRouter;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
-                pendleSUSDeSy,
+                pendleZircuitUSDeSy,
                 false,
                 "approve(address,uint256)",
                 new address[](1),
-                "Approve Pendle router to spend SY-sUSDe",
+                "Approve Pendle router to spend SY-Zircuit-USDe",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = pendleRouter;
@@ -1542,11 +1542,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[0] = pendleRouter;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
-                pendleSUSDePt,
+                pendleZircuitUSDePt,
                 false,
                 "approve(address,uint256)",
                 new address[](1),
-                "Approve Pendle router to spend PT-sUSDe",
+                "Approve Pendle router to spend PT-Zircuit-USDe",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = pendleRouter;
@@ -1572,11 +1572,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[0] = pendleRouter;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
-                pendleSUSDeYt,
+                pendleZircuitUSDeYt,
                 false,
                 "approve(address,uint256)",
                 new address[](1),
-                "Approve Pendle router to spend YT-sUSDe",
+                "Approve Pendle router to spend YT-Zircuit-USDe",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = pendleRouter;
@@ -1602,11 +1602,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[0] = pendleRouter;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
-                pendleSUSDeMarket,
+                pendleZircuitUSDeMarket,
                 false,
                 "approve(address,uint256)",
                 new address[](1),
-                "Approve Pendle router to spend LP-sUSDe",
+                "Approve Pendle router to spend LP-Zircuit-USDe",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = pendleRouter;
@@ -1642,28 +1642,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 false,
                 "mintSyFromToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
                 new address[](6),
-                "Mint SY-sUSDe using USDe",
+                "Mint SY-Zircuit-USDe using USDe",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
-            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
+            leafs[leafIndex].argumentAddresses[1] = pendleZircuitUSDeSy;
             leafs[leafIndex].argumentAddresses[2] = address(USDE);
             leafs[leafIndex].argumentAddresses[3] = address(USDE);
-            leafs[leafIndex].argumentAddresses[4] = address(0);
-            leafs[leafIndex].argumentAddresses[5] = address(0);
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                pendleRouter,
-                false,
-                "mintSyFromToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
-                new address[](6),
-                "Mint SY-sUSDe using sUSDe",
-                rawDataDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = boringVault;
-            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
-            leafs[leafIndex].argumentAddresses[2] = address(SUSDE);
-            leafs[leafIndex].argumentAddresses[3] = address(SUSDE);
             leafs[leafIndex].argumentAddresses[4] = address(0);
             leafs[leafIndex].argumentAddresses[5] = address(0);
             leafIndex++;
@@ -1676,7 +1661,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
-            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
+            leafs[leafIndex].argumentAddresses[1] = pendleWeethSy;
             leafs[leafIndex].argumentAddresses[2] = address(EETH);
             leafs[leafIndex].argumentAddresses[3] = address(EETH);
             leafs[leafIndex].argumentAddresses[4] = address(0);
@@ -1691,7 +1676,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
-            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
+            leafs[leafIndex].argumentAddresses[1] = pendleWeethSy;
             leafs[leafIndex].argumentAddresses[2] = address(WEETH);
             leafs[leafIndex].argumentAddresses[3] = address(WEETH);
             leafs[leafIndex].argumentAddresses[4] = address(0);
@@ -1714,11 +1699,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 false,
                 "mintPyFromSy(address,address,uint256,uint256)",
                 new address[](2),
-                "Mint PT-sUSDe and YT-sUSDe from SY-sUSDe",
+                "Mint PT-Zircuit-USDe and YT-Zircuit-USDe from SY-Zircuit-USDe",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
-            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeYt;
+            leafs[leafIndex].argumentAddresses[1] = pendleZircuitUSDeYt;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
@@ -1759,22 +1744,22 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 false,
                 "swapExactYtForPt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256))",
                 new address[](2),
-                "Swap YT-sUSDe for PT-sUSDe",
+                "Swap YT-Zircuit-USDe for PT-Zircuit-USDe",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
-            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeMarket;
+            leafs[leafIndex].argumentAddresses[1] = pendleZircuitUSDeMarket;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "swapExactPtForYt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256))",
                 new address[](2),
-                "Swap PT-sUSDe for YT-sUSDe",
+                "Swap PT-Zircuit-USDe for YT-Zircuit-USDe",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
-            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeMarket;
+            leafs[leafIndex].argumentAddresses[1] = pendleZircuitUSDeMarket;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
@@ -1826,22 +1811,22 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 false,
                 "addLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
                 new address[](2),
-                "Mint LP-sUSDe using SY-sUSDe and PT-sUSDe",
+                "Mint LP-Zircuit-USDe using SY-Zircuit-USDe and PT-Zircuit-USDe",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
-            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeMarket;
+            leafs[leafIndex].argumentAddresses[1] = pendleZircuitUSDeMarket;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
                 false,
                 "removeLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
                 new address[](2),
-                "Burn LP-sUSDe for SY-sUSDe and PT-sUSDe",
+                "Burn LP-Zircuit-USDe for SY-Zircuit-USDe and PT-Zircuit-USDe",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
-            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeMarket;
+            leafs[leafIndex].argumentAddresses[1] = pendleZircuitUSDeMarket;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
@@ -1882,11 +1867,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 false,
                 "redeemPyToSy(address,address,uint256,uint256)",
                 new address[](2),
-                "Burn PT-sUSDe and YT-sUSDe for SY-sUSDe",
+                "Burn PT-Zircuit-USDe and YT-Zircuit-USDe for SY-Zircuit-USDe",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
-            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeYt;
+            leafs[leafIndex].argumentAddresses[1] = pendleZircuitUSDeYt;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
@@ -1920,13 +1905,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 false,
                 "redeemSyToToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
                 new address[](6),
-                "Burn SY-sUSDe for sUSDe",
+                "Burn SY-Zircuit-USDe for USDe",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = address(boringVault);
-            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
-            leafs[leafIndex].argumentAddresses[2] = address(SUSDE);
-            leafs[leafIndex].argumentAddresses[3] = address(SUSDE);
+            leafs[leafIndex].argumentAddresses[1] = pendleZircuitUSDeSy;
+            leafs[leafIndex].argumentAddresses[2] = address(USDE);
+            leafs[leafIndex].argumentAddresses[3] = address(USDE);
             leafs[leafIndex].argumentAddresses[4] = address(0);
             leafs[leafIndex].argumentAddresses[5] = address(0);
             leafIndex++;
@@ -1978,13 +1963,13 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 false,
                 "redeemDueInterestAndRewards(address,address[],address[],address[])",
                 new address[](4),
-                "Redeem due interest and rewards for sUSDe Pendle.",
+                "Redeem due interest and rewards for Zircuit-USDe Pendle.",
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = boringVault;
-            leafs[leafIndex].argumentAddresses[1] = pendleSUSDeSy;
-            leafs[leafIndex].argumentAddresses[2] = pendleSUSDeYt;
-            leafs[leafIndex].argumentAddresses[3] = pendleSUSDeMarket;
+            leafs[leafIndex].argumentAddresses[1] = pendleZircuitUSDeSy;
+            leafs[leafIndex].argumentAddresses[2] = pendleZircuitUSDeYt;
+            leafs[leafIndex].argumentAddresses[3] = pendleZircuitUSDeMarket;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
                 pendleRouter,
