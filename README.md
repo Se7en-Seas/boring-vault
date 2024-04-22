@@ -1,66 +1,30 @@
-## Foundry
+```
+ _____       ______        _____
+/  ___|     |___  /       /  ___|
+\ `--.  ___    / /__ _ __ \ `--.  ___  __ _ ___
+ `--. \/ _ \  / / _ \ '_ \ `--. \/ _ \/ _` / __|
+/\__/ /  __/./ /  __/ | | /\__/ /  __/ (_| \__ \
+\____/ \___|\_/ \___|_| |_\____/ \___|\__,_|___/
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+```
 
-Foundry consists of:
+# Boring Vault Arctic Architecture
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+Boring Vaults are flexible vault contracts that allow for intricate strategies, secured by both onchain and offchain mechanisms.
+
+The BoringVault architecture is made up of:
+
+- **BoringVault**: A barebones vault contract that outsources complex functionality to external contracts.
+- **Manager**: Limits the possible strategies BoringVaults can use, without large gas overheads, or unnecessary risk.
+- **Teller**: Facilitates user deposits and withdraws in/out of the BoringVault.
+- **Accountant**: Provides a safe share price for Teller interacts via offchain oracles.
+
+The arctic architecture implements:
+
+- **ManagerWithMerkleVerification**: Utilizes Merkle Proofs to limit BoringVault strategies.
+- **TellerWithMultiAssetSupport**: Allows user deposits and withdraws using multiple related assets.
+- **AccountantWithRateProviders**: Leverages offchain pricing, and onchain rate providers to calculate a safe share price.
 
 ## Documentation
 
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
-```
-
-### Test
-
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+GO TO GITBOOK
