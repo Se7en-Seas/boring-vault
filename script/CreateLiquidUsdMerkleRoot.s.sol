@@ -937,6 +937,211 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
         leafs[leafIndex].argumentAddresses[0] = pool;
     }
 
+    function _addLeafsForCurveSwapping(ManageLeaf[] memory leafs, address curvePool) internal {
+        CurvePool pool = CurvePool(curvePool);
+        ERC20 coins0 = ERC20(pool.coins(0));
+        ERC20 coins1 = ERC20(pool.coins(1));
+        // Approvals.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            address(coins0),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Curve ", coins0.symbol(), "/", coins1.symbol(), " pool to spend ", coins0.symbol()),
+            rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = curvePool;
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            address(coins1),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Curve ", coins0.symbol(), "/", coins1.symbol(), " pool to spend ", coins1.symbol()),
+            rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = curvePool;
+        // Swapping.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            curvePool,
+            false,
+            "exchange(int128,int128,uint256,uint256)",
+            new address[](0),
+            string.concat("Swap using Curve ", coins0.symbol(), "/", coins1.symbol(), " pool"),
+            rawDataDecoderAndSanitizer
+        );
+    }
+
+    function _addLeafsForITBPositionManager(
+        ManageLeaf[] memory leafs,
+        address itbPositionManager,
+        ERC20[] memory tokensUsed,
+        string memory itbContractName
+    ) internal {
+        // acceptOwnership
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "acceptOwnership()",
+            new address[](0),
+            "Accept ownership of the ITB Aave V3 USDC contract",
+            itbDecoderAndSanitizer
+        );
+        for (uint256 i; i < tokensUsed.length; ++i) {
+            // Transfer
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(tokensUsed[i]),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                string.concat("Transfer ", tokensUsed[i].symbol(), " to the ", itbContractName, " contract"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = itbPositionManager;
+            // Withdraw
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbPositionManager,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                string.concat("Withdraw ", tokensUsed[i].symbol(), " from the ", itbContractName, " contract"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
+            // WithdrawAll
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbPositionManager,
+                false,
+                "withdrawAll(address)",
+                new address[](1),
+                string.concat("Withdraw all ", tokensUsed[i].symbol(), " from the ", itbContractName, " contract"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
+        }
+    }
+
+    function _addLeafsForItbAaveV3(
+        ManageLeaf[] memory leafs,
+        address itbPositionManager,
+        ERC20[] memory tokensUsed,
+        string memory itbContractName
+    ) internal {
+        _addLeafsForITBPositionManager(leafs, itbPositionManager, tokensUsed, itbContractName);
+        for (uint256 i; i < tokensUsed.length; ++i) {
+            // Deposit
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbPositionManager,
+                false,
+                "deposit(address,uint256)",
+                new address[](1),
+                string.concat("Deposit ", tokensUsed[i].symbol(), " to the ", itbContractName, " contract"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
+            // Withdraw Supply
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbPositionManager,
+                false,
+                "withdrawSupply(address,uint256)",
+                new address[](1),
+                string.concat("Withdraw ", tokensUsed[i].symbol(), " supply from the ", itbContractName, " contract"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
+        }
+    }
+
+    function _addLeafsForItbGearbox(
+        ManageLeaf[] memory leafs,
+        address itbPositionManager,
+        ERC20 underlying,
+        ERC20 diesal,
+        address diesalStaking,
+        string memory itbContractName
+    ) internal {
+        ERC20[] memory tokensUsed = new ERC20[](2);
+        tokensUsed[0] = underlying;
+        tokensUsed[1] = diesal;
+        _addLeafsForITBPositionManager(leafs, itbPositionManager, tokensUsed, itbContractName);
+
+        // Approvals
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbGearboxUsdc,
+            false,
+            "approveToken(address,address,uint256)",
+            new address[](2),
+            string.concat("Approve Gearbox ", diesal.symbol(), " to spend ", underlying.symbol()),
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(underlying);
+        leafs[leafIndex].argumentAddresses[1] = address(diesal);
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbGearboxUsdc,
+            false,
+            "approveToken(address,address,uint256)",
+            new address[](2),
+            string.concat("Approve Gearbox s", diesal.symbol(), " to spend ", diesal.symbol()),
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(diesal);
+        leafs[leafIndex].argumentAddresses[1] = address(diesalStaking);
+
+        // Deposit
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbGearboxUsdc,
+            false,
+            "deposit(uint256,uint256)",
+            new address[](0),
+            string.concat("Deposit ", underlying.symbol(), " into Gearbox ", diesal.symbol(), " contract"),
+            itbDecoderAndSanitizer
+        );
+
+        // Withdraw
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbGearboxUsdc,
+            false,
+            "withdrawSupply(uint256,uint256)",
+            new address[](0),
+            string.concat("Withdraw ", underlying.symbol(), " from Gearbox ", diesal.symbol(), " contract"),
+            itbDecoderAndSanitizer
+        );
+
+        // Stake
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbGearboxUsdc,
+            false,
+            "stake(uint256)",
+            new address[](0),
+            string.concat("Stake ", diesal.symbol(), " into Gearbox s", diesal.symbol(), " contract"),
+            itbDecoderAndSanitizer
+        );
+
+        // Unstake
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbGearboxUsdc,
+            false,
+            "unstake(uint256)",
+            new address[](0),
+            string.concat("Unstake ", diesal.symbol(), " from Gearbox s", diesal.symbol(), " contract"),
+            itbDecoderAndSanitizer
+        );
+    }
+
     function generateLiquidUsdStrategistMerkleRoot() public {
         ManageLeaf[] memory leafs = new ManageLeaf[](1024);
 
@@ -1173,97 +1378,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          * USDe <-> DAI,
          * sDAI <-> sUSDe,
          */
-        {
-            // Approvals
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(USDC),
-                false,
-                "approve(address,uint256)",
-                new address[](1),
-                "Approve Curve USDe USDC to spend USDC",
-                rawDataDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = USDe_USDC_Curve_Pool;
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(USDE),
-                false,
-                "approve(address,uint256)",
-                new address[](1),
-                "Approve Curve USDe USDC to spend USDe",
-                rawDataDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = USDe_USDC_Curve_Pool;
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(DAI),
-                false,
-                "approve(address,uint256)",
-                new address[](1),
-                "Approve Curve USDe DAI to spend DAI",
-                rawDataDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = USDe_DAI_Curve_Pool;
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(USDE),
-                false,
-                "approve(address,uint256)",
-                new address[](1),
-                "Approve Curve USDe DAI to spend USDe",
-                rawDataDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = USDe_DAI_Curve_Pool;
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(sDAI),
-                false,
-                "approve(address,uint256)",
-                new address[](1),
-                "Approve Curve sDAI sUSDe to spend sDAI",
-                rawDataDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = sDAI_sUSDe_Curve_Pool;
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(SUSDE),
-                false,
-                "approve(address,uint256)",
-                new address[](1),
-                "Approve Curve sDAI sUSDe to spend sUSDe",
-                rawDataDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = sDAI_sUSDe_Curve_Pool;
-            // Swapping
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                USDe_USDC_Curve_Pool,
-                false,
-                "exchange(int128,int128,uint256,uint256)",
-                new address[](0),
-                "Swap using Curve USDe/USDC pool",
-                rawDataDecoderAndSanitizer
-            );
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                USDe_DAI_Curve_Pool,
-                false,
-                "exchange(int128,int128,uint256,uint256)",
-                new address[](0),
-                "Swap using Curve USDe/DAI pool",
-                rawDataDecoderAndSanitizer
-            );
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                sDAI_sUSDe_Curve_Pool,
-                false,
-                "exchange(int128,int128,uint256,uint256)",
-                new address[](0),
-                "Swap using Curve sDAI/sUSDe pool",
-                rawDataDecoderAndSanitizer
-            );
-        }
+        _addLeafsForCurveSwapping(leafs, USDe_USDC_Curve_Pool);
+        _addLeafsForCurveSwapping(leafs, USDe_DAI_Curve_Pool);
+        _addLeafsForCurveSwapping(leafs, sDAI_sUSDe_Curve_Pool);
 
         // ========================== ITB Aave V3 USDC ==========================
         /**
@@ -1274,73 +1391,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          * deposit USDC to itbAaveV3Usdc
          * withdraw USDC supply from itbAaveV3Usdc
          */
-        {
-            // acceptOwnership
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Usdc,
-                false,
-                "acceptOwnership()",
-                new address[](0),
-                "Accept ownership of the ITB Aave V3 USDC contract",
-                itbDecoderAndSanitizer
-            );
-            // Transfer
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(USDC),
-                false,
-                "transfer(address,uint256)",
-                new address[](1),
-                "Transfer USDC to the ITB Aave V3 USDC contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = itbAaveV3Usdc;
-            // Withdraw
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Usdc,
-                false,
-                "withdraw(address,uint256)",
-                new address[](1),
-                "Withdraw USDC from the ITB Aave V3 USDC contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDC);
-            // WithdrawAll
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Usdc,
-                false,
-                "withdrawAll(address)",
-                new address[](1),
-                "Withdraw all USDC from the ITB Aave V3 USDC contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDC);
-            // Deposit
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Usdc,
-                false,
-                "deposit(address,uint256)",
-                new address[](1),
-                "Deposit USDC to the ITB Aave V3 USDC contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDC);
-            // Withdraw Supply
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Usdc,
-                false,
-                "withdrawSupply(address,uint256)",
-                new address[](1),
-                "Withdraw USDC supply from the ITB Aave V3 USDC contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDC);
-        }
+        supplyAssets = new ERC20[](1);
+        supplyAssets[0] = USDC;
+        _addLeafsForItbAaveV3(leafs, itbAaveV3Usdc, supplyAssets, "ITB Aave V3 USDC");
         // ========================== ITB Aave V3 DAI ==========================
         /**
          * acceptOwnership() of itbAaveV3Dai
@@ -1350,73 +1403,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          * deposit DAI to itbAaveV3Dai
          * withdraw DAI supply from itbAaveV3Dai
          */
-        {
-            // acceptOwnership
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Dai,
-                false,
-                "acceptOwnership()",
-                new address[](0),
-                "Accept ownership of the ITB Aave V3 DAI contract",
-                itbDecoderAndSanitizer
-            );
-            // Transfer
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(DAI),
-                false,
-                "transfer(address,uint256)",
-                new address[](1),
-                "Transfer DAI to the ITB Aave V3 DAI contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = itbAaveV3Dai;
-            // Withdraw
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Dai,
-                false,
-                "withdraw(address,uint256)",
-                new address[](1),
-                "Withdraw DAI from the ITB Aave V3 DAI contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(DAI);
-            // WithdrawAll
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Dai,
-                false,
-                "withdrawAll(address)",
-                new address[](1),
-                "Withdraw all DAI from the ITB Aave V3 DAI contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(DAI);
-            // Deposit
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Dai,
-                false,
-                "deposit(address,uint256)",
-                new address[](1),
-                "Deposit DAI to the ITB Aave V3 DAI contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(DAI);
-            // Withdraw Supply
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Dai,
-                false,
-                "withdrawSupply(address,uint256)",
-                new address[](1),
-                "Withdraw DAI supply from the ITB Aave V3 DAI contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(DAI);
-        }
+        supplyAssets = new ERC20[](1);
+        supplyAssets[0] = DAI;
+        _addLeafsForItbAaveV3(leafs, itbAaveV3Dai, supplyAssets, "ITB Aave V3 DAI");
         // ========================== ITB Aave V3 USDT ==========================
         /**
          * acceptOwnership() of itbAaveV3Usdt
@@ -1426,73 +1415,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          * deposit USDT to itbAaveV3Usdt
          * withdraw USDT supply from itbAaveV3Usdt
          */
-        {
-            // acceptOwnership
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Usdt,
-                false,
-                "acceptOwnership()",
-                new address[](0),
-                "Accept ownership of the ITB Aave V3 USDT contract",
-                itbDecoderAndSanitizer
-            );
-            // Transfer
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(USDT),
-                false,
-                "transfer(address,uint256)",
-                new address[](1),
-                "Transfer USDT to the ITB Aave V3 USDT contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = itbAaveV3Usdt;
-            // Withdraw
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Usdt,
-                false,
-                "withdraw(address,uint256)",
-                new address[](1),
-                "Withdraw USDT from the ITB Aave V3 USDT contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDT);
-            // WithdrawAll
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Usdt,
-                false,
-                "withdrawAll(address)",
-                new address[](1),
-                "Withdraw all USDT from the ITB Aave V3 USDT contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDT);
-            // Deposit
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Usdt,
-                false,
-                "deposit(address,uint256)",
-                new address[](1),
-                "Deposit USDT to the ITB Aave V3 USDT contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDT);
-            // Withdraw Supply
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbAaveV3Usdt,
-                false,
-                "withdrawSupply(address,uint256)",
-                new address[](1),
-                "Withdraw USDT supply from the ITB Aave V3 USDT contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDT);
-        }
+        supplyAssets = new ERC20[](1);
+        supplyAssets[0] = USDT;
+        _addLeafsForItbAaveV3(leafs, itbAaveV3Usdt, supplyAssets, "ITB Aave V3 USDT");
+
         // ========================== ITB Gearbox USDC ==========================
         /**
          * acceptOwnership() of itbGearboxUsdc
@@ -1504,114 +1430,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          * stake dUSDCV3 into sdUSDCV3
          * unstake dUSDCV3 from sdUSDCV3
          */
-        {
-            // acceptOwnership
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdc,
-                false,
-                "acceptOwnership()",
-                new address[](0),
-                "Accept ownership of the ITB Gearbox USDC contract",
-                itbDecoderAndSanitizer
-            );
-            // Transfer
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(USDC),
-                false,
-                "transfer(address,uint256)",
-                new address[](1),
-                "Transfer USDC to the ITB Gearbox USDC contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = itbGearboxUsdc;
-            // Approvals
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdc,
-                false,
-                "approveToken(address,address,uint256)",
-                new address[](2),
-                "Approve Gearbox dUSDCV3 to spend USDC",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDC);
-            leafs[leafIndex].argumentAddresses[1] = address(dUSDCV3);
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdc,
-                false,
-                "approveToken(address,address,uint256)",
-                new address[](2),
-                "Approve Gearbox sdUSDCV3 to spend dUSDCV3",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(dUSDCV3);
-            leafs[leafIndex].argumentAddresses[1] = address(sdUSDCV3);
-            // Withdraw
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdc,
-                false,
-                "withdraw(address,uint256)",
-                new address[](1),
-                "Withdraw USDC from the ITB Gearbox USDC contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDC);
-            // WithdrawAll
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdc,
-                false,
-                "withdrawAll(address)",
-                new address[](1),
-                "Withdraw all USDC from the ITB Gearbox USDC contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDC);
-            // Deposit
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdc,
-                false,
-                "deposit(uint256,uint256)",
-                new address[](0),
-                "Deposit USDC into Gearbox dUSDCV3 contract",
-                itbDecoderAndSanitizer
-            );
-            // Withdraw
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdc,
-                false,
-                "withdrawSupply(uint256,uint256)",
-                new address[](0),
-                "Withdraw USDC from Gearbox dUSDCV3 contract",
-                itbDecoderAndSanitizer
-            );
-            // Stake
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdc,
-                false,
-                "stake(uint256)",
-                new address[](0),
-                "Stake dUSDCV3 into Gearbox sdUSDCV3 contract",
-                itbDecoderAndSanitizer
-            );
-            // Unstake
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdc,
-                false,
-                "unstake(uint256)",
-                new address[](0),
-                "Unstake dUSDCV3 from Gearbox sdUSDCV3 contract",
-                itbDecoderAndSanitizer
-            );
-        }
+        _addLeafsForItbGearbox(leafs, itbGearboxUsdc, USDC, ERC20(dUSDCV3), sdUSDCV3, "ITB Gearbox USDC");
+
         // ========================== ITB Gearbox DAI ==========================
         /**
          * acceptOwnership() of itbGearboxDai
@@ -1623,114 +1443,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          * stake dDAIV3 into sdDAIV3
          * unstake dDAIV3 from sdDAIV3
          */
-        {
-            // acceptOwnership
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxDai,
-                false,
-                "acceptOwnership()",
-                new address[](0),
-                "Accept ownership of the ITB Gearbox DAI contract",
-                itbDecoderAndSanitizer
-            );
-            // Transfer
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(DAI),
-                false,
-                "transfer(address,uint256)",
-                new address[](1),
-                "Transfer DAI to the ITB Gearbox DAI contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = itbGearboxDai;
-            // Approvals
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxDai,
-                false,
-                "approveToken(address,address,uint256)",
-                new address[](2),
-                "Approve Gearbox dDAIV3 to spend DAI",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(DAI);
-            leafs[leafIndex].argumentAddresses[1] = address(dDAIV3);
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxDai,
-                false,
-                "approveToken(address,address,uint256)",
-                new address[](2),
-                "Approve Gearbox sdDAIV3 to spend dDAIV3",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(dDAIV3);
-            leafs[leafIndex].argumentAddresses[1] = address(sdDAIV3);
-            // Withdraw
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxDai,
-                false,
-                "withdraw(address,uint256)",
-                new address[](1),
-                "Withdraw DAI from the ITB Gearbox DAI contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(DAI);
-            // WithdrawAll
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxDai,
-                false,
-                "withdrawAll(address)",
-                new address[](1),
-                "Withdraw all DAI from the ITB Gearbox DAI contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(DAI);
-            // Deposit
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxDai,
-                false,
-                "deposit(uint256,uint256)",
-                new address[](0),
-                "Deposit DAI into Gearbox dDAIV3 contract",
-                itbDecoderAndSanitizer
-            );
-            // Withdraw
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxDai,
-                false,
-                "withdrawSupply(uint256,uint256)",
-                new address[](0),
-                "Withdraw DAI from Gearbox dDAIV3 contract",
-                itbDecoderAndSanitizer
-            );
-            // Stake
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxDai,
-                false,
-                "stake(uint256)",
-                new address[](0),
-                "Stake dDAIV3 into Gearbox sdDAIV3 contract",
-                itbDecoderAndSanitizer
-            );
-            // Unstake
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxDai,
-                false,
-                "unstake(uint256)",
-                new address[](0),
-                "Unstake dDAIV3 from Gearbox sdDAIV3 contract",
-                itbDecoderAndSanitizer
-            );
-        }
+        _addLeafsForItbGearbox(leafs, itbGearboxDai, DAI, ERC20(dDAIV3), sdDAIV3, "ITB Gearbox DAI");
+
         // ========================== ITB Gearbox USDT ==========================
         /**
          * acceptOwnership() of itbGearboxUsdt
@@ -1742,114 +1456,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
          * stake dUSDTV3 into sdUSDTV3
          * unstake dUSDTV3 from sdUSDTV3
          */
-        {
-            // acceptOwnership
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdt,
-                false,
-                "acceptOwnership()",
-                new address[](0),
-                "Accept ownership of the ITB Gearbox USDT contract",
-                itbDecoderAndSanitizer
-            );
-            // Transfer
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(USDT),
-                false,
-                "transfer(address,uint256)",
-                new address[](1),
-                "Transfer USDT to the ITB Gearbox USDT contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = itbGearboxUsdt;
-            // Approvals
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdt,
-                false,
-                "approveToken(address,address,uint256)",
-                new address[](2),
-                "Approve Gearbox dUSDTV3 to spend USDT",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDT);
-            leafs[leafIndex].argumentAddresses[1] = address(dUSDTV3);
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdt,
-                false,
-                "approveToken(address,address,uint256)",
-                new address[](2),
-                "Approve Gearbox sdUSDTV3 to spend dUSDTV3",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(dUSDTV3);
-            leafs[leafIndex].argumentAddresses[1] = address(sdUSDTV3);
-            // Withdraw
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdt,
-                false,
-                "withdraw(address,uint256)",
-                new address[](1),
-                "Withdraw USDT from the ITB Gearbox USDT contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDT);
-            // WithdrawAll
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdt,
-                false,
-                "withdrawAll(address)",
-                new address[](1),
-                "Withdraw all USDT from the ITB Gearbox USDT contract",
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(USDT);
-            // Deposit
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdt,
-                false,
-                "deposit(uint256,uint256)",
-                new address[](0),
-                "Deposit USDT into Gearbox dUSDTV3 contract",
-                itbDecoderAndSanitizer
-            );
-            // Withdraw
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdt,
-                false,
-                "withdrawSupply(uint256,uint256)",
-                new address[](0),
-                "Withdraw USDT from Gearbox dUSDTV3 contract",
-                itbDecoderAndSanitizer
-            );
-            // Stake
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdt,
-                false,
-                "stake(uint256)",
-                new address[](0),
-                "Stake dUSDTV3 into Gearbox sdUSDTV3 contract",
-                itbDecoderAndSanitizer
-            );
-            // Unstake
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbGearboxUsdt,
-                false,
-                "unstake(uint256)",
-                new address[](0),
-                "Unstake dUSDTV3 from Gearbox sdUSDTV3 contract",
-                itbDecoderAndSanitizer
-            );
-        }
+        _addLeafsForItbGearbox(leafs, itbGearboxUsdt, USDT, ERC20(dUSDTV3), sdUSDTV3, "ITB Gearbox USDT");
 
         // ========================== ITB Curve/Convex PYUSD/USDC ==========================
         /**
@@ -2623,4 +2230,8 @@ interface UniswapV3Pool {
     function token0() external view returns (address);
     function token1() external view returns (address);
     function fee() external view returns (uint24);
+}
+
+interface CurvePool {
+    function coins(uint256 i) external view returns (address);
 }
