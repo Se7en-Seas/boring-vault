@@ -69,4 +69,4 @@ All audits are stored in the [audit](./audit/) folder.
 
 ## Documentation
 
-For more detailed information, please refer to the [documentation](https://gitbook-url).
+For more detailed information, please refer to the [documentation](https://docs.veda.tech).
