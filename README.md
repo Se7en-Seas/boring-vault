@@ -7,7 +7,7 @@
 .,_,.='``'-.,\____/ \___|\_/ \___|_| |_\____/ \___|\__,_|___/-..__..-''                 ~~--
 ```
 
-# Boring Vault Arctic Architecture
+# Boring Vault Architecture
 
 Boring Vaults are flexible vault contracts that allow for intricate strategies, secured by both onchain and offchain mechanisms.
 
