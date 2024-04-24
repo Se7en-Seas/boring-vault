@@ -10,4 +10,6 @@ contract ContractNames {
     string public constant EtherFiLiquidUsdAccountantName = "EtherFi Liquid USD Accountant With Rate Providers V0.0";
     string public constant EtherFiLiquidUsdTellerName = "EtherFi Liquid USD Teller With Multi Asset Support V0.0";
     string public constant EtherFiLiquidUsdDecoderAndSanitizerName = "EtherFi Liquid USD Decoder and Sanitizer V0.0";
+    string public constant AtomicQueueName = "Atomic Queue V0.0";
+    string public constant AtomicSolverName = "Atomic Solver V3.0";
 }

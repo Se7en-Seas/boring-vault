@@ -11,6 +11,7 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {ILiquidityPool} from "src/interfaces/IStaking.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
+import {AtomicSolverV3, AtomicQueue} from "src/atomic-queue/AtomicSolverV3.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -24,6 +25,9 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
     uint8 public constant ADMIN_ROLE = 1;
     uint8 public constant MINTER_ROLE = 7;
     uint8 public constant BURNER_ROLE = 8;
+    uint8 public constant SOLVER_ROLE = 9;
+    uint8 public constant QUEUE_ROLE = 10;
+    uint8 public constant CAN_SOLVE_ROLE = 11;
 
     TellerWithMultiAssetSupport public teller;
     AccountantWithRateProviders public accountant;
@@ -31,6 +35,10 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
     address internal constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     ERC20 internal constant NATIVE_ERC20 = ERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     RolesAuthority public rolesAuthority;
+    AtomicQueue public atomicQueue;
+    AtomicSolverV3 public atomicSolverV3;
+
+    address public solver = vm.addr(54);
 
     function setUp() external {
         // Setup forked environment.
@@ -48,6 +56,10 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
             new TellerWithMultiAssetSupport(address(this), address(boringVault), address(accountant), address(WETH));
 
         rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
+
+        atomicQueue = new AtomicQueue();
+        atomicSolverV3 = new AtomicSolverV3(address(this), rolesAuthority);
+
         boringVault.setAuthority(rolesAuthority);
         accountant.setAuthority(rolesAuthority);
         teller.setAuthority(rolesAuthority);
@@ -69,6 +81,13 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         rolesAuthority.setRoleCapability(
             ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.refundDeposit.selector, true
         );
+        rolesAuthority.setRoleCapability(
+            SOLVER_ROLE, address(teller), TellerWithMultiAssetSupport.bulkWithdraw.selector, true
+        );
+        rolesAuthority.setRoleCapability(QUEUE_ROLE, address(atomicSolverV3), AtomicSolverV3.finishSolve.selector, true);
+        rolesAuthority.setRoleCapability(
+            CAN_SOLVE_ROLE, address(atomicSolverV3), AtomicSolverV3.redeemSolve.selector, true
+        );
         rolesAuthority.setPublicCapability(address(teller), TellerWithMultiAssetSupport.deposit.selector, true);
         rolesAuthority.setPublicCapability(
             address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
@@ -77,6 +96,9 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
+        rolesAuthority.setUserRole(address(atomicSolverV3), SOLVER_ROLE, true);
+        rolesAuthority.setUserRole(address(atomicQueue), QUEUE_ROLE, true);
+        rolesAuthority.setUserRole(solver, CAN_SOLVE_ROLE, true);
 
         teller.addAsset(WETH);
         teller.addAsset(ERC20(NATIVE));
@@ -328,6 +350,39 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         assertApproxEqAbs(assets_out_0, wETH_amount, 1, "Should have received expected wETH assets");
         assertApproxEqAbs(assets_out_1, eETH_amount, 1, "Should have received expected eETH assets");
         assertApproxEqAbs(assets_out_2, weETH_amount, 1, "Should have received expected weETH assets");
+    }
+
+    function testWithdrawWithAtomicQueue(uint256 amount) external {
+        amount = bound(amount, 0.0001e18, 10_000e18);
+
+        address user = vm.addr(9);
+        uint256 wETH_amount = amount;
+        deal(address(WETH), user, wETH_amount);
+
+        vm.startPrank(user);
+        WETH.safeApprove(address(boringVault), wETH_amount);
+
+        uint256 shares = teller.deposit(WETH, wETH_amount, 0);
+
+        // Share lock period is not set, so user can submit withdraw request immediately.
+        AtomicQueue.AtomicRequest memory req = AtomicQueue.AtomicRequest({
+            deadline: uint64(block.timestamp + 1 days),
+            atomicPrice: 1e18,
+            offerAmount: uint96(shares),
+            inSolve: false
+        });
+        boringVault.approve(address(atomicQueue), shares);
+        atomicQueue.updateAtomicRequest(boringVault, WETH, req);
+        vm.stopPrank();
+
+        // Solver approves solver contract to spend enough assets to cover withdraw.
+        vm.startPrank(solver);
+        WETH.safeApprove(address(atomicSolverV3), wETH_amount);
+        // Solve withdraw request.
+        address[] memory users = new address[](1);
+        users[0] = user;
+        atomicSolverV3.redeemSolve(atomicQueue, boringVault, WETH, users, 0, type(uint256).max, teller);
+        vm.stopPrank();
     }
 
     function testAssetIsSupported() external {
