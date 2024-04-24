@@ -3567,6 +3567,78 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[0] = address(SUSDE);
             leafs[leafIndex].argumentAddresses[1] = address(USDT);
             leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap USDC for PYUSD using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[1] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap PYUSD for USDC using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[1] = address(USDC);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap USDT for PYUSD using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(USDT);
+            leafs[leafIndex].argumentAddresses[1] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap PYUSD for USDT using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[1] = address(USDT);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap DAI for PYUSD using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(DAI);
+            leafs[leafIndex].argumentAddresses[1] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                uniV3Router,
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                "Swap PYUSD for DAI using UniswapV3 router",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[1] = address(DAI);
+            leafs[leafIndex].argumentAddresses[2] = address(boringVault);
         }
         // ========================== ITB Aave V3 USDC ==========================
         /**
