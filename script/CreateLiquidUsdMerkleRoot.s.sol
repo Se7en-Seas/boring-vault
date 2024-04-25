@@ -3410,6 +3410,16 @@ contract CreateLiquidUsdMerkleRootScript is Script, MainnetAddresses {
                 rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = uniV3Router;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(PYUSD),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve UniswapV3 router to spend PYUSD",
+                rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = uniV3Router;
             // Swapping
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
