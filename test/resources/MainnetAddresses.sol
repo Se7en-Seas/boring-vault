@@ -5,7 +5,7 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 contract MainnetAddresses {
     // Liquid Ecosystem
-    address public deployerAddress;
+    address public deployerAddress = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d;
     address public dev0Address = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b;
     address public dev1Address = 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1;
 
@@ -60,6 +60,7 @@ contract MainnetAddresses {
     ERC20 public USDE = ERC20(0x4c9EDD5852cd905f086C759E8383e09bff1E68B3);
     ERC20 public GEAR = ERC20(0xBa3335588D9403515223F109EdC4eB7269a9Ab5D);
     ERC20 public SDAI = ERC20(0x83F20F44975D03b1b09e64809B757c47f942BEeA);
+    ERC20 public PYUSD = ERC20(0x6c3ea9036406852006290770BEdFcAbA0e23A0e8);
 
     // Rate providers
     address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
@@ -169,6 +170,7 @@ contract MainnetAddresses {
 
     // Mainnet Balancer Specific Addresses
     address public vault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+    address public balancerVault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     address public relayer = 0xfeA793Aa415061C483D2390414275AD314B3F621;
     address public minter = 0x239e55F427D44C3cc793f49bFB507ebe76638a2b;
     ERC20 public USDC_DAI_USDT_BPT = ERC20(0x79c58f70905F734641735BC61e45c19dD9Ad60bC);
@@ -290,6 +292,15 @@ contract MainnetAddresses {
     address public weETH_wETH_Curve_Gauge = 0x1CAC1a0Ed47E2e0A313c712b2dcF85994021a365;
     address public weETH_wETH_Convex_Reward = 0x2D159E01A5cEe7498F84Be68276a5266b3cb3774;
 
+    address public pyUsd_Usdc_Curve_Pool = 0x383E6b4437b59fff47B619CBA855CA29342A8559;
+    address public pyUsd_Usdc_Convex_Id = address(270);
+    address public frax_Usdc_Curve_Pool = 0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2;
+    address public frax_Usdc_Convex_Id = address(100);
+    address public usdc_CrvUsd_Curve_Pool = 0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E;
+    address public usdc_CrvUsd_Convex_Id = address(182);
+    address public sDai_sUsde_Curve_Pool = 0x167478921b907422F8E88B43C4Af2B8BEa278d3A;
+    address public sDai_sUsde_Curve_Gauge = 0x330Cfd12e0E97B0aDF46158D2A81E8Bd2985c6cB;
+
     address public ezETH_wETH_Curve_Pool = 0x85dE3ADd465a219EE25E04d22c39aB027cF5C12E;
     address public weETH_rswETH_Curve_Pool = 0x278cfB6f06B1EFc09d34fC7127d6060C61d629Db;
     address public rswETH_wETH_Curve_Pool = 0xeE04382c4cA6c450213923fE0f0daB19b0ff3939;
@@ -410,20 +421,15 @@ contract MainnetAddresses {
     address public pendleEethPt = 0xc69Ad9baB1dEE23F4605a82b3354F8E40d1E5966;
     address public pendleEethYt = 0xfb35Fd0095dD1096b1Ca49AD44d8C5812A201677;
 
-    address public pendleEzEthMarket = 0xDe715330043799D7a80249660d1e6b61eB3713B3;
-    address public pendleEzEthSy = 0x22E12A50e3ca49FB183074235cB1db84Fe4C716D;
-    address public pendleEzEthPt = 0xeEE8aED1957ca1545a0508AfB51b53cCA7e3c0d1;
-    address public pendleEzEthYt = 0x256Fb830945141f7927785c06b65dAbc3744213c;
+    address public pendleUSDeMarket = 0x19588F29f9402Bb508007FeADd415c875Ee3f19F;
+    address public pendleUSDeSy = 0x42862F48eAdE25661558AFE0A630b132038553D0;
+    address public pendleUSDePt = 0xa0021EF8970104c2d008F38D92f115ad56a9B8e1;
+    address public pendleUSDeYt = 0x1e3d13932C31d7355fCb3FEc680b0cD159dC1A07;
 
-    address public pendleUSDeMarket = 0xb4460e76D99eCaD95030204D3C25fb33C4833997;
-    address public pendleUSDeSy = 0x248d83f7Ac03CEbCC06d5C1A52c9B5d0EbB9936e;
-    address public pendleUSDePt = 0x0869055C098Fe927E1816CAAfb16E9133e5258FE;
-    address public pendleUSDeYt = 0xA99A4329c49369fB41e6CB6852535Bbf3d4f749b;
-
-    address public pendleSUSDeMarket = 0x8f7627bD46B30E296Aa3AAbe1dF9Bfac10920B6E;
-    address public pendleSUSDeSy = 0x22E12A50e3ca49FB183074235cB1db84Fe4C716D;
-    address public pendleSUSDePt = 0x215a61deaD7e1303b8571Bb429491aeAc5f2061e;
-    address public pendleSUSDeYt = 0x20c8Cf9714339fd018898cB5De84c089e48d1c87;
+    address public pendleZircuitUSDeMarket = 0x90c98ab215498B72Abfec04c651e2e496bA364C0;
+    address public pendleZircuitUSDeSy = 0x293C6937D8D82e05B01335F7B33FBA0c8e256E30;
+    address public pendleZircuitUSDePt = 0x3d4F535539A33FEAd4D76D7b3B7A9cB5B21C73f1;
+    address public pendleZircuitUSDeYt = 0x40357b9f22B4DfF0Bf56A90661b8eC106C259d29;
 
     address public pendleSwethMarket = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303;
 
@@ -454,4 +460,8 @@ contract MainnetAddresses {
     address public USDC_USDT_01 = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6;
     address public USDC_USDT_05 = 0x7858E59e0C01EA06Df3aF3D20aC7B0003275D4Bf;
     address public USDC_wETH_05 = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
+    address public FRAX_USDC_05 = 0xc63B0708E2F7e69CB8A1df0e1389A98C35A76D52;
+    address public FRAX_USDC_01 = 0x9A834b70C07C81a9fcD6F22E842BF002fBfFbe4D;
+    address public DAI_FRAX_05 = 0x97e7d56A0408570bA1a7852De36350f7713906ec;
+    address public FRAX_USDT_05 = 0xc2A856c3afF2110c1171B8f942256d40E980C726;
 }

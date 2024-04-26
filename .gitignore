@@ -14,5 +14,5 @@ docs/
 # Dotenv file
 .env
 
-
-*.json
+*.DS_Store
+broadcast/*

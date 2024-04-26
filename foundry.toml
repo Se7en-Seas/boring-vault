@@ -6,6 +6,7 @@ auto_detect_solc = false
 evm_version = 'shanghai'
 optimizer = true
 optimizer_runs = 200
+fs_permissions = [{ access = "read-write", path = "./" }]
 
 [rpc_endpoints]
 mainnet = "${MAINNET_RPC_URL}"
