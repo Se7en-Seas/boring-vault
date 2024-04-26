@@ -58,6 +58,9 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
      */
     mapping(uint256 => bytes32) public publicDepositHistory;
 
+    /**
+     * @notice Maps user address to the time their shares will be unlocked.
+     */
     mapping(address => uint256) public shareUnlockTime;
 
     //============================== ERRORS ===============================
