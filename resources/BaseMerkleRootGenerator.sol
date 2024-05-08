@@ -965,6 +965,147 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         );
     }
 
+    function _addLeafsForEigenLayerLST(
+        ManageLeaf[] memory leafs,
+        address lst,
+        address strategy,
+        address _strategyManager,
+        address _delegationManager
+    ) internal {
+        // Approvals.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            lst,
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Eigen Layer Strategy Manager to spend ", ERC20(lst).symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _strategyManager;
+        tokenToSpenderToApprovalInTree[lst][_strategyManager] = true;
+        // Depositing.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            _strategyManager,
+            false,
+            "depositIntoStrategy(address,address,uint256)",
+            new address[](2),
+            string.concat("Deposit ", ERC20(lst).symbol(), " into Eigen Layer Strategy Manager"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = strategy;
+        leafs[leafIndex].argumentAddresses[1] = lst;
+        // Request withdraw.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            _delegationManager,
+            false,
+            "queueWithdrawals((address[],uint256[],address)[])",
+            new address[](2),
+            string.concat("Request withdraw of ", ERC20(lst).symbol(), " from Eigen Layer Delegation Manager"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = strategy;
+        leafs[leafIndex].argumentAddresses[1] = _boringVault;
+        // Complete withdraw.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            _delegationManager,
+            false,
+            "completeQueuedWithdrawals((address,address,address,uint256,uint32,address[],uint256[])[],address[][],uint256[],bool[])",
+            new address[](5),
+            string.concat("Complete withdraw of ", ERC20(lst).symbol(), " from Eigen Layer Delegation Manager"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[1] = address(0);
+        leafs[leafIndex].argumentAddresses[2] = _boringVault;
+        leafs[leafIndex].argumentAddresses[3] = strategy;
+        leafs[leafIndex].argumentAddresses[4] = lst;
+    }
+
+    function _addSwellLeafs(ManageLeaf[] memory leafs, address asset, address _swellSimpleStaking) internal {
+        // Approval
+        if (!tokenToSpenderToApprovalInTree[asset][_swellSimpleStaking]) {
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                asset,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Swell Simple Staking to spend ", ERC20(asset).symbol()),
+                _rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = _swellSimpleStaking;
+            tokenToSpenderToApprovalInTree[asset][_swellSimpleStaking] = true;
+        }
+        // deposit
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            _swellSimpleStaking,
+            false,
+            "deposit(address,uint256,address)",
+            new address[](2),
+            string.concat("Deposit ", ERC20(asset).symbol(), " into Swell Simple Staking"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = asset;
+        leafs[leafIndex].argumentAddresses[1] = _boringVault;
+        // withdraw
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            _swellSimpleStaking,
+            false,
+            "withdraw(address,uint256,address)",
+            new address[](2),
+            string.concat("Withdraw ", ERC20(asset).symbol(), " from Swell Simple Staking"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = asset;
+        leafs[leafIndex].argumentAddresses[1] = _boringVault;
+    }
+
+    function _addZircuitLeafs(ManageLeaf[] memory leafs, address asset, address _zircuitSimpleStaking) internal {
+        // Approval
+        if (!tokenToSpenderToApprovalInTree[asset][_zircuitSimpleStaking]) {
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                asset,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Zircuit simple staking to spend ", ERC20(asset).symbol()),
+                _rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = _zircuitSimpleStaking;
+            tokenToSpenderToApprovalInTree[asset][_zircuitSimpleStaking] = true;
+        }
+        // deposit
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            _zircuitSimpleStaking,
+            false,
+            "depositFor(address,address,uint256)",
+            new address[](2),
+            string.concat("Deposit ", ERC20(asset).symbol(), " into Zircuit simple staking"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = asset;
+        leafs[leafIndex].argumentAddresses[1] = _boringVault;
+        // withdraw
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            _zircuitSimpleStaking,
+            false,
+            "withdraw(address,uint256)",
+            new address[](1),
+            string.concat("Withdraw ", ERC20(asset).symbol(), " from Zircuit simple staking"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = asset;
+    }
+
     function _generateLeafs(
         string memory filePath,
         ManageLeaf[] memory leafs,
