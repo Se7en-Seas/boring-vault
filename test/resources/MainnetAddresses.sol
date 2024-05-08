@@ -61,6 +61,7 @@ contract MainnetAddresses {
     ERC20 public GEAR = ERC20(0xBa3335588D9403515223F109EdC4eB7269a9Ab5D);
     ERC20 public SDAI = ERC20(0x83F20F44975D03b1b09e64809B757c47f942BEeA);
     ERC20 public PYUSD = ERC20(0x6c3ea9036406852006290770BEdFcAbA0e23A0e8);
+    ERC20 public METH = ERC20(0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa);
 
     // Rate providers
     address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
@@ -464,4 +465,10 @@ contract MainnetAddresses {
     address public FRAX_USDC_01 = 0x9A834b70C07C81a9fcD6F22E842BF002fBfFbe4D;
     address public DAI_FRAX_05 = 0x97e7d56A0408570bA1a7852De36350f7713906ec;
     address public FRAX_USDT_05 = 0xc2A856c3afF2110c1171B8f942256d40E980C726;
+
+    // EigenLayer
+    address public strategyManager = 0x858646372CC42E1A627fcE94aa7A7033e7CF075A;
+    address public delegationManager = 0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A;
+    address public mETHStrategy = 0x298aFB19A105D59E74658C4C334Ff360BadE6dd2;
+
 }
