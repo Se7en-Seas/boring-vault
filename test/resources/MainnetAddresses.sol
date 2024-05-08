@@ -473,4 +473,7 @@ contract MainnetAddresses {
 
     // Swell
     address public swellSimpleStaking = 0x38D43a6Cb8DA0E855A42fB6b0733A0498531d774;
+
+    // Zircuit
+    address public zircuitSimpleStaking = 0xF047ab4c75cebf0eB9ed34Ae2c186f3611aEAfa6;
 }

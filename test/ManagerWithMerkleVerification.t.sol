@@ -1620,6 +1620,59 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         assertEq(WETH.balanceOf(address(boringVault)), 1_000e18, "BoringVault should have received 1,000 WETH");
     }
 
+    function testZircuitSimpleStakingIntegration() external {
+        deal(address(WETH), address(boringVault), 1_000e18);
+
+        // update DecoderAndSanitizer
+        rawDataDecoderAndSanitizer = address(new PointFarmingDecoderAndSanitizer(address(boringVault)));
+
+        // approve
+        // Call deposit
+        // withdraw
+        // complete withdraw
+        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = zircuitSimpleStaking;
+        leafs[1] = ManageLeaf(zircuitSimpleStaking, false, "depositFor(address,address,uint256)", new address[](2));
+        leafs[1].argumentAddresses[0] = address(WETH);
+        leafs[1].argumentAddresses[1] = address(boringVault);
+        leafs[2] = ManageLeaf(zircuitSimpleStaking, false, "withdraw(address,uint256)", new address[](1));
+        leafs[2].argumentAddresses[0] = address(WETH);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](3);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](3);
+        targets[0] = address(WETH);
+        targets[1] = zircuitSimpleStaking;
+        targets[2] = zircuitSimpleStaking;
+
+        bytes[] memory targetData = new bytes[](3);
+        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", zircuitSimpleStaking, type(uint256).max);
+        targetData[1] =
+            abi.encodeWithSignature("depositFor(address,address,uint256)", WETH, address(boringVault), 1_000e18);
+        targetData[2] = abi.encodeWithSignature("withdraw(address,uint256)", WETH, 1_000e18);
+
+        address[] memory decodersAndSanitizers = new address[](3);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+
+        uint256[] memory values = new uint256[](3);
+
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        assertEq(WETH.balanceOf(address(boringVault)), 1_000e18, "BoringVault should have received 1,000 WETH");
+    }
+
     function testReverts() external {
         bytes32[][] memory manageProofs;
         address[] memory targets;
