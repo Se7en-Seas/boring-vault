@@ -471,4 +471,6 @@ contract MainnetAddresses {
     address public delegationManager = 0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A;
     address public mETHStrategy = 0x298aFB19A105D59E74658C4C334Ff360BadE6dd2;
 
+    // Swell
+    address public swellSimpleStaking = 0x38D43a6Cb8DA0E855A42fB6b0733A0498531d774;
 }
