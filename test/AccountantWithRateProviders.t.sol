@@ -9,6 +9,7 @@ import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
+import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -21,6 +22,8 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     AccountantWithRateProviders public accountant;
     address public payout_address = vm.addr(7777777);
     RolesAuthority public rolesAuthority;
+    GenericRateProvider public mETHRateProvider;
+    GenericRateProvider public ptRateProvider;
 
     uint8 public constant MINTER_ROLE = 1;
     uint8 public constant ADMIN_ROLE = 2;
@@ -30,7 +33,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     function setUp() external {
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 19363419;
+        uint256 blockNumber = 19827152;
         _startFork(rpcKey, blockNumber);
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
@@ -293,6 +296,57 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         assertEq(rate_in_quote, expected_rate, "Rate should be expected rate");
     }
 
+    function testMETHRateProvider() external {
+        // Deploy GenericRateProvider for mETH.
+        bytes4 selector = bytes4(keccak256(abi.encodePacked("mETHToETH(uint256)")));
+        uint256 amount = 1e18;
+        mETHRateProvider = new GenericRateProvider(mantleLspStaking, selector, bytes32(amount), 0, 0, 0, 0, 0, 0, 0);
+
+        uint256 expectedRate = MantleLspStaking(mantleLspStaking).mETHToETH(1e18);
+        uint256 gas = gasleft();
+        uint256 rate = mETHRateProvider.getRate();
+        console.log("Gas used: ", gas - gasleft());
+
+        assertEq(rate, expectedRate, "Rate should be expected rate");
+
+        // Setup rate in accountant.
+        accountant.setRateProviderData(METH, false, address(mETHRateProvider));
+
+        uint256 expectedRateInMeth = accountant.getRate().mulDivDown(1e18, rate);
+
+        uint256 rateInMeth = accountant.getRateInQuote(METH);
+
+        assertEq(rateInMeth, expectedRateInMeth, "Rate should be expected rate");
+
+        assertLt(rateInMeth, 1e18, "Rate should be less than 1e18");
+    }
+
+    function testPtRateProvider() external {
+        // Deploy GenericRateProvider for mETH.
+        bytes4 selector = bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)")));
+        uint256 amount = 1e18;
+        bytes32 pt = 0x000000000000000000000000c69Ad9baB1dEE23F4605a82b3354F8E40d1E5966; // pendleEethPt
+        bytes32 quote = 0x000000000000000000000000C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // wETH
+        ptRateProvider =
+            new GenericRateProvider(liquidV1PriceRouter, selector, pt, bytes32(amount), quote, 0, 0, 0, 0, 0);
+
+        uint256 expectedRate = PriceRouter(liquidV1PriceRouter).getValue(pendleEethPt, 1e18, address(WETH));
+        uint256 rate = ptRateProvider.getRate();
+
+        assertEq(rate, expectedRate, "Rate should be expected rate");
+
+        // Setup rate in accountant.
+        accountant.setRateProviderData(ERC20(pendleEethPt), false, address(ptRateProvider));
+
+        uint256 expectedRateInPt = accountant.getRate().mulDivDown(1e18, rate);
+
+        uint256 rateInPt = accountant.getRateInQuote(ERC20(pendleEethPt));
+
+        assertEq(rateInPt, expectedRateInPt, "Rate should be expected rate");
+
+        assertGt(rateInPt, 1e18, "Rate should be greater than 1e18");
+    }
+
     function testReverts() external {
         accountant.pause();
 
@@ -381,4 +435,12 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
     }
+}
+
+interface MantleLspStaking {
+    function mETHToETH(uint256) external view returns (uint256);
+}
+
+interface PriceRouter {
+    function getValue(address, uint256, address) external view returns (uint256);
 }

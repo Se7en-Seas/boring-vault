@@ -8,6 +8,7 @@ contract MainnetAddresses {
     address public deployerAddress = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d;
     address public dev0Address = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b;
     address public dev1Address = 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1;
+    address public liquidV1PriceRouter = 0x693799805B502264f9365440B93C113D86a4fFF5;
 
     // DeFi Ecosystem
     address public ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -476,4 +477,7 @@ contract MainnetAddresses {
 
     // Zircuit
     address public zircuitSimpleStaking = 0xF047ab4c75cebf0eB9ed34Ae2c186f3611aEAfa6;
+
+    // Mantle
+    address public mantleLspStaking = 0xe3cBd06D7dadB3F4e6557bAb7EdD924CD1489E8f;
 }
