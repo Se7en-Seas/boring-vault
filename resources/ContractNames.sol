@@ -30,4 +30,6 @@ contract ContractNames {
     string public constant PendleZircuitPTweETHRateProviderName = "Pendle Zircuit PT weETH Rate Provider V0.0";
     string public constant PendleZircuitYTweETHRateProviderName = "Pendle Zircuit YT weETH Rate Provider V0.0";
     string public constant PendleZircuitLPweETHRateProviderName = "Pendle Zircuit LP weETH Rate Provider V0.0";
+
+    string public constant WstEthRateProviderName = "wstETH Rate Provider V0.0";
 }

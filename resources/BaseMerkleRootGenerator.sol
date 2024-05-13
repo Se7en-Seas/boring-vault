@@ -1106,6 +1106,191 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         leafs[leafIndex].argumentAddresses[0] = asset;
     }
 
+    function _addBalancerLeafs(ManageLeaf[] memory leafs, bytes32 poolId, address gauge) internal {
+        BalancerVault bv = BalancerVault(balancerVault);
+
+        (ERC20[] memory tokens,,) = bv.getPoolTokens(poolId);
+        address pool = _getPoolAddressFromPoolId(poolId);
+        uint256 tokenCount;
+        for (uint256 i; i < tokens.length; i++) {
+            if (address(tokens[i]) == pool) continue;
+            if (!tokenToSpenderToApprovalInTree[address(tokens[i])][balancerVault]) {
+                leafIndex++;
+                leafs[leafIndex] = ManageLeaf(
+                    address(tokens[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Balancer Vault to spend ", tokens[i].symbol()),
+                    _rawDataDecoderAndSanitizer
+                );
+                leafs[leafIndex].argumentAddresses[0] = balancerVault;
+                tokenToSpenderToApprovalInTree[address(tokens[i])][balancerVault] = true;
+            }
+            tokenCount++;
+        }
+
+        // Approve gauge.
+        if (!tokenToSpenderToApprovalInTree[pool][gauge]) {
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                pool,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Balancer gauge to spend ", ERC20(pool).symbol()),
+                _rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = gauge;
+            tokenToSpenderToApprovalInTree[pool][gauge] = true;
+        }
+
+        address[] memory addressArguments = new address[](3 + tokenCount);
+        addressArguments[0] = pool;
+        addressArguments[1] = _boringVault;
+        addressArguments[2] = _boringVault;
+        uint256 j;
+        for (uint256 i; i < tokens.length; i++) {
+            if (address(tokens[i]) == pool) continue;
+            addressArguments[3 + j] = address(tokens[i]);
+            j++;
+        }
+
+        // Join pool
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            balancerVault,
+            false,
+            "joinPool(bytes32,address,address,(address[],uint256[],bytes,bool))",
+            new address[](5),
+            string.concat("Join Balancer pool ", ERC20(pool).symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        for (uint256 i; i < addressArguments.length; i++) {
+            leafs[leafIndex].argumentAddresses[i] = addressArguments[i];
+        }
+
+        // Exit pool
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            balancerVault,
+            false,
+            "exitPool(exitPool(bytes32,address,address,(address[],uint256[],bytes,bool)))",
+            new address[](5),
+            string.concat("Exit Balancer pool ", ERC20(pool).symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        for (uint256 i; i < addressArguments.length; i++) {
+            leafs[leafIndex].argumentAddresses[i] = addressArguments[i];
+        }
+
+        // Deposit into gauge.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            gauge,
+            false,
+            "deposit(uint256,address)",
+            new address[](1),
+            string.concat("Deposit ", ERC20(pool).symbol(), " into Balancer gauge"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+
+        // Withdraw from gauge.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            gauge,
+            false,
+            "withdraw(uint256)",
+            new address[](0),
+            string.concat("Withdraw ", ERC20(pool).symbol(), " from Balancer gauge"),
+            _rawDataDecoderAndSanitizer
+        );
+
+        // Mint rewards.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            minter,
+            false,
+            "mint(address)",
+            new address[](1),
+            string.concat("Mint rewards from Balancer gauge"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = gauge;
+    }
+
+    function _addAuraLeafs(ManageLeaf[] memory leafs, address auraDeposit) internal {
+        ERC4626 auraVault = ERC4626(auraDeposit);
+        ERC20 bpt = auraVault.asset();
+
+        // Approve vault to spend BPT.
+        if (!tokenToSpenderToApprovalInTree[address(bpt)][auraDeposit]) {
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(bpt),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve ", auraVault.symbol(), " to spend ", bpt.symbol()),
+                _rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = auraDeposit;
+            tokenToSpenderToApprovalInTree[address(bpt)][auraDeposit] = true;
+        }
+
+        // Deposit BPT into Aura vault.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            auraDeposit,
+            false,
+            "deposit(uint256,address)",
+            new address[](1),
+            string.concat("Deposit ", bpt.symbol(), " into ", auraVault.symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+
+        // Withdraw BPT from Aura vault.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            auraDeposit,
+            false,
+            "withdraw(uint256,address,address)",
+            new address[](2),
+            string.concat("Withdraw ", bpt.symbol(), " from ", auraVault.symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[1] = _boringVault;
+
+        // Call getReward.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            auraDeposit,
+            false,
+            "getReward(address,bool)",
+            new address[](1),
+            string.concat("Get rewards from ", auraVault.symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+    }
+
+    function _addBalancerFlashloanLeafs(ManageLeaf[] memory leafs, address tokenToFlashloan) internal {
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            _managerAddress,
+            false,
+            "lashLoan(address,address[],uint256[],bytes)",
+            new address[](2),
+            string.concat("Flashloan ", ERC20(tokenToFlashloan).symbol(), " from Balancer Vault"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _managerAddress;
+        leafs[leafIndex].argumentAddresses[1] = tokenToFlashloan;
+    }
+
     function _generateLeafs(
         string memory filePath,
         ManageLeaf[] memory leafs,
@@ -1273,6 +1458,10 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
             value := keccak256(0x00, 0x40)
         }
     }
+
+    function _getPoolAddressFromPoolId(bytes32 poolId) internal pure returns (address) {
+        return address(uint160(uint256(poolId >> 96)));
+    }
 }
 
 interface IMB {
@@ -1305,4 +1494,8 @@ interface UniswapV3Pool {
 
 interface CurvePool {
     function coins(uint256 i) external view returns (address);
+}
+
+interface BalancerVault {
+    function getPoolTokens(bytes32) external view returns (ERC20[] memory, uint256[] memory, uint256);
 }

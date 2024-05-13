@@ -133,6 +133,7 @@ contract MainnetAddresses {
     ERC20 public swETH_bbaWETH = ERC20(0xaE8535c23afeDdA9304B03c68a3563B75fc8f92b);
     ERC20 public swETH_wETH = ERC20(0x02D928E68D8F10C0358566152677Db51E1e2Dc8C);
 
+    bytes32 public rETH_weETH_id = 0x05ff47afada98a98982113758878f9a8b9fdda0a000000000000000000000645;
     ERC20 public rETH_weETH = ERC20(0x05ff47AFADa98a98982113758878F9A8B9FddA0a);
     address public rETH_weETH_gauge = 0xC859BF9d7B8C557bBd229565124c2C09269F3aEF;
     address public aura_reth_weeth = 0x07A319A023859BbD49CC9C38ee891c3EA9283Cc5;
@@ -294,6 +295,9 @@ contract MainnetAddresses {
     address public weETH_wETH_Curve_Gauge = 0x1CAC1a0Ed47E2e0A313c712b2dcF85994021a365;
     address public weETH_wETH_Convex_Reward = 0x2D159E01A5cEe7498F84Be68276a5266b3cb3774;
 
+    address public weETH_wETH_Pool = 0x13947303F63b363876868D070F14dc865C36463b;
+    address public weETH_wETH_NG_Pool = 0xDB74dfDD3BB46bE8Ce6C33dC9D82777BCFc3dEd5;
+
     address public pyUsd_Usdc_Curve_Pool = 0x383E6b4437b59fff47B619CBA855CA29342A8559;
     address public pyUsd_Usdc_Convex_Id = address(270);
     address public frax_Usdc_Curve_Pool = 0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2;
@@ -427,6 +431,11 @@ contract MainnetAddresses {
     address public pendleZircuitWeethSy = 0xD7DF7E085214743530afF339aFC420c7c720BFa7;
     address public pendleZircuitEethPt = 0x4AE5411F3863CdB640309e84CEDf4B08B8b33FfF;
     address public pendleZircuitEethYt = 0x7C2D26182adeEf96976035986cF56474feC03bDa;
+
+    address public pendleWeETHMarketNew = 0x7d372819240D14fB477f17b964f95F33BeB4c704;
+    address public pendleWeethSyNew = 0xAC0047886a985071476a1186bE89222659970d65;
+    address public pendleEethPtNew = 0x6ee2b5E19ECBa773a352E5B21415Dc419A700d1d;
+    address public pendleEethYtNew = 0x129e6B5DBC0Ecc12F9e486C5BC9cDF1a6A80bc6A;
 
     address public pendleUSDeMarket = 0x19588F29f9402Bb508007FeADd415c875Ee3f19F;
     address public pendleUSDeSy = 0x42862F48eAdE25661558AFE0A630b132038553D0;
