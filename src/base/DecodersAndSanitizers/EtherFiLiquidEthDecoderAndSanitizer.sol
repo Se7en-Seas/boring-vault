@@ -17,6 +17,12 @@ import {GearboxDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protoco
 import {PendleRouterDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/PendleRouterDecoderAndSanitizer.sol";
 import {AaveV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/AaveV3DecoderAndSanitizer.sol";
+import {EigenLayerLSTStakingDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/EigenLayerLSTStakingDecoderAndSanitizer.sol";
+import {SwellSimpleStakingDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/SwellSimpleStakingDecoderAndSanitizer.sol";
+import {ZircuitSimpleStakingDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/ZircuitSimpleStakingDecoderAndSanitizer.sol";
 
 contract EtherFiLiquidEthDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
@@ -31,7 +37,10 @@ contract EtherFiLiquidEthDecoderAndSanitizer is
     OneInchDecoderAndSanitizer,
     GearboxDecoderAndSanitizer,
     PendleRouterDecoderAndSanitizer,
-    AaveV3DecoderAndSanitizer
+    AaveV3DecoderAndSanitizer,
+    EigenLayerLSTStakingDecoderAndSanitizer,
+    SwellSimpleStakingDecoderAndSanitizer,
+    ZircuitSimpleStakingDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
@@ -95,5 +104,18 @@ contract EtherFiLiquidEthDecoderAndSanitizer is
         returns (bytes memory addressesFound)
     {
         addressesFound = abi.encodePacked(_addr);
+    }
+
+    /**
+     * @notice BalancerV2, NativeWrapper, Curve, and Gearbox all specify a `withdraw(uint256)`,
+     *         all cases are handled the same way.
+     */
+    function withdraw(address _token, uint256, /*_amount*/ address _receiver)
+        external
+        pure
+        override(AaveV3DecoderAndSanitizer, SwellSimpleStakingDecoderAndSanitizer)
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(_token, _receiver);
     }
 }
