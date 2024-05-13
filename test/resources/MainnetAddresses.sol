@@ -423,6 +423,11 @@ contract MainnetAddresses {
     address public pendleEethPt = 0xc69Ad9baB1dEE23F4605a82b3354F8E40d1E5966;
     address public pendleEethYt = 0xfb35Fd0095dD1096b1Ca49AD44d8C5812A201677;
 
+    address public pendleZircuitWeETHMarket = 0xe26D7f9409581f606242300fbFE63f56789F2169;
+    address public pendleZircuitWeethSy = 0xD7DF7E085214743530afF339aFC420c7c720BFa7;
+    address public pendleZircuitEethPt = 0x4AE5411F3863CdB640309e84CEDf4B08B8b33FfF;
+    address public pendleZircuitEethYt = 0x7C2D26182adeEf96976035986cF56474feC03bDa;
+
     address public pendleUSDeMarket = 0x19588F29f9402Bb508007FeADd415c875Ee3f19F;
     address public pendleUSDeSy = 0x42862F48eAdE25661558AFE0A630b132038553D0;
     address public pendleUSDePt = 0xa0021EF8970104c2d008F38D92f115ad56a9B8e1;
