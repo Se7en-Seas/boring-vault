@@ -100,8 +100,10 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
             deployer.deployContract(EtherFiLiquidEthManagerName, creationCode, constructorArgs, 0)
         );
 
-        // Set the exchange rate to match the current vaults share price.
-        uint256 exchangeRate = etherFiLiquid1.previewRedeem(1e18);
+        // Set the exchange rate to match the current vaults share price. Use the larger of the two preview functions.
+        uint256 exchangeRate0 = etherFiLiquid1.previewMint(1e18);
+        uint256 exchangeRate1 = etherFiLiquid1.previewRedeem(1e18);
+        uint256 exchangeRate = exchangeRate0 > exchangeRate1 ? exchangeRate0 : exchangeRate1;
         creationCode = type(AccountantWithRateProviders).creationCode;
         constructorArgs = abi.encode(
             owner, address(boringVault), owner, exchangeRate, address(WETH), 1.002e4, 0.998e4, 1 days / 4, 0.02e4
