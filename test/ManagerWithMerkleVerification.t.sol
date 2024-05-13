@@ -20,7 +20,10 @@ import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {IUniswapV3Router} from "src/interfaces/IUniswapV3Router.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
-import {PointFarmingDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
+import {
+    PointFarmingDecoderAndSanitizer,
+    EigenLayerLSTStakingDecoderAndSanitizer
+} from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -2957,6 +2960,134 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         );
 
         // Call now works.
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+    }
+
+    function testEigenLayerLSTStakingReverts() external {
+        deal(address(METH), address(boringVault), 1_000e18);
+
+        // update DecoderAndSanitizer
+        rawDataDecoderAndSanitizer = address(new PointFarmingDecoderAndSanitizer(address(boringVault)));
+
+        // approve
+        // Call deposit
+        // withdraw
+        // complete withdraw
+        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        leafs[0] = ManageLeaf(address(METH), false, "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = strategyManager;
+        leafs[1] = ManageLeaf(strategyManager, false, "depositIntoStrategy(address,address,uint256)", new address[](2));
+        leafs[1].argumentAddresses[0] = mETHStrategy;
+        leafs[1].argumentAddresses[1] = address(METH);
+        leafs[2] =
+            ManageLeaf(delegationManager, false, "queueWithdrawals((address[],uint256[],address)[])", new address[](2));
+        leafs[2].argumentAddresses[0] = mETHStrategy;
+        leafs[2].argumentAddresses[1] = address(boringVault);
+        leafs[3] = ManageLeaf(
+            delegationManager,
+            false,
+            "completeQueuedWithdrawals((address,address,address,uint256,uint32,address[],uint256[])[],address[][],uint256[],bool[])",
+            new address[](5)
+        );
+        leafs[3].argumentAddresses[0] = address(boringVault);
+        leafs[3].argumentAddresses[1] = address(0);
+        leafs[3].argumentAddresses[2] = address(boringVault);
+        leafs[3].argumentAddresses[3] = mETHStrategy;
+        leafs[3].argumentAddresses[4] = address(METH);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](3);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](3);
+        targets[0] = address(METH);
+        targets[1] = strategyManager;
+        targets[2] = delegationManager;
+
+        bytes[] memory targetData = new bytes[](3);
+        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", strategyManager, type(uint256).max);
+        targetData[1] = abi.encodeWithSignature(
+            "depositIntoStrategy(address,address,uint256)", mETHStrategy, address(METH), 1_000e18
+        );
+        DecoderCustomTypes.QueuedWithdrawalParams[] memory queuedParams =
+            new DecoderCustomTypes.QueuedWithdrawalParams[](1);
+        queuedParams[0].strategies = new address[](1);
+        queuedParams[0].strategies[0] = mETHStrategy;
+        queuedParams[0].shares = new uint256[](1);
+        queuedParams[0].shares[0] = 1_000e18;
+        queuedParams[0].withdrawer = address(boringVault);
+        targetData[2] = abi.encodeWithSignature("queueWithdrawals((address[],uint256[],address)[])", queuedParams);
+
+        address[] memory decodersAndSanitizers = new address[](3);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+
+        uint256[] memory values = new uint256[](3);
+
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        // Finalize withdraw requests.
+        // Must wait atleast delegationManager.minWithdrawalDelayBlocks() blocks which is 50400.
+        uint32 withdrawRequestBlock = uint32(block.number);
+        vm.roll(block.number + 50400);
+
+        // Complete the withdrawal
+        manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[3];
+
+        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        targets = new address[](1);
+        targets[0] = delegationManager;
+
+        targetData = new bytes[](1);
+        DecoderCustomTypes.Withdrawal[] memory withdrawParams = new DecoderCustomTypes.Withdrawal[](1);
+        withdrawParams[0].staker = address(boringVault);
+        withdrawParams[0].delegatedTo = address(0);
+        withdrawParams[0].withdrawer = address(boringVault);
+        withdrawParams[0].nonce = 0;
+        withdrawParams[0].startBlock = withdrawRequestBlock;
+        withdrawParams[0].strategies = new address[](1);
+        withdrawParams[0].strategies[0] = mETHStrategy;
+        withdrawParams[0].shares = new uint256[](1);
+        withdrawParams[0].shares[0] = 1_000e18;
+        address[][] memory tokens = new address[][](1);
+        tokens[0] = new address[](1);
+        tokens[0][0] = address(METH);
+        uint256[] memory middlewareTimesIndexes = new uint256[](1);
+        middlewareTimesIndexes[0] = 0;
+        bool[] memory receiveAsTokens = new bool[](1);
+        receiveAsTokens[0] = false;
+        targetData[0] = abi.encodeWithSignature(
+            "completeQueuedWithdrawals((address,address,address,uint256,uint32,address[],uint256[])[],address[][],uint256[],bool[])",
+            withdrawParams,
+            tokens,
+            middlewareTimesIndexes,
+            receiveAsTokens
+        );
+
+        decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+
+        values = new uint256[](1);
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    EigenLayerLSTStakingDecoderAndSanitizer
+                        .EigenLayerLSTStakingDecoderAndSanitizer__CanOnlyReceiveAsTokens
+                        .selector
+                )
+            )
+        );
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 

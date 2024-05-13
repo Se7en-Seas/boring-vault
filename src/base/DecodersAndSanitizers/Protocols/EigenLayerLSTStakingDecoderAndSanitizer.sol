@@ -4,6 +4,10 @@ pragma solidity 0.8.21;
 import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
 
 abstract contract EigenLayerLSTStakingDecoderAndSanitizer is BaseDecoderAndSanitizer {
+    //============================== ERRORS ===============================
+
+    error EigenLayerLSTStakingDecoderAndSanitizer__CanOnlyReceiveAsTokens();
+
     //============================== EIGEN LAYER ===============================
 
     function depositIntoStrategy(address strategy, address token, uint256 /*amount*/ )
@@ -33,9 +37,11 @@ abstract contract EigenLayerLSTStakingDecoderAndSanitizer is BaseDecoderAndSanit
         DecoderCustomTypes.Withdrawal[] calldata withdrawals,
         address[][] calldata tokens,
         uint256[] calldata, /*middlewareTimesIndexes*/
-        bool[] calldata /*receiveAsTokens*/
+        bool[] calldata receiveAsTokens
     ) external pure virtual returns (bytes memory addressesFound) {
         for (uint256 i = 0; i < withdrawals.length; i++) {
+            if (!receiveAsTokens[i]) revert EigenLayerLSTStakingDecoderAndSanitizer__CanOnlyReceiveAsTokens();
+
             addressesFound = abi.encodePacked(
                 addressesFound, withdrawals[i].staker, withdrawals[i].delegatedTo, withdrawals[i].withdrawer
             );
