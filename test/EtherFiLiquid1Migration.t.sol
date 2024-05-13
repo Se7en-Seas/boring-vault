@@ -21,6 +21,7 @@ import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {EtherFiLiquid1} from "src/interfaces/EtherFiLiquid1.sol";
 import {CellarMigrationAdaptor} from "src/migration/CellarMigrationAdaptor.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
+import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -39,6 +40,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     CellarMigrationAdaptor public migrationAdaptor;
     EtherFiLiquid1 public etherFiLiquid1;
     RolesAuthority public rolesAuthority;
+    GenericRateProvider public ptRateProvider;
+    GenericRateProvider public ytRateProvider;
 
     uint8 public constant MANAGER_ROLE = 1;
     uint8 public constant STRATEGIST_ROLE = 2;
@@ -66,7 +69,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         // uint256 blockNumber = 19466630; // from before first rebalance
-        uint256 blockNumber = 19484426;
+        uint256 blockNumber = 19862477;
         _startFork(rpcKey, blockNumber);
 
         etherFiLiquid1 = EtherFiLiquid1(0xeA1A6307D9b18F8d1cbf1c3Dd6aad8416C06a221);
@@ -85,6 +88,19 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         rawDataDecoderAndSanitizer =
             address(new EtherFiLiquidDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
+
+        bytes4 selector = bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)")));
+        uint256 amount = 1e18;
+        bytes32 pt = 0x000000000000000000000000c69Ad9baB1dEE23F4605a82b3354F8E40d1E5966; // pendleEethPt
+        bytes32 quote = 0x000000000000000000000000C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // wETH
+
+        ptRateProvider =
+            new GenericRateProvider(liquidV1PriceRouter, selector, pt, bytes32(amount), quote, 0, 0, 0, 0, 0);
+
+        bytes32 yt = 0x000000000000000000000000fb35Fd0095dD1096b1Ca49AD44d8C5812A201677; // pendleEethYt
+
+        ytRateProvider =
+            new GenericRateProvider(liquidV1PriceRouter, selector, yt, bytes32(amount), quote, 0, 0, 0, 0, 0);
 
         // Deploy queue.
         atomic_queue = new AtomicQueue();
@@ -204,10 +220,14 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         vm.startPrank(multisig);
         accountant.setRateProviderData(EETH, true, address(0));
         accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
+        accountant.setRateProviderData(ERC20(pendleEethPt), false, address(ptRateProvider));
+        accountant.setRateProviderData(ERC20(pendleEethYt), false, address(ytRateProvider));
         teller.addAsset(WETH);
         teller.addAsset(NATIVE_ERC20);
         teller.addAsset(EETH);
         teller.addAsset(WEETH);
+        teller.addAsset(ERC20(pendleEethPt));
+        teller.addAsset(ERC20(pendleEethYt));
         vm.stopPrank();
 
         uint256 wETH_amount = 1_500e18;
@@ -253,16 +273,30 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Give EtherFiLiquid1 the appropriate roles so it can rebalance.
         rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
 
+        uint256 totalAssetsBefore = etherFiLiquid1.totalAssets();
+
         // Strategist rebalances all liquid assets into BoringVault.
         EtherFiLiquid1.AdaptorCall[] memory data = new EtherFiLiquid1.AdaptorCall[](1);
-        bytes[] memory adaptorCalls = new bytes[](3);
+        bytes[] memory adaptorCalls = new bytes[](5);
         adaptorCalls[0] = abi.encodeWithSignature("deposit(address,uint256,uint256)", WETH, type(uint256).max, 0);
         adaptorCalls[1] = abi.encodeWithSignature("deposit(address,uint256,uint256)", EETH, type(uint256).max, 0);
         adaptorCalls[2] = abi.encodeWithSignature("deposit(address,uint256,uint256)", WEETH, type(uint256).max, 0);
+        adaptorCalls[3] =
+            abi.encodeWithSignature("deposit(address,uint256,uint256)", ERC20(pendleEethPt), type(uint256).max, 0);
+        adaptorCalls[4] =
+            abi.encodeWithSignature("deposit(address,uint256,uint256)", ERC20(pendleEethYt), type(uint256).max, 0);
         data[0] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls});
         vm.startPrank(cellarOwner);
         etherFiLiquid1.callOnAdaptor(data);
         vm.stopPrank();
+
+        uint256 totalAssetsAfter = etherFiLiquid1.totalAssets();
+
+        // There is a small change in total assets because the BoringVault prices weETH usinf the rate, but,
+        // when the cellar prices weETH, there is some small rounding errors when getValue logic is used.
+        assertApproxEqRel(
+            totalAssetsAfter, totalAssetsBefore, 0.00000001e18, "Total assets should not change after migration."
+        );
 
         // When users withdraw, they receive BoringVault shares.
         address user = 0x12e8987C762701d60f0FcfeE687Bb8E4c07555aa;
