@@ -403,6 +403,11 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         );
 
         // At this point we could continue migrating little by litle, but once all assets have been migrated, we can fix the share price.
+        vm.prank(cellarOwner);
+        etherFiLiquid1.initiateShutdown();
+
+        vm.expectRevert(bytes(abi.encodeWithSelector(EtherFiLiquid1.Cellar__ContractShutdown.selector)));
+        etherFiLiquid1.deposit(1e18, address(this));
 
         // Once all assets are migrated, match the share prices of the 2 vaults.
         rolesAuthority.setUserRole(0x2a07706473244BC757E10F2a9E86fB532828afe3, MINTER_ROLE, true);
@@ -415,7 +420,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         etherFiLiquid1.setSharePriceOracle(1, address(migrationSharePriceOracle));
         vm.stopPrank();
 
-        // We shut down v1 cellar for deposits.
+        // Move all bv shares into a single sided uni position,
+        // remove and re-add migration adaptor
         // At this point we make the V1 cellar liquid for user withdraws
 
         assertEq(
@@ -424,11 +430,11 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
             "BV share balance should match V1 total supply."
         );
 
-        // TODO I belive there is a rounding error that makes this be slightly off.
+        // TODO I think there is a rounding error that makes this be slightly off.
         assertApproxEqRel(
             etherFiLiquid1.totalAssets(),
             startingTotalAssets,
-            0.0001e12,
+            0.0000000001e12,
             "Total assets should be the same after everything."
         );
 
@@ -451,6 +457,21 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         uint256 approxSharePrice = etherFiLiquid1.previewRedeem(1e18);
 
         assertApproxEqAbs(realSharePrice, approxSharePrice, 1, "Real share price should be the same as approx.");
+
+        uint256 totalSupply = etherFiLiquid1.totalSupply();
+
+        deal(address(etherFiLiquid1), address(this), totalSupply);
+
+        assets = etherFiLiquid1.maxWithdraw(address(this));
+        expectedBoringVaultShares = etherFiLiquid1.withdraw(assets, address(this), address(this));
+        assertApproxEqAbs(
+            boringVault.balanceOf(address(this)),
+            expectedBoringVaultShares,
+            1,
+            "POGGERS should have received expected BoringVault shares."
+        );
+
+        assertEq(etherFiLiquid1.totalSupply(), 0, "Total supply should be 0 after all users withdraw.");
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

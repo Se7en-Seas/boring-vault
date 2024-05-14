@@ -36,7 +36,7 @@ contract CompleteMigration {
         // Make sure that the total supply of v1 matches the bv balance of v1.
         require(v1TotalSupply == bv.balanceOf(address(v1)), "BAL");
 
-        // Make sure share price mathces with a +- 1 wei difference.
+        // Make sure share price matches with a +- 1 wei difference.
         uint256 currentSharePrice = v1.totalAssets().mulDivDown(10 ** v1Decimals, v1TotalSupply);
         require(
             (currentSharePrice + 1 == startingSharePrice) || (currentSharePrice - 1 == startingSharePrice)
