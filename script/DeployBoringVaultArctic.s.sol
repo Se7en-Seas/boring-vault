@@ -106,7 +106,15 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         uint256 exchangeRate = exchangeRate0 > exchangeRate1 ? exchangeRate0 : exchangeRate1;
         creationCode = type(AccountantWithRateProviders).creationCode;
         constructorArgs = abi.encode(
-            owner, address(boringVault), owner, exchangeRate, address(WETH), 1.002e4, 0.998e4, 1 days / 4, 0.02e4
+            owner,
+            address(boringVault),
+            liquidPayoutAddress,
+            exchangeRate,
+            address(WETH),
+            1.005e4,
+            0.995e4,
+            1 days / 4,
+            0.02e4
         );
         accountant = AccountantWithRateProviders(
             deployer.deployContract(EtherFiLiquidEthAccountantName, creationCode, constructorArgs, 0)
@@ -337,6 +345,8 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
         rolesAuthority.setUserRole(dev1Address, STRATEGIST_ROLE, true);
+
+        rolesAuthority.transferOwnership(dev1Address);
 
         vm.stopBroadcast();
     }
