@@ -8,6 +8,8 @@ contract MainnetAddresses {
     address public deployerAddress = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d;
     address public dev0Address = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b;
     address public dev1Address = 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1;
+    address public liquidV1PriceRouter = 0x693799805B502264f9365440B93C113D86a4fFF5;
+    address public liquidPayoutAddress = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A;
 
     // DeFi Ecosystem
     address public ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -61,6 +63,7 @@ contract MainnetAddresses {
     ERC20 public GEAR = ERC20(0xBa3335588D9403515223F109EdC4eB7269a9Ab5D);
     ERC20 public SDAI = ERC20(0x83F20F44975D03b1b09e64809B757c47f942BEeA);
     ERC20 public PYUSD = ERC20(0x6c3ea9036406852006290770BEdFcAbA0e23A0e8);
+    ERC20 public METH = ERC20(0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa);
 
     // Rate providers
     address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
@@ -131,6 +134,7 @@ contract MainnetAddresses {
     ERC20 public swETH_bbaWETH = ERC20(0xaE8535c23afeDdA9304B03c68a3563B75fc8f92b);
     ERC20 public swETH_wETH = ERC20(0x02D928E68D8F10C0358566152677Db51E1e2Dc8C);
 
+    bytes32 public rETH_weETH_id = 0x05ff47afada98a98982113758878f9a8b9fdda0a000000000000000000000645;
     ERC20 public rETH_weETH = ERC20(0x05ff47AFADa98a98982113758878F9A8B9FddA0a);
     address public rETH_weETH_gauge = 0xC859BF9d7B8C557bBd229565124c2C09269F3aEF;
     address public aura_reth_weeth = 0x07A319A023859BbD49CC9C38ee891c3EA9283Cc5;
@@ -292,6 +296,9 @@ contract MainnetAddresses {
     address public weETH_wETH_Curve_Gauge = 0x1CAC1a0Ed47E2e0A313c712b2dcF85994021a365;
     address public weETH_wETH_Convex_Reward = 0x2D159E01A5cEe7498F84Be68276a5266b3cb3774;
 
+    address public weETH_wETH_Pool = 0x13947303F63b363876868D070F14dc865C36463b;
+    address public weETH_wETH_NG_Pool = 0xDB74dfDD3BB46bE8Ce6C33dC9D82777BCFc3dEd5;
+
     address public pyUsd_Usdc_Curve_Pool = 0x383E6b4437b59fff47B619CBA855CA29342A8559;
     address public pyUsd_Usdc_Convex_Id = address(270);
     address public frax_Usdc_Curve_Pool = 0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2;
@@ -421,6 +428,16 @@ contract MainnetAddresses {
     address public pendleEethPt = 0xc69Ad9baB1dEE23F4605a82b3354F8E40d1E5966;
     address public pendleEethYt = 0xfb35Fd0095dD1096b1Ca49AD44d8C5812A201677;
 
+    address public pendleZircuitWeETHMarket = 0xe26D7f9409581f606242300fbFE63f56789F2169;
+    address public pendleZircuitWeethSy = 0xD7DF7E085214743530afF339aFC420c7c720BFa7;
+    address public pendleZircuitEethPt = 0x4AE5411F3863CdB640309e84CEDf4B08B8b33FfF;
+    address public pendleZircuitEethYt = 0x7C2D26182adeEf96976035986cF56474feC03bDa;
+
+    address public pendleWeETHMarketNew = 0x7d372819240D14fB477f17b964f95F33BeB4c704;
+    address public pendleWeethSyNew = 0xAC0047886a985071476a1186bE89222659970d65;
+    address public pendleEethPtNew = 0x6ee2b5E19ECBa773a352E5B21415Dc419A700d1d;
+    address public pendleEethYtNew = 0x129e6B5DBC0Ecc12F9e486C5BC9cDF1a6A80bc6A;
+
     address public pendleUSDeMarket = 0x19588F29f9402Bb508007FeADd415c875Ee3f19F;
     address public pendleUSDeSy = 0x42862F48eAdE25661558AFE0A630b132038553D0;
     address public pendleUSDePt = 0xa0021EF8970104c2d008F38D92f115ad56a9B8e1;
@@ -464,4 +481,18 @@ contract MainnetAddresses {
     address public FRAX_USDC_01 = 0x9A834b70C07C81a9fcD6F22E842BF002fBfFbe4D;
     address public DAI_FRAX_05 = 0x97e7d56A0408570bA1a7852De36350f7713906ec;
     address public FRAX_USDT_05 = 0xc2A856c3afF2110c1171B8f942256d40E980C726;
+
+    // EigenLayer
+    address public strategyManager = 0x858646372CC42E1A627fcE94aa7A7033e7CF075A;
+    address public delegationManager = 0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A;
+    address public mETHStrategy = 0x298aFB19A105D59E74658C4C334Ff360BadE6dd2;
+
+    // Swell
+    address public swellSimpleStaking = 0x38D43a6Cb8DA0E855A42fB6b0733A0498531d774;
+
+    // Zircuit
+    address public zircuitSimpleStaking = 0xF047ab4c75cebf0eB9ed34Ae2c186f3611aEAfa6;
+
+    // Mantle
+    address public mantleLspStaking = 0xe3cBd06D7dadB3F4e6557bAb7EdD924CD1489E8f;
 }

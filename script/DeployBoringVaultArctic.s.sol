@@ -8,8 +8,8 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
-import {EtherFiLiquidUsdDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
+import {EtherFiLiquidEthDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
@@ -18,6 +18,9 @@ import {ArcticArchitectureLens} from "src/helper/ArcticArchitectureLens.sol";
 import {AtomicQueue} from "src/atomic-queue/AtomicQueue.sol";
 import {AtomicSolverV2} from "src/atomic-queue/AtomicSolverV2.sol";
 import {ContractNames} from "resources/ContractNames.sol";
+import {EtherFiLiquid1} from "src/interfaces/EtherFiLiquid1.sol";
+import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
+import {CellarMigrationAdaptor} from "src/migration/CellarMigrationAdaptor.sol";
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
@@ -40,12 +43,20 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
     AccountantWithRateProviders public accountant;
     AtomicQueue public atomicQueue;
     AtomicSolverV2 public atomicSolver;
+    EtherFiLiquid1 public etherFiLiquid1 = EtherFiLiquid1(0xeA1A6307D9b18F8d1cbf1c3Dd6aad8416C06a221);
+    CellarMigrationAdaptor public migrationAdaptor;
+    GenericRateProvider public ptEethRateProvider;
+    GenericRateProvider public ytEethRateProvider;
+    GenericRateProvider public lpEethRateProvider;
+    GenericRateProvider public ptZeethRateProvider;
+    GenericRateProvider public ytZeethRateProvider;
+    GenericRateProvider public lpZeethRateProvider;
 
     // Deployment parameters
-    string public boringVaultName = "Ether.Fi Liquid USD";
-    string public boringVaultSymbol = "liquidUSD";
-    uint8 public boringVaultDecimals = 6;
-    address public owner = dev1Address;
+    string public boringVaultName = "Ether.Fi Liquid ETH";
+    string public boringVaultSymbol = "liquidETH";
+    uint8 public boringVaultDecimals = 18;
+    address public owner = dev0Address; // TODO change to dev1Address for other deployer.
 
     // Roles
     uint8 public constant MANAGER_ROLE = 1;
@@ -72,40 +83,101 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         creationCode = type(RolesAuthority).creationCode;
         constructorArgs = abi.encode(owner, Authority(address(0)));
         rolesAuthority = RolesAuthority(
-            deployer.deployContract(EtherFiLiquidUsdRolesAuthorityName, creationCode, constructorArgs, 0)
+            deployer.deployContract(EtherFiLiquidEthRolesAuthorityName, creationCode, constructorArgs, 0)
         );
 
-        creationCode = type(ArcticArchitectureLens).creationCode;
-        lens = ArcticArchitectureLens(deployer.deployContract(ArcticArchitectureLensName, creationCode, hex"", 0));
+        // creationCode = type(ArcticArchitectureLens).creationCode;
+        // lens = ArcticArchitectureLens(deployer.deployContract(ArcticArchitectureLensName, creationCode, hex"", 0));
 
         creationCode = type(BoringVault).creationCode;
         constructorArgs = abi.encode(owner, boringVaultName, boringVaultSymbol, boringVaultDecimals);
         boringVault =
-            BoringVault(payable(deployer.deployContract(EtherFiLiquidUsdName, creationCode, constructorArgs, 0)));
+            BoringVault(payable(deployer.deployContract(EtherFiLiquidEthName, creationCode, constructorArgs, 0)));
 
         creationCode = type(ManagerWithMerkleVerification).creationCode;
         constructorArgs = abi.encode(owner, address(boringVault), balancerVault);
         manager = ManagerWithMerkleVerification(
-            deployer.deployContract(EtherFiLiquidUsdManagerName, creationCode, constructorArgs, 0)
+            deployer.deployContract(EtherFiLiquidEthManagerName, creationCode, constructorArgs, 0)
         );
 
+        // Set the exchange rate to match the current vaults share price. Use the larger of the two preview functions.
+        uint256 exchangeRate0 = etherFiLiquid1.previewMint(1e18);
+        uint256 exchangeRate1 = etherFiLiquid1.previewRedeem(1e18);
+        uint256 exchangeRate = exchangeRate0 > exchangeRate1 ? exchangeRate0 : exchangeRate1;
         creationCode = type(AccountantWithRateProviders).creationCode;
-        constructorArgs =
-            abi.encode(owner, address(boringVault), owner, 1e6, address(USDC), 1.002e4, 0.998e4, 1 days / 4, 0.02e4);
+        constructorArgs = abi.encode(
+            owner,
+            address(boringVault),
+            liquidPayoutAddress,
+            exchangeRate,
+            address(WETH),
+            1.005e4,
+            0.995e4,
+            1 days / 4,
+            0.02e4
+        );
         accountant = AccountantWithRateProviders(
-            deployer.deployContract(EtherFiLiquidUsdAccountantName, creationCode, constructorArgs, 0)
+            deployer.deployContract(EtherFiLiquidEthAccountantName, creationCode, constructorArgs, 0)
         );
 
         creationCode = type(TellerWithMultiAssetSupport).creationCode;
         constructorArgs = abi.encode(owner, address(boringVault), address(accountant), WETH);
         teller = TellerWithMultiAssetSupport(
-            payable(deployer.deployContract(EtherFiLiquidUsdTellerName, creationCode, constructorArgs, 0))
+            payable(deployer.deployContract(EtherFiLiquidEthTellerName, creationCode, constructorArgs, 0))
         );
 
-        creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
+        creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode;
         constructorArgs = abi.encode(address(boringVault), uniswapV3NonFungiblePositionManager);
         rawDataDecoderAndSanitizer =
-            deployer.deployContract(EtherFiLiquidUsdDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+            deployer.deployContract(EtherFiLiquidEthDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+
+        creationCode = type(CellarMigrationAdaptor).creationCode;
+        constructorArgs = abi.encode(address(boringVault), address(accountant), address(teller));
+        migrationAdaptor = CellarMigrationAdaptor(
+            deployer.deployContract(CellarMigrationAdaptorName, creationCode, constructorArgs, 0)
+        );
+
+        // Deploy Generic Rate Providers.
+        bytes4 selector = bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)")));
+        uint256 amount = 1e18;
+        bytes32 base = 0x000000000000000000000000c69Ad9baB1dEE23F4605a82b3354F8E40d1E5966; // pendleEethPt
+        bytes32 quote = 0x000000000000000000000000C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // wETH
+
+        creationCode = type(GenericRateProvider).creationCode;
+        constructorArgs = abi.encode(liquidV1PriceRouter, selector, base, bytes32(amount), quote, 0, 0, 0, 0, 0);
+        ptEethRateProvider = GenericRateProvider(
+            deployer.deployContract(PendlePTweETHRateProviderName, creationCode, constructorArgs, 0)
+        );
+
+        base = 0x000000000000000000000000fb35Fd0095dD1096b1Ca49AD44d8C5812A201677; // pendleEethYt
+        constructorArgs = abi.encode(liquidV1PriceRouter, selector, base, bytes32(amount), quote, 0, 0, 0, 0, 0);
+        ytEethRateProvider = GenericRateProvider(
+            deployer.deployContract(PendleYTweETHRateProviderName, creationCode, constructorArgs, 0)
+        );
+
+        base = 0x000000000000000000000000F32e58F92e60f4b0A37A69b95d642A471365EAe8; // pendleEethLp
+        constructorArgs = abi.encode(liquidV1PriceRouter, selector, base, bytes32(amount), quote, 0, 0, 0, 0, 0);
+        lpEethRateProvider = GenericRateProvider(
+            deployer.deployContract(PendleLPweETHRateProviderName, creationCode, constructorArgs, 0)
+        );
+
+        base = 0x0000000000000000000000004AE5411F3863CdB640309e84CEDf4B08B8b33FfF; // pendleZeethPt
+        constructorArgs = abi.encode(liquidV1PriceRouter, selector, base, bytes32(amount), quote, 0, 0, 0, 0, 0);
+        ptZeethRateProvider = GenericRateProvider(
+            deployer.deployContract(PendleZircuitPTweETHRateProviderName, creationCode, constructorArgs, 0)
+        );
+
+        base = 0x0000000000000000000000007C2D26182adeEf96976035986cF56474feC03bDa; // pendleZeethYt
+        constructorArgs = abi.encode(liquidV1PriceRouter, selector, base, bytes32(amount), quote, 0, 0, 0, 0, 0);
+        ytZeethRateProvider = GenericRateProvider(
+            deployer.deployContract(PendleZircuitYTweETHRateProviderName, creationCode, constructorArgs, 0)
+        );
+
+        base = 0x000000000000000000000000e26D7f9409581f606242300fbFE63f56789F2169; // pendleZeethLp
+        constructorArgs = abi.encode(liquidV1PriceRouter, selector, base, bytes32(amount), quote, 0, 0, 0, 0, 0);
+        lpZeethRateProvider = GenericRateProvider(
+            deployer.deployContract(PendleZircuitLPweETHRateProviderName, creationCode, constructorArgs, 0)
+        );
 
         // Setup roles.
         // MANAGER_ROLE
@@ -216,28 +288,41 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
             true
         );
         // Publicly callable functions
-        rolesAuthority.setPublicCapability(address(teller), TellerWithMultiAssetSupport.deposit.selector, true);
-        rolesAuthority.setPublicCapability(
-            address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
-        );
+        // rolesAuthority.setPublicCapability(address(teller), TellerWithMultiAssetSupport.deposit.selector, true);
+        // rolesAuthority.setPublicCapability(
+        //     address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
+        // );
 
         // Give roles to appropriate contracts
         rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
         rolesAuthority.setUserRole(address(manager), MANAGER_INTERNAL_ROLE, true);
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
+        rolesAuthority.setUserRole(deployer.getAddress(AtomicSolverName), SOLVER_ROLE, true);
+        // Give Liquid V1 the solver role so it can use bulk withdraw and deposit.
+        rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
 
         // Setup rate providers.
-        accountant.setRateProviderData(USDC, true, address(0));
-        accountant.setRateProviderData(USDT, true, address(0));
-        accountant.setRateProviderData(DAI, true, address(0));
-        accountant.setRateProviderData(USDE, true, address(0));
+        accountant.setRateProviderData(WETH, true, address(0));
+        accountant.setRateProviderData(EETH, true, address(0));
+        accountant.setRateProviderData(WEETH, false, address(WEETH));
+        accountant.setRateProviderData(ERC20(pendleEethPt), false, address(ptEethRateProvider));
+        accountant.setRateProviderData(ERC20(pendleEethYt), false, address(ytEethRateProvider));
+        accountant.setRateProviderData(ERC20(pendleWeETHMarket), false, address(lpEethRateProvider));
+        accountant.setRateProviderData(ERC20(pendleZircuitEethPt), false, address(ptZeethRateProvider));
+        accountant.setRateProviderData(ERC20(pendleZircuitEethYt), false, address(ytZeethRateProvider));
+        accountant.setRateProviderData(ERC20(pendleZircuitWeETHMarket), false, address(lpZeethRateProvider));
 
         // Setup Teller deposit assets.
-        teller.addAsset(USDC);
-        teller.addAsset(USDT);
-        teller.addAsset(DAI);
-        teller.addAsset(USDE);
+        teller.addAsset(WETH);
+        teller.addAsset(EETH);
+        teller.addAsset(WEETH);
+        teller.addAsset(ERC20(pendleEethPt));
+        teller.addAsset(ERC20(pendleEethYt));
+        teller.addAsset(ERC20(pendleWeETHMarket));
+        teller.addAsset(ERC20(pendleZircuitEethPt));
+        teller.addAsset(ERC20(pendleZircuitEethYt));
+        teller.addAsset(ERC20(pendleZircuitWeETHMarket));
 
         // Setup share lock period.
         teller.setShareLockPeriod(1 days);
@@ -260,6 +345,8 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
         rolesAuthority.setUserRole(dev1Address, STRATEGIST_ROLE, true);
+
+        rolesAuthority.transferOwnership(dev1Address);
 
         vm.stopBroadcast();
     }
