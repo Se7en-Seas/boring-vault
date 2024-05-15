@@ -326,16 +326,35 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         /// NOTE the above migration can happen over the course of multiple weeks, since all the assets are in the illiquid
         /// BoringVault position withdraws fail.
 
+        /// NOTE if we want to the UI could be updated to state that a migration is underway, and maybe prompt users to use the atomic queue for new deposits or withdraws?
+
         // Wait long enough so that we can update the exchnage rate.
         vm.warp(block.timestamp + 2);
 
         uint256 withdrawable = etherFiLiquid1.maxWithdraw(user);
         assertEq(withdrawable, 0, "User should not be able to withdraw any assets.");
 
+        // Strategist sets the holding position to the migration position to stop further deposits.
+        vm.startPrank(strategist);
+        etherFiLiquid1.setHoldingPosition(migrationPosition); // This also doubley checks that deposits fail, as users can not deposit into this position.
+        vm.stopPrank();
+
+        // Deposits now revert.
+        deal(address(WETH), address(this), 1e18);
+        WETH.safeApprove(address(etherFiLiquid1), 1e18);
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(CellarMigrationAdaptor.CellarMigrationAdaptor__UserDepositsNotAllowed.selector)
+            )
+        );
+        etherFiLiquid1.deposit(1e18, address(this));
+
+        // If need be the strategist would rebalance 1 more time to move all assets into the boring vault.
+
         // At this point the entire vault is migrated. Strategist can iniaite shutdown to prevent further deposits.
         vm.prank(strategist);
         etherFiLiquid1.initiateShutdown();
-        // Deposits now revert.
+        // Deposits still revert.
         vm.expectRevert(bytes(abi.encodeWithSelector(EtherFiLiquid1.Cellar__ContractShutdown.selector)));
         etherFiLiquid1.deposit(1e18, address(this));
 
@@ -360,7 +379,6 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         vm.startPrank(jointMultisig);
         etherFiLiquid1.toggleIgnorePause();
-        etherFiLiquid1.setHoldingPosition(migrationPosition); // This also doubley checks that deposits fail, as users can not deposit into this position.
         // Force out eETH position as it always keeps 1 wei in balance so can not be removed normally.
         etherFiLiquid1.forcePositionOut(3, 2, false);
         // Remove all positions from cellar, except for migration position.
