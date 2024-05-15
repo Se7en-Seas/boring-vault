@@ -351,7 +351,15 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
             "Total assets should not change after distrusting positions."
         );
 
+        // registry pauses cellar before final migration.
+        vm.startPrank(registryMultisig);
+        address[] memory _add = new address[](1);
+        _add[0] = address(etherFiLiquid1);
+        registry.batchPause(_add);
+        vm.stopPrank();
+
         vm.startPrank(jointMultisig);
+        etherFiLiquid1.toggleIgnorePause();
         etherFiLiquid1.setHoldingPosition(migrationPosition); // This also doubley checks that deposits fail, as users can not deposit into this position.
         // Force out eETH position as it always keeps 1 wei in balance so can not be removed normally.
         etherFiLiquid1.forcePositionOut(3, 2, false);
@@ -394,6 +402,12 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         etherFiLiquid1.forcePositionOut(1, migrationPosition, false);
         // Shutdown cellar again.
         etherFiLiquid1.initiateShutdown();
+        etherFiLiquid1.toggleIgnorePause();
+        vm.stopPrank();
+
+        // If everything looks good registry can unpause the cellar.
+        vm.startPrank(registryMultisig);
+        registry.batchUnpause(_add);
         vm.stopPrank();
 
         assertApproxEqRel(
@@ -718,6 +732,8 @@ interface Registry {
     function trustPosition(uint32 id, address adaptor, bytes calldata adaptorData) external;
     function distrustPosition(uint32 id) external;
     function setAddress(uint256 id, address _add) external;
+    function batchPause(address[] memory _add) external;
+    function batchUnpause(address[] memory _add) external;
 }
 
 interface PriceRouter {
