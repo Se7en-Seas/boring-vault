@@ -6,14 +6,37 @@ import {BoringVault, ERC20} from "src/base/BoringVault.sol";
 import {ERC4626} from "lib/solmate/src/tokens/ERC4626.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 
-contract CompleteMigration {
+/**
+ * @notice This contract is intended to be used to migrate a Cellar to a BoringVault, while maintaining the share price parity.
+ *         In order to do this, ALL assets in the Cellar must be in the BoringVault, and the vast majority of BoringVault
+ *         shares must be owned by the Cellar.
+ */
+contract CellarMigratorWithSharePriceParity {
     using FixedPointMathLib for uint256;
 
+    /**
+     * @notice The BoringVault the Cellar is migrating to.
+     */
     BoringVault internal immutable boringVault;
+
+    /**
+     * @notice The accountant of the BoringVault.
+     */
     AccountantWithRateProviders internal immutable accountant;
+
+    /**
+     * @notice The Cellar being migrated.
+     */
     ERC4626 internal immutable target;
+
+    /**
+     * @notice The address capable of calling `completeMigration`.
+     */
     address internal immutable migrator;
 
+    /**
+     * @notice Bool indicating if the migration has been completed.
+     */
     bool public migrationDone;
 
     constructor(BoringVault bv, ERC4626 v1, AccountantWithRateProviders _accountant, address _migrator) {
@@ -23,6 +46,16 @@ contract CompleteMigration {
         migrator = _migrator;
     }
 
+    /**
+     * @notice Helper function to complete the migration.
+     * @dev Only callable by the `migrator` address.
+     * @dev Only callable once.
+     * @param checkIfCellarOwnsAllShares Bool indicating if the Cellar should own all shares of the target.
+     * @param totalAssetsTolerance The tolerance for the change of total assets of the target.
+     * @dev If `checkIfCellarOwnsAllShares` is true, the Cellar must own all BoringVault shares.
+     * @dev `totalAssetsTolerance` with 4 decimals, must be less than 1e4. There is no explicit check for this,
+     *       but the `minimumTotalAssets` calcualtion will revert from underflow if it is larger than 1e4.
+     */
     function completeMigration(bool checkIfCellarOwnsAllShares, uint256 totalAssetsTolerance) external {
         require(msg.sender == migrator, "MIGRATOR");
         require(!migrationDone, "DONE");

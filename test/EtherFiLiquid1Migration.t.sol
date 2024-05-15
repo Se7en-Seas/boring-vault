@@ -23,14 +23,17 @@ import {CellarMigrationAdaptor} from "src/migration/CellarMigrationAdaptor.sol";
 import {CellarMigrationAdaptor2} from "src/migration/CellarMigrationAdaptor2.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
-import {MigrationSharePriceOracle} from "src/migration/MigrationSharePriceOracle.sol";
-import {CompleteMigration, ERC4626} from "src/migration/CompleteMigration.sol";
+import {ParitySharePriceOracle} from "src/migration/ParitySharePriceOracle.sol";
+import {CellarMigratorWithSharePriceParity, ERC4626} from "src/migration/CellarMigratorWithSharePriceParity.sol";
+import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
+
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
 contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
+    using AddressToBytes32Lib for address;
 
     BoringVault public boringVault;
     ManagerWithMerkleVerification public manager;
@@ -47,8 +50,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     GenericRateProvider public ytRateProvider;
     GenericRateProvider public zircuitPtRateProvider;
     GenericRateProvider public zircuitYtRateProvider;
-    MigrationSharePriceOracle public migrationSharePriceOracle;
-    CompleteMigration public migrator;
+    ParitySharePriceOracle public paritySharePriceOracle;
+    CellarMigratorWithSharePriceParity public migrator;
 
     uint8 public constant MANAGER_ROLE = 1;
     uint8 public constant STRATEGIST_ROLE = 2;
@@ -94,31 +97,65 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         migrationAdaptor = new CellarMigrationAdaptor(address(boringVault), address(accountant), address(teller));
         migrationAdaptor2 = new CellarMigrationAdaptor2(address(boringVault), address(accountant), address(teller));
 
-        migrationSharePriceOracle = new MigrationSharePriceOracle(address(etherFiLiquid1), address(accountant));
+        paritySharePriceOracle = new ParitySharePriceOracle(address(etherFiLiquid1), address(accountant));
 
         rawDataDecoderAndSanitizer =
             address(new EtherFiLiquidDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
 
         bytes4 selector = bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)")));
         uint256 amount = 1e18;
-        bytes32 pt = 0x000000000000000000000000c69Ad9baB1dEE23F4605a82b3354F8E40d1E5966; // pendleEethPt
-        bytes32 quote = 0x000000000000000000000000C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // wETH
 
-        ptRateProvider =
-            new GenericRateProvider(liquidV1PriceRouter, selector, pt, bytes32(amount), quote, 0, 0, 0, 0, 0);
+        ptRateProvider = new GenericRateProvider(
+            liquidV1PriceRouter,
+            selector,
+            pendleEethPt.toBytes32(),
+            bytes32(amount),
+            address(WETH).toBytes32(),
+            0,
+            0,
+            0,
+            0,
+            0
+        );
 
-        bytes32 yt = 0x000000000000000000000000fb35Fd0095dD1096b1Ca49AD44d8C5812A201677; // pendleEethYt
+        ytRateProvider = new GenericRateProvider(
+            liquidV1PriceRouter,
+            selector,
+            pendleEethYt.toBytes32(),
+            bytes32(amount),
+            address(WETH).toBytes32(),
+            0,
+            0,
+            0,
+            0,
+            0
+        );
 
-        ytRateProvider =
-            new GenericRateProvider(liquidV1PriceRouter, selector, yt, bytes32(amount), quote, 0, 0, 0, 0, 0);
+        zircuitPtRateProvider = new GenericRateProvider(
+            liquidV1PriceRouter,
+            selector,
+            pendleZircuitEethPt.toBytes32(),
+            bytes32(amount),
+            address(WETH).toBytes32(),
+            0,
+            0,
+            0,
+            0,
+            0
+        );
 
-        pt = 0x0000000000000000000000004AE5411F3863CdB640309e84CEDf4B08B8b33FfF;
-        zircuitPtRateProvider =
-            new GenericRateProvider(liquidV1PriceRouter, selector, pt, bytes32(amount), quote, 0, 0, 0, 0, 0);
-
-        yt = 0x0000000000000000000000007C2D26182adeEf96976035986cF56474feC03bDa;
-        zircuitYtRateProvider =
-            new GenericRateProvider(liquidV1PriceRouter, selector, yt, bytes32(amount), quote, 0, 0, 0, 0, 0);
+        zircuitYtRateProvider = new GenericRateProvider(
+            liquidV1PriceRouter,
+            selector,
+            pendleZircuitEethYt.toBytes32(),
+            bytes32(amount),
+            address(WETH).toBytes32(),
+            0,
+            0,
+            0,
+            0,
+            0
+        );
 
         // Deploy queue.
         atomic_queue = new AtomicQueue();
@@ -265,7 +302,9 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         deal(address(etherFiLiquid1), user, 10e18);
 
         // Deploy migrator.
-        migrator = new CompleteMigration(boringVault, ERC4626(address(etherFiLiquid1)), accountant, jointMultisig);
+        migrator = new CellarMigratorWithSharePriceParity(
+            boringVault, ERC4626(address(etherFiLiquid1)), accountant, jointMultisig
+        );
 
         // Simulate rebalancing the Cellar into simpler positions that can be deposited into the BoringVault.
         _simulateRebalance(seed);
@@ -279,7 +318,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         registry.trustPosition(migrationPosition, address(migrationAdaptor), hex"");
         registry.trustAdaptor(address(migrationAdaptor2));
         registry.trustPosition(migrationPosition2, address(migrationAdaptor2), hex"");
-        registry.setAddress(1, address(migrationSharePriceOracle));
+        registry.setAddress(1, address(paritySharePriceOracle));
         vm.stopPrank();
 
         // Joint multisig only adds the first migration position/adaptor to the catalogue,
@@ -338,6 +377,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         vm.startPrank(strategist);
         etherFiLiquid1.setHoldingPosition(migrationPosition); // This also doubley checks that deposits fail, as users can not deposit into this position.
         vm.stopPrank();
+
+        /// NOTE make sure no one sneaked in a deposit TX.
 
         // Deposits now revert.
         deal(address(WETH), address(this), 1e18);
@@ -405,7 +446,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Complete the migration.
         migrator.completeMigration(true, 0.0001e4);
         // Update Share price oracle to use the migration share price oracle.
-        etherFiLiquid1.setSharePriceOracle(1, address(migrationSharePriceOracle));
+        etherFiLiquid1.setSharePriceOracle(1, address(paritySharePriceOracle));
         // Revoke roles from migrator.
         rolesAuthority.setUserRole(address(migrator), MINTER_ROLE, false);
         rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, false);
@@ -519,6 +560,15 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         );
     }
 
+    // TODO write out steps in doc
+
+    // TODO add bespoke tests for ParitySharePriceOracle, CellarMigratorWithSharePriceParity.
+
+    // TODO in the rebalancing, Have the Cellar deposit aTokens into BoringVault, then have the BoringVault take out a loan
+    // Then have the Cellar Withdraw wETH that was borrowed, to repay all debt.
+
+    // TODO can I make this a bit more realistic? Where we try and get rid of complicated positions, but essentially migrate
+    // All pendle assets, all ERC20s, aTokens, and BPTs.
     function _simulateRebalance(uint256 seed) internal {
         uint256[7] memory makeup = [
             uint256(keccak256(abi.encode(seed, 0))) % type(uint16).max + 1e6,
