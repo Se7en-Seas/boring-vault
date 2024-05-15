@@ -14,6 +14,8 @@ contract CompleteMigration {
     ERC4626 internal immutable target;
     address internal immutable migrator;
 
+    bool public migrationDone;
+
     constructor(BoringVault bv, ERC4626 v1, AccountantWithRateProviders _accountant, address _migrator) {
         boringVault = bv;
         target = v1;
@@ -23,6 +25,8 @@ contract CompleteMigration {
 
     function completeMigration(bool checkIfCellarOwnsAllShares) external {
         require(msg.sender == migrator, "MIGRATOR");
+        require(!migrationDone, "DONE");
+        migrationDone = true;
         // Once all assets have been migrated from v1 to the bv, in order to make the share price identical,
         // v1 must hold the same amount of bv shares, as its total supply.
         uint256 targetTotalSupply = target.totalSupply();
@@ -57,6 +61,5 @@ contract CompleteMigration {
                 || (currentSharePrice == startingSharePrice),
             "SP"
         );
-        selfdestruct(payable(migrator));
     }
 }
