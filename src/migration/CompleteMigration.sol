@@ -9,39 +9,54 @@ import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 contract CompleteMigration {
     using FixedPointMathLib for uint256;
 
-    constructor(BoringVault bv, ERC4626 v1, AccountantWithRateProviders accountant) {
+    BoringVault internal immutable boringVault;
+    AccountantWithRateProviders internal immutable accountant;
+    ERC4626 internal immutable target;
+    address internal immutable migrator;
+
+    constructor(BoringVault bv, ERC4626 v1, AccountantWithRateProviders _accountant, address _migrator) {
+        boringVault = bv;
+        target = v1;
+        accountant = _accountant;
+        migrator = _migrator;
+    }
+
+    function completeMigration(bool checkIfCellarOwnsAllShares) external {
+        require(msg.sender == migrator, "MIGRATOR");
         // Once all assets have been migrated from v1 to the bv, in order to make the share price identical,
         // v1 must hold the same amount of bv shares, as its total supply.
-        uint256 v1TotalSupply = v1.totalSupply();
-        uint256 v1BvShares = bv.balanceOf(address(v1));
-        uint256 bvTotalSupply = bv.totalSupply();
-        uint8 v1Decimals = v1.decimals();
-        uint256 startingSharePrice = v1.totalAssets().mulDivDown(10 ** v1Decimals, v1TotalSupply);
-
-        // Require that BoringVault shares are only owned by the v1 contract.
-        require(bvTotalSupply == v1BvShares, "TS");
+        uint256 targetTotalSupply = target.totalSupply();
+        uint256 targetBvShares = boringVault.balanceOf(address(target));
+        uint8 targetDecimals = target.decimals();
+        uint256 startingSharePrice = target.totalAssets().mulDivDown(10 ** targetDecimals, targetTotalSupply);
 
         // Update accountants exchange rate.
         accountant.updateExchangeRate(uint96(startingSharePrice));
 
-        // Update V1's BoringVault share amount to keep share price constant.
-        if (v1BvShares < v1TotalSupply) {
-            // If v1 has less bv shares than its total supply, mint the difference.
-            bv.enter(address(0), ERC20(address(0)), 0, address(v1), v1TotalSupply - v1BvShares);
-        } else if (v1BvShares > v1TotalSupply) {
-            // If v1 has more bv shares than its total supply, burn the difference.
-            bv.exit(address(0), ERC20(address(0)), 0, address(v1), v1BvShares - v1TotalSupply);
+        if (checkIfCellarOwnsAllShares) {
+            // Make sure that Cellar owns all shares of the target.
+            require(targetBvShares == boringVault.totalSupply(), "SH");
         }
 
-        // Make sure that the total supply of v1 matches the bv balance of v1.
-        require(v1TotalSupply == bv.balanceOf(address(v1)), "BAL");
+        // Update target's BoringVault share amount to keep share price constant.
+        if (targetBvShares < targetTotalSupply) {
+            // If target has less bv shares than its total supply, mint the difference.
+            boringVault.enter(address(0), ERC20(address(0)), 0, address(target), targetTotalSupply - targetBvShares);
+        } else if (targetBvShares > targetTotalSupply) {
+            // If target has more bv shares than its total supply, burn the difference.
+            boringVault.exit(address(0), ERC20(address(0)), 0, address(target), targetBvShares - targetTotalSupply);
+        }
+
+        // Make sure that the total supply of target matches the bv balance of target.
+        require(targetTotalSupply == boringVault.balanceOf(address(target)), "BAL");
 
         // Make sure share price matches with a +- 1 wei difference.
-        uint256 currentSharePrice = v1.totalAssets().mulDivDown(10 ** v1Decimals, v1TotalSupply);
+        uint256 currentSharePrice = target.totalAssets().mulDivDown(10 ** targetDecimals, targetTotalSupply);
         require(
             (currentSharePrice + 1 == startingSharePrice) || (currentSharePrice - 1 == startingSharePrice)
                 || (currentSharePrice == startingSharePrice),
             "SP"
         );
+        selfdestruct(payable(migrator));
     }
 }

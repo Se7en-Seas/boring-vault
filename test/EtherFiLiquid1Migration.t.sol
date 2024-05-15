@@ -288,7 +288,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         vm.startPrank(cellarOwner);
         etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
         etherFiLiquid1.addPositionToCatalogue(migrationPosition);
-        etherFiLiquid1.addPosition(0, migrationPosition, abi.encode(true), false);
+        etherFiLiquid1.addPosition(0, migrationPosition, abi.encode(false), false);
         vm.stopPrank();
         // Give EtherFiLiquid1 the appropriate roles so it can rebalance.
         rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
@@ -312,6 +312,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
             "deposit(address,uint256,uint256)", ERC20(pendleZircuitEethYt), type(uint256).max, 0
         );
         data[0] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls});
+        // TODO make this called by the strategist
         vm.startPrank(cellarOwner);
         etherFiLiquid1.callOnAdaptor(data);
         vm.stopPrank();
@@ -325,26 +326,42 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         );
 
         // At this point the entire vault is migrated.
-        // vm.prank(cellarOwner);
-        // etherFiLiquid1.initiateShutdown(); // or pause it
+        vm.prank(cellarOwner);
+        etherFiLiquid1.initiateShutdown(); // or pause it
 
-        // vm.expectRevert(bytes(abi.encodeWithSelector(EtherFiLiquid1.Cellar__ContractShutdown.selector)));
-        // etherFiLiquid1.deposit(1e18, address(this));
+        // Deposits now revert.
+        vm.expectRevert(bytes(abi.encodeWithSelector(EtherFiLiquid1.Cellar__ContractShutdown.selector)));
+        etherFiLiquid1.deposit(1e18, address(this));
 
-        // // Once all assets are migrated, match the share prices of the 2 vaults.
-        // rolesAuthority.setUserRole(0x2a07706473244BC757E10F2a9E86fB532828afe3, MINTER_ROLE, true);
-        // rolesAuthority.setUserRole(0x2a07706473244BC757E10F2a9E86fB532828afe3, BURNER_ROLE, true);
-        // rolesAuthority.setUserRole(0x2a07706473244BC757E10F2a9E86fB532828afe3, UPDATE_EXCHANGE_RATE_ROLE, true);
-        // new CompleteMigration(boringVault, ERC4626(address(etherFiLiquid1)), accountant);
+        // Once all assets are migrated, match the share prices of the 2 vaults.
+        CompleteMigration migrator =
+            new CompleteMigration(boringVault, ERC4626(address(etherFiLiquid1)), accountant, cellarOwner);
 
-        // // Setup Cellar to use migration share price oracle.
-        // vm.startPrank(cellarOwner);
-        // etherFiLiquid1.setSharePriceOracle(1, address(migrationSharePriceOracle));
-        // vm.stopPrank();
+        rolesAuthority.transferOwnership(cellarOwner);
 
-        // // Move all bv shares into a single sided uni position,
-        // // remove and re-add migration adaptor
-        // // At this point we make the V1 cellar liquid for user withdraws
+        vm.prank(registryOwner);
+        registry.setAddress(1, address(migrationSharePriceOracle));
+
+        // Setup Cellar to use migration share price oracle.
+        vm.startPrank(cellarOwner);
+        rolesAuthority.setUserRole(address(migrator), MINTER_ROLE, true);
+        rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, true);
+        rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, true);
+        migrator.completeMigration(true);
+        etherFiLiquid1.setSharePriceOracle(1, address(migrationSharePriceOracle));
+        rolesAuthority.setUserRole(address(migrator), MINTER_ROLE, false);
+        rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, false);
+        rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, false);
+        vm.stopPrank();
+
+        // TODO Deploy another Migration Adaptor to make a new position.
+        // THis could even be done above, then the registry owner adds both positions, but the multisig only adds the first one to the catalogue.
+
+        // TODO Force the old position out, then add the new position in the same call, but make the new position liquid.
+
+        // TODO add test showing how even if the rate changes, user withdraws still redeem at a 1:1 cellar share:boring vault share.
+
+        // TODO should the cellar migration adaptor use the safe version of getRate?
 
         // assertEq(
         //     etherFiLiquid1.totalSupply(),
@@ -398,13 +415,13 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
     function _simulateRebalance(uint256 seed) internal {
         uint256[7] memory makeup = [
-            uint256(keccak256(abi.encode(seed, 0))) % type(uint16).max,
-            uint256(keccak256(abi.encode(seed, 1))) % type(uint16).max,
-            uint256(keccak256(abi.encode(seed, 2))) % type(uint16).max,
-            uint256(keccak256(abi.encode(seed, 3))) % type(uint16).max,
-            uint256(keccak256(abi.encode(seed, 4))) % type(uint16).max,
-            uint256(keccak256(abi.encode(seed, 5))) % type(uint16).max,
-            uint256(keccak256(abi.encode(seed, 6))) % type(uint16).max
+            uint256(keccak256(abi.encode(seed, 0))) % type(uint16).max + 1e6,
+            uint256(keccak256(abi.encode(seed, 1))) % type(uint16).max + 1e6,
+            uint256(keccak256(abi.encode(seed, 2))) % type(uint16).max + 1e6,
+            uint256(keccak256(abi.encode(seed, 3))) % type(uint16).max + 1e6,
+            uint256(keccak256(abi.encode(seed, 4))) % type(uint16).max + 1e6,
+            uint256(keccak256(abi.encode(seed, 5))) % type(uint16).max + 1e6,
+            uint256(keccak256(abi.encode(seed, 6))) % type(uint16).max + 1e6
         ];
         uint256 makeupTotal;
         for (uint256 i; i < makeup.length; i++) {
@@ -603,14 +620,21 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         etherFiLiquid1.deposit(1e18, address(this));
 
         // Once all assets are migrated, match the share prices of the 2 vaults.
-        rolesAuthority.setUserRole(0x2a07706473244BC757E10F2a9E86fB532828afe3, MINTER_ROLE, true);
-        rolesAuthority.setUserRole(0x2a07706473244BC757E10F2a9E86fB532828afe3, BURNER_ROLE, true);
-        rolesAuthority.setUserRole(0x2a07706473244BC757E10F2a9E86fB532828afe3, UPDATE_EXCHANGE_RATE_ROLE, true);
-        new CompleteMigration(boringVault, ERC4626(address(etherFiLiquid1)), accountant);
+        CompleteMigration migrator =
+            new CompleteMigration(boringVault, ERC4626(address(etherFiLiquid1)), accountant, cellarOwner);
+
+        rolesAuthority.transferOwnership(cellarOwner);
 
         // Setup Cellar to use migration share price oracle.
         vm.startPrank(cellarOwner);
+        rolesAuthority.setUserRole(address(migrator), MINTER_ROLE, true);
+        rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, true);
+        rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, true);
+        migrator.completeMigration(true);
         etherFiLiquid1.setSharePriceOracle(1, address(migrationSharePriceOracle));
+        rolesAuthority.setUserRole(address(migrator), MINTER_ROLE, false);
+        rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, false);
+        rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, false);
         vm.stopPrank();
 
         // Move all bv shares into a single sided uni position,
