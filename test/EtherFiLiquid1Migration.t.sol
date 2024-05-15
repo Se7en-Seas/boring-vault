@@ -377,7 +377,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, true);
         rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, true);
         // Complete the migration.
-        migrator.completeMigration(true);
+        migrator.completeMigration(true, 0.0001e4);
         // Update Share price oracle to use the migration share price oracle.
         etherFiLiquid1.setSharePriceOracle(1, address(migrationSharePriceOracle));
         // Revoke roles from migrator.

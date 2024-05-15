@@ -23,7 +23,7 @@ contract CompleteMigration {
         migrator = _migrator;
     }
 
-    function completeMigration(bool checkIfCellarOwnsAllShares) external {
+    function completeMigration(bool checkIfCellarOwnsAllShares, uint256 totalAssetsTolerance) external {
         require(msg.sender == migrator, "MIGRATOR");
         require(!migrationDone, "DONE");
         migrationDone = true;
@@ -32,7 +32,8 @@ contract CompleteMigration {
         uint256 targetTotalSupply = target.totalSupply();
         uint256 targetBvShares = boringVault.balanceOf(address(target));
         uint8 targetDecimals = target.decimals();
-        uint256 startingSharePrice = target.totalAssets().mulDivDown(10 ** targetDecimals, targetTotalSupply);
+        uint256 targetTotalAssets = target.totalAssets();
+        uint256 startingSharePrice = targetTotalAssets.mulDivDown(10 ** targetDecimals, targetTotalSupply);
 
         // Update accountants exchange rate.
         accountant.updateExchangeRate(uint96(startingSharePrice));
@@ -55,7 +56,15 @@ contract CompleteMigration {
         require(targetTotalSupply == boringVault.balanceOf(address(target)), "BAL");
 
         // Make sure share price matches with a +- 1 wei difference.
-        uint256 currentSharePrice = target.totalAssets().mulDivDown(10 ** targetDecimals, targetTotalSupply);
+        uint256 currentTotalAssets = target.totalAssets();
+        // There is no explicit check that totalAssetsTolerance is less than 1e4, but
+        // the line below will revert from underflow if it is larger than 1e4.
+        uint256 minimumTotalAssets = targetTotalAssets.mulDivDown(1e4 - totalAssetsTolerance, 1e4);
+        uint256 maximumTotalAssets = targetTotalAssets.mulDivDown(1e4 + totalAssetsTolerance, 1e4);
+
+        require((currentTotalAssets > minimumTotalAssets) && (currentTotalAssets < maximumTotalAssets), "TA");
+
+        uint256 currentSharePrice = currentTotalAssets.mulDivDown(10 ** targetDecimals, targetTotalSupply);
         require(
             (currentSharePrice + 1 == startingSharePrice) || (currentSharePrice - 1 == startingSharePrice)
                 || (currentSharePrice == startingSharePrice),
