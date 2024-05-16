@@ -26,6 +26,7 @@ import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
 import {ParitySharePriceOracle} from "src/migration/ParitySharePriceOracle.sol";
 import {CellarMigratorWithSharePriceParity, ERC4626} from "src/migration/CellarMigratorWithSharePriceParity.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -34,82 +35,80 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
     using AddressToBytes32Lib for address;
+    using Address for address;
 
-    BoringVault public boringVault;
-    ManagerWithMerkleVerification public manager;
-    TellerWithMultiAssetSupport public teller;
-    AccountantWithRateProviders public accountant;
+    // Mainnet Contracts.
+    BoringVault public boringVault = BoringVault(payable(0x66BC9023f618C447e52c31dAF591d1943529D9e7));
+    ManagerWithMerkleVerification public manager =
+        ManagerWithMerkleVerification(0x2f33E96790EF4A8b98E0F207CAB1e5972Be6989A);
+    TellerWithMultiAssetSupport public teller = TellerWithMultiAssetSupport(0x6213DD8bB580c4D22e2B11fBD2DcC807F7C77cBF);
+    AccountantWithRateProviders public accountant =
+        AccountantWithRateProviders(0x3365AD279cD33508A837EBC23c61C0Ca0ac9950B);
+    address public rawDataDecoderAndSanitizer = 0x0c9fd99d67DF2AB4722640eC4A5b495371bc81d2;
+    RolesAuthority public rolesAuthority = RolesAuthority(0x485Bde66Bb668a51f2372E34e45B1c6226798122);
+    EtherFiLiquid1 public etherFiLiquid1 = EtherFiLiquid1(0xeA1A6307D9b18F8d1cbf1c3Dd6aad8416C06a221);
     AtomicQueue public atomic_queue;
     AtomicSolver public atomic_solver;
-    address public rawDataDecoderAndSanitizer;
+    address public auraERC4626Adaptor = 0x0F3f8cab8D3888281033faf7A6C0b74dE62bb162;
+    address public uniswapV3Adaptor = 0xBC912F54ddeb7221A21F7d41B0a8A08336A55056;
+    address public erc4626Adaptor = 0xb1761a7C7799Cb429eB5bf2db16d88534DA681e2;
+    address public morphoBlueSupplyAdaptor = 0x11747E893eFE2AB739A3f52C090b2e39130b18F4;
+    address public aaveV3ATokenAdaptor = 0x7613b7f78A1672FBC478bfecf4598EeDE10a2Fa7;
+    address public aaveV3DebtTokenAdaptor = 0x79677329a4B2d4576e820f69b5e260F77d93FcCE;
+
+    bytes32 strategistRoot = 0x3021d7ed1bdf4996ecbff0a69b58465fb6fdc5107d75662743c8a633bb2429fa;
+
     CellarMigrationAdaptor public migrationAdaptor;
     CellarMigrationAdaptor2 public migrationAdaptor2;
-    EtherFiLiquid1 public etherFiLiquid1;
-    RolesAuthority public rolesAuthority;
-    GenericRateProvider public ptRateProvider;
-    GenericRateProvider public ytRateProvider;
-    GenericRateProvider public zircuitPtRateProvider;
-    GenericRateProvider public zircuitYtRateProvider;
     ParitySharePriceOracle public paritySharePriceOracle;
     CellarMigratorWithSharePriceParity public migrator;
+    GenericRateProvider public bptRateProvider;
+    GenericRateProvider public wstethRateProvider;
 
     uint8 public constant MANAGER_ROLE = 1;
-    uint8 public constant STRATEGIST_ROLE = 2;
-    uint8 public constant MANGER_INTERNAL_ROLE = 3;
-    uint8 public constant ADMIN_ROLE = 4;
-    uint8 public constant BORING_VAULT_ROLE = 5;
-    uint8 public constant BALANCER_VAULT_ROLE = 6;
-    uint8 public constant MINTER_ROLE = 7;
-    uint8 public constant BURNER_ROLE = 8;
-    uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 9;
-    uint8 public constant SOLVER_ROLE = 10;
+    uint8 public constant MINTER_ROLE = 2;
+    uint8 public constant BURNER_ROLE = 3;
+    uint8 public constant MANAGER_INTERNAL_ROLE = 4;
+    uint8 public constant SOLVER_ROLE = 12;
+    uint8 public constant OWNER_ROLE = 8;
+    uint8 public constant MULTISIG_ROLE = 9;
+    uint8 public constant STRATEGIST_MULTISIG_ROLE = 10;
+    uint8 public constant STRATEGIST_ROLE = 7;
+    uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 11;
 
-    address public multisig = vm.addr(123456789);
-    address public fakeStrategist = vm.addr(987654321);
-    address public payout_address = vm.addr(777);
-    address public weth_user = vm.addr(11);
-    address public eeth_user = vm.addr(111);
-    address public weeth_user = vm.addr(1111);
+    address public jointMultisig;
+    address public registryMultisig;
+    address public strategist;
+    Registry public registry;
+
     ERC20 internal constant NATIVE_ERC20 = ERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     address public balancer_vault = vault;
-    address public weEthOracle = 0x3fa58b74e9a8eA8768eb33c8453e9C2Ed089A40a;
-    address public weEthIrm = 0x870aC11D48B15DB9a138Cf899d20F13F79Ba00BC;
 
     function setUp() external {
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         // uint256 blockNumber = 19466630; // from before first rebalance
-        uint256 blockNumber = 19870746;
+        uint256 blockNumber = 19877751;
         _startFork(rpcKey, blockNumber);
 
-        etherFiLiquid1 = EtherFiLiquid1(0xeA1A6307D9b18F8d1cbf1c3Dd6aad8416C06a221);
+        jointMultisig = etherFiLiquid1.owner();
+        registry = Registry(etherFiLiquid1.registry());
+        registryMultisig = registry.owner();
+        strategist = registryMultisig;
 
-        boringVault = new BoringVault(multisig, "Boring Vault", "BV", 18);
-
-        manager = new ManagerWithMerkleVerification(multisig, address(boringVault), vault);
-
-        accountant = new AccountantWithRateProviders(
-            multisig, address(boringVault), payout_address, 1e18, address(WETH), 1.1e4, 0.9e4, 1, 0.01e4
-        );
-
-        teller = new TellerWithMultiAssetSupport(multisig, address(boringVault), address(accountant), address(WETH));
+        vm.prank(dev1Address);
+        rolesAuthority.transferOwnership(jointMultisig);
 
         migrationAdaptor = new CellarMigrationAdaptor(address(boringVault), address(accountant), address(teller));
         migrationAdaptor2 = new CellarMigrationAdaptor2(address(boringVault), address(accountant), address(teller));
 
         paritySharePriceOracle = new ParitySharePriceOracle(address(etherFiLiquid1), address(accountant));
 
-        rawDataDecoderAndSanitizer =
-            address(new EtherFiLiquidDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
-
-        bytes4 selector = bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)")));
-        uint256 amount = 1e18;
-
-        ptRateProvider = new GenericRateProvider(
-            liquidV1PriceRouter,
-            selector,
-            pendleEethPt.toBytes32(),
-            bytes32(amount),
+        bptRateProvider = new GenericRateProvider(
+            address(etherFiLiquid1.priceRouter()),
+            bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)"))),
+            address(rETH_weETH).toBytes32(),
+            bytes32(uint256(1e18)),
             address(WETH).toBytes32(),
             0,
             0,
@@ -118,11 +117,11 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
             0
         );
 
-        ytRateProvider = new GenericRateProvider(
-            liquidV1PriceRouter,
-            selector,
-            pendleEethYt.toBytes32(),
-            bytes32(amount),
+        wstethRateProvider = new GenericRateProvider(
+            address(etherFiLiquid1.priceRouter()),
+            bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)"))),
+            address(WSTETH).toBytes32(),
+            bytes32(uint256(1e18)),
             address(WETH).toBytes32(),
             0,
             0,
@@ -131,171 +130,186 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
             0
         );
 
-        zircuitPtRateProvider = new GenericRateProvider(
-            liquidV1PriceRouter,
-            selector,
-            pendleZircuitEethPt.toBytes32(),
-            bytes32(amount),
-            address(WETH).toBytes32(),
-            0,
-            0,
-            0,
-            0,
-            0
-        );
-
-        zircuitYtRateProvider = new GenericRateProvider(
-            liquidV1PriceRouter,
-            selector,
-            pendleZircuitEethYt.toBytes32(),
-            bytes32(amount),
-            address(WETH).toBytes32(),
-            0,
-            0,
-            0,
-            0,
-            0
-        );
-
-        // Deploy queue.
-        atomic_queue = new AtomicQueue();
-        atomic_solver = new AtomicSolver(address(this), vault);
-
-        rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
-        vm.startPrank(multisig);
-        boringVault.setAuthority(rolesAuthority);
-        manager.setAuthority(rolesAuthority);
-        accountant.setAuthority(rolesAuthority);
-        teller.setAuthority(rolesAuthority);
-        vm.stopPrank();
-
-        // Setup roles authority.
-        rolesAuthority.setRoleCapability(
-            MANAGER_ROLE,
-            address(boringVault),
-            bytes4(keccak256(abi.encodePacked("manage(address,bytes,uint256)"))),
-            true
-        );
-        rolesAuthority.setRoleCapability(
-            MANAGER_ROLE,
-            address(boringVault),
-            bytes4(keccak256(abi.encodePacked("manage(address[],bytes[],uint256[])"))),
-            true
-        );
-
-        rolesAuthority.setRoleCapability(
-            STRATEGIST_ROLE,
-            address(manager),
-            ManagerWithMerkleVerification.manageVaultWithMerkleVerification.selector,
-            true
-        );
-        rolesAuthority.setRoleCapability(
-            MANGER_INTERNAL_ROLE,
-            address(manager),
-            ManagerWithMerkleVerification.manageVaultWithMerkleVerification.selector,
-            true
-        );
-        rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(manager), ManagerWithMerkleVerification.setManageRoot.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            BORING_VAULT_ROLE, address(manager), ManagerWithMerkleVerification.flashLoan.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            BALANCER_VAULT_ROLE, address(manager), ManagerWithMerkleVerification.receiveFlashLoan.selector, true
-        );
-        rolesAuthority.setRoleCapability(MINTER_ROLE, address(boringVault), BoringVault.enter.selector, true);
-        rolesAuthority.setRoleCapability(BURNER_ROLE, address(boringVault), BoringVault.exit.selector, true);
-
-        rolesAuthority.setPublicCapability(address(teller), TellerWithMultiAssetSupport.deposit.selector, true);
-        rolesAuthority.setPublicCapability(
-            address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.addAsset.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.removeAsset.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.pause.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.unpause.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateDelay.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateUpper.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateLower.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateManagementFee.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updatePayoutAddress.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.setRateProviderData.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            UPDATE_EXCHANGE_RATE_ROLE,
-            address(accountant),
-            AccountantWithRateProviders.updateExchangeRate.selector,
-            true
-        );
-        rolesAuthority.setRoleCapability(
-            BORING_VAULT_ROLE, address(accountant), AccountantWithRateProviders.claimFees.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            SOLVER_ROLE, address(teller), TellerWithMultiAssetSupport.bulkDeposit.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            SOLVER_ROLE, address(teller), TellerWithMultiAssetSupport.bulkWithdraw.selector, true
-        );
-
-        // Grant roles
-        rolesAuthority.setUserRole(address(this), STRATEGIST_ROLE, true);
-        rolesAuthority.setUserRole(fakeStrategist, STRATEGIST_ROLE, true);
-        rolesAuthority.setUserRole(address(manager), MANGER_INTERNAL_ROLE, true);
-        rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
-        rolesAuthority.setUserRole(multisig, ADMIN_ROLE, true);
-        rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
-        rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
-        rolesAuthority.setUserRole(vault, BALANCER_VAULT_ROLE, true);
-        rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
-        rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
-        rolesAuthority.setUserRole(address(this), UPDATE_EXCHANGE_RATE_ROLE, true);
-        rolesAuthority.setUserRole(address(atomic_solver), SOLVER_ROLE, true);
-        rolesAuthority.setUserRole(address(atomic_solver), SOLVER_ROLE, true);
-
-        vm.startPrank(multisig);
-        accountant.setRateProviderData(EETH, true, address(0));
-        accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
-        accountant.setRateProviderData(ERC20(pendleEethPt), false, address(ptRateProvider));
-        accountant.setRateProviderData(ERC20(pendleEethYt), false, address(ytRateProvider));
-        accountant.setRateProviderData(ERC20(pendleZircuitEethPt), false, address(zircuitPtRateProvider));
-        accountant.setRateProviderData(ERC20(pendleZircuitEethYt), false, address(zircuitYtRateProvider));
-        teller.addAsset(WETH);
-        teller.addAsset(NATIVE_ERC20);
-        teller.addAsset(EETH);
-        teller.addAsset(WEETH);
-        teller.addAsset(ERC20(pendleEethPt));
-        teller.addAsset(ERC20(pendleEethYt));
-        teller.addAsset(ERC20(pendleZircuitEethPt));
-        teller.addAsset(ERC20(pendleZircuitEethYt));
+        vm.startPrank(jointMultisig);
+        rolesAuthority.setUserRole(strategist, STRATEGIST_ROLE, true);
+        rolesAuthority.setUserRole(jointMultisig, OWNER_ROLE, true);
+        accountant.setRateProviderData(rETH_weETH, false, address(bptRateProvider));
+        accountant.setRateProviderData(WSTETH, false, address(wstethRateProvider));
+        accountant.setRateProviderData(aV3WeETH, false, address(WEETH_RATE_PROVIDER));
+        teller.addAsset(rETH_weETH);
+        teller.addAsset(WSTETH);
+        teller.addAsset(aV3WeETH);
         vm.stopPrank();
     }
 
+    function _migratePendleAssets() internal {
+        EtherFiLiquid1.AdaptorCall[] memory data = new EtherFiLiquid1.AdaptorCall[](1);
+        bytes[] memory adaptorCalls = new bytes[](6);
+        adaptorCalls[0] =
+            abi.encodeWithSignature("deposit(address,uint256,uint256)", pendleWeETHMarket, type(uint256).max, 0);
+        adaptorCalls[1] =
+            abi.encodeWithSignature("deposit(address,uint256,uint256)", pendleZircuitWeETHMarket, type(uint256).max, 0);
+        adaptorCalls[2] =
+            abi.encodeWithSignature("deposit(address,uint256,uint256)", ERC20(pendleEethPt), type(uint256).max, 0);
+        adaptorCalls[3] =
+            abi.encodeWithSignature("deposit(address,uint256,uint256)", ERC20(pendleEethYt), type(uint256).max, 0);
+        adaptorCalls[4] = abi.encodeWithSignature(
+            "deposit(address,uint256,uint256)", ERC20(pendleZircuitEethPt), type(uint256).max, 0
+        );
+        adaptorCalls[5] = abi.encodeWithSignature(
+            "deposit(address,uint256,uint256)", ERC20(pendleZircuitEethYt), type(uint256).max, 0
+        );
+        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls});
+        vm.startPrank(strategist);
+        etherFiLiquid1.callOnAdaptor(data);
+        vm.stopPrank();
+    }
+
+    function _removePendlePositionsFromCellar() internal {
+        // TODO remove positions from cellar, and catalogue.
+    }
+
+    function _migrateAuraAssets() internal {
+        EtherFiLiquid1.AdaptorCall[] memory data = new EtherFiLiquid1.AdaptorCall[](2);
+        bytes[] memory adaptorCalls = new bytes[](1);
+        bytes[] memory adaptorCalls1 = new bytes[](1);
+        adaptorCalls[0] =
+            abi.encodeWithSignature("withdrawFromVault(address,uint256)", aura_reth_weeth, type(uint256).max);
+        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: auraERC4626Adaptor, callData: adaptorCalls});
+        adaptorCalls1[0] = abi.encodeWithSignature("deposit(address,uint256,uint256)", rETH_weETH, type(uint256).max, 0);
+        data[1] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls1});
+        vm.startPrank(strategist);
+        etherFiLiquid1.callOnAdaptor(data);
+        vm.stopPrank();
+    }
+
+    function _removeAuraPositionsFromCellar() internal {
+        // TODO remove positions from cellar, and catalogue.
+    }
+
+    function _closeUniswapV3Positions() internal {
+        uint256[3] memory tokenIds = [uint256(709497), 719349, 709498];
+        for (uint256 i; i < tokenIds.length; i++) {
+            EtherFiLiquid1.AdaptorCall[] memory data = new EtherFiLiquid1.AdaptorCall[](1);
+            bytes[] memory adaptorCalls = new bytes[](1);
+            adaptorCalls[0] = abi.encodeWithSignature("closePosition(uint256,uint256,uint256)", tokenIds[i], 0, 0);
+            data[0] = EtherFiLiquid1.AdaptorCall({adaptor: uniswapV3Adaptor, callData: adaptorCalls});
+            vm.startPrank(strategist);
+            etherFiLiquid1.callOnAdaptor(data);
+            vm.stopPrank();
+        }
+    }
+
+    function _closeGearBoxPosition() internal {
+        EtherFiLiquid1.AdaptorCall[] memory data = new EtherFiLiquid1.AdaptorCall[](1);
+        bytes[] memory adaptorCalls = new bytes[](1);
+        adaptorCalls[0] = abi.encodeWithSignature("withdrawFromVault(address,uint256)", dWETHV3, type(uint256).max);
+        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: erc4626Adaptor, callData: adaptorCalls});
+        vm.startPrank(strategist);
+        etherFiLiquid1.callOnAdaptor(data);
+        vm.stopPrank();
+    }
+
+    function _removeGearboxPositionFromCellar() internal {
+        uint32[] memory creditPositions = etherFiLiquid1.getCreditPositions();
+        uint32 gearboxPosition = 23;
+        for (uint32 i; i < creditPositions.length; i++) {
+            if (creditPositions[i] == gearboxPosition) {
+                vm.startPrank(strategist);
+                etherFiLiquid1.removePosition(i, false);
+                etherFiLiquid1.removePositionFromCatalogue(gearboxPosition);
+                vm.stopPrank();
+                break;
+            }
+        }
+    }
+
+    function _closeMorphoBluePosition() internal {
+        // TODO might be better to just force this position out, and mint appropriate wETH.
+        uint32 morphoBlueSupplyPosition = 11;
+
+        uint256 totalAssetsBefore = etherFiLiquid1.totalAssets();
+
+        vm.prank(strategist);
+        registry.distrustPosition(morphoBlueSupplyPosition);
+        uint32[] memory creditPositions = etherFiLiquid1.getCreditPositions();
+
+        for (uint32 i; i < creditPositions.length; i++) {
+            if (creditPositions[i] == morphoBlueSupplyPosition) {
+                vm.startPrank(jointMultisig);
+                etherFiLiquid1.forcePositionOut(i, morphoBlueSupplyPosition, false);
+                vm.stopPrank();
+                break;
+            }
+        }
+
+        uint256 totalAssetsAfter = etherFiLiquid1.totalAssets();
+
+        // Need to deal Cellar ETH to mock a successful withdraw.
+        uint256 cellarWethBalance = WETH.balanceOf(address(etherFiLiquid1));
+
+        deal(address(WETH), address(etherFiLiquid1), cellarWethBalance + (totalAssetsBefore - totalAssetsAfter));
+    }
+
+    // TODO maybe dont do wETH to start so we can use it to repay a lot of the loan.
+    function _migrateERC20Positions() internal {
+        // TODO migrate wETH, eETH, wstETH, weETH.
+    }
+
+    function _migrateAavePosition() internal {
+        // Repay the wETH balance of the Cellar.
+        uint256 amountToRepay = WETH.balanceOf(address(etherFiLiquid1));
+        EtherFiLiquid1.AdaptorCall[] memory data = new EtherFiLiquid1.AdaptorCall[](1);
+        bytes[] memory adaptorCalls = new bytes[](1);
+        adaptorCalls[0] = abi.encodeWithSignature("repayAaveDebt(address,uint256)", WETH, amountToRepay);
+        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: aaveV3DebtTokenAdaptor, callData: adaptorCalls});
+        vm.startPrank(strategist);
+        etherFiLiquid1.callOnAdaptor(data);
+        vm.stopPrank();
+
+        // Now migrate half of the aTokens to BoringVault.
+        uint256 amountToMigrate = aV3WeETH.balanceOf(address(etherFiLiquid1)) / 2;
+        adaptorCalls[0] = abi.encodeWithSignature("deposit(address,uint256,uint256)", aV3WeETH, amountToMigrate, 0);
+        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls});
+        vm.startPrank(strategist);
+        etherFiLiquid1.callOnAdaptor(data);
+        vm.stopPrank();
+
+        // Now strategist rebalances BoringVault to take out a loan of wETH.
+        uint256 amountToBorrow = dV3WETH.balanceOf(address(etherFiLiquid1)) + 2;
+        vm.startPrank(address(manager));
+        bytes memory callData = abi.encodeWithSignature(
+            "borrow(address,uint256,uint256,uint16,address)", WETH, amountToBorrow, 2, 0, address(boringVault)
+        );
+        boringVault.manage(v3Pool, callData, 0);
+        vm.stopPrank();
+
+        // Now that the BoringVault is holding wETH, Cellar can redeem some BV tokens for wETH.
+        uint256 rate = accountant.getRate();
+        uint256 amountToRedeem = amountToBorrow.mulDivDown(1e18, rate);
+        adaptorCalls[0] = abi.encodeWithSignature("withdraw(address,uint256,uint256)", WETH, amountToRedeem, 0);
+        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls});
+        vm.startPrank(strategist);
+        etherFiLiquid1.callOnAdaptor(data);
+        vm.stopPrank();
+
+        // Now that the Cellar has wETH, it can repay the loan, then deposit the remaining aTokens.
+        data = new EtherFiLiquid1.AdaptorCall[](2);
+        adaptorCalls = new bytes[](1);
+        adaptorCalls[0] = abi.encodeWithSignature("repayAaveDebt(address,uint256)", WETH, type(uint256).max);
+        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: aaveV3DebtTokenAdaptor, callData: adaptorCalls});
+        bytes[] memory adaptorCalls1 = new bytes[](1);
+        adaptorCalls1[0] = abi.encodeWithSignature("deposit(address,uint256,uint256)", aV3WeETH, type(uint256).max, 0);
+        data[1] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls1});
+        vm.startPrank(strategist);
+        etherFiLiquid1.callOnAdaptor(data);
+        vm.stopPrank();
+
+        assertEq(dV3WETH.balanceOf(address(etherFiLiquid1)), 0, "Cellar should have repaid the loan.");
+        assertEq(aV3WeETH.balanceOf(address(etherFiLiquid1)), 0, "Cellar should have deposited all aTokens.");
+    }
+
     function testMigration(uint256 seed) external {
-        address jointMultisig = etherFiLiquid1.owner();
-        rolesAuthority.transferOwnership(jointMultisig);
-        Registry registry = Registry(etherFiLiquid1.registry());
-        address registryMultisig = registry.owner();
-        address strategist = registryMultisig;
         address user = vm.addr(3);
 
         // Give fake user some shares.
@@ -306,9 +320,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
             boringVault, ERC4626(address(etherFiLiquid1)), accountant, jointMultisig
         );
 
-        // Simulate rebalancing the Cellar into simpler positions that can be deposited into the BoringVault.
-        _simulateRebalance(seed);
-
+        // Setup the BoringVault position.
         // Add both migration adaptors and positions to the registry.
         // Also setAddress 1 to be the migration share price oracle.
         uint32 migrationPosition = 77777777;
@@ -331,233 +343,246 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
         vm.stopPrank();
 
-        uint256 totalAssetsBefore = etherFiLiquid1.totalAssets();
-
-        // Strategist rebalances all liquid assets into BoringVault.
-        EtherFiLiquid1.AdaptorCall[] memory data = new EtherFiLiquid1.AdaptorCall[](1);
-        bytes[] memory adaptorCalls = new bytes[](7);
-        adaptorCalls[0] = abi.encodeWithSignature("deposit(address,uint256,uint256)", WETH, type(uint256).max, 0);
-        adaptorCalls[1] = abi.encodeWithSignature("deposit(address,uint256,uint256)", EETH, type(uint256).max, 0);
-        adaptorCalls[2] = abi.encodeWithSignature("deposit(address,uint256,uint256)", WEETH, type(uint256).max, 0);
-        adaptorCalls[3] =
-            abi.encodeWithSignature("deposit(address,uint256,uint256)", ERC20(pendleEethPt), type(uint256).max, 0);
-        adaptorCalls[4] =
-            abi.encodeWithSignature("deposit(address,uint256,uint256)", ERC20(pendleEethYt), type(uint256).max, 0);
-        adaptorCalls[5] = abi.encodeWithSignature(
-            "deposit(address,uint256,uint256)", ERC20(pendleZircuitEethPt), type(uint256).max, 0
-        );
-        adaptorCalls[6] = abi.encodeWithSignature(
-            "deposit(address,uint256,uint256)", ERC20(pendleZircuitEethYt), type(uint256).max, 0
-        );
-        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls});
-        vm.startPrank(strategist);
-        etherFiLiquid1.callOnAdaptor(data);
-        vm.stopPrank();
-
-        uint256 totalAssetsAfter = etherFiLiquid1.totalAssets();
-
-        // There is a small change in total assets because the BoringVault prices weETH using the rate, but,
-        // when the cellar prices weETH, there is some small rounding errors when getValue logic is used.
-        assertApproxEqRel(
-            totalAssetsAfter, totalAssetsBefore, 0.00000001e18, "Total assets should not change after migration."
-        );
-
-        /// NOTE the above migration can happen over the course of multiple weeks, since all the assets are in the illiquid
-        /// BoringVault position withdraws fail.
-
-        /// NOTE if we want to the UI could be updated to state that a migration is underway, and maybe prompt users to use the atomic queue for new deposits or withdraws?
-
-        // Wait long enough so that we can update the exchnage rate.
-        vm.warp(block.timestamp + 2);
-
-        uint256 withdrawable = etherFiLiquid1.maxWithdraw(user);
-        assertEq(withdrawable, 0, "User should not be able to withdraw any assets.");
-
-        // Strategist sets the holding position to the migration position to stop further deposits.
-        vm.startPrank(strategist);
-        etherFiLiquid1.setHoldingPosition(migrationPosition); // This also doubley checks that deposits fail, as users can not deposit into this position.
-        vm.stopPrank();
-
-        /// NOTE make sure no one sneaked in a deposit TX.
-
-        // Deposits now revert.
-        deal(address(WETH), address(this), 1e18);
-        WETH.safeApprove(address(etherFiLiquid1), 1e18);
-        vm.expectRevert(
-            bytes(
-                abi.encodeWithSelector(CellarMigrationAdaptor.CellarMigrationAdaptor__UserDepositsNotAllowed.selector)
-            )
-        );
-        etherFiLiquid1.deposit(1e18, address(this));
-
-        // If need be the strategist would rebalance 1 more time to move all assets into the boring vault.
-
-        // At this point the entire vault is migrated. Strategist can iniaite shutdown to prevent further deposits.
-        vm.prank(strategist);
-        etherFiLiquid1.initiateShutdown();
-        // Deposits still revert.
-        vm.expectRevert(bytes(abi.encodeWithSelector(EtherFiLiquid1.Cellar__ContractShutdown.selector)));
-        etherFiLiquid1.deposit(1e18, address(this));
-
-        // Registry distrusts eETH position, and migration position so they can be forced out.
-        vm.startPrank(registryMultisig);
-        registry.distrustPosition(2);
-        registry.distrustPosition(migrationPosition);
-        vm.stopPrank();
-
-        assertEq(
-            etherFiLiquid1.totalAssets(),
-            totalAssetsAfter,
-            "Total assets should not change after distrusting positions."
-        );
-
-        // registry pauses cellar before final migration.
-        vm.startPrank(registryMultisig);
-        address[] memory _add = new address[](1);
-        _add[0] = address(etherFiLiquid1);
-        registry.batchPause(_add);
-        vm.stopPrank();
-
-        vm.startPrank(jointMultisig);
-        etherFiLiquid1.toggleIgnorePause();
-        // Force out eETH position as it always keeps 1 wei in balance so can not be removed normally.
-        etherFiLiquid1.forcePositionOut(3, 2, false);
-        // Remove all positions from cellar, except for migration position.
-        etherFiLiquid1.removePosition(1, false);
-        etherFiLiquid1.removePosition(1, false);
-        etherFiLiquid1.removePosition(1, false);
-        etherFiLiquid1.removePosition(1, false);
-        etherFiLiquid1.removePosition(1, false);
-        etherFiLiquid1.removePosition(1, false);
-        // Remove all positions from catalogue so they can not be added back.
-        etherFiLiquid1.removePositionFromCatalogue(3);
-        etherFiLiquid1.removePositionFromCatalogue(1);
-        etherFiLiquid1.removePositionFromCatalogue(2);
-        etherFiLiquid1.removePositionFromCatalogue(17);
-        etherFiLiquid1.removePositionFromCatalogue(18);
-        etherFiLiquid1.removePositionFromCatalogue(31);
-        etherFiLiquid1.removePositionFromCatalogue(30);
-        // Revoke solver role from Cellar so that strategist can not deposit or withdraw from BoringVault.
-        rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, false);
-        // Give the migrator contract the appropriate roles to complete the migration.
-        rolesAuthority.setUserRole(address(migrator), MINTER_ROLE, true);
-        rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, true);
-        rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, true);
-        // Complete the migration.
-        migrator.completeMigration(true, 0.0001e4);
-        // Update Share price oracle to use the migration share price oracle.
-        etherFiLiquid1.setSharePriceOracle(1, address(paritySharePriceOracle));
-        // Revoke roles from migrator.
-        rolesAuthority.setUserRole(address(migrator), MINTER_ROLE, false);
-        rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, false);
-        rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, false);
-        // Lift the shutdown.
-        etherFiLiquid1.liftShutdown();
-        // Add the second migration position, add it as a liquid position, make it the holding position, then force out the first one.
-        etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor2));
-        etherFiLiquid1.addPositionToCatalogue(migrationPosition2);
-        etherFiLiquid1.addPosition(0, migrationPosition2, abi.encode(true), false);
-        etherFiLiquid1.setHoldingPosition(migrationPosition2);
-        etherFiLiquid1.forcePositionOut(1, migrationPosition, false);
-        // Shutdown cellar again.
-        etherFiLiquid1.initiateShutdown();
-        etherFiLiquid1.toggleIgnorePause();
-        vm.stopPrank();
-
-        // If everything looks good registry can unpause the cellar.
-        vm.startPrank(registryMultisig);
-        registry.batchUnpause(_add);
-        vm.stopPrank();
-
+        // Strategist begins rebalancing positions.
+        uint256 startingTotalAssets = etherFiLiquid1.totalAssets();
+        _migratePendleAssets();
+        _removePendlePositionsFromCellar();
         assertApproxEqRel(
             etherFiLiquid1.totalAssets(),
-            totalAssetsBefore,
-            0.00000001e18,
-            "Total assets should not change after completing migration."
+            startingTotalAssets,
+            1e6,
+            "Total assets should not change after migrating pendle assets."
         );
 
-        // Check share prices match.
-        {
-            uint256 realSharePrice = etherFiLiquid1.totalAssets().mulDivDown(1e18, etherFiLiquid1.totalSupply());
-            uint256 approxSharePrice = etherFiLiquid1.previewRedeem(1e18);
-
-            assertApproxEqAbs(realSharePrice, approxSharePrice, 1, "Real share price should be the same as approx.");
-        }
-
-        assertEq(
-            etherFiLiquid1.totalSupply(),
-            boringVault.balanceOf(address(etherFiLiquid1)),
-            "BV share balance should match V1 total supply."
+        _migrateAuraAssets();
+        _removeAuraPositionsFromCellar();
+        assertApproxEqRel(
+            etherFiLiquid1.totalAssets(),
+            startingTotalAssets,
+            1e6,
+            "Total assets should not change after migrating pendle assets."
         );
 
-        /// NOTE at this point the BoringVault Teller should have any unwanted deposit assets removed, then public deposits can be turned on.
+        _closeUniswapV3Positions();
+        _closeGearBoxPosition();
+        _removeGearboxPositionFromCellar();
 
-        // When users withdraw, they receive BoringVault shares.
-        vm.startPrank(user);
-        uint256 boringVaultShareDelta = boringVault.balanceOf(user);
-        uint256 cellarSharesRedeemed = 1e18;
-        etherFiLiquid1.redeem(1e18, user, user);
-        boringVaultShareDelta = boringVault.balanceOf(user) - boringVaultShareDelta;
-        vm.stopPrank();
-        assertApproxEqAbs(
-            boringVaultShareDelta, cellarSharesRedeemed, 2, "User should have received BoringVault shares."
+        _closeMorphoBluePosition();
+
+        _migrateAavePosition();
+        assertApproxEqRel(
+            etherFiLiquid1.totalAssets(),
+            startingTotalAssets,
+            0.0001e18,
+            "Total assets should not change after migrating pendle assets."
         );
 
-        // Even as the rate changes, users still receieve BoringVault shares at a 1:1 ratio.
-        // Rate goes down.
-        // Wait long enough so that we can update the exchnage rate.
-        vm.warp(block.timestamp + 2);
-        uint256 newRate = accountant.getRate().mulDivDown(0.95e4, 1e4);
-        accountant.updateExchangeRate(uint96(newRate));
+        // TODO migrate ERC20s.
+        // TODO then remove all positions from cellar, and catalogue.
+        // uint256 totalAssetsAfter = etherFiLiquid1.totalAssets();
 
-        vm.startPrank(user);
-        boringVaultShareDelta = boringVault.balanceOf(user);
-        cellarSharesRedeemed = 1e18;
-        etherFiLiquid1.redeem(1e18, user, user);
-        boringVaultShareDelta = boringVault.balanceOf(user) - boringVaultShareDelta;
-        vm.stopPrank();
-        assertApproxEqAbs(
-            boringVaultShareDelta, cellarSharesRedeemed, 2, "User should have received BoringVault shares."
-        );
+        // // There is a small change in total assets because the BoringVault prices weETH using the rate, but,
+        // // when the cellar prices weETH, there is some small rounding errors when getValue logic is used.
+        // assertApproxEqRel(
+        //     totalAssetsAfter, totalAssetsBefore, 0.00000001e18, "Total assets should not change after migration."
+        // );
 
-        // Rate goes up.
-        // Wait long enough so that we can update the exchnage rate.
-        vm.warp(block.timestamp + 2);
-        newRate = accountant.getRate().mulDivDown(1.05e4, 1e4);
-        accountant.updateExchangeRate(uint96(newRate));
+        // /// NOTE the above migration can happen over the course of multiple weeks, since all the assets are in the illiquid
+        // /// BoringVault position withdraws fail.
 
-        vm.startPrank(user);
-        boringVaultShareDelta = boringVault.balanceOf(user);
-        cellarSharesRedeemed = 1e18;
-        etherFiLiquid1.redeem(1e18, user, user);
-        boringVaultShareDelta = boringVault.balanceOf(user) - boringVaultShareDelta;
-        vm.stopPrank();
-        assertApproxEqAbs(
-            boringVaultShareDelta, cellarSharesRedeemed, 2, "User should have received BoringVault shares."
-        );
+        // /// NOTE if we want to the UI could be updated to state that a migration is underway, and maybe prompt users to use the atomic queue for new deposits or withdraws?
 
-        // If exchangeRate is updated to some extreme value, pause it triggered which causes all Cellar withdraws to revert.
-        // Wait long enough so that we can update the exchnage rate.
-        vm.warp(block.timestamp + 2);
-        newRate = accountant.getRate().mulDivDown(0.01e4, 1e4);
-        accountant.updateExchangeRate(uint96(newRate));
+        // // Wait long enough so that we can update the exchnage rate.
+        // vm.warp(block.timestamp + 2);
 
-        vm.expectRevert(bytes(abi.encodeWithSelector(EtherFiLiquid1.Cellar__OracleFailure.selector)));
-        etherFiLiquid1.redeem(1e18, user, user);
+        // uint256 withdrawable = etherFiLiquid1.maxWithdraw(user);
+        // assertEq(withdrawable, 0, "User should not be able to withdraw any assets.");
 
-        accountant.unpause();
+        // // Strategist sets the holding position to the migration position to stop further deposits.
+        // vm.startPrank(strategist);
+        // etherFiLiquid1.setHoldingPosition(migrationPosition); // This also doubley checks that deposits fail, as users can not deposit into this position.
+        // vm.stopPrank();
 
-        vm.startPrank(user);
-        boringVaultShareDelta = boringVault.balanceOf(user);
-        cellarSharesRedeemed = 1e18;
-        etherFiLiquid1.redeem(1e18, user, user);
-        boringVaultShareDelta = boringVault.balanceOf(user) - boringVaultShareDelta;
-        vm.stopPrank();
-        /// NOTE in this example the extreme rate was made very small which does introduce more rounding errors, so the abs tolerance
-        /// for the assert is increased.
-        assertApproxEqAbs(
-            boringVaultShareDelta, cellarSharesRedeemed, 100, "User should have received BoringVault shares."
-        );
+        // /// NOTE make sure no one sneaked in a deposit TX.
+
+        // // Deposits now revert.
+        // deal(address(WETH), address(this), 1e18);
+        // WETH.safeApprove(address(etherFiLiquid1), 1e18);
+        // vm.expectRevert(
+        //     bytes(
+        //         abi.encodeWithSelector(CellarMigrationAdaptor.CellarMigrationAdaptor__UserDepositsNotAllowed.selector)
+        //     )
+        // );
+        // etherFiLiquid1.deposit(1e18, address(this));
+
+        // // If need be the strategist would rebalance 1 more time to move all assets into the boring vault.
+
+        // // At this point the entire vault is migrated. Strategist can iniaite shutdown to prevent further deposits.
+        // vm.prank(strategist);
+        // etherFiLiquid1.initiateShutdown();
+        // // Deposits still revert.
+        // vm.expectRevert(bytes(abi.encodeWithSelector(EtherFiLiquid1.Cellar__ContractShutdown.selector)));
+        // etherFiLiquid1.deposit(1e18, address(this));
+
+        // // Registry distrusts eETH position, and migration position so they can be forced out.
+        // vm.startPrank(registryMultisig);
+        // registry.distrustPosition(2);
+        // registry.distrustPosition(migrationPosition);
+        // vm.stopPrank();
+
+        // assertEq(
+        //     etherFiLiquid1.totalAssets(),
+        //     totalAssetsAfter,
+        //     "Total assets should not change after distrusting positions."
+        // );
+
+        // // registry pauses cellar before final migration.
+        // vm.startPrank(registryMultisig);
+        // address[] memory _add = new address[](1);
+        // _add[0] = address(etherFiLiquid1);
+        // registry.batchPause(_add);
+        // vm.stopPrank();
+
+        // vm.startPrank(jointMultisig);
+        // etherFiLiquid1.toggleIgnorePause();
+        // // Force out eETH position as it always keeps 1 wei in balance so can not be removed normally.
+        // etherFiLiquid1.forcePositionOut(3, 2, false);
+        // // Remove all positions from cellar, except for migration position.
+        // etherFiLiquid1.removePosition(1, false);
+        // etherFiLiquid1.removePosition(1, false);
+        // etherFiLiquid1.removePosition(1, false);
+        // etherFiLiquid1.removePosition(1, false);
+        // etherFiLiquid1.removePosition(1, false);
+        // etherFiLiquid1.removePosition(1, false);
+        // // Remove all positions from catalogue so they can not be added back.
+        // etherFiLiquid1.removePositionFromCatalogue(3);
+        // etherFiLiquid1.removePositionFromCatalogue(1);
+        // etherFiLiquid1.removePositionFromCatalogue(2);
+        // etherFiLiquid1.removePositionFromCatalogue(17);
+        // etherFiLiquid1.removePositionFromCatalogue(18);
+        // etherFiLiquid1.removePositionFromCatalogue(31);
+        // etherFiLiquid1.removePositionFromCatalogue(30);
+        // // Revoke solver role from Cellar so that strategist can not deposit or withdraw from BoringVault.
+        // rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, false);
+        // // Give the migrator contract the appropriate roles to complete the migration.
+        // rolesAuthority.setUserRole(address(migrator), MINTER_ROLE, true);
+        // rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, true);
+        // rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, true);
+        // // Complete the migration.
+        // migrator.completeMigration(true, 0.0001e4);
+        // // Update Share price oracle to use the migration share price oracle.
+        // etherFiLiquid1.setSharePriceOracle(1, address(paritySharePriceOracle));
+        // // Revoke roles from migrator.
+        // rolesAuthority.setUserRole(address(migrator), MINTER_ROLE, false);
+        // rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, false);
+        // rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, false);
+        // // Lift the shutdown.
+        // etherFiLiquid1.liftShutdown();
+        // // Add the second migration position, add it as a liquid position, make it the holding position, then force out the first one.
+        // etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor2));
+        // etherFiLiquid1.addPositionToCatalogue(migrationPosition2);
+        // etherFiLiquid1.addPosition(0, migrationPosition2, abi.encode(true), false);
+        // etherFiLiquid1.setHoldingPosition(migrationPosition2);
+        // etherFiLiquid1.forcePositionOut(1, migrationPosition, false);
+        // // Shutdown cellar again.
+        // etherFiLiquid1.initiateShutdown();
+        // etherFiLiquid1.toggleIgnorePause();
+        // vm.stopPrank();
+
+        // // If everything looks good registry can unpause the cellar.
+        // vm.startPrank(registryMultisig);
+        // registry.batchUnpause(_add);
+        // vm.stopPrank();
+
+        // assertApproxEqRel(
+        //     etherFiLiquid1.totalAssets(),
+        //     totalAssetsBefore,
+        //     0.00000001e18,
+        //     "Total assets should not change after completing migration."
+        // );
+
+        // // Check share prices match.
+        // {
+        //     uint256 realSharePrice = etherFiLiquid1.totalAssets().mulDivDown(1e18, etherFiLiquid1.totalSupply());
+        //     uint256 approxSharePrice = etherFiLiquid1.previewRedeem(1e18);
+
+        //     assertApproxEqAbs(realSharePrice, approxSharePrice, 1, "Real share price should be the same as approx.");
+        // }
+
+        // assertEq(
+        //     etherFiLiquid1.totalSupply(),
+        //     boringVault.balanceOf(address(etherFiLiquid1)),
+        //     "BV share balance should match V1 total supply."
+        // );
+
+        // /// NOTE at this point the BoringVault Teller should have any unwanted deposit assets removed, then public deposits can be turned on.
+
+        // // When users withdraw, they receive BoringVault shares.
+        // vm.startPrank(user);
+        // uint256 boringVaultShareDelta = boringVault.balanceOf(user);
+        // uint256 cellarSharesRedeemed = 1e18;
+        // etherFiLiquid1.redeem(1e18, user, user);
+        // boringVaultShareDelta = boringVault.balanceOf(user) - boringVaultShareDelta;
+        // vm.stopPrank();
+        // assertApproxEqAbs(
+        //     boringVaultShareDelta, cellarSharesRedeemed, 2, "User should have received BoringVault shares."
+        // );
+
+        // // Even as the rate changes, users still receieve BoringVault shares at a 1:1 ratio.
+        // // Rate goes down.
+        // // Wait long enough so that we can update the exchnage rate.
+        // vm.warp(block.timestamp + 2);
+        // uint256 newRate = accountant.getRate().mulDivDown(0.95e4, 1e4);
+        // accountant.updateExchangeRate(uint96(newRate));
+
+        // vm.startPrank(user);
+        // boringVaultShareDelta = boringVault.balanceOf(user);
+        // cellarSharesRedeemed = 1e18;
+        // etherFiLiquid1.redeem(1e18, user, user);
+        // boringVaultShareDelta = boringVault.balanceOf(user) - boringVaultShareDelta;
+        // vm.stopPrank();
+        // assertApproxEqAbs(
+        //     boringVaultShareDelta, cellarSharesRedeemed, 2, "User should have received BoringVault shares."
+        // );
+
+        // // Rate goes up.
+        // // Wait long enough so that we can update the exchnage rate.
+        // vm.warp(block.timestamp + 2);
+        // newRate = accountant.getRate().mulDivDown(1.05e4, 1e4);
+        // accountant.updateExchangeRate(uint96(newRate));
+
+        // vm.startPrank(user);
+        // boringVaultShareDelta = boringVault.balanceOf(user);
+        // cellarSharesRedeemed = 1e18;
+        // etherFiLiquid1.redeem(1e18, user, user);
+        // boringVaultShareDelta = boringVault.balanceOf(user) - boringVaultShareDelta;
+        // vm.stopPrank();
+        // assertApproxEqAbs(
+        //     boringVaultShareDelta, cellarSharesRedeemed, 2, "User should have received BoringVault shares."
+        // );
+
+        // // If exchangeRate is updated to some extreme value, pause it triggered which causes all Cellar withdraws to revert.
+        // // Wait long enough so that we can update the exchnage rate.
+        // vm.warp(block.timestamp + 2);
+        // newRate = accountant.getRate().mulDivDown(0.01e4, 1e4);
+        // accountant.updateExchangeRate(uint96(newRate));
+
+        // vm.expectRevert(bytes(abi.encodeWithSelector(EtherFiLiquid1.Cellar__OracleFailure.selector)));
+        // etherFiLiquid1.redeem(1e18, user, user);
+
+        // accountant.unpause();
+
+        // vm.startPrank(user);
+        // boringVaultShareDelta = boringVault.balanceOf(user);
+        // cellarSharesRedeemed = 1e18;
+        // etherFiLiquid1.redeem(1e18, user, user);
+        // boringVaultShareDelta = boringVault.balanceOf(user) - boringVaultShareDelta;
+        // vm.stopPrank();
+        // /// NOTE in this example the extreme rate was made very small which does introduce more rounding errors, so the abs tolerance
+        // /// for the assert is increased.
+        // assertApproxEqAbs(
+        //     boringVaultShareDelta, cellarSharesRedeemed, 100, "User should have received BoringVault shares."
+        // );
     }
 
     // TODO write out steps in doc
@@ -585,7 +610,6 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         }
 
         address cellarOwner = etherFiLiquid1.owner();
-        Registry registry = Registry(etherFiLiquid1.registry());
         address registryOwner = registry.owner();
 
         // Rebalance the Cellar so that it only has assets in PT weETH, YT weETH, PT Zircuit weETH, YT Zircuit weETH, eETH, weETH, and wETH.
@@ -791,6 +815,14 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
+    }
+
+    struct MarketParams {
+        address loanToken;
+        address collateralToken;
+        address oracle;
+        address irm;
+        uint256 lltv;
     }
 }
 

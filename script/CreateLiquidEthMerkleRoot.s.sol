@@ -13,10 +13,10 @@ import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
     using FixedPointMathLib for uint256;
 
-    address public boringVault = 0xc79cC44DC8A91330872D7815aE9CFB04405952ea;
-    address public rawDataDecoderAndSanitizer = 0xdADc9DE5d8C9E2a34875A2CEa0cd415751E1791b;
-    address public managerAddress = 0x048a5002E57166a78Dd060B3B36DEd2f404D0a17;
-    address public accountantAddress = 0xc6f89cc0551c944CEae872997A4060DC95622D8F;
+    address public boringVault = 0x66BC9023f618C447e52c31dAF591d1943529D9e7;
+    address public rawDataDecoderAndSanitizer = 0x0c9fd99d67DF2AB4722640eC4A5b495371bc81d2;
+    address public managerAddress = 0x2f33E96790EF4A8b98E0F207CAB1e5972Be6989A;
+    address public accountantAddress = 0x3365AD279cD33508A837EBC23c61C0Ca0ac9950B;
 
     function setUp() external {}
 
