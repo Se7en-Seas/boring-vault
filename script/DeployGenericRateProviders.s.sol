@@ -23,6 +23,7 @@ contract DeployGenericRateProvidersScript is Script, ContractNames, MainnetAddre
     // Contracts to deploy
     Deployer public deployer = Deployer(deployerAddress);
     GenericRateProvider public auraRETHWeETHBptRateProvider;
+    GenericRateProvider public wstethRateProvider;
 
     // Dont need an aweETH rate provider as aweETH is 1:1 with weETH so we can just use the weETH rate provider.
 
@@ -55,6 +56,22 @@ contract DeployGenericRateProvidersScript is Script, ContractNames, MainnetAddre
         auraRETHWeETHBptRateProvider = GenericRateProvider(
             deployer.deployContract(AuraRETHWeETHBptRateProviderName, creationCode, constructorArgs, 0)
         );
+
+        creationCode = type(GenericRateProvider).creationCode;
+        constructorArgs = abi.encode(
+            liquidV1PriceRouter,
+            selector,
+            address(WSTETH).toBytes32(),
+            bytes32(amount),
+            address(WETH).toBytes32(),
+            0,
+            0,
+            0,
+            0,
+            0
+        );
+        wstethRateProvider =
+            GenericRateProvider(deployer.deployContract(WstETHRateProviderName, creationCode, constructorArgs, 0));
 
         vm.stopBroadcast();
     }
