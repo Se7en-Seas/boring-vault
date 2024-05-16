@@ -73,7 +73,7 @@ contract CellarMigratorWithSharePriceParity {
 
         if (checkIfCellarOwnsAllShares) {
             // Make sure that Cellar owns all shares of the target.
-            require(targetBvShares == boringVault.totalSupply(), "SH");
+            require(targetBvShares == boringVault.totalSupply(), "SHARES");
         }
 
         // Update target's BoringVault share amount to keep share price constant.

@@ -76,6 +76,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     uint8 public constant STRATEGIST_ROLE = 7;
     uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 11;
 
+    ERC20 public asset = USDC; // Used for ParitySharePriceOracle test.
+
     address public jointMultisig;
     address public registryMultisig;
     address public strategist;
@@ -642,9 +644,87 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         );
     }
 
-    // TODO write out steps in doc
+    function testCellarMigrationWithSharePriceParity() external {
+        address user = vm.addr(3);
 
-    // TODO add bespoke tests for ParitySharePriceOracle, CellarMigratorWithSharePriceParity.
+        // Give fake user some shares.
+        deal(address(etherFiLiquid1), user, 10e18);
+
+        // Deploy migrator.
+        migrator = new CellarMigratorWithSharePriceParity(
+            boringVault, ERC4626(address(etherFiLiquid1)), accountant, jointMultisig
+        );
+
+        uint32 migrationPosition = 77777777;
+        vm.startPrank(registryMultisig);
+        registry.trustAdaptor(address(migrationAdaptor));
+        registry.trustPosition(migrationPosition, address(migrationAdaptor), hex"");
+        registry.setAddress(1, address(paritySharePriceOracle));
+        vm.stopPrank();
+
+        // Joint multisig only adds the first migration position/adaptor to the catalogue,
+        // then adds the position ot the cellar, specifying it to be illiquid.
+        // Next it gives etherfi liquid the solver role so it can rebalance.
+        vm.startPrank(jointMultisig);
+        etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
+        etherFiLiquid1.addPositionToCatalogue(migrationPosition);
+        etherFiLiquid1.addPosition(0, migrationPosition, abi.encode(false), false);
+        rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
+        rolesAuthority.setUserRole(address(migrator), MINTER_ROLE, true);
+        rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, true);
+        rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, true);
+        vm.stopPrank();
+
+        // Strategist begins rebalancing positions.
+
+        ERC20[] memory tokensToMigrate = new ERC20[](1);
+        tokensToMigrate[0] = WETH;
+        _migrateERC20Positions(tokensToMigrate);
+
+        // Trying to call the complete migration function from the wrong account reverts.
+        vm.expectRevert(bytes("MIGRATOR"));
+        migrator.completeMigration(true, 10);
+
+        uint256 targetBVShares = boringVault.balanceOf(address(etherFiLiquid1));
+
+        // Remove 1 wei boring vault share from target.
+        deal(address(boringVault), address(etherFiLiquid1), targetBVShares - 1);
+
+        vm.startPrank(jointMultisig);
+        vm.expectRevert(bytes("SHARES"));
+        migrator.completeMigration(true, 10);
+        vm.stopPrank();
+
+        vm.startPrank(jointMultisig);
+        vm.expectRevert(bytes("TA"));
+        migrator.completeMigration(false, 0);
+        vm.stopPrank();
+    }
+
+    function testParitySharePriceOracle() external {
+        // Try deploying a share price oracle when the assets are mismatched.
+        vm.expectRevert(bytes("ASSET_MISMATCH"));
+        new ParitySharePriceOracle(address(this), address(accountant));
+
+        ParitySharePriceOracle oracle = new ParitySharePriceOracle(address(etherFiLiquid1), address(accountant));
+
+        uint256 currentRate = accountant.getRate();
+
+        // Check that the oracle returns the correct rate.
+        (uint256 ans, uint256 twaa, bool isNotSafeToUse) = oracle.getLatest();
+
+        assertEq(ans, currentRate, "Rate should match the current rate.");
+        assertEq(twaa, currentRate, "TWAA should match the current rate.");
+        assertEq(isNotSafeToUse, false, "Oracle should be safe to use.");
+
+        // Pause accountant.
+        vm.startPrank(jointMultisig);
+        accountant.pause();
+        vm.stopPrank();
+
+        (,, isNotSafeToUse) = oracle.getLatest();
+        assertEq(isNotSafeToUse, true, "Oracle should not be safe to use.");
+    }
 
     function _simulateRebalance(uint256 seed) internal {
         uint256[7] memory makeup = [
