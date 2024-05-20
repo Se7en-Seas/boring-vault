@@ -139,7 +139,22 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         assertEq(management_fee, 0.09e4, "Management Fee should be 0.09e4");
     }
 
-    // TODO testUpdatePerformanceFee
+    function testUpdataePerformanceFee() external {
+        accountant.updatePerformanceFee(0.2e4);
+        (,,,,,,,,,,, uint16 performance_fee) = accountant.accountantState();
+
+        assertEq(performance_fee, 0.2e4, "Performance Fee should be 0.2e4");
+    }
+
+    function testResetHighwaterMark() external {
+        // Change share price to 0.5.
+        accountant.updateExchangeRate(0.5e18);
+
+        accountant.resetHighwaterMark();
+        (, uint96 highwater_mark,,,,,,,,,,) = accountant.accountantState();
+
+        assertEq(highwater_mark, 0.5e18, "Highwater mark should be 0.5e18");
+    }
 
     function testUpdatePayoutAddress() external {
         (address payout,,,,,,,,,,,) = accountant.accountantState();
@@ -158,7 +173,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         assertEq(address(rate_provider), WEETH_RATE_PROVIDER, "WEETH rate provider should be set");
     }
 
-    function testUpdateExchangeRateAndFeeLogic() external {
+    function testUpdateExchangeRateAndManagementFeeLogic() external {
         accountant.updateManagementFee(0.01e4);
 
         skip(1 days / 24);
@@ -237,6 +252,97 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
 
         (,, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,,) =
             accountant.accountantState();
+        assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
+        assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
+        assertEq(current_exchange_rate, new_exchange_rate, "Current exchange rate should be updated");
+        assertEq(last_update_timestamp, uint64(block.timestamp), "Last update timestamp should be updated");
+        assertTrue(is_paused == true, "Accountant should be paused");
+    }
+
+    function testUpdateExchangeRateAndPerformanceFeeLogic() external {
+        accountant.updatePerformanceFee(0.2e4);
+
+        skip(1 days / 24);
+        // Increase exchange rate by 5 bps.
+        uint96 new_exchange_rate = uint96(1.0005e18);
+        accountant.updateExchangeRate(new_exchange_rate);
+
+        (
+            ,
+            uint96 highwaterMark,
+            uint128 fees_owed,
+            uint128 total_shares,
+            uint96 current_exchange_rate,
+            ,
+            ,
+            uint64 last_update_timestamp,
+            bool is_paused,
+            ,
+            ,
+        ) = accountant.accountantState();
+        assertEq(highwaterMark, new_exchange_rate, "Highwater mark should be new_exchange_rate");
+        assertEq(fees_owed, 0, "Fees owed should be 0");
+        assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
+        assertEq(current_exchange_rate, new_exchange_rate, "Current exchange rate should be updated");
+        assertEq(last_update_timestamp, uint64(block.timestamp), "Last update timestamp should be updated");
+        assertTrue(is_paused == false, "Accountant should not be paused");
+
+        skip(1 days / 24);
+        // Increase exchange rate by 5 bps.
+        new_exchange_rate = uint96(1.001e18);
+        accountant.updateExchangeRate(new_exchange_rate);
+
+        uint256 expected_fees_owed = uint256(0.0005e18).mulDivDown(total_shares, 1e18).mulDivDown(0.2e4, 1e4);
+
+        (, highwaterMark, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,,) =
+            accountant.accountantState();
+        assertEq(highwaterMark, new_exchange_rate, "Highwater mark should be new_exchange_rate");
+        assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
+        assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
+        assertEq(current_exchange_rate, new_exchange_rate, "Current exchange rate should be updated");
+        assertEq(last_update_timestamp, uint64(block.timestamp), "Last update timestamp should be updated");
+        assertTrue(is_paused == false, "Accountant should not be paused");
+
+        skip(1 days / 24);
+        // Decrease exchange rate by 5 bps.
+        uint96 oldExchangeRate = new_exchange_rate;
+        new_exchange_rate = uint96(1.0005e18);
+        accountant.updateExchangeRate(new_exchange_rate);
+
+        // expected_fees_owed should be the same.
+
+        (, highwaterMark, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,,) =
+            accountant.accountantState();
+        assertEq(highwaterMark, oldExchangeRate, "Highwater mark should not change");
+        assertEq(fees_owed, expected_fees_owed, "Fees owed should not have changed");
+        assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
+        assertEq(current_exchange_rate, new_exchange_rate, "Current exchange rate should be updated");
+        assertEq(last_update_timestamp, uint64(block.timestamp), "Last update timestamp should be updated");
+        assertTrue(is_paused == false, "Accountant should not be paused");
+
+        // Trying to update before the minimum time should succeed but, pause the contract.
+        new_exchange_rate = uint96(1.0e18);
+        accountant.updateExchangeRate(new_exchange_rate);
+
+        (, highwaterMark, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,,) =
+            accountant.accountantState();
+        assertEq(highwaterMark, oldExchangeRate, "Highwater mark should not change");
+        assertEq(fees_owed, expected_fees_owed, "Fees owed should not change");
+        assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
+        assertEq(current_exchange_rate, new_exchange_rate, "Current exchange rate should be updated");
+        assertEq(last_update_timestamp, uint64(block.timestamp), "Last update timestamp should be updated");
+        assertTrue(is_paused == true, "Accountant should be paused");
+
+        accountant.unpause();
+
+        // Or if the next update is outside the accepted bounds it will pause.
+        skip((1 days / 24));
+        new_exchange_rate = uint96(10.0e18);
+        accountant.updateExchangeRate(new_exchange_rate);
+
+        (, highwaterMark, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,,) =
+            accountant.accountantState();
+        assertEq(highwaterMark, oldExchangeRate, "Highwater mark should not change");
         assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
         assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
         assertEq(current_exchange_rate, new_exchange_rate, "Current exchange rate should be updated");

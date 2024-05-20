@@ -69,6 +69,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     error AccountantWithRateProviders__UpperBoundTooSmall();
     error AccountantWithRateProviders__LowerBoundTooLarge();
     error AccountantWithRateProviders__ManagementFeeTooLarge();
+    error AccountantWithRateProviders__PerformanceFeeTooLarge();
     error AccountantWithRateProviders__Paused();
     error AccountantWithRateProviders__ZeroFeesOwed();
     error AccountantWithRateProviders__OnlyCallableByBoringVault();
@@ -82,6 +83,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     event UpperBoundUpdated(uint16 oldBound, uint16 newBound);
     event LowerBoundUpdated(uint16 oldBound, uint16 newBound);
     event ManagementFeeUpdated(uint16 oldFee, uint16 newFee);
+    event PerformanceFeeUpdated(uint16 oldFee, uint16 newFee);
     event PayoutAddressUpdated(address oldPayout, address newPayout);
     event RateProviderUpdated(address asset, bool isPegged, address rateProvider);
     event ExchangeRateUpdated(uint96 oldRate, uint96 newRate, uint64 currentTime);
@@ -211,6 +213,17 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     }
 
     /**
+     * @notice Update the performance fee to a new value.
+     * @dev Callable by OWNER_ROLE.
+     */
+    function updatePerformanceFee(uint16 performanceFee) external requiresAuth {
+        if (performanceFee > 0.5e4) revert AccountantWithRateProviders__PerformanceFeeTooLarge();
+        uint16 oldFee = accountantState.performanceFee;
+        accountantState.performanceFee = performanceFee;
+        emit PerformanceFeeUpdated(oldFee, performanceFee);
+    }
+
+    /**
      * @notice Update the payout address fees are sent to.
      * @dev Callable by OWNER_ROLE.
      */
@@ -235,13 +248,14 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @notice Reset the highwater mark to the current exchange rate.
+     * @dev Callable by OWNER_ROLE.
      */
     function resetHighwaterMark() external requiresAuth {
         AccountantState storage state = accountantState;
 
+        // TODO I am not sure if the totalSupply should be updated.
         state.totalSharesLastUpdate = uint128(vault.totalSupply());
         state.highwaterMark = accountantState.exchangeRate;
-        state.lastUpdateTimestamp = uint64(block.timestamp);
 
         emit HighwaterMarkReset();
     }
@@ -286,14 +300,17 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
             uint256 newFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
 
             // Account for performance fees.
-            if (state.performanceFee > 0) {
-                if (newExchangeRate > state.highwaterMark) {
+            if (newExchangeRate > state.highwaterMark) {
+                if (state.performanceFee > 0) {
                     uint256 changeInExchangeRate = newExchangeRate - state.highwaterMark;
                     uint256 yieldEarned = changeInExchangeRate.mulDivDown(shareSupplyToUse, ONE_SHARE);
                     uint256 performanceFeesOwedInBase = yieldEarned.mulDivDown(state.performanceFee, 1e4);
                     newFeesOwedInBase += performanceFeesOwedInBase;
-                    state.highwaterMark = uint96(newExchangeRate);
                 }
+                // Always update the highwater mark if the new exchange rate is higher.
+                // This way if we are not iniitiall taking performance fees, we can start taking them
+                // without back charging them on past performance.
+                state.highwaterMark = newExchangeRate;
             }
 
             state.feesOwedInBase += uint128(newFeesOwedInBase);
