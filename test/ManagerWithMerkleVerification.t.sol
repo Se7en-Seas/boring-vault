@@ -7,6 +7,7 @@ import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVer
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 import {
     EtherFiLiquidDecoderAndSanitizer,
     MorphoBlueDecoderAndSanitizer,
@@ -14,7 +15,7 @@ import {
     BalancerV2DecoderAndSanitizer,
     PendleRouterDecoderAndSanitizer
 } from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
-import {EtherFiLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
+import {EtherFiLiquidUsdDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
 import {LidoLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/LidoLiquidDecoderAndSanitizer.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {IUniswapV3Router} from "src/interfaces/IUniswapV3Router.sol";
@@ -1676,6 +1677,77 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         assertEq(WETH.balanceOf(address(boringVault)), 1_000e18, "BoringVault should have received 1,000 WETH");
     }
 
+    function testEthenaWithdrawIntegration() external {
+        // Give BoringVault some sUSDE. 
+        uint256 assets = 100_000e18;
+        deal(address(SUSDE), address(boringVault), assets);
+
+        // update DecoderAndSanitizer
+        rawDataDecoderAndSanitizer = address(new EtherFiLiquidUsdDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        leafs[0] = ManageLeaf(address(SUSDE), false, "cooldownAssets(uint256)", new address[](0));
+        leafs[1] = ManageLeaf(address(SUSDE), false, "cooldownShares(uint256)", new address[](0));
+        leafs[2] = ManageLeaf(address(SUSDE), false, "unstake(address)", new address[](1));
+        leafs[2].argumentAddresses[0] = address(boringVault);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](2);
+        targets[0] = address(SUSDE);
+        targets[1] = address(SUSDE);
+
+        bytes[] memory targetData = new bytes[](2);
+        targetData[0] = abi.encodeWithSignature("cooldownAssets(uint256)", assets / 2);
+        uint256 shares = ERC4626(address(SUSDE)).previewWithdraw(assets / 2);
+        targetData[1] =
+            abi.encodeWithSignature("cooldownShares(uint256)", shares);
+
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
+        uint256[] memory values = new uint256[](2);
+
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        EthenaSusde susde = EthenaSusde(address(SUSDE));
+        (uint104 end, uint152 amount) = susde.cooldowns(address(boringVault));
+        assertGt(end, block.timestamp, "Cooldown end should have been set.");
+        assertEq(amount, assets, "Cooldown amount should equal assets.");
+
+        // Wait the cooldown duration.
+        skip(susde.cooldownDuration());
+
+         manageLeafs = new ManageLeaf[](1);
+         manageLeafs[0] = leafs[2];
+
+          manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        targets = new address[](1);
+        targets[0] = address(SUSDE);
+
+        targetData = new bytes[](1);
+        targetData[0] = abi.encodeWithSignature("unstake(address)",address(boringVault));
+
+        decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+
+        values = new uint256[](1);
+
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        assertEq(USDE.balanceOf(address(boringVault)), amount, "BoringVault should have received unstaked USDe.");
+    }
+
     function testReverts() external {
         bytes32[][] memory manageProofs;
         address[] memory targets;
@@ -3302,4 +3374,10 @@ interface IUNSTETH {
         returns (uint256[] memory);
 
     function getLastCheckpointIndex() external view returns (uint256);
+}
+
+
+interface EthenaSusde {
+    function cooldownDuration() external view returns(uint24);
+    function cooldowns(address) external view returns(uint104 cooldownEnd, uint152 underlyingAmount);
 }
