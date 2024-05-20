@@ -397,6 +397,44 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         assertTrue(teller.isSupported(WETH) == true, "WETH should be supported");
     }
 
+    function testDenyList() external {
+        boringVault.setBeforeTransferHook(address(teller));
+        address attacker = vm.addr(0xDEAD);
+        deal(address(boringVault), attacker, 1e18, true);
+        // Transfers currently work.
+        vm.prank(attacker);
+        boringVault.transfer(address(this), 0.1e18);
+
+        // But if attacker is added to the deny list, transfers should fail.
+        teller.denyTransfer(attacker);
+
+        vm.startPrank(attacker);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
+                attacker,
+                address(this)
+            )
+        );
+        boringVault.transfer(address(this), 0.1e18);
+        vm.stopPrank();
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
+                attacker,
+                address(this)
+            )
+        );
+        boringVault.transferFrom(attacker, address(this), 0.1e18);
+
+        // If attacker is removed from the deny list, transfers should work again.
+        teller.allowTransfer(attacker);
+
+        vm.prank(attacker);
+        boringVault.transfer(address(this), 0.1e18);
+    }
+
     function testReverts() external {
         // Test pause logic
         teller.pause();
