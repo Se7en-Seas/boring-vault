@@ -39,7 +39,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
         accountant = new AccountantWithRateProviders(
-            address(this), address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0
+            address(this), address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0, 0
         );
 
         rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
@@ -100,12 +100,12 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     function testPause() external {
         accountant.pause();
 
-        (,,,,,,, bool is_paused,,) = accountant.accountantState();
+        (,,,,,,,, bool is_paused,,,) = accountant.accountantState();
         assertTrue(is_paused == true, "Accountant should be paused");
 
         accountant.unpause();
 
-        (,,,,,,, is_paused,,) = accountant.accountantState();
+        (,,,,,,,, is_paused,,,) = accountant.accountantState();
 
         assertTrue(is_paused == false, "Accountant should be unpaused");
     }
@@ -113,40 +113,42 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     function testUpdateDelay() external {
         accountant.updateDelay(2);
 
-        (,,,,,,,, uint32 delay_in_seconds,) = accountant.accountantState();
+        (,,,,,,,,, uint32 delay_in_seconds,,) = accountant.accountantState();
 
         assertEq(delay_in_seconds, 2, "Delay should be 2 seconds");
     }
 
     function testUpdateUpper() external {
         accountant.updateUpper(1.002e4);
-        (,,,, uint16 upper_bound,,,,,) = accountant.accountantState();
+        (,,,,, uint16 upper_bound,,,,,,) = accountant.accountantState();
 
         assertEq(upper_bound, 1.002e4, "Upper bound should be 1.002e4");
     }
 
     function testUpdateLower() external {
         accountant.updateLower(0.998e4);
-        (,,,,, uint16 lower_bound,,,,) = accountant.accountantState();
+        (,,,,,, uint16 lower_bound,,,,,) = accountant.accountantState();
 
         assertEq(lower_bound, 0.998e4, "Lower bound should be 0.9980e4");
     }
 
     function testUpdateManagementFee() external {
         accountant.updateManagementFee(0.09e4);
-        (,,,,,,,,, uint16 management_fee) = accountant.accountantState();
+        (,,,,,,,,,, uint16 management_fee,) = accountant.accountantState();
 
         assertEq(management_fee, 0.09e4, "Management Fee should be 0.09e4");
     }
 
+    // TODO testUpdatePerformanceFee
+
     function testUpdatePayoutAddress() external {
-        (address payout,,,,,,,,,) = accountant.accountantState();
+        (address payout,,,,,,,,,,,) = accountant.accountantState();
         assertEq(payout, payout_address, "Payout address should be the same");
 
         address new_payout_address = vm.addr(8888888);
         accountant.updatePayoutAddress(new_payout_address);
 
-        (payout,,,,,,,,,) = accountant.accountantState();
+        (payout,,,,,,,,,,,) = accountant.accountantState();
         assertEq(payout, new_payout_address, "Payout address should be the same");
     }
 
@@ -166,6 +168,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
 
         (
             ,
+            ,
             uint128 fees_owed,
             uint128 total_shares,
             uint96 current_exchange_rate,
@@ -173,6 +176,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
             ,
             uint64 last_update_timestamp,
             bool is_paused,
+            ,
             ,
         ) = accountant.accountantState();
         assertEq(fees_owed, 0, "Fees owed should be 0");
@@ -189,7 +193,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         uint256 expected_fees_owed =
             uint256(0.01e4).mulDivDown(uint256(1 days / 24).mulDivDown(1_000.5e18, 365 days), 1e4);
 
-        (, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,) =
+        (,, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,,) =
             accountant.accountantState();
         assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
         assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
@@ -204,7 +208,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
 
         expected_fees_owed += uint256(0.01e4).mulDivDown(uint256(1 days / 24).mulDivDown(1_000.5e18, 365 days), 1e4);
 
-        (, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,) =
+        (,, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,,) =
             accountant.accountantState();
         assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
         assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
@@ -216,7 +220,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         new_exchange_rate = uint96(1.0e18);
         accountant.updateExchangeRate(new_exchange_rate);
 
-        (, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,) =
+        (,, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,,) =
             accountant.accountantState();
         assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
         assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
@@ -231,7 +235,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         new_exchange_rate = uint96(10.0e18);
         accountant.updateExchangeRate(new_exchange_rate);
 
-        (, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,) =
+        (,, fees_owed, total_shares, current_exchange_rate,,, last_update_timestamp, is_paused,,,) =
             accountant.accountantState();
         assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
         assertEq(total_shares, 1_000e18, "Total shares should be 1_000e18");
@@ -248,7 +252,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         uint96 new_exchange_rate = uint96(1.0005e18);
         accountant.updateExchangeRate(new_exchange_rate);
 
-        (, uint128 fees_owed,,,,,,,,) = accountant.accountantState();
+        (,, uint128 fees_owed,,,,,,,,,) = accountant.accountantState();
         assertEq(fees_owed, 0, "Fees owed should be 0");
 
         skip(1 days / 24);
@@ -259,7 +263,7 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
         uint256 expected_fees_owed =
             uint256(0.01e4).mulDivDown(uint256(1 days / 24).mulDivDown(1_000.5e18, 365 days), 1e4);
 
-        (, fees_owed,,,,,,,,) = accountant.accountantState();
+        (,, fees_owed,,,,,,,,,) = accountant.accountantState();
         assertEq(fees_owed, expected_fees_owed, "Fees owed should equal expected");
 
         vm.startPrank(address(boringVault));

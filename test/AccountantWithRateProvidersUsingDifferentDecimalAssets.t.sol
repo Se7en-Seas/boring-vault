@@ -38,7 +38,7 @@ contract AccountantWithRateProvidersUsingDifferentDecimalTest is Test, MainnetAd
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 6);
 
         accountant = new AccountantWithRateProviders(
-            address(this), address(boringVault), payoutAddress, 1e6, address(USDC), 1.001e4, 0.999e4, 1, 0
+            address(this), address(boringVault), payoutAddress, 1e6, address(USDC), 1.001e4, 0.999e4, 1, 0, 0
         );
 
         vm.startPrank(usdcWhale);
@@ -71,7 +71,7 @@ contract AccountantWithRateProvidersUsingDifferentDecimalTest is Test, MainnetAd
         uint96 newExchangeRate = uint96(1e6);
         accountant.updateExchangeRate(newExchangeRate);
 
-        (, uint128 feesOwed,,,,,,,,) = accountant.accountantState();
+        (,, uint128 feesOwed,,,,,,,,,) = accountant.accountantState();
 
         vm.startPrank(address(boringVault));
         USDC.safeApprove(address(accountant), type(uint256).max);
@@ -87,7 +87,7 @@ contract AccountantWithRateProvidersUsingDifferentDecimalTest is Test, MainnetAd
         uint96 newExchangeRate = uint96(1e6);
         accountant.updateExchangeRate(newExchangeRate);
 
-        (, uint128 feesOwed,,,,,,,,) = accountant.accountantState();
+        (,, uint128 feesOwed,,,,,,,,,) = accountant.accountantState();
 
         deal(address(USDT), address(boringVault), 1_000_000e6);
         vm.startPrank(address(boringVault));
@@ -104,7 +104,7 @@ contract AccountantWithRateProvidersUsingDifferentDecimalTest is Test, MainnetAd
         uint96 newExchangeRate = uint96(1e6);
         accountant.updateExchangeRate(newExchangeRate);
 
-        (, uint128 feesOwed,,,,,,,,) = accountant.accountantState();
+        (,, uint128 feesOwed,,,,,,,,,) = accountant.accountantState();
 
         deal(address(DAI), address(boringVault), 1_000_000e18);
         vm.startPrank(address(boringVault));
@@ -122,7 +122,7 @@ contract AccountantWithRateProvidersUsingDifferentDecimalTest is Test, MainnetAd
         uint96 newExchangeRate = uint96(1e6);
         accountant.updateExchangeRate(newExchangeRate);
 
-        (, uint128 feesOwed,,,,,,,,) = accountant.accountantState();
+        (,, uint128 feesOwed,,,,,,,,,) = accountant.accountantState();
 
         deal(address(SDAI), address(boringVault), 1_000_000e18);
         vm.startPrank(address(boringVault));

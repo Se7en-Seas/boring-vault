@@ -79,7 +79,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         manager = new ManagerWithMerkleVerification(multisig, address(boringVault), vault);
 
         accountant = new AccountantWithRateProviders(
-            multisig, address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0.01e4
+            multisig, address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0.01e4, 0
         );
 
         teller = new TellerWithMultiAssetSupport(multisig, address(boringVault), address(accountant), address(WETH));

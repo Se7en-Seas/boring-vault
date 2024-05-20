@@ -16,6 +16,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     /**
      * @param payoutAddress the address `claimFees` sends fees to
+     * @param highwaterMark the highest value of the BoringVault's share price
      * @param feesOwedInBase total pending fees owed in terms of base
      * @param totalSharesLastUpdate total amount of shares the last exchange rate update
      * @param exchangeRate the current exchange rate in terms of base
@@ -29,6 +30,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      */
     struct AccountantState {
         address payoutAddress;
+        uint96 highwaterMark;
         uint128 feesOwedInBase;
         uint128 totalSharesLastUpdate;
         uint96 exchangeRate;
@@ -36,8 +38,9 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         uint16 allowedExchangeRateChangeLower;
         uint64 lastUpdateTimestamp;
         bool isPaused;
-        uint32 minimumUpdateDelayInSeconds;
+        uint24 minimumUpdateDelayInSeconds;
         uint16 managementFee;
+        uint16 performanceFee;
     }
 
     /**
@@ -75,7 +78,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
 
     event Paused();
     event Unpaused();
-    event DelayInSecondsUpdated(uint32 oldDelay, uint32 newDelay);
+    event DelayInSecondsUpdated(uint24 oldDelay, uint24 newDelay);
     event UpperBoundUpdated(uint16 oldBound, uint16 newBound);
     event LowerBoundUpdated(uint16 oldBound, uint16 newBound);
     event ManagementFeeUpdated(uint16 oldFee, uint16 newFee);
@@ -83,6 +86,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     event RateProviderUpdated(address asset, bool isPegged, address rateProvider);
     event ExchangeRateUpdated(uint96 oldRate, uint96 newRate, uint64 currentTime);
     event FeesClaimed(address indexed feeAsset, uint256 amount);
+    event HighwaterMarkReset();
 
     //============================== IMMUTABLES ===============================
 
@@ -115,8 +119,9 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         address _base,
         uint16 allowedExchangeRateChangeUpper,
         uint16 allowedExchangeRateChangeLower,
-        uint32 minimumUpdateDelayInSeconds,
-        uint16 managementFee
+        uint24 minimumUpdateDelayInSeconds,
+        uint16 managementFee,
+        uint16 performanceFee
     ) Auth(_owner, Authority(address(0))) {
         base = ERC20(_base);
         decimals = ERC20(_base).decimals();
@@ -124,6 +129,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         ONE_SHARE = 10 ** vault.decimals();
         accountantState = AccountantState({
             payoutAddress: payoutAddress,
+            highwaterMark: startingExchangeRate,
             feesOwedInBase: 0,
             totalSharesLastUpdate: uint128(vault.totalSupply()),
             exchangeRate: startingExchangeRate,
@@ -132,7 +138,8 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
             lastUpdateTimestamp: uint64(block.timestamp),
             isPaused: false,
             minimumUpdateDelayInSeconds: minimumUpdateDelayInSeconds,
-            managementFee: managementFee
+            managementFee: managementFee,
+            performanceFee: performanceFee
         });
     }
 
@@ -163,9 +170,9 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      *      the exchange rate updated as frequently as needed.
      * @dev Callable by OWNER_ROLE.
      */
-    function updateDelay(uint32 minimumUpdateDelayInSeconds) external requiresAuth {
+    function updateDelay(uint24 minimumUpdateDelayInSeconds) external requiresAuth {
         if (minimumUpdateDelayInSeconds > 14 days) revert AccountantWithRateProviders__UpdateDelayTooLarge();
-        uint32 oldDelay = accountantState.minimumUpdateDelayInSeconds;
+        uint24 oldDelay = accountantState.minimumUpdateDelayInSeconds;
         accountantState.minimumUpdateDelayInSeconds = minimumUpdateDelayInSeconds;
         emit DelayInSecondsUpdated(oldDelay, minimumUpdateDelayInSeconds);
     }
@@ -226,6 +233,19 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         emit RateProviderUpdated(address(asset), isPeggedToBase, rateProvider);
     }
 
+    /**
+     * @notice Reset the highwater mark to the current exchange rate.
+     */
+    function resetHighwaterMark() external requiresAuth {
+        AccountantState storage state = accountantState;
+
+        state.totalSharesLastUpdate = uint128(vault.totalSupply());
+        state.highwaterMark = accountantState.exchangeRate;
+        state.lastUpdateTimestamp = uint64(block.timestamp);
+
+        emit HighwaterMarkReset();
+    }
+
     // ========================================= UPDATE EXCHANGE RATE/FEES FUNCTIONS =========================================
 
     /**
@@ -264,6 +284,17 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
                 : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
             uint256 managementFeesAnnual = minimumAssets.mulDivDown(state.managementFee, 1e4);
             uint256 newFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
+
+            // Account for performance fees.
+            if (state.performanceFee > 0) {
+                if (newExchangeRate > state.highwaterMark) {
+                    uint256 changeInExchangeRate = newExchangeRate - state.highwaterMark;
+                    uint256 yieldEarned = changeInExchangeRate.mulDivDown(shareSupplyToUse, ONE_SHARE);
+                    uint256 performanceFeesOwedInBase = yieldEarned.mulDivDown(state.performanceFee, 1e4);
+                    newFeesOwedInBase += performanceFeesOwedInBase;
+                    state.highwaterMark = uint96(newExchangeRate);
+                }
+            }
 
             state.feesOwedInBase += uint128(newFeesOwedInBase);
         }
