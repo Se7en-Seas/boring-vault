@@ -191,6 +191,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
 
     /**
      * @notice Deny a user from transferring or receiving shares.
+     * @dev Callable by OWNER_ROLE, and DENIER_ROLE.
      */
     function denyTransfer(address user) external requiresAuth {
         denyList[user] = true;
@@ -199,6 +200,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
 
     /**
      * @notice Allow a user to transfer or receive shares.
+     * @dev Callable by OWNER_ROLE, and DENIER_ROLE.
      */
     function allowTransfer(address user) external requiresAuth {
         denyList[user] = false;
