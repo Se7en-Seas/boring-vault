@@ -208,7 +208,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     // ========================================= BeforeTransferHook FUNCTIONS =========================================
 
     /**
-     * @notice Implement beforeTransfer hook to check if shares are locked.
+     * @notice Implement beforeTransfer hook to check if shares are locked, or if `from` or `to` are on the deny list.
      */
     function beforeTransfer(address from, address to) external view {
         if (denyList[from] || denyList[to]) revert TellerWithMultiAssetSupport__TransferDenied(from, to);
