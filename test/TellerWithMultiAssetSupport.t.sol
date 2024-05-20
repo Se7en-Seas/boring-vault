@@ -397,6 +397,138 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         assertTrue(teller.isSupported(WETH) == true, "WETH should be supported");
     }
 
+    function testRemediation() external {
+        boringVault.setBeforeTransferHook(address(teller));
+
+        uint256 amountOfSharesStolen = 1e18;
+        address phisher = vm.addr(0xDEAD);
+        address victim0 = vm.addr(0xBEEF);
+        deal(address(boringVault), victim0, amountOfSharesStolen, true);
+
+        // Assume phisher is able to steal victim0s shares.
+        vm.prank(victim0);
+        boringVault.transfer(phisher, amountOfSharesStolen);
+
+        // Calling completeRemediation should revert since it has not been started.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__RemediationNotStarted.selector
+            )
+        );
+        teller.completeRemediation(phisher);
+
+        // Remediator starts remediation process.
+        teller.freezeSharesAndStartRemediation(phisher, victim0, amountOfSharesStolen);
+
+        // Phisher is not able to transfer shares.
+        vm.startPrank(phisher);
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__SharesAreLocked.selector)
+        );
+        boringVault.transfer(vm.addr(1), amountOfSharesStolen);
+        vm.stopPrank();
+
+        // Remediator is not able to complete remediation until REMEDIATION_PERIOD has passed.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__RemediationTimeNotMet.selector
+            )
+        );
+        teller.completeRemediation(phisher);
+
+        skip(3 days + 1);
+
+        // Remediation can now be completed.
+        teller.completeRemediation(phisher);
+
+        assertEq(boringVault.balanceOf(phisher), 0, "Phisher should have had shares removed.");
+        assertEq(boringVault.balanceOf(victim0), amountOfSharesStolen, "Victim0 should have had shares returned.");
+
+        // Assume phisher was able to trick victim0 again.
+        vm.prank(victim0);
+        boringVault.transfer(phisher, amountOfSharesStolen);
+
+        // Calling completeRemediation should revert since it has not been started.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__RemediationNotStarted.selector
+            )
+        );
+        teller.completeRemediation(phisher);
+
+        // Since phisher has constantly done this, shares will be remediated to a remediator address, where from there
+        // they can distributed.
+        address remediator = vm.addr(777);
+
+        // Start a new remediation but use type(uint256).max as amount of shares stolen.
+        teller.freezeSharesAndStartRemediation(phisher, remediator, type(uint256).max);
+
+        address victim1 = vm.addr(0xCAFEBABE);
+        deal(address(boringVault), victim1, amountOfSharesStolen, true);
+
+        // Assume phisher is able to steal victim1s shares.
+        vm.prank(victim1);
+        boringVault.transfer(phisher, amountOfSharesStolen);
+
+        // Eventhough we already started a remediation, since we used type(uint256).max as amount, we do not need to start another one.
+
+        skip(3 days + 1);
+
+        // Remediation can now be completed.
+        teller.completeRemediation(phisher);
+
+        assertEq(boringVault.balanceOf(phisher), 0, "Phisher should have had shares removed.");
+        assertEq(
+            boringVault.balanceOf(remediator),
+            2 * amountOfSharesStolen,
+            "Remediator should have received all phishers shares."
+        );
+        (uint64 time, address a, uint256 amount) = teller.remediationInfo(phisher);
+        assertEq(time, 0, "Time should be 0");
+        assertEq(a, address(0), "Address should be 0");
+        assertEq(amount, 0, "Amount should be 0");
+    }
+
+    function testRemediationForUserNotUnderogingRemediation() external {
+        address user = vm.addr(1);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__RemediationNotStarted.selector
+            )
+        );
+        teller.completeRemediation(user);
+    }
+
+    function testCancellingRemediation() external {
+        boringVault.setBeforeTransferHook(address(teller));
+
+        address user = vm.addr(1);
+        deal(address(boringVault), user, 1e18, true);
+
+        teller.freezeSharesAndStartRemediation(user, address(this), 1e18);
+
+        // User can not transfer shares now.
+        vm.startPrank(user);
+        vm.expectRevert(
+            abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__SharesAreLocked.selector)
+        );
+        boringVault.transfer(address(this), 1e18);
+        vm.stopPrank();
+
+        // User gets in touch with us and we learn that they were not phished.
+        teller.cancelRemediationAndUnlockShares(user);
+
+        (uint64 time, address a, uint256 amount) = teller.remediationInfo(user);
+        assertEq(time, 0, "Time should be 0");
+        assertEq(a, address(0), "Address should be 0");
+        assertEq(amount, 0, "Amount should be 0");
+
+        // User should be able to transfer shares now.
+        vm.prank(user);
+        boringVault.transfer(address(this), 1e18);
+    }
+
     function testReverts() external {
         // Test pause logic
         teller.pause();

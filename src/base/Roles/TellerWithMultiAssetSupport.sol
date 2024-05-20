@@ -16,6 +16,19 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     using SafeTransferLib for ERC20;
     using SafeTransferLib for WETH;
 
+    // ========================================= STRUCTS =========================================
+
+    /**
+     * @param remediationTime The time the remediation process will be completed.
+     * @param remediationAddress The address to send remediated shares to.
+     * @param amount The amount of shares to remediate, use type(uint256).max to remediate all shares,
+     *               at completion.
+     */
+    struct RemediationInfo {
+        uint64 remediationTime;
+        address remediationAddress;
+        uint256 amount;
+    }
     // ========================================= CONSTANTS =========================================
 
     /**
@@ -27,6 +40,11 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
      * @notice The maximum possible share lock period.
      */
     uint256 internal constant MAX_SHARE_LOCK_PERIOD = 3 days;
+
+    /**
+     * @notice The time till a users shares are remediated after lock.
+     */
+    uint256 internal constant REMEDIATION_PERIOD = 3 days;
 
     // ========================================= STATE =========================================
 
@@ -63,6 +81,11 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
      */
     mapping(address => uint256) public shareUnlockTime;
 
+    /**
+     * @notice Maps user address to their remediation info.
+     */
+    mapping(address => RemediationInfo) public remediationInfo;
+
     //============================== ERRORS ===============================
 
     error TellerWithMultiAssetSupport__ShareLockPeriodTooLong();
@@ -77,6 +100,8 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     error TellerWithMultiAssetSupport__ZeroShares();
     error TellerWithMultiAssetSupport__DualDeposit();
     error TellerWithMultiAssetSupport__Paused();
+    error TellerWithMultiAssetSupport__RemediationTimeNotMet();
+    error TellerWithMultiAssetSupport__RemediationNotStarted();
 
     //============================== EVENTS ===============================
 
@@ -96,6 +121,9 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     event BulkDeposit(address indexed asset, uint256 depositAmount);
     event BulkWithdraw(address indexed asset, uint256 shareAmount);
     event DepositRefunded(uint256 indexed nonce, bytes32 depositHash, address indexed user);
+    event SharesUndergoingRemediation(address indexed user);
+    event SharesRemediated(address indexed user, address indexed remediationAddress, uint256 amount);
+    event RemediationCancelled(address indexed user);
 
     //============================== IMMUTABLES ===============================
 
@@ -179,6 +207,68 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     function setShareLockPeriod(uint64 _shareLockPeriod) external requiresAuth {
         if (_shareLockPeriod > MAX_SHARE_LOCK_PERIOD) revert TellerWithMultiAssetSupport__ShareLockPeriodTooLong();
         shareLockPeriod = _shareLockPeriod;
+    }
+
+    /**
+     * @notice Freezes user shares, and starts remediation process.
+     * @dev This will lock `user` shares, and start the remediation process. once REMEDIATION_PERIOD has passed,
+     *      `completeRemediation` can be called to remediate the shares.
+     * @dev Use type(uint256).max for `amountToRemediate` to remediate all shares at the time of remediation completion.
+     * @dev Callable by REMEDIATION_ROLE.
+     */
+    function freezeSharesAndStartRemediation(address user, address remediationAddress, uint256 amountToRemediate)
+        external
+        requiresAuth
+    {
+        // Freeze user shares.
+        shareUnlockTime[user] = type(uint256).max;
+
+        // Set remediation info.
+        remediationInfo[user].remediationTime = uint64(block.timestamp + REMEDIATION_PERIOD);
+        remediationInfo[user].remediationAddress = remediationAddress;
+        remediationInfo[user].amount = amountToRemediate;
+
+        emit SharesUndergoingRemediation(user);
+    }
+
+    /**
+     * @notice Cancels an ongoing remediation process, and unlocks user shares.
+     * @dev Callable by REMEDIATION_ROLE, and OWNER_ROLE.
+     */
+    function cancelRemediationAndUnlockShares(address user) external requiresAuth {
+        if (remediationInfo[user].remediationTime == 0) revert TellerWithMultiAssetSupport__RemediationNotStarted();
+        shareUnlockTime[user] = 0;
+        delete remediationInfo[user];
+
+        emit RemediationCancelled(user);
+    }
+
+    // Called by some new remediation role
+    /**
+     * @notice Completes the remediation process, and remediates the shares.
+     * @dev Callable by REMEDIATION_ROLE.
+     */
+    function completeRemediation(address user) external requiresAuth {
+        RemediationInfo storage info = remediationInfo[user];
+
+        // Make sure user is actually undergoing remediation, and that enough time has passed.
+        if (info.remediationTime == 0) revert TellerWithMultiAssetSupport__RemediationNotStarted();
+        if (info.remediationTime >= block.timestamp) {
+            revert TellerWithMultiAssetSupport__RemediationTimeNotMet();
+        }
+
+        uint256 amountToRemediate = info.amount;
+        if (amountToRemediate == type(uint256).max) amountToRemediate = vault.balanceOf(user);
+
+        // Burn shares from user, and mint shares to remediation address.
+        vault.exit(address(0), ERC20(address(0)), 0, user, amountToRemediate);
+        vault.enter(address(0), ERC20(address(0)), 0, info.remediationAddress, amountToRemediate);
+
+        emit SharesRemediated(user, info.remediationAddress, amountToRemediate);
+
+        // Unlock user shares, and delete remediation info.
+        shareUnlockTime[user] = 0;
+        delete remediationInfo[user];
     }
 
     // ========================================= BeforeTransferHook FUNCTIONS =========================================
