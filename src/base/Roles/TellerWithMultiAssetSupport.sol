@@ -63,6 +63,11 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
      */
     mapping(address => uint256) public shareUnlockTime;
 
+    /**
+     * @notice Mapping user address to a bool to deny them from transferring or receiving shares.
+     */
+    mapping(address => bool) public denyList;
+
     //============================== ERRORS ===============================
 
     error TellerWithMultiAssetSupport__ShareLockPeriodTooLong();
@@ -77,6 +82,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     error TellerWithMultiAssetSupport__ZeroShares();
     error TellerWithMultiAssetSupport__DualDeposit();
     error TellerWithMultiAssetSupport__Paused();
+    error TellerWithMultiAssetSupport__TransferDenied(address from, address to);
 
     //============================== EVENTS ===============================
 
@@ -96,6 +102,8 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     event BulkDeposit(address indexed asset, uint256 depositAmount);
     event BulkWithdraw(address indexed asset, uint256 shareAmount);
     event DepositRefunded(uint256 indexed nonce, bytes32 depositHash, address indexed user);
+    event DenyTransfer(address indexed user);
+    event AllowTransfer(address indexed user);
 
     //============================== IMMUTABLES ===============================
 
@@ -181,12 +189,29 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         shareLockPeriod = _shareLockPeriod;
     }
 
+    /**
+     * @notice Deny a user from transferring or receiving shares.
+     */
+    function denyTransfer(address user) external requiresAuth {
+        denyList[user] = true;
+        emit DenyTransfer(user);
+    }
+
+    /**
+     * @notice Allow a user to transfer or receive shares.
+     */
+    function allowTransfer(address user) external requiresAuth {
+        denyList[user] = false;
+        emit AllowTransfer(user);
+    }
+
     // ========================================= BeforeTransferHook FUNCTIONS =========================================
 
     /**
      * @notice Implement beforeTransfer hook to check if shares are locked.
      */
-    function beforeTransfer(address from, address /*to*/ ) external view {
+    function beforeTransfer(address from, address to) external view {
+        if (denyList[from] || denyList[to]) revert TellerWithMultiAssetSupport__TransferDenied(from, to);
         if (shareUnlockTime[from] >= block.timestamp) revert TellerWithMultiAssetSupport__SharesAreLocked();
     }
 
