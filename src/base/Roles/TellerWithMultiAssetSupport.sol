@@ -209,6 +209,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         shareLockPeriod = _shareLockPeriod;
     }
 
+    // TODO to freeze shares by setting the share unlock time is not good cuz they can just make a deposit to update it.
     /**
      * @notice Freezes user shares, and starts remediation process.
      * @dev This will lock `user` shares, and start the remediation process. once REMEDIATION_PERIOD has passed,
