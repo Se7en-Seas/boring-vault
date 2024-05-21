@@ -18,6 +18,7 @@ contract DelayedWithdraw is Auth {
     struct WithdrawAsset {
         uint64 withdrawDelay;
         bool allowWithdraws;
+        uint128 outstandingShares;
     }
     /* fee? */
 
@@ -26,6 +27,11 @@ contract DelayedWithdraw is Auth {
         uint96 shares;
         uint96 exchangeRateAtTimeOfRequest;
     }
+    // TODO add minExchangeRate?
+
+    event WithdrawRequested(address indexed account, ERC20 indexed asset, uint96 shares, uint64 maturity);
+    event WithdrawCancelled(address indexed account, ERC20 indexed asset, uint96 shares);
+    event WithdrawCompleted(address indexed account, ERC20 indexed asset, uint96 shares, uint256 assets);
 
     mapping(ERC20 => WithdrawAsset) public withdrawAssets;
     mapping(address => mapping(ERC20 => WithdrawRequest)) public withdrawRequests;
@@ -42,24 +48,44 @@ contract DelayedWithdraw is Auth {
         ONE_SHARE = 10 ** boringVault.decimals();
     }
 
+    function setWithdrawAsset(ERC20 asset, uint64 withdrawDelay, bool allowWithdraws) public requiresAuth {
+        WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
+        withdrawAsset.withdrawDelay = withdrawDelay;
+        withdrawAsset.allowWithdraws = allowWithdraws;
+
+        // TODO emit event.
+    }
+    // TODO withdraw asset fee logic that sends BV shares to people rebalancing BoringVault.
+
     function requestWithdraw(uint96 shares, ERC20 asset) public requiresAuth {
-        WithdrawAsset memory withdrawAsset = withdrawAssets[asset];
+        WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
         if (!withdrawAsset.allowWithdraws) revert("Withdraws not allowed for asset.");
 
         boringVault.safeTransferFrom(msg.sender, address(this), shares);
 
+        withdrawAsset.outstandingShares += shares;
+
         WithdrawRequest storage req = withdrawRequests[msg.sender][asset];
 
         req.shares += shares;
-        req.maturity = uint64(block.timestamp + withdrawAsset.withdrawDelay);
+        uint64 maturity = uint64(block.timestamp + withdrawAsset.withdrawDelay);
+        req.maturity = maturity;
         req.exchangeRateAtTimeOfRequest = uint96(accountant.getRateInQuoteSafe(asset));
+
+        emit WithdrawRequested(msg.sender, asset, shares, maturity);
     }
 
     function _cancelWithdraw(address account, ERC20 asset) internal {
+        WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
+        if (!withdrawAsset.allowWithdraws) revert("Withdraws not allowed for asset.");
+
         WithdrawRequest storage req = withdrawRequests[account][asset];
-        uint256 shares = req.shares;
+        uint96 shares = req.shares;
+        withdrawAsset.outstandingShares -= shares;
         req.shares = 0;
         boringVault.safeTransfer(account, shares);
+
+        emit WithdrawCancelled(account, asset, shares);
     }
 
     function cancelWithdraw(ERC20 asset) public requiresAuth {
@@ -70,8 +96,11 @@ contract DelayedWithdraw is Auth {
         _cancelWithdraw(account, asset);
     }
 
-    function completeWithdraw(ERC20 asset) public requiresAuth {
-        WithdrawRequest storage req = withdrawRequests[msg.sender][asset];
+    function completeWithdraw(address account, ERC20 asset) public requiresAuth {
+        WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
+        if (!withdrawAsset.allowWithdraws) revert("Withdraws not allowed for asset.");
+
+        WithdrawRequest storage req = withdrawRequests[account][asset];
         if (block.timestamp < req.maturity) revert("Withdraw not matured yet.");
         if (req.shares == 0) revert("No shares to withdraw.");
 
@@ -80,17 +109,28 @@ contract DelayedWithdraw is Auth {
             ? currentExchangeRate
             : req.exchangeRateAtTimeOfRequest;
 
-        uint256 shares = req.shares;
+        uint96 shares = req.shares;
 
-        uint256 assetsOut = shares.mulDivDown(rateToUse, ONE_SHARE);
+        withdrawAsset.outstandingShares -= shares;
+        uint256 assetsOut = uint256(shares).mulDivDown(rateToUse, ONE_SHARE);
 
         req.shares = 0;
 
-        boringVault.exit(msg.sender, asset, assetsOut, address(this), shares);
+        boringVault.exit(account, asset, assetsOut, address(this), shares);
+
+        emit WithdrawCompleted(account, asset, shares, assetsOut);
     }
 
-    // assetsOut = shareAmount.mulDivDown(accountant.getRateInQuoteSafe(withdrawAsset), ONE_SHARE);
-    // if (assetsOut < minimumAssets) revert TellerWithMultiAssetSupport__MinimumAssetsNotMet();
-    // vault.exit(to, withdrawAsset, assetsOut, msg.sender, shareAmount);
-    // emit BulkWithdraw(address(withdrawAsset), shareAmount);
+    function viewOutstandingDebt(ERC20 asset) public view returns (uint256 debt) {
+        uint256 rate = accountant.getRateInQuoteSafe(asset);
+
+        debt = rate.mulDivDown(withdrawAssets[asset].outstandingShares, ONE_SHARE);
+    }
+
+    function viewOutstandingDebts(ERC20[] calldata assets) external view returns (uint256[] memory debts) {
+        debts = new uint256[](assets.length);
+        for (uint256 i = 0; i < assets.length; i++) {
+            debts[i] = viewOutstandingDebt(assets[i]);
+        }
+    }
 }
