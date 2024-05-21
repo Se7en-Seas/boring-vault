@@ -79,7 +79,8 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
     function run() external {
         bytes memory creationCode;
         bytes memory constructorArgs;
-        vm.startBroadcast(privateKey);
+        vm.startBroadcast();
+        // vm.startBroadcast(privateKey);
 
         // creationCode = type(RolesAuthority).creationCode;
         // constructorArgs = abi.encode(owner, Authority(address(0)));
