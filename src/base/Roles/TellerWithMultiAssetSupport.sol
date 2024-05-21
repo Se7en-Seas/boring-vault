@@ -82,7 +82,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     error TellerWithMultiAssetSupport__ZeroShares();
     error TellerWithMultiAssetSupport__DualDeposit();
     error TellerWithMultiAssetSupport__Paused();
-    error TellerWithMultiAssetSupport__TransferDenied(address from, address to);
+    error TellerWithMultiAssetSupport__TransferDenied(address from, address to, address operator);
 
     //============================== EVENTS ===============================
 
@@ -210,10 +210,10 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     // ========================================= BeforeTransferHook FUNCTIONS =========================================
 
     /**
-     * @notice Implement beforeTransfer hook to check if shares are locked, or if `from` or `to` are on the deny list.
+     * @notice Implement beforeTransfer hook to check if shares are locked, or if `from`, `to`, or `operator` are on the deny list.
      */
-    function beforeTransfer(address from, address to) external view {
-        if (denyList[from] || denyList[to]) revert TellerWithMultiAssetSupport__TransferDenied(from, to);
+    function beforeTransfer(address from, address to, address operator) external view {
+        if (denyList[from] || denyList[to] || denyList[operator]) revert TellerWithMultiAssetSupport__TransferDenied(from, to, operator);
         if (shareUnlockTime[from] >= block.timestamp) revert TellerWithMultiAssetSupport__SharesAreLocked();
     }
 

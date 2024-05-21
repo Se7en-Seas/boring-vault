@@ -413,7 +413,8 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
             abi.encodeWithSelector(
                 TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
                 attacker,
-                address(this)
+                address(this),
+                attacker
             )
         );
         boringVault.transfer(address(this), 0.1e18);
@@ -423,6 +424,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
             abi.encodeWithSelector(
                 TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
                 attacker,
+                address(this),
                 address(this)
             )
         );
@@ -433,6 +435,24 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
 
         vm.prank(attacker);
         boringVault.transfer(address(this), 0.1e18);
+
+        // Make sure we can deny certain operators.
+        address operator = vm.addr(2);
+        address normalUser = vm.addr(3);
+
+        teller.denyTransfer(operator);
+
+        vm.startPrank(operator);
+                vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
+                normalUser,
+                normalUser,
+                operator
+            )
+        );
+        boringVault.transferFrom(normalUser, normalUser, 1e18);
+        vm.stopPrank();
     }
 
     function testReverts() external {
