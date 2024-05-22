@@ -295,6 +295,7 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         accountant.setRateProviderData(WETH, true, address(0));
         accountant.setRateProviderData(EETH, true, address(0));
         accountant.setRateProviderData(WEETH, false, address(WEETH));
+        accountant.setRateProviderData(aV3WeETH, false, address(WEETH));
         accountant.setRateProviderData(ERC20(pendleEethPt), false, address(ptEethRateProvider));
         accountant.setRateProviderData(ERC20(pendleEethYt), false, address(ytEethRateProvider));
         accountant.setRateProviderData(ERC20(pendleWeETHMarket), false, address(lpEethRateProvider));
@@ -308,6 +309,7 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         teller.addAsset(WETH);
         teller.addAsset(EETH);
         teller.addAsset(WEETH);
+        teller.addAsset(aV3WeETH);
         teller.addAsset(ERC20(pendleEethPt));
         teller.addAsset(ERC20(pendleEethYt));
         teller.addAsset(ERC20(pendleWeETHMarket));
