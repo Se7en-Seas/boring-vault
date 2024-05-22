@@ -20,7 +20,7 @@ import {AtomicSolverV2} from "src/atomic-queue/AtomicSolverV2.sol";
 import {ContractNames} from "resources/ContractNames.sol";
 import {EtherFiLiquid1} from "src/interfaces/EtherFiLiquid1.sol";
 import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
-import {CellarMigrationAdaptor} from "src/migration/CellarMigrationAdaptor.sol";
+import {CellarMigrationAdaptor2} from "src/migration/CellarMigrationAdaptor2.sol";
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
@@ -44,7 +44,7 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
     AtomicQueue public atomicQueue;
     AtomicSolverV2 public atomicSolver;
     EtherFiLiquid1 public etherFiLiquid1 = EtherFiLiquid1(0xeA1A6307D9b18F8d1cbf1c3Dd6aad8416C06a221);
-    CellarMigrationAdaptor public migrationAdaptor;
+    CellarMigrationAdaptor2 public migrationAdaptor;
     GenericRateProvider public ptEethRateProvider;
     GenericRateProvider public ytEethRateProvider;
     GenericRateProvider public lpEethRateProvider;
@@ -79,8 +79,7 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
     function run() external {
         bytes memory creationCode;
         bytes memory constructorArgs;
-        vm.startBroadcast();
-        // vm.startBroadcast(privateKey);
+        vm.startBroadcast(privateKey);
 
         // creationCode = type(RolesAuthority).creationCode;
         // constructorArgs = abi.encode(owner, Authority(address(0)));
@@ -130,9 +129,9 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         // constructorArgs = abi.encode(address(boringVault), uniswapV3NonFungiblePositionManager);
         rawDataDecoderAndSanitizer = deployer.getAddress(EtherFiLiquidEthDecoderAndSanitizerName);
 
-        creationCode = type(CellarMigrationAdaptor).creationCode;
+        creationCode = type(CellarMigrationAdaptor2).creationCode;
         constructorArgs = abi.encode(address(boringVault), address(accountant), address(teller));
-        migrationAdaptor = CellarMigrationAdaptor(
+        migrationAdaptor = CellarMigrationAdaptor2(
             deployer.deployContract(CellarMigrationAdaptorName, creationCode, constructorArgs, 0)
         );
 
