@@ -281,6 +281,9 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         _addLeafsForCurveSwapping(leafs, USDe_DAI_Curve_Pool);
         _addLeafsForCurveSwapping(leafs, sDAI_sUSDe_Curve_Pool);
 
+        // ========================== Ethena Withdraws ==========================
+        _addEthenaSUSDeWithdrawLeafs(leafs);
+
         // ========================== ITB Aave V3 USDC ==========================
         /**
          * acceptOwnership() of itbAaveV3Usdc

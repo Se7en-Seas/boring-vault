@@ -527,6 +527,65 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         // User should be able to transfer shares now.
         vm.prank(user);
         boringVault.transfer(address(this), 1e18);
+
+    }
+    
+    function testDenyList() external {
+        boringVault.setBeforeTransferHook(address(teller));
+        address attacker = vm.addr(0xDEAD);
+        deal(address(boringVault), attacker, 1e18, true);
+        // Transfers currently work.
+        vm.prank(attacker);
+        boringVault.transfer(address(this), 0.1e18);
+
+        // But if attacker is added to the deny list, transfers should fail.
+        teller.denyTransfer(attacker);
+
+        vm.startPrank(attacker);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
+                attacker,
+                address(this),
+                attacker
+            )
+        );
+        boringVault.transfer(address(this), 0.1e18);
+        vm.stopPrank();
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
+                attacker,
+                address(this),
+                address(this)
+            )
+        );
+        boringVault.transferFrom(attacker, address(this), 0.1e18);
+
+        // If attacker is removed from the deny list, transfers should work again.
+        teller.allowTransfer(attacker);
+
+        vm.prank(attacker);
+        boringVault.transfer(address(this), 0.1e18);
+
+        // Make sure we can deny certain operators.
+        address operator = vm.addr(2);
+        address normalUser = vm.addr(3);
+
+        teller.denyTransfer(operator);
+
+        vm.startPrank(operator);
+                vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
+                normalUser,
+                normalUser,
+                operator
+            )
+        );
+        boringVault.transferFrom(normalUser, normalUser, 1e18);
+        vm.stopPrank();
     }
 
     function testReverts() external {
