@@ -40,7 +40,7 @@ contract ParitySharePriceOracle {
      * @dev If the accountant is pausd, then Cellar will revert with an oracle failure.
      */
     function getLatest() external view returns (uint256, uint256, bool) {
-        (,,, uint96 answer,,,, bool isPaused,,) = accountant.accountantState();
+        (,,,, uint96 answer,,,, bool isPaused,,,) = accountant.accountantState();
         return (answer, answer, isPaused);
     }
 }
