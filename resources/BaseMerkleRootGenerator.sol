@@ -1282,13 +1282,44 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         leafs[leafIndex] = ManageLeaf(
             _managerAddress,
             false,
-            "lashLoan(address,address[],uint256[],bytes)",
+            "flashLoan(address,address[],uint256[],bytes)",
             new address[](2),
             string.concat("Flashloan ", ERC20(tokenToFlashloan).symbol(), " from Balancer Vault"),
             _rawDataDecoderAndSanitizer
         );
         leafs[leafIndex].argumentAddresses[0] = _managerAddress;
         leafs[leafIndex].argumentAddresses[1] = tokenToFlashloan;
+    }
+
+    function _addEthenaSUSDeWithdrawLeafs(ManageLeaf[] memory leafs) internal {
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            address(SUSDE),
+            false,
+            "cooldownAssets(uint256)",
+            new address[](0),
+            "Withdraw from sUSDe specifying asset amount.",
+            _rawDataDecoderAndSanitizer
+        );
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            address(SUSDE),
+            false,
+            "cooldownShares(uint256)",
+            new address[](0),
+            "Withdraw from sUSDe specifying share amount.",
+            _rawDataDecoderAndSanitizer
+        );
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            address(SUSDE),
+            false,
+            "unstake(address)",
+            new address[](1),
+            "Complete withdraw from sUSDe.",
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
     }
 
     function _generateLeafs(
