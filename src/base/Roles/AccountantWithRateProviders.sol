@@ -27,6 +27,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
      * @param minimumUpdateDelayInSeconds the minimum amount of time that must pass between
      *        exchange rate updates, such that the update won't trigger the contract to be paused
      * @param managementFee the management fee
+     * @param performanceFee the performance fee
      */
     struct AccountantState {
         address payoutAddress;
@@ -254,6 +255,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         AccountantState storage state = accountantState;
 
         // TODO I am not sure if the totalSupply should be updated.
+        // The both management fees and performance fees calculations rely on `totalSharesLastUpdate`.
         state.totalSharesLastUpdate = uint128(vault.totalSupply());
         state.highwaterMark = accountantState.exchangeRate;
 
