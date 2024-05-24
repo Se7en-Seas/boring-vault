@@ -15,78 +15,209 @@ contract DelayedWithdraw is Auth {
     using SafeTransferLib for BoringVault;
     using FixedPointMathLib for uint256;
 
-    address public feeAddress;
-    // TODO something to set this
+    // ========================================= STRUCTS =========================================
 
-    //TODO could do some global slippage check instead of individual users, could even be stored in the WithdrawAsset struct
-    // then on withdraw we look at the current exchange rate and make sure it is close enough to the one they had when the request was made. that might be simpler for people to integrate
-
+    /**
+     * @param allowWithdraws Whether or not withdrawals are allowed for this asset.
+     * @param withdrawDelay The delay in seconds before a requested withdrawal can be completed.
+     * @param outstandingShares The total number of shares that are currently outstanding for an asset.
+     * @param withdrawFee The fee that is charged when a withdrawal is completed.
+     * @param maxLoss The maximum loss that can be incurred when completing a withdrawal, evaluating the
+     *                exchange rate at time of withdraw, compared to time of completion.
+     */
     struct WithdrawAsset {
         bool allowWithdraws;
         uint64 withdrawDelay;
         uint128 outstandingShares;
         uint16 withdrawFee;
-        uint16 maxLoss; // If the exchange rate at time of completion is less than the exchange rate at time of request
-        // we require that it is greater than some minimum 
-        // TODO actually I Think maxLoss should just constrain that the two exchange rates are within that rnage of eachother, cuz it is a loss with exchange rate went to the moon*
+        uint16 maxLoss;
     }
 
+    /**
+     * @param maturity The time at which the withdrawal can be completed.
+     * @param shares The number of shares that are requested to be withdrawn.
+     * @param exchangeRateAtTimeOfRequest The exchange rate at the time of the request.
+     */
     struct WithdrawRequest {
         uint64 maturity;
         uint96 shares;
         uint96 exchangeRateAtTimeOfRequest;
     }
 
-    event WithdrawRequested(address indexed account, ERC20 indexed asset, uint96 shares, uint64 maturity);
-    event WithdrawCancelled(address indexed account, ERC20 indexed asset, uint96 shares);
-    event WithdrawCompleted(address indexed account, ERC20 indexed asset, uint96 shares, uint256 assets);
+    // ========================================= STATE =========================================
 
+    /**
+     * @notice The address that receives the fee when a withdrawal is completed.
+     */
+    address public feeAddress;
+
+    /**
+     * @notice The mapping of assets to their respective withdrawal settings.
+     */
     mapping(ERC20 => WithdrawAsset) public withdrawAssets;
+
+    /**
+     * @notice The mapping of users to withdraw asset to their withdrawal requests.
+     */
     mapping(address => mapping(ERC20 => WithdrawRequest)) public withdrawRequests;
 
+    //============================== ERRORS ===============================
+
+    error DelayedWithdraw__WithdrawFeeTooHigh();
+    error DelayedWithdraw__MaxLossTooLarge();
+    error DelayedWithdraw__AlreadySetup();
+    error DelayedWithdraw__WithdrawsNotAllowed();
+    error DelayedWithdraw__WithdrawNotMatured();
+    error DelayedWithdraw__NoSharesToWithdraw();
+    error DelayedWithdraw__MaxLossExceeded();
+    error DelayedWithdraw__BadAddress();
+
+    //============================== EVENTS ===============================
+
+    event WithdrawRequested(address indexed account, ERC20 indexed asset, uint96 shares, uint64 maturity);
+    event WithdrawCancelled(address indexed account, ERC20 indexed asset, uint96 shares);
+    event WithdrawCompleted(address indexed account, ERC20 indexed asset, uint256 shares, uint256 assets);
+    event FeeAddressSet(address newFeeAddress);
+    event SetupWithdrawalsInAsset(address indexed asset, uint64 withdrawDelay, uint16 withdrawFee, uint16 maxLoss);
+    event WithdrawDelayUpdated(address indexed asset, uint64 newWithdrawDelay);
+    event WithdrawFeeUpdated(address indexed asset, uint16 newWithdrawFee);
+    event MaxLossUpdated(address indexed asset, uint16 newMaxLoss);
+    event WithdrawalsStopped(address indexed asset);
+
+    //============================== IMMUTABLES ===============================
+
+    /**
+     * @notice The accountant contract that is used to get the exchange rate of assets.
+     */
     AccountantWithRateProviders internal immutable accountant;
+
+    /**
+     * @notice The BoringVault contract that users are withdrawing from.
+     */
     BoringVault internal immutable boringVault;
+
+    /**
+     * @notice Constant that represents 1 share.
+     */
     uint256 internal immutable ONE_SHARE;
 
-    constructor(address _owner, address payable _boringVault, address _accountant, address _feeAddress)
+    constructor(address _owner, address _boringVault, address _accountant, address _feeAddress)
         Auth(_owner, Authority(address(0)))
     {
         accountant = AccountantWithRateProviders(_accountant);
-        boringVault = BoringVault(_boringVault);
+        boringVault = BoringVault(payable(_boringVault));
         ONE_SHARE = 10 ** boringVault.decimals();
-        if (feeAddress == address(0)) revert("Bad Address");
         feeAddress = _feeAddress;
     }
 
-    function stopWithdrawalsInAsset(ERC20 asset) extenral requiresAuth {
-        withdrawAssets[asset].allowWithdaws = false;
+    // ========================================= ADMIN FUNCTIONS =========================================
+
+    /**
+     * @notice Stops withdrawals for a specific asset.
+     * @dev Callable by MULTISIG_ROLE.
+     */
+    function stopWithdrawalsInAsset(ERC20 asset) external requiresAuth {
+        WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
+        if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
+
+        withdrawAsset.allowWithdraws = false;
+
+        emit WithdrawalsStopped(address(asset));
     }
 
-    function setupWithdrawAsset(ERC20 asset, uint64 withdrawDelay, uint16 withdrawFee, uint16 maxLoss) public requiresAuth {
+    /**
+     * @notice Sets up the withdrawal settings for a specific asset.
+     * @dev Callable by MULTISIG_ROLE.
+     */
+    function setupWithdrawAsset(ERC20 asset, uint64 withdrawDelay, uint16 withdrawFee, uint16 maxLoss)
+        public
+        requiresAuth
+    {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
 
-        if (withdrawFee > 0.2e4) revert ("Too high");
-        if (maxLoss > 0.5e4) revert ("Too large");
+        if (withdrawFee > 0.2e4) revert DelayedWithdraw__WithdrawFeeTooHigh();
+        if (maxLoss > 0.5e4) revert DelayedWithdraw__MaxLossTooLarge();
 
-        if (withdrawAsset.allowWithdraws || withdrawAsset.outstandingShares > 0) revert("Already setup");
+        if (withdrawAsset.allowWithdraws || withdrawAsset.outstandingShares > 0) revert DelayedWithdraw__AlreadySetup();
         withdrawAsset.withdrawDelay = withdrawDelay;
-        withdrawAsset.allowWithdraws = allowWithdraws;
+        withdrawAsset.allowWithdraws = true;
         withdrawAsset.withdrawFee = withdrawFee;
         withdrawAsset.maxLoss = maxLoss;
 
-        // TODO emit event.
+        emit SetupWithdrawalsInAsset(address(asset), withdrawDelay, withdrawFee, maxLoss);
     }
 
-    function setPayoutAddress(address _feeAddress) external requiresAuth {
-        if (feeAddress == address(0)) revert("Bad Address");
+    /**
+     * @notice Changes the withdraw delay for a specific asset.
+     * @dev Callable by MULTISIG_ROLE.
+     */
+    function changeWithdrawDelay(ERC20 asset, uint64 withdrawDelay) external requiresAuth {
+        WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
+        if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
+
+        withdrawAsset.withdrawDelay = withdrawDelay;
+
+        emit WithdrawDelayUpdated(address(asset), withdrawDelay);
+    }
+
+    /**
+     * @notice Changes the withdraw fee for a specific asset.
+     * @dev Callable by OWNER_ROLE.
+     */
+    function changeWithdrawFee(ERC20 asset, uint16 withdrawFee) external requiresAuth {
+        WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
+        if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
+
+        if (withdrawFee > 0.2e4) revert DelayedWithdraw__WithdrawFeeTooHigh();
+
+        withdrawAsset.withdrawFee = withdrawFee;
+
+        emit WithdrawFeeUpdated(address(asset), withdrawFee);
+    }
+
+    /**
+     * @notice Changes the max loss for a specific asset.
+     * @dev Callable by OWNER_ROLE.
+     */
+    function changeMaxLoss(ERC20 asset, uint16 maxLoss) external requiresAuth {
+        WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
+        if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
+
+        if (maxLoss > 0.5e4) revert DelayedWithdraw__MaxLossTooLarge();
+
+        withdrawAsset.maxLoss = maxLoss;
+
+        emit MaxLossUpdated(address(asset), maxLoss);
+    }
+
+    /**
+     * @notice Changes the fee address.
+     * @dev Callable by STRATEGIST_MULTISIG_ROLE.
+     */
+    function setFeeAddress(address _feeAddress) external requiresAuth {
+        if (feeAddress == address(0)) revert DelayedWithdraw__BadAddress();
         feeAddress = _feeAddress;
 
-        // TODO emit event
+        emit FeeAddressSet(_feeAddress);
     }
 
-    function requestWithdraw(uint96 shares, ERC20 asset) public requiresAuth {
+    /**
+     * @notice Cancels a user's withdrawal request.
+     * @dev Callable by MULTISIG_ROLE, and STRATEGIST_MULTISIG_ROLE.
+     */
+    function cancelUserWithdraw(ERC20 asset, address user) public requiresAuth {
+        _cancelWithdraw(asset, user);
+    }
+
+    // ========================================= PUBLIC FUNCTIONS =========================================
+
+    /**
+     * @notice Requests a withdrawal of shares for a specific asset.
+     * @dev Publicly callable.
+     */
+    function requestWithdraw(ERC20 asset, uint96 shares) public requiresAuth {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
-        if (!withdrawAsset.allowWithdraws) revert("Withdraws not allowed for asset.");
+        if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
 
         boringVault.safeTransferFrom(msg.sender, address(this), shares);
 
@@ -102,49 +233,54 @@ contract DelayedWithdraw is Auth {
         emit WithdrawRequested(msg.sender, asset, shares, maturity);
     }
 
-    function _cancelWithdraw(address account, ERC20 asset) internal {
-        WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
-        if (!withdrawAsset.allowWithdraws) revert("Withdraws not allowed for asset.");
-
-        WithdrawRequest storage req = withdrawRequests[account][asset];
-        uint96 shares = req.shares;
-        if (shares == 0) revert("No shares to withdraw.");
-        withdrawAsset.outstandingShares -= shares;
-        req.shares = 0;
-        boringVault.safeTransfer(account, shares);
-
-        emit WithdrawCancelled(account, asset, shares);
-    }
-
+    /**
+     * @notice Cancels msg.sender's withdrawal request.
+     * @dev Publicly callable.
+     */
     function cancelWithdraw(ERC20 asset) public requiresAuth {
-        _cancelWithdraw(msg.sender, asset);
+        _cancelWithdraw(asset, msg.sender);
     }
 
-    function cancelWithdraw(address account, ERC20 asset) public requiresAuth {
-        _cancelWithdraw(account, asset);
-    }
-
-    function completeWithdraw(address account, ERC20 asset) public requiresAuth {
+    /**
+     * @notice Completes a user's withdrawal request.
+     * @dev Publicly callable.
+     */
+    function completeWithdraw(ERC20 asset, address account) public requiresAuth {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
-        if (!withdrawAsset.allowWithdraws) revert("Withdraws not allowed for asset.");
+        if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
 
         WithdrawRequest storage req = withdrawRequests[account][asset];
-        if (block.timestamp < req.maturity) revert("Withdraw not matured yet.");
-        if (req.shares == 0) revert("No shares to withdraw.");
-
-        // TODO constrain rates to be within maxLoss of eachother.
+        if (block.timestamp < req.maturity) revert DelayedWithdraw__WithdrawNotMatured();
+        if (req.shares == 0) revert DelayedWithdraw__NoSharesToWithdraw();
 
         uint256 currentExchangeRate = accountant.getRateInQuoteSafe(asset);
-        uint256 rateToUse = currentExchangeRate < req.exchangeRateAtTimeOfRequest
+
+        uint256 minRate = req.exchangeRateAtTimeOfRequest < currentExchangeRate
+            ? req.exchangeRateAtTimeOfRequest
+            : currentExchangeRate;
+        uint256 maxRate = req.exchangeRateAtTimeOfRequest < currentExchangeRate
             ? currentExchangeRate
             : req.exchangeRateAtTimeOfRequest;
 
-        uint96 shares = req.shares;
+        // Make sure minRate * maxLoss is greater than or equal to maxRate.
+        if (minRate.mulDivDown(1e4 + withdrawAsset.maxLoss, 1e4) < maxRate) revert DelayedWithdraw__MaxLossExceeded();
 
-        // TODO remove fee from shares, and send to payout address.
+        uint256 shares = req.shares;
 
-        withdrawAsset.outstandingShares -= shares;
-        uint256 assetsOut = uint256(shares).mulDivDown(rateToUse, ONE_SHARE);
+        // Safe to cast shares to a uint128 since req.shares is constrained to be less than 2^96.
+        withdrawAsset.outstandingShares -= uint128(shares);
+
+        if (withdrawAsset.withdrawFee > 0) {
+            // Handle withdraw fee.
+            uint256 fee = uint256(shares).mulDivDown(withdrawAsset.withdrawFee, 1e4);
+            shares -= fee;
+
+            // Transfer fee to feeAddress.
+            boringVault.safeTransfer(feeAddress, fee);
+        }
+
+        // Calculate assets out.
+        uint256 assetsOut = shares.mulDivDown(minRate, ONE_SHARE);
 
         req.shares = 0;
 
@@ -153,16 +289,43 @@ contract DelayedWithdraw is Auth {
         emit WithdrawCompleted(account, asset, shares, assetsOut);
     }
 
+    // ========================================= VIEW FUNCTIONS =========================================
+
+    /**
+     * @notice Helper function to view the outstanding withdraw debt for a specific asset.
+     */
     function viewOutstandingDebt(ERC20 asset) public view returns (uint256 debt) {
         uint256 rate = accountant.getRateInQuoteSafe(asset);
 
         debt = rate.mulDivDown(withdrawAssets[asset].outstandingShares, ONE_SHARE);
     }
 
+    /**
+     * @notice Helper function to view the outstanding withdraw debt for multiple assets.
+     */
     function viewOutstandingDebts(ERC20[] calldata assets) external view returns (uint256[] memory debts) {
         debts = new uint256[](assets.length);
         for (uint256 i = 0; i < assets.length; i++) {
             debts[i] = viewOutstandingDebt(assets[i]);
         }
+    }
+
+    // ========================================= INTERNAL FUNCTIONS =========================================
+
+    /**
+     * @notice Internal helper function that implements shared logic for cancelling a user's withdrawal request.
+     */
+    function _cancelWithdraw(ERC20 asset, address account) internal {
+        WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
+        // We do not check if `asset` is allowed, to handle edge cases where the asset is no longer allowed.
+
+        WithdrawRequest storage req = withdrawRequests[account][asset];
+        uint96 shares = req.shares;
+        if (shares == 0) revert DelayedWithdraw__NoSharesToWithdraw();
+        withdrawAsset.outstandingShares -= shares;
+        req.shares = 0;
+        boringVault.safeTransfer(account, shares);
+
+        emit WithdrawCancelled(account, asset, shares);
     }
 }
