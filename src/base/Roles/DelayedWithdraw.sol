@@ -15,19 +15,27 @@ contract DelayedWithdraw is Auth {
     using SafeTransferLib for BoringVault;
     using FixedPointMathLib for uint256;
 
+    address public feeAddress;
+    // TODO something to set this
+
+    //TODO could do some global slippage check instead of individual users, could even be stored in the WithdrawAsset struct
+    // then on withdraw we look at the current exchange rate and make sure it is close enough to the one they had when the request was made. that might be simpler for people to integrate
+
     struct WithdrawAsset {
-        uint64 withdrawDelay;
         bool allowWithdraws;
+        uint64 withdrawDelay;
         uint128 outstandingShares;
+        uint16 withdrawFee;
+        uint16 maxLoss; // If the exchange rate at time of completion is less than the exchange rate at time of request
+        // we require that it is greater than some minimum 
+        // TODO actually I Think maxLoss should just constrain that the two exchange rates are within that rnage of eachother, cuz it is a loss with exchange rate went to the moon*
     }
-    /* fee? */
 
     struct WithdrawRequest {
         uint64 maturity;
         uint96 shares;
         uint96 exchangeRateAtTimeOfRequest;
     }
-    // TODO add minExchangeRate?
 
     event WithdrawRequested(address indexed account, ERC20 indexed asset, uint96 shares, uint64 maturity);
     event WithdrawCancelled(address indexed account, ERC20 indexed asset, uint96 shares);
@@ -40,22 +48,41 @@ contract DelayedWithdraw is Auth {
     BoringVault internal immutable boringVault;
     uint256 internal immutable ONE_SHARE;
 
-    constructor(address _owner, address payable _boringVault, address _accountant)
+    constructor(address _owner, address payable _boringVault, address _accountant, address _feeAddress)
         Auth(_owner, Authority(address(0)))
     {
         accountant = AccountantWithRateProviders(_accountant);
         boringVault = BoringVault(_boringVault);
         ONE_SHARE = 10 ** boringVault.decimals();
+        if (feeAddress == address(0)) revert("Bad Address");
+        feeAddress = _feeAddress;
     }
 
-    function setWithdrawAsset(ERC20 asset, uint64 withdrawDelay, bool allowWithdraws) public requiresAuth {
+    function stopWithdrawalsInAsset(ERC20 asset) extenral requiresAuth {
+        withdrawAssets[asset].allowWithdaws = false;
+    }
+
+    function setupWithdrawAsset(ERC20 asset, uint64 withdrawDelay, uint16 withdrawFee, uint16 maxLoss) public requiresAuth {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
+
+        if (withdrawFee > 0.2e4) revert ("Too high");
+        if (maxLoss > 0.5e4) revert ("Too large");
+
+        if (withdrawAsset.allowWithdraws || withdrawAsset.outstandingShares > 0) revert("Already setup");
         withdrawAsset.withdrawDelay = withdrawDelay;
         withdrawAsset.allowWithdraws = allowWithdraws;
+        withdrawAsset.withdrawFee = withdrawFee;
+        withdrawAsset.maxLoss = maxLoss;
 
         // TODO emit event.
     }
-    // TODO withdraw asset fee logic that sends BV shares to people rebalancing BoringVault.
+
+    function setPayoutAddress(address _feeAddress) external requiresAuth {
+        if (feeAddress == address(0)) revert("Bad Address");
+        feeAddress = _feeAddress;
+
+        // TODO emit event
+    }
 
     function requestWithdraw(uint96 shares, ERC20 asset) public requiresAuth {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
@@ -81,6 +108,7 @@ contract DelayedWithdraw is Auth {
 
         WithdrawRequest storage req = withdrawRequests[account][asset];
         uint96 shares = req.shares;
+        if (shares == 0) revert("No shares to withdraw.");
         withdrawAsset.outstandingShares -= shares;
         req.shares = 0;
         boringVault.safeTransfer(account, shares);
@@ -104,12 +132,16 @@ contract DelayedWithdraw is Auth {
         if (block.timestamp < req.maturity) revert("Withdraw not matured yet.");
         if (req.shares == 0) revert("No shares to withdraw.");
 
+        // TODO constrain rates to be within maxLoss of eachother.
+
         uint256 currentExchangeRate = accountant.getRateInQuoteSafe(asset);
         uint256 rateToUse = currentExchangeRate < req.exchangeRateAtTimeOfRequest
             ? currentExchangeRate
             : req.exchangeRateAtTimeOfRequest;
 
         uint96 shares = req.shares;
+
+        // TODO remove fee from shares, and send to payout address.
 
         withdrawAsset.outstandingShares -= shares;
         uint256 assetsOut = uint256(shares).mulDivDown(rateToUse, ONE_SHARE);
