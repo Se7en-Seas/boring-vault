@@ -406,7 +406,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         boringVault.transfer(address(this), 0.1e18);
 
         // But if attacker is added to the deny list, transfers should fail.
-        teller.denyTransfer(attacker);
+        teller.denyAll(attacker);
 
         vm.startPrank(attacker);
         vm.expectRevert(
@@ -431,7 +431,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         boringVault.transferFrom(attacker, address(this), 0.1e18);
 
         // If attacker is removed from the deny list, transfers should work again.
-        teller.allowTransfer(attacker);
+        teller.allowAll(attacker);
 
         vm.prank(attacker);
         boringVault.transfer(address(this), 0.1e18);
@@ -440,7 +440,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         address operator = vm.addr(2);
         address normalUser = vm.addr(3);
 
-        teller.denyTransfer(operator);
+        teller.denyAll(operator);
 
         vm.startPrank(operator);
         vm.expectRevert(
@@ -454,6 +454,8 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         boringVault.transferFrom(normalUser, normalUser, 1e18);
         vm.stopPrank();
     }
+
+    // TODO add tests checking logic of deny from, to, operator.
 
     function testReverts() external {
         // Test pause logic
