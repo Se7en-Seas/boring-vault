@@ -56,6 +56,8 @@ contract TellerWithRemediation is TellerWithMultiAssetSupport {
      * @dev This will lock `user` shares, and start the remediation process. once REMEDIATION_PERIOD has passed,
      *      `completeRemediation` can be called to remediate the shares.
      * @dev Use type(uint256).max for `amountToRemediate` to remediate all shares at the time of remediation completion.
+     * @dev The type(uint256).max logic is a convenience feature, but is not really required since once this function is
+     *      called the users balance can not change.
      * @dev Callable by REMEDIATION_ROLE.
      */
     function freezeSharesAndStartRemediation(address user, address remediationAddress, uint256 amountToRemediate)
@@ -73,7 +75,7 @@ contract TellerWithRemediation is TellerWithMultiAssetSupport {
 
     /**
      * @notice Cancels an ongoing remediation process, and unlocks user shares.
-     * @dev Callable by REMEDIATION_ROLE, and OWNER_ROLE.
+     * @dev Callable by REMEDIATION_ROLE, and MULTISIG_ROLE.
      */
     function cancelRemediationAndUnlockShares(address user) external requiresAuth {
         if (!remediationInfo[user].isFrozen) revert TellerWithRemediation__RemediationNotStarted();
@@ -82,7 +84,6 @@ contract TellerWithRemediation is TellerWithMultiAssetSupport {
         emit RemediationCancelled(user);
     }
 
-    // Called by some new remediation role
     /**
      * @notice Completes the remediation process, and remediates the shares.
      * @dev Callable by REMEDIATION_ROLE.
