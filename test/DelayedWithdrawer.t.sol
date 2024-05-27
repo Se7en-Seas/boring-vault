@@ -234,8 +234,66 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         // Request can now be completed.
         withdrawer.completeWithdraw(WETH, user);
     }
-    // TODO tests where we check the effects of the admin functions
-    // TODO check that fees work as expected.
+
+    function testAdminFunctions() external {
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0.01e4, 0.1e4);
+
+        (bool allowWithdraws, uint64 withdrawDelay, uint128 outstandingShares, uint16 withdrawFee, uint16 maxLoss) =
+            withdrawer.withdrawAssets(WETH);
+
+        assertEq(allowWithdraws, true, "allowWithdraws should be true.");
+        assertEq(withdrawDelay, 1 days, "withdrawDelay should be 1 days.");
+        assertEq(outstandingShares, 0, "outstandingShares should be 0.");
+        assertEq(withdrawFee, 0.01e4, "withdrawFee should be 0.01e4.");
+        assertEq(maxLoss, 0.1e4, "maxLoss should be 0.1e4.");
+
+        withdrawer.changeWithdrawDelay(WETH, 2 days);
+
+        withdrawer.changeWithdrawFee(WETH, 0.02e4);
+
+        withdrawer.changeMaxLoss(WETH, 0.11e4);
+
+        withdrawer.stopWithdrawalsInAsset(WETH);
+
+        (allowWithdraws, withdrawDelay, outstandingShares, withdrawFee, maxLoss) = withdrawer.withdrawAssets(WETH);
+        assertEq(allowWithdraws, false, "allowWithdraws should be false.");
+        assertEq(withdrawDelay, 2 days, "withdrawDelay should be 2 days.");
+        assertEq(withdrawFee, 0.02e4, "withdrawFee should be 0.02e4.");
+        assertEq(maxLoss, 0.11e4, "maxLoss should be 0.11e4.");
+
+        address newFeeAddress = vm.addr(2);
+        withdrawer.setFeeAddress(newFeeAddress);
+
+        assertEq(withdrawer.feeAddress(), newFeeAddress, "feeAddress should be newFeeAddress.");
+    }
+
+    function testFeeLogic() external {
+        uint16 fee = 0.01e4;
+        withdrawer.setupWithdrawAsset(WETH, 1 days, fee, 0);
+
+        address user = vm.addr(1);
+
+        // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
+        deal(address(boringVault), user, 1_000e18, true);
+        deal(address(WETH), address(boringVault), 1_000e18);
+
+        uint96 sharesToWithdraw = 100e18;
+        vm.startPrank(user);
+        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw);
+        vm.stopPrank();
+
+        // Fast forward time so that user request is valid.
+        skip(1 days);
+
+        uint256 assetsOut = withdrawer.completeWithdraw(WETH, user);
+
+        uint256 expectedFee = sharesToWithdraw * fee / 1e4;
+        uint256 expectedAssetsOut = sharesToWithdraw - expectedFee;
+        assertEq(assetsOut, expectedAssetsOut, "assetsOut should equal expectedAssetsOut.");
+        assertEq(WETH.balanceOf(user), assetsOut, "User should have received assetsOut of WETH");
+        assertEq(boringVault.balanceOf(payoutAddress), expectedFee, "Payout address should have received expectedFee.");
+    }
 
     function testUserFunctionReverts() external {
         address user = vm.addr(1);
