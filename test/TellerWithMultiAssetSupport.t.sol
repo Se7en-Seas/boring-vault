@@ -455,7 +455,63 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         vm.stopPrank();
     }
 
-    // TODO add tests checking logic of deny from, to, operator.
+    function testHookLogic() external {
+        boringVault.setBeforeTransferHook(address(teller));
+        address from = vm.addr(1);
+        address to = vm.addr(2);
+
+        deal(address(boringVault), from, 100e18, true);
+        vm.prank(from);
+        boringVault.approve(address(this), 100e18);
+
+        // Transfers currently work.
+        boringVault.transferFrom(from, to, 1e18);
+
+        // Transfers fail if from is denied.
+        teller.denyFrom(from);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
+                from,
+                to,
+                address(this)
+            )
+        );
+        boringVault.transferFrom(from, to, 1e18);
+
+        teller.allowFrom(from);
+
+        // Transfers fail if to is denied.
+        teller.denyTo(to);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
+                from,
+                to,
+                address(this)
+            )
+        );
+        boringVault.transferFrom(from, to, 1e18);
+
+        teller.allowTo(to);
+
+        // Transfers fail if operator is denied.
+        teller.denyOperator(address(this));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
+                from,
+                to,
+                address(this)
+            )
+        );
+        boringVault.transferFrom(from, to, 1e18);
+
+        teller.allowOperator(address(this));
+
+        // Transfers currently work.
+        boringVault.transferFrom(from, to, 1e18);
+    }
 
     function testReverts() external {
         // Test pause logic
