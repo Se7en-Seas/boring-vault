@@ -11,7 +11,7 @@ import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
 
-contract DelayedWithdraw is Auth {
+contract DelayedWithdraw is Auth, ReentrancyGuard {
     using SafeTransferLib for BoringVault;
     using FixedPointMathLib for uint256;
 
@@ -107,6 +107,7 @@ contract DelayedWithdraw is Auth {
         accountant = AccountantWithRateProviders(_accountant);
         boringVault = BoringVault(payable(_boringVault));
         ONE_SHARE = 10 ** boringVault.decimals();
+        if (_feeAddress == address(0)) revert DelayedWithdraw__BadAddress();
         feeAddress = _feeAddress;
     }
 
@@ -138,7 +139,7 @@ contract DelayedWithdraw is Auth {
         if (withdrawFee > 0.2e4) revert DelayedWithdraw__WithdrawFeeTooHigh();
         if (maxLoss > 0.5e4) revert DelayedWithdraw__MaxLossTooLarge();
 
-        if (withdrawAsset.allowWithdraws || withdrawAsset.outstandingShares > 0) revert DelayedWithdraw__AlreadySetup();
+        if (withdrawAsset.allowWithdraws) revert DelayedWithdraw__AlreadySetup();
         withdrawAsset.withdrawDelay = withdrawDelay;
         withdrawAsset.allowWithdraws = true;
         withdrawAsset.withdrawFee = withdrawFee;
@@ -178,6 +179,12 @@ contract DelayedWithdraw is Auth {
     /**
      * @notice Changes the max loss for a specific asset.
      * @dev Callable by OWNER_ROLE.
+     * @dev Since maxLoss is a global value based off some withdraw asset, it is possible that a user
+     *      creates a request, then the maxLoss is updated to some value the user is not comfortable with.
+     *      In this case the user should cancel their request. However this is not always possible, so a
+     *      better course of action would be if the maxLoss needs to be updated, the asset can be fully removed.
+     *      Then all exisitng requets for that asset can be cancelled, and finally the maxLoss can be updated.
+     *  // TODO we could requires that the outstanding shares is zero for an asset in order to update the maxLoss?
      */
     function changeMaxLoss(ERC20 asset, uint16 maxLoss) external requiresAuth {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
@@ -195,7 +202,7 @@ contract DelayedWithdraw is Auth {
      * @dev Callable by STRATEGIST_MULTISIG_ROLE.
      */
     function setFeeAddress(address _feeAddress) external requiresAuth {
-        if (feeAddress == address(0)) revert DelayedWithdraw__BadAddress();
+        if (_feeAddress == address(0)) revert DelayedWithdraw__BadAddress();
         feeAddress = _feeAddress;
 
         emit FeeAddressSet(_feeAddress);
@@ -215,7 +222,7 @@ contract DelayedWithdraw is Auth {
      * @notice Requests a withdrawal of shares for a specific asset.
      * @dev Publicly callable.
      */
-    function requestWithdraw(ERC20 asset, uint96 shares) public requiresAuth {
+    function requestWithdraw(ERC20 asset, uint96 shares) external requiresAuth nonReentrant {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
         if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
 
@@ -237,7 +244,7 @@ contract DelayedWithdraw is Auth {
      * @notice Cancels msg.sender's withdrawal request.
      * @dev Publicly callable.
      */
-    function cancelWithdraw(ERC20 asset) public requiresAuth {
+    function cancelWithdraw(ERC20 asset) external requiresAuth nonReentrant {
         _cancelWithdraw(asset, msg.sender);
     }
 
@@ -245,7 +252,12 @@ contract DelayedWithdraw is Auth {
      * @notice Completes a user's withdrawal request.
      * @dev Publicly callable.
      */
-    function completeWithdraw(ERC20 asset, address account) public requiresAuth {
+    function completeWithdraw(ERC20 asset, address account)
+        external
+        requiresAuth
+        nonReentrant
+        returns (uint256 assetsOut)
+    {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
         if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
 
@@ -280,7 +292,7 @@ contract DelayedWithdraw is Auth {
         }
 
         // Calculate assets out.
-        uint256 assetsOut = shares.mulDivDown(minRate, ONE_SHARE);
+        assetsOut = shares.mulDivDown(minRate, ONE_SHARE);
 
         req.shares = 0;
 
