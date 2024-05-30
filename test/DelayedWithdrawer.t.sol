@@ -55,6 +55,9 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         rolesAuthority.setPublicCapability(address(withdrawer), DelayedWithdraw.cancelWithdraw.selector, true);
         rolesAuthority.setPublicCapability(address(withdrawer), DelayedWithdraw.requestWithdraw.selector, true);
         rolesAuthority.setPublicCapability(address(withdrawer), DelayedWithdraw.completeWithdraw.selector, true);
+        rolesAuthority.setPublicCapability(
+            address(withdrawer), DelayedWithdraw.setAllowThirdPartyToComplete.selector, true
+        );
 
         rolesAuthority.setUserRole(address(withdrawer), BURNER_ROLE, true);
 
@@ -63,7 +66,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
     }
 
     function testHappyPath() external {
-        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0);
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0);
 
         address user = vm.addr(1);
 
@@ -74,11 +77,11 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
         vm.stopPrank();
 
         uint256 expectedOutstandingShraes = 100e18;
-        (,, uint128 outstandingShares,,) = withdrawer.withdrawAssets(WETH);
+        (,,, uint128 outstandingShares,,) = withdrawer.withdrawAssets(WETH);
         assertEq(outstandingShares, expectedOutstandingShraes, "Outstanding shares should be 100e18");
 
         uint256 expectedOustandingDebt = 100e18;
@@ -92,12 +95,12 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         withdrawer.completeWithdraw(WETH, user);
         vm.stopPrank();
 
-        (,, outstandingShares,,) = withdrawer.withdrawAssets(WETH);
+        (,,, outstandingShares,,) = withdrawer.withdrawAssets(WETH);
         assertEq(outstandingShares, 0, "Outstanding shares should be 0");
     }
 
     function testExchangeRateIncreasesAfterRequest() external {
-        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0.1e4);
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0.1e4);
 
         address user = vm.addr(1);
 
@@ -108,7 +111,8 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
+        withdrawer.setAllowThirdPartyToComplete(WETH, true);
         vm.stopPrank();
 
         // Fast forward time so that user request is valid, and the exchange rate can be updated without pausing.
@@ -126,7 +130,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
     }
 
     function testExchangeRateDecreasesAfterRequest() external {
-        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0.1e4);
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0.1e4);
 
         address user = vm.addr(1);
 
@@ -137,7 +141,8 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
+        withdrawer.setAllowThirdPartyToComplete(WETH, true);
         vm.stopPrank();
 
         // Fast forward time so that user request is valid, and the exchange rate can be updated without pausing.
@@ -154,9 +159,42 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         assertEq(WETH.balanceOf(user), assetsOut, "User should have received assetsOut of WETH");
     }
 
+    function testThirdPartyCompletionNotAllowed() external {
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0.1e4);
+
+        address user = vm.addr(1);
+
+        // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
+        deal(address(boringVault), user, 1_000e18, true);
+        deal(address(WETH), address(boringVault), 1_000e18);
+
+        uint96 sharesToWithdraw = 100e18;
+        vm.startPrank(user);
+        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
+        vm.stopPrank();
+
+        // Fast forward time so that user request is valid, and the exchange rate can be updated without pausing.
+        skip(1 days);
+
+        // This fails.
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__ThirdPartyCompletionNotAllowed.selector))
+        );
+        uint256 assetsOut = withdrawer.completeWithdraw(WETH, user);
+
+        // But if user calls it, it works.
+        vm.prank(user);
+        assetsOut = withdrawer.completeWithdraw(WETH, user);
+
+        uint256 expectedAssetsOut = sharesToWithdraw;
+        assertEq(assetsOut, expectedAssetsOut, "assetsOut should equal expectedAssetsOut.");
+        assertEq(WETH.balanceOf(user), assetsOut, "User should have received assetsOut of WETH");
+    }
+
     function testCancellingRequestOnceAssetIsRemoved() external {
-        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0.1e4);
-        withdrawer.setupWithdrawAsset(EETH, 1 days, 0, 0.1e4);
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0.1e4);
+        withdrawer.setupWithdrawAsset(EETH, 1 days, 0, 0, 0.1e4);
 
         address user = vm.addr(1);
 
@@ -169,8 +207,8 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), 2 * sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw);
-        withdrawer.requestWithdraw(EETH, sharesToWithdraw);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
+        withdrawer.requestWithdraw(EETH, sharesToWithdraw, 0);
         vm.stopPrank();
 
         // wETH is removed as a withdrawable asset.
@@ -190,7 +228,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
     }
 
     function testMaxLossLogic() external {
-        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0.01e4);
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0.01e4);
 
         address user = vm.addr(1);
 
@@ -201,7 +239,8 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
+        withdrawer.setAllowThirdPartyToComplete(WETH, true);
         vm.stopPrank();
 
         // Fast forward time so the exchange rate can be updated without pausing.
@@ -235,14 +274,124 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         withdrawer.completeWithdraw(WETH, user);
     }
 
-    function testAdminFunctions() external {
-        withdrawer.setupWithdrawAsset(WETH, 1 days, 0.01e4, 0.1e4);
+    function testUserSetMaxLossLogic() external {
+        // Setup asset with a huge maxLoss of 50%.
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0.5e4);
 
-        (bool allowWithdraws, uint64 withdrawDelay, uint128 outstandingShares, uint16 withdrawFee, uint16 maxLoss) =
-            withdrawer.withdrawAssets(WETH);
+        address user = vm.addr(1);
+
+        // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
+        deal(address(boringVault), user, 1_000e18, true);
+        deal(address(WETH), address(boringVault), 1_000e18);
+
+        uint96 sharesToWithdraw = 100e18;
+        vm.startPrank(user);
+        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0.01e4);
+        withdrawer.setAllowThirdPartyToComplete(WETH, true);
+        vm.stopPrank();
+
+        // Fast forward time so the exchange rate can be updated without pausing.
+        skip(1 days);
+
+        // Update exchnage rate so it is too high.
+        uint96 newExchangeRate = 1.02e18;
+        accountant.updateExchangeRate(newExchangeRate);
+
+        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__MaxLossExceeded.selector)));
+        withdrawer.completeWithdraw(WETH, user);
+
+        // Fast forward time so the exchange rate can be updated without pausing.
+        skip(1 days);
+
+        // Update exchnage rate so it is too low.
+        newExchangeRate = 0.98e18;
+        accountant.updateExchangeRate(newExchangeRate);
+
+        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__MaxLossExceeded.selector)));
+        withdrawer.completeWithdraw(WETH, user);
+
+        // Fast forward time so the exchange rate can be updated without pausing.
+        skip(1 days);
+
+        // Update exchnage rate so it stabilizes at 1:1.
+        newExchangeRate = 1e18;
+        accountant.updateExchangeRate(newExchangeRate);
+
+        // Request can now be completed.
+        withdrawer.completeWithdraw(WETH, user);
+    }
+
+    function testCompletionWindowLogic() external {
+        // Start by using default completion window.
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0.1e4);
+
+        address user = vm.addr(1);
+
+        // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
+        deal(address(boringVault), user, 1_000e18, true);
+        deal(address(WETH), address(boringVault), 1_000e18);
+
+        uint96 sharesToWithdraw = 100e18;
+        vm.startPrank(user);
+        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
+        withdrawer.setAllowThirdPartyToComplete(WETH, true);
+        vm.stopPrank();
+
+        // Fast forward 8 days so that request is past the default completion window.
+        skip(8 days + 1);
+
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__RequestPastCompletionWindow.selector))
+        );
+        withdrawer.completeWithdraw(WETH, user);
+
+        // But if completion window is updated, request can be completed.
+        withdrawer.changeCompletionWindow(WETH, 8 days);
+
+        withdrawer.completeWithdraw(WETH, user);
+    }
+
+    function testCompleteUserWithdrraw() external {
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0.1e4);
+
+        address user = vm.addr(1);
+
+        // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
+        deal(address(boringVault), user, 1_000e18, true);
+        deal(address(WETH), address(boringVault), 1_000e18);
+
+        uint96 sharesToWithdraw = 100e18;
+        vm.startPrank(user);
+        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
+        vm.stopPrank();
+
+        // Fast forward time so user request is past completion window
+        skip(8 days + 1);
+
+        // At this point user has not opted into 3rd party completions, and their completion window has passed,
+        // so the only way their withdraw can be completed is if an Admin does it.
+
+        withdrawer.completeUserWithdraw(WETH, user);
+    }
+
+    function testAdminFunctions() external {
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 3 days, 0.01e4, 0.1e4);
+
+        (
+            bool allowWithdraws,
+            uint32 withdrawDelay,
+            uint32 completionWindow,
+            uint128 outstandingShares,
+            uint16 withdrawFee,
+            uint16 maxLoss
+        ) = withdrawer.withdrawAssets(WETH);
 
         assertEq(allowWithdraws, true, "allowWithdraws should be true.");
         assertEq(withdrawDelay, 1 days, "withdrawDelay should be 1 days.");
+        assertEq(completionWindow, 3 days, "completionWindow should be 3 days.");
         assertEq(outstandingShares, 0, "outstandingShares should be 0.");
         assertEq(withdrawFee, 0.01e4, "withdrawFee should be 0.01e4.");
         assertEq(maxLoss, 0.1e4, "maxLoss should be 0.1e4.");
@@ -253,11 +402,15 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
 
         withdrawer.changeMaxLoss(WETH, 0.11e4);
 
+        withdrawer.changeCompletionWindow(WETH, 4 days);
+
         withdrawer.stopWithdrawalsInAsset(WETH);
 
-        (allowWithdraws, withdrawDelay, outstandingShares, withdrawFee, maxLoss) = withdrawer.withdrawAssets(WETH);
+        (allowWithdraws, withdrawDelay, completionWindow, outstandingShares, withdrawFee, maxLoss) =
+            withdrawer.withdrawAssets(WETH);
         assertEq(allowWithdraws, false, "allowWithdraws should be false.");
         assertEq(withdrawDelay, 2 days, "withdrawDelay should be 2 days.");
+        assertEq(completionWindow, 4 days, "completionWindow should be 4 days.");
         assertEq(withdrawFee, 0.02e4, "withdrawFee should be 0.02e4.");
         assertEq(maxLoss, 0.11e4, "maxLoss should be 0.11e4.");
 
@@ -269,7 +422,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
 
     function testFeeLogic() external {
         uint16 fee = 0.01e4;
-        withdrawer.setupWithdrawAsset(WETH, 1 days, fee, 0);
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, fee, 0);
 
         address user = vm.addr(1);
 
@@ -280,7 +433,8 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
+        withdrawer.setAllowThirdPartyToComplete(WETH, true);
         vm.stopPrank();
 
         // Fast forward time so that user request is valid.
@@ -298,6 +452,9 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
     function testUserFunctionReverts() external {
         address user = vm.addr(1);
 
+        vm.prank(user);
+        withdrawer.setAllowThirdPartyToComplete(WETH, true);
+
         // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH.
         deal(address(boringVault), user, 1_000e18, true);
         deal(address(WETH), address(boringVault), 1_000e18);
@@ -305,19 +462,19 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         // Requeting withdraws in an asset that is not withdrawable.
         ERC20 nonWithdrawableAsset = USDC;
         vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawsNotAllowed.selector)));
-        withdrawer.requestWithdraw(nonWithdrawableAsset, 100e18);
+        withdrawer.requestWithdraw(nonWithdrawableAsset, 100e18, 0);
 
         // Cancelling a request with zero shares.
         vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__NoSharesToWithdraw.selector)));
         withdrawer.cancelWithdraw(WETH);
 
         // Completing a withdraw with an asset that is not allowed.
-        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0.01e4);
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0.01e4);
         // Requesting withdraws
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
         vm.stopPrank();
 
         // The asset is removed from the withdrawable assets.
@@ -326,13 +483,25 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawsNotAllowed.selector)));
         withdrawer.completeWithdraw(WETH, user);
 
-        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0.01e4);
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0.01e4);
 
         // Withdraw is not matured.
         vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawNotMatured.selector)));
         withdrawer.completeWithdraw(WETH, user);
 
         skip(1 days);
+
+        // 3rd party withdraws now allowed.
+        vm.prank(user);
+        withdrawer.setAllowThirdPartyToComplete(WETH, false);
+
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__ThirdPartyCompletionNotAllowed.selector))
+        );
+        withdrawer.completeWithdraw(WETH, user);
+
+        vm.prank(user);
+        withdrawer.setAllowThirdPartyToComplete(WETH, true);
 
         // Withdraw can now be completed.
         withdrawer.completeWithdraw(WETH, user);
@@ -347,15 +516,15 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         withdrawer.stopWithdrawalsInAsset(WETH);
 
         vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawFeeTooHigh.selector)));
-        withdrawer.setupWithdrawAsset(WETH, 1 days, 0.2001e4, 0);
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0.2001e4, 0);
 
         vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__MaxLossTooLarge.selector)));
-        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0.5001e4);
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0.5001e4);
 
-        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0);
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0);
 
         vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__AlreadySetup.selector)));
-        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0);
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0);
 
         vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawsNotAllowed.selector)));
         withdrawer.changeWithdrawDelay(EETH, 1 days);
