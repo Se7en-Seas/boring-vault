@@ -286,7 +286,11 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
      * @notice Requests a withdrawal of shares for a specific asset.
      * @dev Publicly callable.
      */
-    function requestWithdraw(ERC20 asset, uint96 shares, uint16 maxLoss) external requiresAuth nonReentrant {
+    function requestWithdraw(ERC20 asset, uint96 shares, uint16 maxLoss, bool allowThirdPartyToComplete)
+        external
+        requiresAuth
+        nonReentrant
+    {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
         if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
         if (maxLoss > MAX_LOSS) revert DelayedWithdraw__MaxLossTooLarge();
@@ -302,6 +306,7 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
         req.maturity = maturity;
         req.exchangeRateAtTimeOfRequest = uint96(accountant.getRateInQuoteSafe(asset));
         req.maxLoss = maxLoss;
+        req.allowThirdPartyToComplete = allowThirdPartyToComplete;
 
         emit WithdrawRequested(msg.sender, asset, shares, maturity);
     }

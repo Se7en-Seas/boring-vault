@@ -77,7 +77,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, false);
         vm.stopPrank();
 
         uint256 expectedOutstandingShraes = 100e18;
@@ -111,8 +111,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
-        withdrawer.setAllowThirdPartyToComplete(WETH, true);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, true);
         vm.stopPrank();
 
         // Fast forward time so that user request is valid, and the exchange rate can be updated without pausing.
@@ -141,8 +140,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
-        withdrawer.setAllowThirdPartyToComplete(WETH, true);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, true);
         vm.stopPrank();
 
         // Fast forward time so that user request is valid, and the exchange rate can be updated without pausing.
@@ -171,7 +169,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, false);
         vm.stopPrank();
 
         // Fast forward time so that user request is valid, and the exchange rate can be updated without pausing.
@@ -207,8 +205,8 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), 2 * sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
-        withdrawer.requestWithdraw(EETH, sharesToWithdraw, 0);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, false);
+        withdrawer.requestWithdraw(EETH, sharesToWithdraw, 0, false);
         vm.stopPrank();
 
         // wETH is removed as a withdrawable asset.
@@ -239,8 +237,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
-        withdrawer.setAllowThirdPartyToComplete(WETH, true);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, true);
         vm.stopPrank();
 
         // Fast forward time so the exchange rate can be updated without pausing.
@@ -287,8 +284,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0.01e4);
-        withdrawer.setAllowThirdPartyToComplete(WETH, true);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0.01e4, true);
         vm.stopPrank();
 
         // Fast forward time so the exchange rate can be updated without pausing.
@@ -335,8 +331,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
-        withdrawer.setAllowThirdPartyToComplete(WETH, true);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, true);
         vm.stopPrank();
 
         // Fast forward 8 days so that request is past the default completion window.
@@ -365,7 +360,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, false);
         vm.stopPrank();
 
         // Fast forward time so user request is past completion window
@@ -433,8 +428,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
-        withdrawer.setAllowThirdPartyToComplete(WETH, true);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, true);
         vm.stopPrank();
 
         // Fast forward time so that user request is valid.
@@ -462,7 +456,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         // Requeting withdraws in an asset that is not withdrawable.
         ERC20 nonWithdrawableAsset = USDC;
         vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__WithdrawsNotAllowed.selector)));
-        withdrawer.requestWithdraw(nonWithdrawableAsset, 100e18, 0);
+        withdrawer.requestWithdraw(nonWithdrawableAsset, 100e18, 0, true);
 
         // Cancelling a request with zero shares.
         vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__NoSharesToWithdraw.selector)));
@@ -474,7 +468,7 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         uint96 sharesToWithdraw = 100e18;
         vm.startPrank(user);
         boringVault.approve(address(withdrawer), sharesToWithdraw);
-        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, true);
         vm.stopPrank();
 
         // The asset is removed from the withdrawable assets.
