@@ -147,12 +147,32 @@ contract AccountantWithRateProvidersTest is Test, MainnetAddresses {
     }
 
     function testResetHighwaterMark() external {
+        // Trying to reset the highwaterMark when exchange rate is larger than hwm should revert.
+        // Change share price to 1.5.
+        accountant.updateExchangeRate(1.5e18);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AccountantWithRateProviders.AccountantWithRateProviders__ExchangeRateAboveHighwaterMark.selector
+            )
+        );
+        accountant.resetHighwaterMark();
+
+        // Set a management fee.
+        accountant.updateManagementFee(0.01e4);
+
         // Change share price to 0.5.
+        accountant.unpause();
         accountant.updateExchangeRate(0.5e18);
 
-        accountant.resetHighwaterMark();
-        (, uint96 highwater_mark,,,,,,,,,,) = accountant.accountantState();
+        // Advance time to accumualte management fees.
+        skip(1 days);
 
+        (,, uint128 feesOwedInBaseBeforeReset,,,,,,,,,) = accountant.accountantState();
+
+        accountant.resetHighwaterMark();
+        (, uint96 highwater_mark, uint128 feesOwedInBase,,,,,,,,,) = accountant.accountantState();
+        assertGt(feesOwedInBase, feesOwedInBaseBeforeReset, "Management fees should have been accumulated");
         assertEq(highwater_mark, 0.5e18, "Highwater mark should be 0.5e18");
     }
 

@@ -75,6 +75,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     error AccountantWithRateProviders__ZeroFeesOwed();
     error AccountantWithRateProviders__OnlyCallableByBoringVault();
     error AccountantWithRateProviders__UpdateDelayTooLarge();
+    error AccountantWithRateProviders__ExchangeRateAboveHighwaterMark();
 
     //============================== EVENTS ===============================
 
@@ -254,10 +255,16 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
     function resetHighwaterMark() external requiresAuth {
         AccountantState storage state = accountantState;
 
-        // TODO I am not sure if the totalSupply should be updated.
-        // The both management fees and performance fees calculations rely on `totalSharesLastUpdate`.
-        state.totalSharesLastUpdate = uint128(vault.totalSupply());
+        if (state.exchangeRate > state.highwaterMark) {
+            revert AccountantWithRateProviders__ExchangeRateAboveHighwaterMark();
+        }
+
+        uint64 currentTime = uint64(block.timestamp);
+        uint256 currentTotalShares = vault.totalSupply();
+        _calculateFeesOwed(state, state.exchangeRate, state.exchangeRate, currentTotalShares, currentTime);
+        state.totalSharesLastUpdate = uint128(currentTotalShares);
         state.highwaterMark = accountantState.exchangeRate;
+        state.lastUpdateTimestamp = currentTime;
 
         emit HighwaterMarkReset();
     }
@@ -285,37 +292,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
             // to a better value, and pause it.
             state.isPaused = true;
         } else {
-            // Only update fees if we are not paused.
-            // Update fee accounting.
-            uint256 shareSupplyToUse = currentTotalShares;
-            // Use the minimum between current total supply and total supply for last update.
-            if (state.totalSharesLastUpdate < shareSupplyToUse) {
-                shareSupplyToUse = state.totalSharesLastUpdate;
-            }
-
-            // Determine management fees owned.
-            uint256 timeDelta = currentTime - state.lastUpdateTimestamp;
-            uint256 minimumAssets = newExchangeRate > currentExchangeRate
-                ? shareSupplyToUse.mulDivDown(currentExchangeRate, ONE_SHARE)
-                : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
-            uint256 managementFeesAnnual = minimumAssets.mulDivDown(state.managementFee, 1e4);
-            uint256 newFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
-
-            // Account for performance fees.
-            if (newExchangeRate > state.highwaterMark) {
-                if (state.performanceFee > 0) {
-                    uint256 changeInExchangeRate = newExchangeRate - state.highwaterMark;
-                    uint256 yieldEarned = changeInExchangeRate.mulDivDown(shareSupplyToUse, ONE_SHARE);
-                    uint256 performanceFeesOwedInBase = yieldEarned.mulDivDown(state.performanceFee, 1e4);
-                    newFeesOwedInBase += performanceFeesOwedInBase;
-                }
-                // Always update the highwater mark if the new exchange rate is higher.
-                // This way if we are not iniitiall taking performance fees, we can start taking them
-                // without back charging them on past performance.
-                state.highwaterMark = newExchangeRate;
-            }
-
-            state.feesOwedInBase += uint128(newFeesOwedInBase);
+            _calculateFeesOwed(state, newExchangeRate, currentExchangeRate, currentTotalShares, currentTime);
         }
 
         state.exchangeRate = newExchangeRate;
@@ -425,5 +402,49 @@ contract AccountantWithRateProviders is Auth, IRateProvider {
         } else {
             return amount / 10 ** (fromDecimals - toDecimals);
         }
+    }
+
+    /**
+     * @notice Calculate fees owed in base.
+     * @dev This function will update the highwater mark if the new exchange rate is higher.
+     */
+    function _calculateFeesOwed(
+        AccountantState storage state,
+        uint96 newExchangeRate,
+        uint256 currentExchangeRate,
+        uint256 currentTotalShares,
+        uint64 currentTime
+    ) internal {
+        // Only update fees if we are not paused.
+        // Update fee accounting.
+        uint256 shareSupplyToUse = currentTotalShares;
+        // Use the minimum between current total supply and total supply for last update.
+        if (state.totalSharesLastUpdate < shareSupplyToUse) {
+            shareSupplyToUse = state.totalSharesLastUpdate;
+        }
+
+        // Determine management fees owned.
+        uint256 timeDelta = currentTime - state.lastUpdateTimestamp;
+        uint256 minimumAssets = newExchangeRate > currentExchangeRate
+            ? shareSupplyToUse.mulDivDown(currentExchangeRate, ONE_SHARE)
+            : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
+        uint256 managementFeesAnnual = minimumAssets.mulDivDown(state.managementFee, 1e4);
+        uint256 newFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
+
+        // Account for performance fees.
+        if (newExchangeRate > state.highwaterMark) {
+            if (state.performanceFee > 0) {
+                uint256 changeInExchangeRate = newExchangeRate - state.highwaterMark;
+                uint256 yieldEarned = changeInExchangeRate.mulDivDown(shareSupplyToUse, ONE_SHARE);
+                uint256 performanceFeesOwedInBase = yieldEarned.mulDivDown(state.performanceFee, 1e4);
+                newFeesOwedInBase += performanceFeesOwedInBase;
+            }
+            // Always update the highwater mark if the new exchange rate is higher.
+            // This way if we are not iniitiall taking performance fees, we can start taking them
+            // without back charging them on past performance.
+            state.highwaterMark = newExchangeRate;
+        }
+
+        state.feesOwedInBase += uint128(newFeesOwedInBase);
     }
 }
