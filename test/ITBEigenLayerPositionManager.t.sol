@@ -42,18 +42,18 @@ contract ITBEigenLayerPositionManagerTest is Test, MainnetAddresses {
         eigenLayerPositionManager.delegate();
 
         // Try withdrawing everything.
-        // eigenLayerPositionManager.startWithdrawal(1_000e18);
+        eigenLayerPositionManager.startWithdrawal(1_000e18);
 
-        // // Roll forward so withdraw can be claimed.
-        // vm.roll(block.number + 50400);
+        // Roll forward so withdraw can be claimed.
+        vm.roll(block.number + 50400);
 
-        // eigenLayerPositionManager.completeNextWithdrawal(1_000e18);
+        eigenLayerPositionManager.completeNextWithdrawal(1_000e18);
 
-        // assertEq(
-        //     METH.balanceOf(address(eigenLayerPositionManager)),
-        //     1_000e18,
-        //     "Position Manager should have fully withdrawn."
-        // );
+        assertEq(
+            METH.balanceOf(address(eigenLayerPositionManager)),
+            1_000e18,
+            "Position Manager should have fully withdrawn."
+        );
 
         // Delegating again still fails.
         vm.expectRevert(bytes("DelegationManager._delegate: staker is already actively delegated"));
