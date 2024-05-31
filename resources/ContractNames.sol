@@ -8,7 +8,12 @@ contract ContractNames {
     string public constant ArcticArchitectureLensName = "Arctic Architecture Lens V0.0";
     string public constant AtomicQueueName = "Atomic Queue V0.0";
     string public constant AtomicSolverName = "Atomic Solver V3.0";
+
+    // Migration
     string public constant CellarMigrationAdaptorName = "Cellar Migration Adaptor V0.1";
+    string public constant CellarMigrationAdaptorName2 = "Cellar Migration Adaptor 2 V0.0";
+    string public constant ParitySharePriceOracleName = "Parity Share Price Oracle V0.0";
+    string public constant CellarMigratorWithSharePriceParityName = "Cellar Migrator With Share Price Parity V0.0";
 
     string public constant EtherFiLiquidUsdName = "EtherFi Liquid USD V0.0";
     string public constant EtherFiLiquidUsdManagerName = "EtherFi Liquid USD Manager With Merkle Verification V0.0";

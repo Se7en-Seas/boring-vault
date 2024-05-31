@@ -56,14 +56,14 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     address public aaveV3ATokenAdaptor = 0x7613b7f78A1672FBC478bfecf4598EeDE10a2Fa7;
     address public aaveV3DebtTokenAdaptor = 0x79677329a4B2d4576e820f69b5e260F77d93FcCE;
     CellarMigrationAdaptor public migrationAdaptor = CellarMigrationAdaptor(0x24A84a3BE5C15d1AA14d083CE56112317be5729d);
+    GenericRateProvider public bptRateProvider = GenericRateProvider(0x603293a1fA59f7045fAc25E31f01b402910397A3);
+    GenericRateProvider public wstethRateProvider = GenericRateProvider(0x8A4207Bfc6fc475F172F929468aCDD4A2c4C3C19);
 
     bytes32 strategistRoot = 0x3021d7ed1bdf4996ecbff0a69b58465fb6fdc5107d75662743c8a633bb2429fa;
 
     CellarMigrationAdaptor2 public migrationAdaptor2;
     ParitySharePriceOracle public paritySharePriceOracle;
     CellarMigratorWithSharePriceParity public migrator;
-    GenericRateProvider public bptRateProvider;
-    GenericRateProvider public wstethRateProvider;
 
     uint8 public constant MANAGER_ROLE = 1;
     uint8 public constant MINTER_ROLE = 2;
@@ -78,7 +78,6 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
     ERC20 public asset = USDC; // Used for ParitySharePriceOracle test.
 
-    address public jointMultisig;
     address public registryMultisig;
     address public strategist;
     Registry public registry;
@@ -93,48 +92,21 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         uint256 blockNumber = 19877751;
         _startFork(rpcKey, blockNumber);
 
-        jointMultisig = etherFiLiquid1.owner();
         registry = Registry(etherFiLiquid1.registry());
         registryMultisig = registry.owner();
         strategist = registryMultisig;
 
         vm.prank(dev1Address);
-        rolesAuthority.transferOwnership(jointMultisig);
+        rolesAuthority.transferOwnership(liquidMultisig);
 
         migrationAdaptor2 = new CellarMigrationAdaptor2(address(boringVault), address(accountant), address(teller));
 
         paritySharePriceOracle = new ParitySharePriceOracle(address(etherFiLiquid1), address(accountant));
 
-        bptRateProvider = new GenericRateProvider(
-            address(etherFiLiquid1.priceRouter()),
-            bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)"))),
-            address(rETH_weETH).toBytes32(),
-            bytes32(uint256(1e18)),
-            address(WETH).toBytes32(),
-            0,
-            0,
-            0,
-            0,
-            0
-        );
-
-        wstethRateProvider = new GenericRateProvider(
-            address(etherFiLiquid1.priceRouter()),
-            bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)"))),
-            address(WSTETH).toBytes32(),
-            bytes32(uint256(1e18)),
-            address(WETH).toBytes32(),
-            0,
-            0,
-            0,
-            0,
-            0
-        );
-
-        vm.startPrank(jointMultisig);
+        vm.startPrank(liquidMultisig);
         rolesAuthority.setUserRole(strategist, STRATEGIST_ROLE, true);
-        rolesAuthority.setUserRole(jointMultisig, OWNER_ROLE, true);
-        rolesAuthority.setUserRole(jointMultisig, MULTISIG_ROLE, true);
+        rolesAuthority.setUserRole(liquidMultisig, OWNER_ROLE, true);
+        rolesAuthority.setUserRole(liquidMultisig, MULTISIG_ROLE, true);
         rolesAuthority.setUserRole(address(this), UPDATE_EXCHANGE_RATE_ROLE, true);
         accountant.setRateProviderData(rETH_weETH, false, address(bptRateProvider));
         accountant.setRateProviderData(WSTETH, false, address(wstethRateProvider));
@@ -216,7 +188,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         for (uint32 i; i < creditPositions.length; i++) {
             if (creditPositions[i] == morphoBlueSupplyPosition) {
-                vm.startPrank(jointMultisig);
+                vm.startPrank(liquidMultisig);
                 etherFiLiquid1.forcePositionOut(i, morphoBlueSupplyPosition, false);
                 vm.stopPrank();
                 break;
@@ -339,7 +311,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         // Deploy migrator.
         migrator = new CellarMigratorWithSharePriceParity(
-            boringVault, ERC4626(address(etherFiLiquid1)), accountant, jointMultisig
+            boringVault, ERC4626(address(etherFiLiquid1)), accountant, liquidMultisig
         );
 
         // Setup the BoringVault position.
@@ -358,7 +330,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Joint multisig only adds the first migration position/adaptor to the catalogue,
         // then adds the position ot the cellar, specifying it to be illiquid.
         // Next it gives etherfi liquid the solver role so it can rebalance.
-        vm.startPrank(jointMultisig);
+        vm.startPrank(liquidMultisig);
         etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
         etherFiLiquid1.addPositionToCatalogue(migrationPosition);
         etherFiLiquid1.addPosition(0, migrationPosition, abi.encode(false), false);
@@ -490,7 +462,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         registry.batchPause(_add);
         vm.stopPrank();
 
-        vm.startPrank(jointMultisig);
+        vm.startPrank(liquidMultisig);
         etherFiLiquid1.toggleIgnorePause();
         // Force out eETH position as it always keeps 1 wei in balance so can not be removed normally.
         etherFiLiquid1.forcePositionOut(1, 2, false);
@@ -533,7 +505,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
             "Total assets should not change after completing migration."
         );
 
-        vm.startPrank(jointMultisig);
+        vm.startPrank(liquidMultisig);
         teller.removeAsset(rETH_weETH);
         teller.removeAsset(WSTETH);
         teller.removeAsset(aV3WeETH);
@@ -591,7 +563,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         uint256 newRate = accountant.getRate().mulDivDown(0.95e4, 1e4);
         accountant.updateExchangeRate(uint96(newRate));
 
-        vm.startPrank(jointMultisig);
+        vm.startPrank(liquidMultisig);
         accountant.unpause();
 
         vm.startPrank(user);
@@ -608,7 +580,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         newRate = accountant.getRate().mulDivDown(1.05e4, 1e4);
         accountant.updateExchangeRate(uint96(newRate));
 
-        vm.startPrank(jointMultisig);
+        vm.startPrank(liquidMultisig);
         accountant.unpause();
 
         vm.startPrank(user);
@@ -628,7 +600,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         vm.expectRevert(bytes(abi.encodeWithSelector(EtherFiLiquid1.Cellar__OracleFailure.selector)));
         etherFiLiquid1.redeem(1e18, user, user);
 
-        vm.startPrank(jointMultisig);
+        vm.startPrank(liquidMultisig);
         accountant.unpause();
 
         vm.startPrank(user);
@@ -652,7 +624,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         // Deploy migrator.
         migrator = new CellarMigratorWithSharePriceParity(
-            boringVault, ERC4626(address(etherFiLiquid1)), accountant, jointMultisig
+            boringVault, ERC4626(address(etherFiLiquid1)), accountant, liquidMultisig
         );
 
         uint32 migrationPosition = 77777777;
@@ -665,7 +637,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Joint multisig only adds the first migration position/adaptor to the catalogue,
         // then adds the position ot the cellar, specifying it to be illiquid.
         // Next it gives etherfi liquid the solver role so it can rebalance.
-        vm.startPrank(jointMultisig);
+        vm.startPrank(liquidMultisig);
         etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
         etherFiLiquid1.addPositionToCatalogue(migrationPosition);
         etherFiLiquid1.addPosition(0, migrationPosition, abi.encode(false), false);
@@ -690,12 +662,12 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Remove 1 wei boring vault share from target.
         deal(address(boringVault), address(etherFiLiquid1), targetBVShares - 1);
 
-        vm.startPrank(jointMultisig);
+        vm.startPrank(liquidMultisig);
         vm.expectRevert(bytes("SHARES"));
         migrator.completeMigration(true, 10);
         vm.stopPrank();
 
-        vm.startPrank(jointMultisig);
+        vm.startPrank(liquidMultisig);
         vm.expectRevert(bytes("TA"));
         migrator.completeMigration(false, 0);
         vm.stopPrank();
@@ -718,7 +690,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         assertEq(isNotSafeToUse, false, "Oracle should be safe to use.");
 
         // Pause accountant.
-        vm.startPrank(jointMultisig);
+        vm.startPrank(liquidMultisig);
         accountant.pause();
         vm.stopPrank();
 
