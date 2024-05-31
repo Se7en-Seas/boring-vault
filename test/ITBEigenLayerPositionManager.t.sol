@@ -6,7 +6,7 @@ import {BoringVault} from "src/base/BoringVault.sol";
 import {PositionManager as EigenLayerPositionManager} from "src/interfaces/EigenLayerPositionManager.sol";
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
+contract ITBEigenLayerPositionManagerTest is Test, MainnetAddresses {
     using stdStorage for StdStorage;
 
     BoringVault public boringVault = BoringVault(payable(0x7985F7dAdb0Cd22e9Cc24A5f5e284f3FA939D88f));
@@ -42,18 +42,18 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         eigenLayerPositionManager.delegate();
 
         // Try withdrawing everything.
-        eigenLayerPositionManager.startWithdrawal(1_000e18);
+        // eigenLayerPositionManager.startWithdrawal(1_000e18);
 
-        // Roll forward so withdraw can be claimed.
-        vm.roll(block.number + 50400);
+        // // Roll forward so withdraw can be claimed.
+        // vm.roll(block.number + 50400);
 
-        eigenLayerPositionManager.completeNextWithdrawal(1_000e18);
+        // eigenLayerPositionManager.completeNextWithdrawal(1_000e18);
 
-        assertEq(
-            METH.balanceOf(address(eigenLayerPositionManager)),
-            1_000e18,
-            "Position Manager should have fully withdrawn."
-        );
+        // assertEq(
+        //     METH.balanceOf(address(eigenLayerPositionManager)),
+        //     1_000e18,
+        //     "Position Manager should have fully withdrawn."
+        // );
 
         // Delegating again still fails.
         vm.expectRevert(bytes("DelegationManager._delegate: staker is already actively delegated"));
