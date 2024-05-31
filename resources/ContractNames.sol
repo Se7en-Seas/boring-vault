@@ -14,7 +14,7 @@ contract ContractNames {
     string public constant EtherFiLiquidUsdManagerName = "EtherFi Liquid USD Manager With Merkle Verification V0.0";
     string public constant EtherFiLiquidUsdAccountantName = "EtherFi Liquid USD Accountant With Rate Providers V0.0";
     string public constant EtherFiLiquidUsdTellerName = "EtherFi Liquid USD Teller With Multi Asset Support V0.0";
-    string public constant EtherFiLiquidUsdDecoderAndSanitizerName = "EtherFi Liquid USD Decoder and Sanitizer V0.0";
+    string public constant EtherFiLiquidUsdDecoderAndSanitizerName = "EtherFi Liquid USD Decoder and Sanitizer V0.1";
 
     string public constant EtherFiLiquidEthName = "EtherFi Liquid ETH V0.1";
     string public constant EtherFiLiquidEthManagerName = "EtherFi Liquid ETH Manager With Merkle Verification V0.1";
@@ -29,6 +29,7 @@ contract ContractNames {
     string public constant TestVaultEthTellerName = "Test ETH Vault Teller With Multi Asset Support V0.0";
     string public constant TestVaultEthDecoderAndSanitizerName = "Test ETH Vault Decoder and Sanitizer V0.0";
 
+    string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.0";
     // gernic Rate Providers
     string public constant PendlePTweETHRateProviderName = "Pendle PT weETH Rate Provider V0.0";
     string public constant PendleYTweETHRateProviderName = "Pendle YT weETH Rate Provider V0.0";

@@ -13,14 +13,14 @@ import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
     using FixedPointMathLib for uint256;
 
-    address public boringVault = 0xc79cC44DC8A91330872D7815aE9CFB04405952ea;
-    address public rawDataDecoderAndSanitizer = 0xdADc9DE5d8C9E2a34875A2CEa0cd415751E1791b;
-    address public managerAddress = 0x048a5002E57166a78Dd060B3B36DEd2f404D0a17;
-    address public accountantAddress = 0xc6f89cc0551c944CEae872997A4060DC95622D8F;
+    address public boringVault = 0xf2b27554d618488f28023467d3F9656c472ea22e;
+    address public managerAddress = 0x4180D80018055158cf608A7A7Eb5582C7a0135E8;
+    address public accountantAddress = 0xE4100F1Cf42C7CD6E5Cac69002eeD2F1c6d68704;
+    address public rawDataDecoderAndSanitizer = address(0);
 
     address public itbKilnOperatorPositionManager = 0xc31BDE60f00bf1172a59B8EB699c417548Bce0C2;
     address public itbP2POperatorPositionManager = 0x3034dA3ff55466612847a490B6a8380cc6E22306;
-    address public itbDecoderAndSanitizer = address(65);
+    address public itbDecoderAndSanitizer = 0xF87F3Cf3b1bC0673e037c41b275B4300e1eCF739;
 
     function setUp() external {}
 
@@ -230,6 +230,8 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
 
         ManageLeaf[] memory leafs = new ManageLeaf[](64);
 
+        // TODO Currently there is no leafs for fee claiming.
+
         // ========================== ITB Eigen Layer Kiln Position Manager ==========================
         ERC20[] memory tokens = new ERC20[](1);
         tokens[0] = METH;
@@ -241,7 +243,7 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
             delegationManager,
             mETHStrategy,
             address(METH),
-            0xDbEd88D83176316fc46797B43aDeE927Dc2ff2F5
+            0x1f8C8b1d78d01bCc42ebdd34Fae60181bD697662
         );
 
         // ========================== ITB Eigen Layer P2P Position Manager ==========================
@@ -253,7 +255,7 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
             delegationManager,
             mETHStrategy,
             address(METH),
-            0xDbEd88D83176316fc46797B43aDeE927Dc2ff2F5 // TODO this looks wrong
+            0xDbEd88D83176316fc46797B43aDeE927Dc2ff2F5
         );
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);

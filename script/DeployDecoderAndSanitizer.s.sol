@@ -3,6 +3,8 @@ pragma solidity 0.8.21;
 
 import {ITBPositionDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/ITB/ITBPositionDecoderAndSanitizer.sol";
+import {EtherFiLiquidUsdDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
 import {Deployer} from "src/helper/Deployer.sol";
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 import {ContractNames} from "resources/ContractNames.sol";
@@ -32,7 +34,11 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
 
         creationCode = type(ITBPositionDecoderAndSanitizer).creationCode;
         constructorArgs = abi.encode(boringVault);
-        deployer.deployContract("ITB Position Decoder And Sanitizer", creationCode, constructorArgs, 0);
+        deployer.deployContract(ItbPositionDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+
+        creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
+        constructorArgs = abi.encode(boringVault, uniswapV3NonFungiblePositionManager);
+        deployer.deployContract(EtherFiLiquidUsdDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
         vm.stopBroadcast();
     }
