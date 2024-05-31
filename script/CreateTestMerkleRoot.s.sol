@@ -48,7 +48,7 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
             false,
             "acceptOwnership()",
             new address[](0),
-            "Accept ownership of the ITB Curve sDAI/sUSDe contract",
+            string.concat("Accept ownership of the ITB Contract: ", vm.toString(positionManager)),
             itbDecoderAndSanitizer
         );
         // Transfer all tokens to the ITB contract.
@@ -146,7 +146,7 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
         // Deposit
         leafIndex++;
         leafs[leafIndex] = ManageLeaf(
-            positionManager, false, "deposit(uint256,uint256)", new address[](2), "Deposit", itbDecoderAndSanitizer
+            positionManager, false, "deposit(uint256,uint256)", new address[](0), "Deposit", itbDecoderAndSanitizer
         );
         // Start Withdrawal
         leafIndex++;
@@ -154,7 +154,7 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
             positionManager,
             false,
             "startWithdrawal(uint256)",
-            new address[](1),
+            new address[](0),
             "Start Withdrawal",
             itbDecoderAndSanitizer
         );
@@ -164,7 +164,7 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
             positionManager,
             false,
             "completeWithdrawal(uint256,uint256)",
-            new address[](2),
+            new address[](0),
             "Complete Withdrawal",
             itbDecoderAndSanitizer
         );
@@ -174,7 +174,7 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
             positionManager,
             false,
             "completeNextWithdrawal(uint256)",
-            new address[](1),
+            new address[](0),
             "Complete Next Withdrawal",
             itbDecoderAndSanitizer
         );
@@ -184,7 +184,7 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
             positionManager,
             false,
             "completeNextWithdrawals(uint256)",
-            new address[](1),
+            new address[](0),
             "Complete Next Withdrawals",
             itbDecoderAndSanitizer
         );
@@ -194,14 +194,14 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
             positionManager,
             false,
             "overrideWithdrawalIndexes(uint256,uint256)",
-            new address[](2),
+            new address[](0),
             "Override Withdrawal Indexes",
             itbDecoderAndSanitizer
         );
         // Assemble
         leafIndex++;
         leafs[leafIndex] = ManageLeaf(
-            positionManager, false, "assemble(uint256)", new address[](1), "Assemble", itbDecoderAndSanitizer
+            positionManager, false, "assemble(uint256)", new address[](0), "Assemble", itbDecoderAndSanitizer
         );
         // Disassemble
         leafIndex++;
@@ -209,7 +209,7 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
             positionManager,
             false,
             "disassemble(uint256,uint256)",
-            new address[](2),
+            new address[](0),
             "Disassemble",
             itbDecoderAndSanitizer
         );
@@ -219,7 +219,7 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
             positionManager,
             false,
             "fullDisassemble(uint256)",
-            new address[](1),
+            new address[](0),
             "Full Disassemble",
             itbDecoderAndSanitizer
         );
