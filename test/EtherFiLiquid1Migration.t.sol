@@ -56,8 +56,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     address public aaveV3ATokenAdaptor = 0x7613b7f78A1672FBC478bfecf4598EeDE10a2Fa7;
     address public aaveV3DebtTokenAdaptor = 0x79677329a4B2d4576e820f69b5e260F77d93FcCE;
     CellarMigrationAdaptor public migrationAdaptor = CellarMigrationAdaptor(0x24A84a3BE5C15d1AA14d083CE56112317be5729d);
-    GenericRateProvider public bptRateProvider = GenericRateProvider(0x603293a1fA59f7045fAc25E31f01b402910397A3);
-    GenericRateProvider public wstethRateProvider = GenericRateProvider(0x8A4207Bfc6fc475F172F929468aCDD4A2c4C3C19);
+    GenericRateProvider public bptRateProvider;
+    GenericRateProvider public wstethRateProvider;
 
     bytes32 strategistRoot = 0x3021d7ed1bdf4996ecbff0a69b58465fb6fdc5107d75662743c8a633bb2429fa;
 
@@ -77,6 +77,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 11;
 
     ERC20 public asset = USDC; // Used for ParitySharePriceOracle test.
+
+    uint32 public EETH_POSITION = 2;
 
     address public registryMultisig;
     address public strategist;
@@ -102,6 +104,32 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         migrationAdaptor2 = new CellarMigrationAdaptor2(address(boringVault), address(accountant), address(teller));
 
         paritySharePriceOracle = new ParitySharePriceOracle(address(etherFiLiquid1), address(accountant));
+
+        bptRateProvider = new GenericRateProvider(
+            address(etherFiLiquid1.priceRouter()),
+            bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)"))),
+            address(rETH_weETH).toBytes32(),
+            bytes32(uint256(1e18)),
+            address(WETH).toBytes32(),
+            0,
+            0,
+            0,
+            0,
+            0
+        );
+
+        wstethRateProvider = new GenericRateProvider(
+            address(etherFiLiquid1.priceRouter()),
+            bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)"))),
+            address(WSTETH).toBytes32(),
+            bytes32(uint256(1e18)),
+            address(WETH).toBytes32(),
+            0,
+            0,
+            0,
+            0,
+            0
+        );
 
         vm.startPrank(liquidMultisig);
         rolesAuthority.setUserRole(strategist, STRATEGIST_ROLE, true);
@@ -444,7 +472,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         // Registry distrusts eETH position, and migration position so they can be forced out.
         vm.startPrank(registryMultisig);
-        registry.distrustPosition(2);
+        registry.distrustPosition(EETH_POSITION);
         registry.distrustPosition(migrationPosition);
         vm.stopPrank();
 
@@ -465,7 +493,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         vm.startPrank(liquidMultisig);
         etherFiLiquid1.toggleIgnorePause();
         // Force out eETH position as it always keeps 1 wei in balance so can not be removed normally.
-        etherFiLiquid1.forcePositionOut(1, 2, false);
+        // 1 is the index in etherFiLiquid1.getCreditPositions();
+        etherFiLiquid1.forcePositionOut(1, EETH_POSITION, false);
         // Revoke solver role from Cellar so that strategist can not deposit or withdraw from BoringVault.
         rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, false);
         // Give the migrator contract the appropriate roles to complete the migration.
