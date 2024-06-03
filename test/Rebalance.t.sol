@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.21;
 
+import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
+import {BoringVault} from "src/base/BoringVault.sol";
+import {PositionManager as EigenLayerPositionManager} from "src/interfaces/EigenLayerPositionManager.sol";
 import {BaseMerkleRootGenerator} from "resources/BaseMerkleRootGenerator.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
@@ -9,11 +12,21 @@ import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVerification.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 
-/**
- *  source .env && forge script script/CreateTestMerkleRoot.s.sol:CreateTestMerkleRootScript --rpc-url $MAINNET_RPC_URL --sender 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1
- */
-contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
-    using FixedPointMathLib for uint256;
+import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
+
+contract RebalanceTest is Test, MainnetAddresses, BaseMerkleRootGenerator {
+    using stdStorage for StdStorage;
+
+    EigenLayerPositionManager public eigenLayerPositionManager =
+        EigenLayerPositionManager(payable(0xc31BDE60f00bf1172a59B8EB699c417548Bce0C2));
+
+    function setUp() external {
+        // Setup forked environment.
+        string memory rpcKey = "MAINNET_RPC_URL";
+        uint256 blockNumber = 20013424;
+
+        _startFork(rpcKey, blockNumber);
+    }
 
     address public boringVault = 0xf2b27554d618488f28023467d3F9656c472ea22e;
     address public managerAddress = 0x4180D80018055158cf608A7A7Eb5582C7a0135E8;
@@ -26,15 +39,6 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
     address public itbDecoderAndSanitizer = 0xF87F3Cf3b1bC0673e037c41b275B4300e1eCF739;
 
     RolesAuthority public rolesAuthority = RolesAuthority(0xec8CE1a4eD2611c02A42B5B66dd968CdB20a20B9);
-
-    function setUp() external {}
-
-    /**
-     * @notice Uncomment which script you want to run.
-     */
-    function run() external {
-        generateTestStrategistMerkleRoot();
-    }
 
     function _addLeafsForITBEigenLayerPositionManager(
         ManageLeaf[] memory leafs,
@@ -230,8 +234,8 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
         );
     }
 
-    function generateTestStrategistMerkleRoot() public {
-        updateAddresses(boringVault, 0xF87F3Cf3b1bC0673e037c41b275B4300e1eCF739, managerAddress, accountantAddress);
+    function testRebalance() external {
+        updateAddresses(boringVault, itbDecoderAndSanitizer, managerAddress, accountantAddress);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](64);
 
@@ -264,6 +268,7 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
         );
 
         // ========================== ITB Karak Position Manager ==========================
+        // TODO change strategy manager to the address that needs the approval for deposit to work.
         _addLeafsForITBEigenLayerPositionManager(
             leafs,
             itbKarakPositionManager,
@@ -277,7 +282,7 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        vm.startBroadcast();
+        vm.startPrank(dev1Address);
         rolesAuthority.setUserRole(dev1Address, 7, true);
         rolesAuthority.setUserRole(dev1Address, 8, true);
         ManagerWithMerkleVerification(managerAddress).setManageRoot(dev1Address, manageTree[manageTree.length - 1][0]);
@@ -291,12 +296,16 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
         manageLeafs[5] = leafs[20]; // Transfer METH to P2P Position Manager
         manageLeafs[6] = leafs[21]; // Approve Strategy Manager to spend METH
         manageLeafs[7] = leafs[28]; // Deposit mETH
-        manageLeafs[8] = leafs[37]; // Accept ownership of Karak Position Manager
-        manageLeafs[9] = leafs[38]; // Transfer METH to Karak Position Manager
-        manageLeafs[10] = leafs[39]; // Approve KMETH to spend METH
-        manageLeafs[11] = leafs[46]; // Deposit mETH
+        manageLeafs[8] = leafs[46]; // Accept ownership of Karak Position Manager
+        manageLeafs[9] = leafs[47]; // Transfer METH to Karak Position Manager
+        manageLeafs[10] = leafs[48]; // Approve KMETH to spend METH
+        manageLeafs[11] = leafs[55]; // Deposit mETH
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        for (uint256 i; i < manageProofs[8].length; i++) {
+            console.logBytes32(manageProofs[8][i]);
+        }
 
         address[] memory targets = new address[](12);
         targets[0] = itbKilnOperatorPositionManager;
@@ -319,12 +328,14 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
             "approveToken(address,address,uint256)", address(METH), strategyManager, type(uint256).max
         );
         targetData[3] = abi.encodeWithSignature("deposit(uint256,uint256)", 0.003e18, 0);
+
         targetData[4] = abi.encodeWithSignature("acceptOwnership()");
         targetData[5] = abi.encodeWithSignature("transfer(address,uint256)", itbP2POperatorPositionManager, 0.003e18);
         targetData[6] = abi.encodeWithSignature(
             "approveToken(address,address,uint256)", address(METH), strategyManager, type(uint256).max
         );
         targetData[7] = abi.encodeWithSignature("deposit(uint256,uint256)", 0.003e18, 0);
+
         targetData[8] = abi.encodeWithSignature("acceptOwnership()");
         targetData[9] = abi.encodeWithSignature("transfer(address,uint256)", itbKarakPositionManager, 0.003e18);
         targetData[10] = abi.encodeWithSignature(
@@ -344,10 +355,15 @@ contract CreateTestMerkleRootScript is BaseMerkleRootGenerator {
             manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](12)
         );
 
-        vm.stopBroadcast();
-
-        string memory filePath = "./leafs/TestStrategistLeafs.json";
-
-        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
+        vm.stopPrank();
     }
+
+    function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
+        forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
+        vm.selectFork(forkId);
+    }
+}
+
+interface DelegationManager {
+    function undelegate(address staker) external;
 }

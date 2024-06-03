@@ -1493,6 +1493,46 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
     function _getPoolAddressFromPoolId(bytes32 poolId) internal pure returns (address) {
         return address(uint160(uint256(poolId >> 96)));
     }
+
+    function _getProofsUsingTree(ManageLeaf[] memory manageLeafs, bytes32[][] memory tree)
+        internal
+        view
+        returns (bytes32[][] memory proofs)
+    {
+        proofs = new bytes32[][](manageLeafs.length);
+        for (uint256 i; i < manageLeafs.length; ++i) {
+            // Generate manage proof.
+            bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
+            bytes memory rawDigest = abi.encodePacked(
+                _rawDataDecoderAndSanitizer, manageLeafs[i].target, manageLeafs[i].canSendValue, selector
+            );
+            uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
+            for (uint256 j; j < argumentAddressesLength; ++j) {
+                rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
+            }
+            bytes32 leaf = keccak256(rawDigest);
+            proofs[i] = _generateProof(leaf, tree);
+        }
+    }
+
+    function _generateProof(bytes32 leaf, bytes32[][] memory tree) internal pure returns (bytes32[] memory proof) {
+        // The length of each proof is the height of the tree - 1.
+        uint256 tree_length = tree.length;
+        proof = new bytes32[](tree_length - 1);
+
+        // Build the proof
+        for (uint256 i; i < tree_length - 1; ++i) {
+            // For each layer we need to find the leaf.
+            for (uint256 j; j < tree[i].length; ++j) {
+                if (leaf == tree[i][j]) {
+                    // We have found the leaf, so now figure out if the proof needs the next leaf or the previous one.
+                    proof[i] = j % 2 == 0 ? tree[i][j + 1] : tree[i][j - 1];
+                    leaf = _hashPair(leaf, proof[i]);
+                    break;
+                }
+            }
+        }
+    }
 }
 
 interface IMB {
