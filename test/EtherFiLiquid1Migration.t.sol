@@ -27,6 +27,7 @@ import {ParitySharePriceOracle} from "src/migration/ParitySharePriceOracle.sol";
 import {CellarMigratorWithSharePriceParity, ERC4626} from "src/migration/CellarMigratorWithSharePriceParity.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {Deployer} from "src/helper/Deployer.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -38,31 +39,30 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     using Address for address;
 
     // Mainnet Contracts.
-    BoringVault public boringVault = BoringVault(payable(0x66BC9023f618C447e52c31dAF591d1943529D9e7));
+    Deployer public deployer = Deployer(deployerAddress);
+    BoringVault public boringVault = BoringVault(payable(0xf0bb20865277aBd641a307eCe5Ee04E79073416C));
     ManagerWithMerkleVerification public manager =
-        ManagerWithMerkleVerification(0x2f33E96790EF4A8b98E0F207CAB1e5972Be6989A);
-    TellerWithMultiAssetSupport public teller = TellerWithMultiAssetSupport(0x6213DD8bB580c4D22e2B11fBD2DcC807F7C77cBF);
+        ManagerWithMerkleVerification(0x227975088C28DBBb4b421c6d96781a53578f19a8);
+    TellerWithMultiAssetSupport public teller = TellerWithMultiAssetSupport(0x5c135e8eC99557b412b9B4492510dCfBD36066F5);
     AccountantWithRateProviders public accountant =
-        AccountantWithRateProviders(0x3365AD279cD33508A837EBC23c61C0Ca0ac9950B);
+        AccountantWithRateProviders(0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198);
     address public rawDataDecoderAndSanitizer = 0x0c9fd99d67DF2AB4722640eC4A5b495371bc81d2;
     RolesAuthority public rolesAuthority = RolesAuthority(0x485Bde66Bb668a51f2372E34e45B1c6226798122);
     EtherFiLiquid1 public etherFiLiquid1 = EtherFiLiquid1(0xeA1A6307D9b18F8d1cbf1c3Dd6aad8416C06a221);
-    AtomicQueue public atomic_queue;
-    AtomicSolver public atomic_solver;
     address public auraERC4626Adaptor = 0x0F3f8cab8D3888281033faf7A6C0b74dE62bb162;
     address public uniswapV3Adaptor = 0xBC912F54ddeb7221A21F7d41B0a8A08336A55056;
     address public erc4626Adaptor = 0xb1761a7C7799Cb429eB5bf2db16d88534DA681e2;
     address public morphoBlueSupplyAdaptor = 0x11747E893eFE2AB739A3f52C090b2e39130b18F4;
     address public aaveV3ATokenAdaptor = 0x7613b7f78A1672FBC478bfecf4598EeDE10a2Fa7;
     address public aaveV3DebtTokenAdaptor = 0x79677329a4B2d4576e820f69b5e260F77d93FcCE;
-    CellarMigrationAdaptor public migrationAdaptor = CellarMigrationAdaptor(0x24A84a3BE5C15d1AA14d083CE56112317be5729d);
+    CellarMigrationAdaptor public migrationAdaptor = CellarMigrationAdaptor(0x3D77e32F07f4B54C590eA9102A4cF55299DCCb71);
+    CellarMigrationAdaptor2 public migrationAdaptor2 = CellarMigrationAdaptor2(0x37Bf4f94D045e5Fcda3ed4A223F7Ecdedbf73303);
+    ParitySharePriceOracle public paritySharePriceOracle = ParitySharePriceOracle(0xdE6a8E421300fB785622A7AC0d487274333BC15d);
     GenericRateProvider public bptRateProvider;
     GenericRateProvider public wstethRateProvider;
 
     bytes32 strategistRoot = 0x3021d7ed1bdf4996ecbff0a69b58465fb6fdc5107d75662743c8a633bb2429fa;
 
-    CellarMigrationAdaptor2 public migrationAdaptor2;
-    ParitySharePriceOracle public paritySharePriceOracle;
     CellarMigratorWithSharePriceParity public migrator;
 
     uint8 public constant MANAGER_ROLE = 1;
@@ -91,7 +91,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         // uint256 blockNumber = 19466630; // from before first rebalance
-        uint256 blockNumber = 19877751;
+        uint256 blockNumber = 20019360;
         _startFork(rpcKey, blockNumber);
 
         registry = Registry(etherFiLiquid1.registry());
@@ -101,34 +101,12 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         vm.prank(dev1Address);
         rolesAuthority.transferOwnership(liquidMultisig);
 
-        migrationAdaptor2 = new CellarMigrationAdaptor2(address(boringVault), address(accountant), address(teller));
-
-        paritySharePriceOracle = new ParitySharePriceOracle(address(etherFiLiquid1), address(accountant));
-
-        bptRateProvider = new GenericRateProvider(
-            address(etherFiLiquid1.priceRouter()),
-            bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)"))),
-            address(rETH_weETH).toBytes32(),
-            bytes32(uint256(1e18)),
-            address(WETH).toBytes32(),
-            0,
-            0,
-            0,
-            0,
-            0
+        bptRateProvider =  GenericRateProvider(
+            deployer.getAddress(AuraRETHWeETHBptRateProviderName)
         );
 
-        wstethRateProvider = new GenericRateProvider(
-            address(etherFiLiquid1.priceRouter()),
-            bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)"))),
-            address(WSTETH).toBytes32(),
-            bytes32(uint256(1e18)),
-            address(WETH).toBytes32(),
-            0,
-            0,
-            0,
-            0,
-            0
+        wstethRateProvider =  GenericRateProvider(
+            deployer.getAddress(WstETHRateProviderName)
         );
 
         vm.startPrank(liquidMultisig);
