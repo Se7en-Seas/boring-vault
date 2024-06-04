@@ -8,7 +8,12 @@ contract ContractNames {
     string public constant ArcticArchitectureLensName = "Arctic Architecture Lens V0.0";
     string public constant AtomicQueueName = "Atomic Queue V0.0";
     string public constant AtomicSolverName = "Atomic Solver V3.0";
+
+    // Migration
     string public constant CellarMigrationAdaptorName = "Cellar Migration Adaptor V0.1";
+    string public constant CellarMigrationAdaptorName2 = "Cellar Migration Adaptor 2 V0.0";
+    string public constant ParitySharePriceOracleName = "Parity Share Price Oracle V0.0";
+    string public constant CellarMigratorWithSharePriceParityName = "Cellar Migrator With Share Price Parity V0.0";
 
     string public constant EtherFiLiquidUsdName = "EtherFi Liquid USD V0.0";
     string public constant EtherFiLiquidUsdManagerName = "EtherFi Liquid USD Manager With Merkle Verification V0.0";
@@ -39,4 +44,12 @@ contract ContractNames {
     string public constant PendleZircuitLPweETHRateProviderName = "Pendle Zircuit LP weETH Rate Provider V0.0";
     string public constant AuraRETHWeETHBptRateProviderName = "Aura rETH weETH Bpt Rate Provider V0.0";
     string public constant WstETHRateProviderName = "wstETH Rate Provider V0.0";
+    string public constant PendleWeETHMarketSeptemberRateProviderName =
+        "Pendle weETH Market September 2024 Rate Provider V0.0";
+    string public constant PendleEethPtSeptemberRateProviderName = "Pendle eETH PT September 2024 Rate Provider V0.0";
+    string public constant PendleEethYtSeptemberRateProviderName = "Pendle eETH YT September 2024 Rate Provider V0.0";
+    string public constant PendleWeETHMarketDecemberRateProviderName =
+        "Pendle weETH Market December 2024 Rate Provider V0.0";
+    string public constant PendleEethPtDecemberRateProviderName = "Pendle eETH PT December 2024 Rate Provider V0.0";
+    string public constant PendleEethYtDecemberRateProviderName = "Pendle eETH YT December 2024 Rate Provider V0.0";
 }

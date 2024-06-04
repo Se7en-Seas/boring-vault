@@ -20,7 +20,10 @@ import {AtomicSolverV2} from "src/atomic-queue/AtomicSolverV2.sol";
 import {ContractNames} from "resources/ContractNames.sol";
 import {EtherFiLiquid1} from "src/interfaces/EtherFiLiquid1.sol";
 import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
+import {CellarMigrationAdaptor} from "src/migration/CellarMigrationAdaptor.sol";
 import {CellarMigrationAdaptor2} from "src/migration/CellarMigrationAdaptor2.sol";
+import {ParitySharePriceOracle} from "src/migration/ParitySharePriceOracle.sol";
+import {CellarMigratorWithSharePriceParity, ERC4626} from "src/migration/CellarMigratorWithSharePriceParity.sol";
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
