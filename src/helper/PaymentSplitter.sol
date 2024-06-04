@@ -11,6 +11,11 @@ contract PaymentSplitter is Auth {
 
     //============================== STRUCTS ===============================
 
+    /**
+     * @dev Represents a split of fee payments.
+     * @param to The address to send the split to.
+     * @param percent The percentage of the total fee to send to this address.
+     */
     struct SplitInformation {
         address to;
         uint96 percent;
@@ -18,10 +23,16 @@ contract PaymentSplitter is Auth {
 
     //============================== STATE ===============================
 
+    /**
+     * @notice Contains split information for each address.
+     */
     SplitInformation[] public splits;
 
     //============================== IMMUTABLES ===============================
 
+    /**
+     * @notice The cumualative percents of all splits.
+     */
     uint256 internal immutable totalPercent;
 
     constructor(address _owner, uint256 _totalPercent, SplitInformation[] memory _splits)
@@ -39,6 +50,9 @@ contract PaymentSplitter is Auth {
 
     // ========================================= ADMIN =========================================
 
+    /**
+     * @notice Adjusts the splits of fee payments.
+     */
     function adjustSplits(SplitInformation[] calldata _splits) external requiresAuth {
         // Empty out old splits.
         uint256 splitsLength = splits.length;
@@ -55,12 +69,18 @@ contract PaymentSplitter is Auth {
         require(totalSplitPercent == totalPercent, "PaymentSplitter: total percent is not 100%");
     }
 
+    /**
+     * @notice Rescues any ERC20 asset sent to this contract.
+     */
     function rescueERC20(ERC20 asset) external requiresAuth {
         asset.safeTransfer(msg.sender, asset.balanceOf(address(this)));
     }
 
     // ========================================= PAYOUT =========================================
 
+    /**
+     * @notice Pays out the splits to the respective addresses.
+     */
     function payoutSplits(ERC20 asset) external requiresAuth {
         // Subtract 1 from balance so we revert if balance is 0, and to also leave dust in this contract,
         // to reduce gas costs for future transactions.
