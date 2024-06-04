@@ -36,10 +36,10 @@ contract ContractNames {
     string public constant TestVaultEthDecoderAndSanitizerName = "Test ETH Vault Decoder and Sanitizer V0.0";
 
     string public constant EtherFiLiquidBtcRolesAuthorityName = "EtherFi Liquid BTC RolesAuthority Version 0.0";
-    string public constant EtherFiLiquidBtcName = "EtherFi Liquid BTC V0.1";
-    string public constant EtherFiLiquidBtcManagerName = "EtherFi Liquid BTC Manager With Merkle Verification V0.1";
-    string public constant EtherFiLiquidBtcAccountantName = "EtherFi Liquid BTC Accountant With Rate Providers V0.1";
-    string public constant EtherFiLiquidBtcTellerName = "EtherFi Liquid BTC Teller With Multi Asset Support V0.1";
+    string public constant EtherFiLiquidBtcName = "EtherFi Liquid BTC V0.0";
+    string public constant EtherFiLiquidBtcManagerName = "EtherFi Liquid BTC Manager With Merkle Verification V0.0";
+    string public constant EtherFiLiquidBtcAccountantName = "EtherFi Liquid BTC Accountant With Rate Providers V0.0";
+    string public constant EtherFiLiquidBtcTellerName = "EtherFi Liquid BTC Teller With Multi Asset Support V0.0";
     string public constant EtherFiLiquidBtcDecoderAndSanitizerName = "EtherFi Liquid BTC Decoder and Sanitizer V0.0";
 
     string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.0";

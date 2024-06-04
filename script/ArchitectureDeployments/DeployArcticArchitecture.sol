@@ -366,6 +366,7 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
 
+        // Give development address straetgist and owner roles, and transfer ownership if needed.
         rolesAuthority.setUserRole(developmentAddress, STRATEGIST_ROLE, true);
         rolesAuthority.setUserRole(developmentAddress, OWNER_ROLE, true);
         if (owner != developmentAddress) rolesAuthority.transferOwnership(developmentAddress);
@@ -377,18 +378,69 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
             // Need to delete it
             vm.removeFile(filePath);
         }
-        vm.writeLine(filePath, "{ \"contracts\": ");
         string memory finalJson;
+        string memory coreOutput;
+        string memory assetConfigurationOutput;
+        string memory accountantConfigurationOutput;
+        string memory depositConfigurationOutput;
+        {
+            string memory coreContracts = "core contracts key";
+            vm.serializeAddress(coreContracts, "RolesAuthority", address(rolesAuthority));
+            vm.serializeAddress(coreContracts, "Lens", address(lens));
+            vm.serializeAddress(coreContracts, "BoringVault", address(boringVault));
+            vm.serializeAddress(coreContracts, "ManagerWithMerkleVerification", address(manager));
+            vm.serializeAddress(coreContracts, "AccountantWithRateProviders", address(accountant));
+            vm.serializeAddress(coreContracts, "TellerWithMultiAssetSupport", address(teller));
+            coreOutput = vm.serializeAddress(coreContracts, "DecoderAndSanitizer", rawDataDecoderAndSanitizer);
+        }
 
-        vm.serializeAddress(finalJson, names.rolesAuthority, address(rolesAuthority));
-        vm.serializeAddress(finalJson, names.lens, address(lens));
-        vm.serializeAddress(finalJson, names.boringVault, address(boringVault));
-        vm.serializeAddress(finalJson, names.manager, address(manager));
-        vm.serializeAddress(finalJson, names.accountant, address(accountant));
-        vm.serializeAddress(finalJson, names.teller, address(teller));
-        vm.serializeAddress(finalJson, names.rawDataDecoderAndSanitizer, rawDataDecoderAndSanitizer);
+        {
+            string memory assetConfiguration = "asset configuration key";
+            for (uint256 i; i < alternativeAssets.length; i++) {
+                AlternativeAsset memory alternativeAsset = alternativeAssets[i];
+                string memory assetKey = "asset key";
+                vm.serializeBool(assetKey, "depositable", true);
+                vm.serializeBool(assetKey, "withdrawable", true);
+                vm.serializeBool(assetKey, "isPeggedToBase", alternativeAsset.isPeggedToBase);
+                string memory assetOutput = vm.serializeAddress(assetKey, "rateProvider", alternativeAsset.rateProvider);
+                assetConfigurationOutput =
+                    vm.serializeString(assetConfiguration, alternativeAsset.asset.symbol(), assetOutput);
+            }
+        }
 
-        vm.writeLine(filePath, finalJson);
-        vm.writeLine(filePath, "}");
+        {
+            string memory accountantConfiguration = "accountant key";
+            vm.serializeAddress(accountantConfiguration, "PayoutAddress", accountantParameters.payoutAddress);
+            vm.serializeUint(
+                accountantConfiguration,
+                "AllowedExchangeRateChangeUpper",
+                accountantParameters.allowedExchangeRateChangeUpper
+            );
+            vm.serializeUint(
+                accountantConfiguration,
+                "AllowedExchangeRateChangeLower",
+                accountantParameters.allowedExchangeRateChangeLower
+            );
+            vm.serializeUint(
+                accountantConfiguration, "MinimumUpateDelayInSeconds", accountantParameters.minimumUpateDelayInSeconds
+            );
+            vm.serializeUint(accountantConfiguration, "ManagementFee", accountantParameters.managementFee);
+            vm.serializeUint(accountantConfiguration, "StartingExchangeRate", accountantParameters.startingExchangeRate);
+            accountantConfigurationOutput =
+                vm.serializeAddress(accountantConfiguration, "Base", address(accountantParameters.base));
+        }
+
+        {
+            string memory depositConfiguration = "deposit configuration key";
+            vm.serializeBool(depositConfiguration, "AllowPublicDeposits", allowPublicDeposits);
+            depositConfigurationOutput = vm.serializeUint(depositConfiguration, "ShareLockPeriod", shareLockPeriod);
+        }
+
+        vm.serializeString(finalJson, "depositConfiguration", depositConfigurationOutput);
+        vm.serializeString(finalJson, "core", coreOutput);
+        vm.serializeString(finalJson, "accountantConfiguration", accountantConfigurationOutput);
+        finalJson = vm.serializeString(finalJson, "assetConfiguration", assetConfigurationOutput);
+
+        vm.writeJson(finalJson, filePath);
     }
 }

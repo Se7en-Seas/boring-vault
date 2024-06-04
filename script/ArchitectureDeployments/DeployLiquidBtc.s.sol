@@ -56,7 +56,17 @@ contract DeployLiquidBtcScript is DeployArcticArchitecture {
             abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
         // Setup alternative assets.
-        // none
+        alternativeAssets.push(
+            AlternativeAsset({
+                asset: TBTC,
+                isPeggedToBase: true,
+                rateProvider: address(0),
+                genericRateProviderName: "",
+                target: address(0),
+                selector: bytes4(0),
+                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
 
         bool allowPublicDeposits = true;
         uint64 shareLockPeriod = 1 days;
