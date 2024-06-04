@@ -25,6 +25,11 @@ abstract contract EigenLayerDecoderAndSanitizer is ITBContractDecoderAndSanitize
         return addressesFound;
     }
 
+    function undelegate() external pure returns (bytes memory addressesFound) {
+        // Nothing to sanitize or return
+        return addressesFound;
+    }
+
     function deposit(uint256, uint256) external pure returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
