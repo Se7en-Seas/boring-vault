@@ -32,8 +32,42 @@ import "forge-std/StdJson.sol";
  *  source .env && forge script script/DeployBoringVaultArctic.s.sol:DeployBoringVaultArcticScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresses {
-    uint256 public privateKey;
+contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
+    struct ArchitectureNames {
+        string rolesAuthority;
+        string lens;
+        string boringVault;
+        string manager;
+        string accountant;
+        string teller;
+        string rawDataDecoderAndSanitizer;
+    }
+
+    ArchitectureNames public names;
+
+    struct AccountantParameters {
+        address payoutAddress;
+        uint16 allowedExchangeRateChangeUpper;
+        uint16 allowedExchangeRateChangeLower;
+        uint32 minimumUpateDelayInSeconds; // TODO once merged this will need to have its type changed to uint24.
+        uint16 managementFee; // TODO performance fee
+        uint96 startingExchangeRate;
+        ERC20 base;
+    }
+
+    AccountantParameters public accountantParameters;
+
+    struct AlternativeAsset {
+        ERC20 asset;
+        bool isPeggedToBase;
+        address rateProvider;
+        string genericRateProviderName;
+        address target;
+        bytes4 selector;
+        bytes32[8] params;
+    }
+
+    AlternativeAsset[] public alternativeAssets;
 
     // Contracts to deploy
     Deployer public deployer = Deployer(deployerAddress);
@@ -46,12 +80,6 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
     AccountantWithRateProviders public accountant;
     AtomicQueue public atomicQueue;
     AtomicSolverV2 public atomicSolver;
-    EtherFiLiquid1 public etherFiLiquid1 = EtherFiLiquid1(0xeA1A6307D9b18F8d1cbf1c3Dd6aad8416C06a221);
-    // Deployment parameters
-    string public boringVaultName = "Test ETH Vault";
-    string public boringVaultSymbol = "TEV";
-    uint8 public boringVaultDecimals = 18;
-    address public owner = dev0Address;
 
     // Roles
     uint8 public constant MANAGER_ROLE = 1;
@@ -65,51 +93,109 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
     uint8 public constant STRATEGIST_ROLE = 7;
     uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 11;
 
-    function setUp() external {
-        privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("mainnet");
+    function _getAddressIfDeployed(string memory name) internal view returns (address) {
+        address deployedAt = deployer.getAddress(name);
+        uint256 size;
+        assembly {
+            size := extcodesize(deployedAt)
+        }
+        return size > 0 ? deployedAt : address(0);
     }
 
-    function run() external {
+    // TODO this should save all the addresses in a JSON file, using the name provided.
+    function _deploy(
+        string memory deploymentFileName,
+        address owner,
+        string memory boringVaultName,
+        string memory boringVaultSymbol,
+        uint8 boringVaultDecimals,
+        bytes memory decoderAndSanitizerCreationCode,
+        bytes memory decoderAndSanitizerConstructorArgs,
+        bool allowPublicDeposits,
+        uint64 shareLockPeriod,
+        address developmentAddress
+    ) internal {
         bytes memory creationCode;
         bytes memory constructorArgs;
-        vm.startBroadcast(privateKey);
+        address deployedAddress;
 
-        creationCode = type(RolesAuthority).creationCode;
-        constructorArgs = abi.encode(owner, Authority(address(0)));
-        rolesAuthority =
-            RolesAuthority(deployer.deployContract(TestVaultEthRolesAuthorityName, creationCode, constructorArgs, 0));
+        deployedAddress = _getAddressIfDeployed(names.rolesAuthority);
+        if (deployedAddress == address(0)) {
+            creationCode = type(RolesAuthority).creationCode;
+            constructorArgs = abi.encode(owner, Authority(address(0)));
+            rolesAuthority =
+                RolesAuthority(deployer.deployContract(names.rolesAuthority, creationCode, constructorArgs, 0));
+        } else {
+            rolesAuthority = RolesAuthority(deployedAddress);
+        }
 
-        // creationCode = type(ArcticArchitectureLens).creationCode;
-        // lens = ArcticArchitectureLens(deployer.deployContract(ArcticArchitectureLensName, creationCode, hex"", 0));
+        deployedAddress = _getAddressIfDeployed(names.lens);
+        if (deployedAddress == address(0)) {
+            creationCode = type(ArcticArchitectureLens).creationCode;
+            lens = ArcticArchitectureLens(deployer.deployContract(names.lens, creationCode, hex"", 0));
+        } else {
+            lens = ArcticArchitectureLens(deployedAddress);
+        }
 
-        creationCode = type(BoringVault).creationCode;
-        constructorArgs = abi.encode(owner, boringVaultName, boringVaultSymbol, boringVaultDecimals);
-        boringVault = BoringVault(payable(deployer.deployContract(TestVaultEthName, creationCode, constructorArgs, 0)));
+        deployedAddress = _getAddressIfDeployed(names.boringVault);
+        if (deployedAddress == address(0)) {
+            creationCode = type(BoringVault).creationCode;
+            constructorArgs = abi.encode(owner, boringVaultName, boringVaultSymbol, boringVaultDecimals);
+            boringVault =
+                BoringVault(payable(deployer.deployContract(names.boringVault, creationCode, constructorArgs, 0)));
+        } else {
+            boringVault = BoringVault(payable(deployedAddress));
+        }
 
-        creationCode = type(ManagerWithMerkleVerification).creationCode;
-        constructorArgs = abi.encode(owner, address(boringVault), balancerVault);
-        manager = ManagerWithMerkleVerification(
-            deployer.deployContract(TestVaultEthManagerName, creationCode, constructorArgs, 0)
-        );
+        deployedAddress = _getAddressIfDeployed(names.manager);
+        if (deployedAddress == address(0)) {
+            creationCode = type(ManagerWithMerkleVerification).creationCode;
+            constructorArgs = abi.encode(owner, address(boringVault), balancerVault);
+            manager =
+                ManagerWithMerkleVerification(deployer.deployContract(names.manager, creationCode, constructorArgs, 0));
+        } else {
+            manager = ManagerWithMerkleVerification(deployedAddress);
+        }
 
-        creationCode = type(AccountantWithRateProviders).creationCode;
-        constructorArgs = abi.encode(
-            owner, address(boringVault), liquidPayoutAddress, 1e18, address(METH), 1.005e4, 0.995e4, 1 days / 4, 0.02e4
-        );
-        accountant = AccountantWithRateProviders(
-            deployer.deployContract(TestVaultEthAccountantName, creationCode, constructorArgs, 0)
-        );
+        deployedAddress = _getAddressIfDeployed(names.accountant);
+        if (deployedAddress == address(0)) {
+            creationCode = type(AccountantWithRateProviders).creationCode;
+            constructorArgs = abi.encode(
+                owner,
+                address(boringVault),
+                accountantParameters.payoutAddress,
+                accountantParameters.startingExchangeRate,
+                accountantParameters.base,
+                accountantParameters.allowedExchangeRateChangeUpper,
+                accountantParameters.allowedExchangeRateChangeLower,
+                accountantParameters.minimumUpateDelayInSeconds,
+                accountantParameters.managementFee
+            );
+            accountant =
+                AccountantWithRateProviders(deployer.deployContract(names.accountant, creationCode, constructorArgs, 0));
+        } else {
+            accountant = AccountantWithRateProviders(deployedAddress);
+        }
 
-        creationCode = type(TellerWithMultiAssetSupport).creationCode;
-        constructorArgs = abi.encode(owner, address(boringVault), address(accountant), WETH);
-        teller = TellerWithMultiAssetSupport(
-            payable(deployer.deployContract(TestVaultEthTellerName, creationCode, constructorArgs, 0))
-        );
+        deployedAddress = _getAddressIfDeployed(names.teller);
+        if (deployedAddress == address(0)) {
+            creationCode = type(TellerWithMultiAssetSupport).creationCode;
+            constructorArgs = abi.encode(owner, address(boringVault), address(accountant), WETH);
+            teller = TellerWithMultiAssetSupport(
+                payable(deployer.deployContract(names.teller, creationCode, constructorArgs, 0))
+            );
+        } else {
+            teller = TellerWithMultiAssetSupport(payable(deployedAddress));
+        }
 
-        // creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode;
-        // constructorArgs = abi.encode(address(boringVault), uniswapV3NonFungiblePositionManager);
-        // rawDataDecoderAndSanitizer = deployer.getAddress(EtherFiLiquidEthDecoderAndSanitizerName);
+        deployedAddress = _getAddressIfDeployed(names.rawDataDecoderAndSanitizer);
+        if (deployedAddress == address(0)) {
+            rawDataDecoderAndSanitizer = deployer.deployContract(
+                names.rawDataDecoderAndSanitizer, decoderAndSanitizerCreationCode, decoderAndSanitizerConstructorArgs, 0
+            );
+        } else {
+            rawDataDecoderAndSanitizer = deployedAddress;
+        }
 
         // Setup roles.
         // MANAGER_ROLE
@@ -219,11 +305,14 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
             AccountantWithRateProviders.updateExchangeRate.selector,
             true
         );
+
         // Publicly callable functions
-        rolesAuthority.setPublicCapability(address(teller), TellerWithMultiAssetSupport.deposit.selector, true);
-        rolesAuthority.setPublicCapability(
-            address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
-        );
+        if (allowPublicDeposits) {
+            rolesAuthority.setPublicCapability(address(teller), TellerWithMultiAssetSupport.deposit.selector, true);
+            rolesAuthority.setPublicCapability(
+                address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
+            );
+        }
 
         // Give roles to appropriate contracts
         rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
@@ -231,16 +320,33 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
         rolesAuthority.setUserRole(deployer.getAddress(AtomicSolverName), SOLVER_ROLE, true);
-        // Give Liquid V1 the solver role so it can use bulk withdraw and deposit.
-        rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
 
-        // No accountant rate providers to set, since vault only accepts base.
+        // Setup alternative assets.
+        for (uint256 i; i < alternativeAssets.length; i++) {
+            AlternativeAsset storage alternativeAsset = alternativeAssets[i];
+            if (alternativeAsset.isPeggedToBase) {
+                // Rate provider is not needed.
+                accountant.setRateProviderData(alternativeAsset.asset, true, address(0));
+                teller.addAsset(alternativeAsset.asset);
+            } else if (alternativeAsset.rateProvider != address(0)) {
+                // Rate provider is provided.
+                accountant.setRateProviderData(alternativeAsset.asset, false, alternativeAsset.rateProvider);
+                teller.addAsset(alternativeAsset.asset);
+            } else {
+                // We need a generic rate provider.
+                creationCode = type(GenericRateProvider).creationCode;
+                constructorArgs =
+                    abi.encode(alternativeAsset.target, alternativeAsset.selector, alternativeAsset.params);
+                alternativeAsset.rateProvider =
+                    deployer.deployContract(alternativeAsset.genericRateProviderName, creationCode, constructorArgs, 0);
 
-        // Setup Teller deposit assets.
-        teller.addAsset(METH);
+                accountant.setRateProviderData(alternativeAsset.asset, false, alternativeAsset.rateProvider);
+                teller.addAsset(alternativeAsset.asset);
+            }
+        }
 
         // Setup share lock period.
-        teller.setShareLockPeriod(1 days);
+        teller.setShareLockPeriod(shareLockPeriod);
 
         // Set all RolesAuthorities.
         boringVault.setAuthority(rolesAuthority);
@@ -259,10 +365,30 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         rolesAuthority.setUserRole(address(manager), MANAGER_INTERNAL_ROLE, true);
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
-        rolesAuthority.setUserRole(dev1Address, STRATEGIST_ROLE, true);
 
-        // rolesAuthority.transferOwnership(dev1Address);
+        rolesAuthority.setUserRole(developmentAddress, STRATEGIST_ROLE, true);
+        rolesAuthority.setUserRole(developmentAddress, OWNER_ROLE, true);
+        if (owner != developmentAddress) rolesAuthority.transferOwnership(developmentAddress);
 
-        vm.stopBroadcast();
+        // Save deployment details.
+        string memory filePath = string.concat("./deployments/", deploymentFileName);
+
+        if (vm.exists(filePath)) {
+            // Need to delete it
+            vm.removeFile(filePath);
+        }
+        vm.writeLine(filePath, "{ \"contracts\": ");
+        string memory finalJson;
+
+        vm.serializeAddress(finalJson, names.rolesAuthority, address(rolesAuthority));
+        vm.serializeAddress(finalJson, names.lens, address(lens));
+        vm.serializeAddress(finalJson, names.boringVault, address(boringVault));
+        vm.serializeAddress(finalJson, names.manager, address(manager));
+        vm.serializeAddress(finalJson, names.accountant, address(accountant));
+        vm.serializeAddress(finalJson, names.teller, address(teller));
+        vm.serializeAddress(finalJson, names.rawDataDecoderAndSanitizer, rawDataDecoderAndSanitizer);
+
+        vm.writeLine(filePath, finalJson);
+        vm.writeLine(filePath, "}");
     }
 }
