@@ -15,8 +15,6 @@ import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSu
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
 import {Deployer} from "src/helper/Deployer.sol";
 import {ArcticArchitectureLens} from "src/helper/ArcticArchitectureLens.sol";
-import {AtomicQueue} from "src/atomic-queue/AtomicQueue.sol";
-import {AtomicSolverV2} from "src/atomic-queue/AtomicSolverV2.sol";
 import {ContractNames} from "resources/ContractNames.sol";
 import {EtherFiLiquid1} from "src/interfaces/EtherFiLiquid1.sol";
 import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
@@ -78,8 +76,6 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
     address public rawDataDecoderAndSanitizer;
     TellerWithMultiAssetSupport public teller;
     AccountantWithRateProviders public accountant;
-    AtomicQueue public atomicQueue;
-    AtomicSolverV2 public atomicSolver;
 
     // Roles
     uint8 public constant MANAGER_ROLE = 1;
@@ -319,7 +315,6 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
         rolesAuthority.setUserRole(address(manager), MANAGER_INTERNAL_ROLE, true);
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
-        rolesAuthority.setUserRole(deployer.getAddress(AtomicSolverName), SOLVER_ROLE, true);
 
         // Setup alternative assets.
         for (uint256 i; i < alternativeAssets.length; i++) {
