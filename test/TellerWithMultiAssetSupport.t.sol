@@ -49,7 +49,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
         accountant = new AccountantWithRateProviders(
-            address(this), address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0
+            address(this), address(boringVault), payout_address, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0, 0
         );
 
         teller =
@@ -406,7 +406,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         boringVault.transfer(address(this), 0.1e18);
 
         // But if attacker is added to the deny list, transfers should fail.
-        teller.denyTransfer(attacker);
+        teller.denyAll(attacker);
 
         vm.startPrank(attacker);
         vm.expectRevert(
@@ -431,7 +431,7 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         boringVault.transferFrom(attacker, address(this), 0.1e18);
 
         // If attacker is removed from the deny list, transfers should work again.
-        teller.allowTransfer(attacker);
+        teller.allowAll(attacker);
 
         vm.prank(attacker);
         boringVault.transfer(address(this), 0.1e18);
@@ -440,10 +440,10 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         address operator = vm.addr(2);
         address normalUser = vm.addr(3);
 
-        teller.denyTransfer(operator);
+        teller.denyAll(operator);
 
         vm.startPrank(operator);
-                vm.expectRevert(
+        vm.expectRevert(
             abi.encodeWithSelector(
                 TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
                 normalUser,
@@ -453,6 +453,64 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         );
         boringVault.transferFrom(normalUser, normalUser, 1e18);
         vm.stopPrank();
+    }
+
+    function testHookLogic() external {
+        boringVault.setBeforeTransferHook(address(teller));
+        address from = vm.addr(1);
+        address to = vm.addr(2);
+
+        deal(address(boringVault), from, 100e18, true);
+        vm.prank(from);
+        boringVault.approve(address(this), 100e18);
+
+        // Transfers currently work.
+        boringVault.transferFrom(from, to, 1e18);
+
+        // Transfers fail if from is denied.
+        teller.denyFrom(from);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
+                from,
+                to,
+                address(this)
+            )
+        );
+        boringVault.transferFrom(from, to, 1e18);
+
+        teller.allowFrom(from);
+
+        // Transfers fail if to is denied.
+        teller.denyTo(to);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
+                from,
+                to,
+                address(this)
+            )
+        );
+        boringVault.transferFrom(from, to, 1e18);
+
+        teller.allowTo(to);
+
+        // Transfers fail if operator is denied.
+        teller.denyOperator(address(this));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__TransferDenied.selector,
+                from,
+                to,
+                address(this)
+            )
+        );
+        boringVault.transferFrom(from, to, 1e18);
+
+        teller.allowOperator(address(this));
+
+        // Transfers currently work.
+        boringVault.transferFrom(from, to, 1e18);
     }
 
     function testReverts() external {

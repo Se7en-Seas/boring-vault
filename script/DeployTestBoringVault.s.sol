@@ -48,7 +48,7 @@ contract DeployTestBoringVaultScript is Script {
         manager = new ManagerWithMerkleVerification(owner, address(boring_vault), balancerVault);
 
         accountant = new AccountantWithRateProviders(
-            owner, address(boring_vault), owner, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0
+            owner, address(boring_vault), owner, 1e18, address(WETH), 1.001e4, 0.999e4, 1, 0, 0
         );
         teller = new TellerWithMultiAssetSupport(owner, address(boring_vault), address(accountant), WETH);
 
