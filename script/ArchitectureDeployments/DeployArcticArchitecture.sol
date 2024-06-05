@@ -98,7 +98,6 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
         return size > 0 ? deployedAt : address(0);
     }
 
-    // TODO this should save all the addresses in a JSON file, using the name provided.
     function _deploy(
         string memory deploymentFileName,
         address owner,
