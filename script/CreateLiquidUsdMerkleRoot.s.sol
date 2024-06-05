@@ -14,7 +14,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0xc79cC44DC8A91330872D7815aE9CFB04405952ea;
-    address public rawDataDecoderAndSanitizer = 0xdADc9DE5d8C9E2a34875A2CEa0cd415751E1791b;
+    address public rawDataDecoderAndSanitizer = 0xdE58bbF90ebdB242ffAb7440D01583753b1250B6;
     address public managerAddress = 0x048a5002E57166a78Dd060B3B36DEd2f404D0a17;
     address public accountantAddress = 0xc6f89cc0551c944CEae872997A4060DC95622D8F;
 
@@ -140,6 +140,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
          * deposit, withdraw
          */
         _addERC4626Leafs(leafs, ERC4626(address(SUSDE)));
+        _addEthenaSUSDeWithdrawLeafs(leafs);
 
         // ========================== UniswapV3 ==========================
         /**
