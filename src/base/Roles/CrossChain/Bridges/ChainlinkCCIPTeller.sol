@@ -23,7 +23,7 @@ abstract contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIP
     // ========================================= CONSTANTS =========================================
     // ========================================= STATE =========================================
 
-    mapping(uint256 => Chain) public idToChains;
+    mapping(uint256 => Chain) public selectorToChains;
     //============================== ERRORS ===============================
 
     error ChainlinkCCIPTeller__MessagesNotAllowedFrom(uint256 chainId);
@@ -62,14 +62,14 @@ abstract contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIP
         bool allowMessagesTo,
         address toAddress
     ) external requiresAuth {
-        idToChains[chainId] = Chain(allowMessagesFrom, fromAddress, allowMessagesTo, toAddress);
+        selectorToChains[chainId] = Chain(allowMessagesFrom, fromAddress, allowMessagesTo, toAddress);
 
         emit ChainAdded(chainId, allowMessagesFrom, fromAddress, allowMessagesTo, toAddress);
     }
     // ========================================= CCIP RECEIVER =========================================
 
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
-        Chain memory source = idToChains[any2EvmMessage.sourceChainSelector];
+        Chain memory source = selectorToChains[any2EvmMessage.sourceChainSelector];
         if (!source.allowMessagesFrom) {
             revert ChainlinkCCIPTeller__MessagesNotAllowedFrom(any2EvmMessage.sourceChainSelector);
         }
@@ -82,14 +82,6 @@ abstract contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIP
         _completeMessageReceive(any2EvmMessage.messageId, message);
     }
 
-    // ========================================= VIEW FUNCTIONS =========================================
-    // /**
-    //  * @notice Preview fee required to bridge shares back to source.
-    //  * @param amount Specified amount of `share` tokens to bridge to source network.
-    //  * @param to Specified address to receive bridged shares on source network.
-    //  * @return fee required to bridge shares.
-    //  */
-
     // ========================================= INTERNAL BRIDGE FUNCTIONS =========================================
     function _sendMessage(uint256 message, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
         internal
@@ -97,7 +89,7 @@ abstract contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIP
         returns (bytes32 messageId)
     {
         uint64 destinationId = abi.decode(bridgeWildCard, (uint64));
-        Chain memory chain = idToChains[destinationId];
+        Chain memory chain = selectorToChains[destinationId];
         if (!chain.allowMessagesTo) {
             revert ChainlinkCCIPTeller__MessagesNotAllowedTo(destinationId);
         }
@@ -126,7 +118,7 @@ abstract contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIP
         returns (uint256 fee)
     {
         uint64 destinationId = abi.decode(bridgeWildCard, (uint64));
-        Chain memory chain = idToChains[destinationId];
+        Chain memory chain = selectorToChains[destinationId];
         Client.EVM2AnyMessage memory m = _buildMessage(message, chain.toAddress, address(feeToken));
 
         IRouterClient router = IRouterClient(this.getRouter());
