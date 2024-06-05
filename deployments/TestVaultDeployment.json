@@ -1,0 +1,25 @@
+{
+  "accountantConfiguration": {
+    "AllowedExchangeRateChangeLower": 9950,
+    "AllowedExchangeRateChangeUpper": 10050,
+    "Base": "0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa",
+    "ManagementFee": 200,
+    "MinimumUpateDelayInSeconds": 21600,
+    "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
+    "StartingExchangeRate": 1000000000000000000
+  },
+  "assetConfiguration": "",
+  "core": {
+    "AccountantWithRateProviders": "0xE4100F1Cf42C7CD6E5Cac69002eeD2F1c6d68704",
+    "BoringVault": "0xf2b27554d618488f28023467d3F9656c472ea22e",
+    "DecoderAndSanitizer": "0xF87F3Cf3b1bC0673e037c41b275B4300e1eCF739",
+    "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
+    "ManagerWithMerkleVerification": "0x4180D80018055158cf608A7A7Eb5582C7a0135E8",
+    "RolesAuthority": "0xec8CE1a4eD2611c02A42B5B66dd968CdB20a20B9",
+    "TellerWithMultiAssetSupport": "0x25F0C69b7b812644666BE928d8Af550B5cF9b24C"
+  },
+  "depositConfiguration": {
+    "AllowPublicDeposits": true,
+    "ShareLockPeriod": 86400
+  }
+}
