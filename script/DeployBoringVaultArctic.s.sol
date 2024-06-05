@@ -20,7 +20,10 @@ import {AtomicSolverV2} from "src/atomic-queue/AtomicSolverV2.sol";
 import {ContractNames} from "resources/ContractNames.sol";
 import {EtherFiLiquid1} from "src/interfaces/EtherFiLiquid1.sol";
 import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
+import {CellarMigrationAdaptor} from "src/migration/CellarMigrationAdaptor.sol";
 import {CellarMigrationAdaptor2} from "src/migration/CellarMigrationAdaptor2.sol";
+import {ParitySharePriceOracle} from "src/migration/ParitySharePriceOracle.sol";
+import {CellarMigratorWithSharePriceParity, ERC4626} from "src/migration/CellarMigratorWithSharePriceParity.sol";
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
@@ -44,7 +47,8 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
     AtomicQueue public atomicQueue;
     AtomicSolverV2 public atomicSolver;
     EtherFiLiquid1 public etherFiLiquid1 = EtherFiLiquid1(0xeA1A6307D9b18F8d1cbf1c3Dd6aad8416C06a221);
-    CellarMigrationAdaptor2 public migrationAdaptor;
+    CellarMigrationAdaptor public migrationAdaptor;
+    CellarMigrationAdaptor2 public migrationAdaptor2;
     GenericRateProvider public ptEethRateProvider;
     GenericRateProvider public ytEethRateProvider;
     GenericRateProvider public lpEethRateProvider;
@@ -53,11 +57,14 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
     GenericRateProvider public lpZeethRateProvider;
     GenericRateProvider public auraRETHWeETHBptRateProvider;
     GenericRateProvider public wstethRateProvider;
+    ParitySharePriceOracle public paritySharePriceOracle;
+    CellarMigratorWithSharePriceParity public cellarMigratorWithSharePriceParity;
+
     // Deployment parameters
     string public boringVaultName = "Ether.Fi Liquid ETH";
     string public boringVaultSymbol = "liquidETH";
     uint8 public boringVaultDecimals = 18;
-    address public owner = dev1Address;
+    address public owner = dev0Address;
 
     // Roles
     uint8 public constant MANAGER_ROLE = 1;
@@ -129,10 +136,29 @@ contract DeployBoringVaultArcticScript is Script, ContractNames, MainnetAddresse
         // constructorArgs = abi.encode(address(boringVault), uniswapV3NonFungiblePositionManager);
         rawDataDecoderAndSanitizer = deployer.getAddress(EtherFiLiquidEthDecoderAndSanitizerName);
 
+        // Migration
+        creationCode = type(CellarMigrationAdaptor).creationCode;
+        constructorArgs = abi.encode(address(boringVault), address(accountant), address(teller));
+        migrationAdaptor = CellarMigrationAdaptor(
+            deployer.deployContract(CellarMigrationAdaptorName, creationCode, constructorArgs, 0)
+        );
+
         creationCode = type(CellarMigrationAdaptor2).creationCode;
         constructorArgs = abi.encode(address(boringVault), address(accountant), address(teller));
-        migrationAdaptor = CellarMigrationAdaptor2(
-            deployer.deployContract(CellarMigrationAdaptorName, creationCode, constructorArgs, 0)
+        migrationAdaptor2 = CellarMigrationAdaptor2(
+            deployer.deployContract(CellarMigrationAdaptorName2, creationCode, constructorArgs, 0)
+        );
+
+        creationCode = type(ParitySharePriceOracle).creationCode;
+        constructorArgs = abi.encode(address(etherFiLiquid1), address(accountant));
+        paritySharePriceOracle = ParitySharePriceOracle(
+            deployer.deployContract(ParitySharePriceOracleName, creationCode, constructorArgs, 0)
+        );
+
+        creationCode = type(CellarMigratorWithSharePriceParity).creationCode;
+        constructorArgs = abi.encode(address(boringVault), ERC4626(address(etherFiLiquid1)), accountant, liquidMultisig);
+        cellarMigratorWithSharePriceParity = CellarMigratorWithSharePriceParity(
+            deployer.deployContract(CellarMigratorWithSharePriceParityName, creationCode, constructorArgs, 0)
         );
 
         // Deploy Generic Rate Providers.

@@ -10,6 +10,7 @@ contract MainnetAddresses {
     address public dev1Address = 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1;
     address public liquidV1PriceRouter = 0x693799805B502264f9365440B93C113D86a4fFF5;
     address public liquidPayoutAddress = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A;
+    address public liquidMultisig = 0xCEA8039076E35a825854c5C2f85659430b06ec96;
 
     // DeFi Ecosystem
     address public ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -448,6 +449,16 @@ contract MainnetAddresses {
     address public pendleZircuitUSDeSy = 0x293C6937D8D82e05B01335F7B33FBA0c8e256E30;
     address public pendleZircuitUSDePt = 0x3d4F535539A33FEAd4D76D7b3B7A9cB5B21C73f1;
     address public pendleZircuitUSDeYt = 0x40357b9f22B4DfF0Bf56A90661b8eC106C259d29;
+
+    address public pendleWeETHMarketSeptember = 0xC8eDd52D0502Aa8b4D5C77361D4B3D300e8fC81c;
+    address public pendleWeethSySeptember = 0xAC0047886a985071476a1186bE89222659970d65;
+    address public pendleEethPtSeptember = 0x1c085195437738d73d75DC64bC5A3E098b7f93b1;
+    address public pendleEethYtSeptember = 0xA54Df645A042D24121a737dAA89a57EbF8E0b71c;
+
+    address public pendleWeETHMarketDecember = 0x7d372819240D14fB477f17b964f95F33BeB4c704;
+    address public pendleWeethSyDecember = 0xAC0047886a985071476a1186bE89222659970d65;
+    address public pendleEethPtDecember = 0x6ee2b5E19ECBa773a352E5B21415Dc419A700d1d;
+    address public pendleEethYtDecember = 0x129e6B5DBC0Ecc12F9e486C5BC9cDF1a6A80bc6A;
 
     address public pendleSwethMarket = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303;
 
