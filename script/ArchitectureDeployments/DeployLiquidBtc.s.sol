@@ -37,6 +37,7 @@ contract DeployLiquidBtcScript is DeployArcticArchitecture {
         names.accountant = EtherFiLiquidBtcAccountantName;
         names.teller = EtherFiLiquidBtcTellerName;
         names.rawDataDecoderAndSanitizer = EtherFiLiquidBtcDecoderAndSanitizerName;
+        names.delayedWithdrawer = EtherFiLiquidBtcDelayedWithdrawer;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
@@ -45,6 +46,7 @@ contract DeployLiquidBtcScript is DeployArcticArchitecture {
         accountantParameters.startingExchangeRate = 1e8;
         //  4 decimals
         accountantParameters.managementFee = 0.02e4;
+        accountantParameters.performanceFee = 0;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;
         // Minimum time(in seconds) to pass between updated without triggering a pause.
@@ -55,9 +57,9 @@ contract DeployLiquidBtcScript is DeployArcticArchitecture {
         bytes memory constructorArgs =
             abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
-        // Setup alternative assets.
-        alternativeAssets.push(
-            AlternativeAsset({
+        // Setup extra deposit assets.
+        depositAssets.push(
+            DepositAsset({
                 asset: TBTC,
                 isPeggedToBase: true,
                 rateProvider: address(0),
@@ -68,8 +70,21 @@ contract DeployLiquidBtcScript is DeployArcticArchitecture {
             })
         );
 
+        // Setup withdraw assets.
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: TBTC,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+
         bool allowPublicDeposits = true;
+        bool allowPublicWithdraws = true;
         uint64 shareLockPeriod = 1 days;
+        address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
         vm.startBroadcast(privateKey);
 
@@ -81,7 +96,9 @@ contract DeployLiquidBtcScript is DeployArcticArchitecture {
             boringVaultDecimals,
             creationCode,
             constructorArgs,
+            delayedWithdrawFeeAddress,
             allowPublicDeposits,
+            allowPublicWithdraws,
             shareLockPeriod,
             dev1Address
         );

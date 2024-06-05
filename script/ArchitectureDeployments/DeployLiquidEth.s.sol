@@ -9,7 +9,7 @@ import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployLiquidEthScript is DeployArcticArchitecture {
@@ -37,6 +37,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture {
         names.accountant = EtherFiLiquidEthAccountantName;
         names.teller = EtherFiLiquidEthTellerName;
         names.rawDataDecoderAndSanitizer = EtherFiLiquidEthDecoderAndSanitizerName;
+        names.delayedWithdrawer = EtherFiLiquidEthDelayedWithdrawer;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
@@ -45,6 +46,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture {
         accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
         accountantParameters.managementFee = 0.02e4;
+        accountantParameters.performanceFee = 0;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;
         // Minimum time(in seconds) to pass between updated without triggering a pause.
@@ -55,9 +57,9 @@ contract DeployLiquidEthScript is DeployArcticArchitecture {
         bytes memory constructorArgs =
             abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
-        // Setup alternative assets.
-        alternativeAssets.push(
-            AlternativeAsset({
+        // Setup extra deposit assets.
+        depositAssets.push(
+            DepositAsset({
                 asset: EETH,
                 isPeggedToBase: true,
                 rateProvider: address(0),
@@ -67,8 +69,8 @@ contract DeployLiquidEthScript is DeployArcticArchitecture {
                 params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
             })
         );
-        alternativeAssets.push(
-            AlternativeAsset({
+        depositAssets.push(
+            DepositAsset({
                 asset: WEETH,
                 isPeggedToBase: false,
                 rateProvider: address(WEETH),
@@ -80,8 +82,8 @@ contract DeployLiquidEthScript is DeployArcticArchitecture {
         );
         bytes4 selector = bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)")));
         uint256 amount = 1e18;
-        alternativeAssets.push(
-            AlternativeAsset({
+        depositAssets.push(
+            DepositAsset({
                 asset: WSTETH,
                 isPeggedToBase: false,
                 rateProvider: address(0),
@@ -92,8 +94,41 @@ contract DeployLiquidEthScript is DeployArcticArchitecture {
             })
         );
 
+        // Setup withdraw assets.
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: WETH,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: EETH,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: WEETH,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+
         bool allowPublicDeposits = true;
+        bool allowPublicWithdraws = true;
         uint64 shareLockPeriod = 1 days;
+        address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
         vm.startBroadcast(privateKey);
 
@@ -105,7 +140,9 @@ contract DeployLiquidEthScript is DeployArcticArchitecture {
             boringVaultDecimals,
             creationCode,
             constructorArgs,
+            delayedWithdrawFeeAddress,
             allowPublicDeposits,
+            allowPublicWithdraws,
             shareLockPeriod,
             dev1Address
         );

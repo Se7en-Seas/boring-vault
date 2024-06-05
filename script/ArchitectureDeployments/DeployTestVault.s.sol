@@ -37,6 +37,7 @@ contract DeployTestVaultScript is DeployArcticArchitecture {
         names.accountant = TestVaultEthAccountantName;
         names.teller = TestVaultEthTellerName;
         names.rawDataDecoderAndSanitizer = ItbPositionDecoderAndSanitizerName;
+        names.delayedWithdrawer = TestVaultEthDelayedWithdrawer;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
@@ -45,6 +46,7 @@ contract DeployTestVaultScript is DeployArcticArchitecture {
         accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
         accountantParameters.managementFee = 0.02e4;
+        accountantParameters.performanceFee = 0;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;
         // Minimum time(in seconds) to pass between updated without triggering a pause.
@@ -54,11 +56,24 @@ contract DeployTestVaultScript is DeployArcticArchitecture {
         bytes memory creationCode = type(ITBPositionDecoderAndSanitizer).creationCode;
         bytes memory constructorArgs = abi.encode(deployer.getAddress(names.boringVault));
 
-        // Setup alternative assets.
+        // Setup extra deposit assets.
         // none
 
+        // Setup withdraw assets.
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: METH,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+
         bool allowPublicDeposits = true;
+        bool allowPublicWithdraws = true;
         uint64 shareLockPeriod = 1 days;
+        address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
         vm.startBroadcast(privateKey);
 
@@ -70,7 +85,9 @@ contract DeployTestVaultScript is DeployArcticArchitecture {
             boringVaultDecimals,
             creationCode,
             constructorArgs,
+            delayedWithdrawFeeAddress,
             allowPublicDeposits,
+            allowPublicWithdraws,
             shareLockPeriod,
             dev1Address
         );

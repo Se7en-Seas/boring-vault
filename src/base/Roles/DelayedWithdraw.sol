@@ -182,7 +182,7 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
 
     /**
      * @notice Sets up the withdrawal settings for a specific asset.
-     * @dev Callable by MULTISIG_ROLE.
+     * @dev Callable by OWNER_ROLE.
      */
     function setupWithdrawAsset(
         ERC20 asset,
@@ -190,7 +190,7 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
         uint32 completionWindow,
         uint16 withdrawFee,
         uint16 maxLoss
-    ) public requiresAuth {
+    ) external requiresAuth {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
 
         if (withdrawFee > MAX_WITHDRAW_FEE) revert DelayedWithdraw__WithdrawFeeTooHigh();
@@ -254,7 +254,7 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
      *      creates a request, then the maxLoss is updated to some value the user is not comfortable with.
      *      In this case the user should cancel their request. However this is not always possible, so a
      *      better course of action would be if the maxLoss needs to be updated, the asset can be fully removed.
-     *      Then all exisitng requets for that asset can be cancelled, and finally the maxLoss can be updated.
+     *      Then all exisitng requests for that asset can be cancelled, and finally the maxLoss can be updated.
      */
     function changeMaxLoss(ERC20 asset, uint16 maxLoss) external requiresAuth {
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];

@@ -16,12 +16,8 @@ import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProv
 import {Deployer} from "src/helper/Deployer.sol";
 import {ArcticArchitectureLens} from "src/helper/ArcticArchitectureLens.sol";
 import {ContractNames} from "resources/ContractNames.sol";
-import {EtherFiLiquid1} from "src/interfaces/EtherFiLiquid1.sol";
 import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
-import {CellarMigrationAdaptor} from "src/migration/CellarMigrationAdaptor.sol";
-import {CellarMigrationAdaptor2} from "src/migration/CellarMigrationAdaptor2.sol";
-import {ParitySharePriceOracle} from "src/migration/ParitySharePriceOracle.sol";
-import {CellarMigratorWithSharePriceParity, ERC4626} from "src/migration/CellarMigratorWithSharePriceParity.sol";
+import {DelayedWithdraw} from "src/base/Roles/DelayedWithdraw.sol";
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
@@ -39,6 +35,7 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
         string accountant;
         string teller;
         string rawDataDecoderAndSanitizer;
+        string delayedWithdrawer;
     }
 
     ArchitectureNames public names;
@@ -47,15 +44,16 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
         address payoutAddress;
         uint16 allowedExchangeRateChangeUpper;
         uint16 allowedExchangeRateChangeLower;
-        uint32 minimumUpateDelayInSeconds; // TODO once merged this will need to have its type changed to uint24.
-        uint16 managementFee; // TODO performance fee
+        uint24 minimumUpateDelayInSeconds;
+        uint16 managementFee;
+        uint16 performanceFee;
         uint96 startingExchangeRate;
         ERC20 base;
     }
 
     AccountantParameters public accountantParameters;
 
-    struct AlternativeAsset {
+    struct DepositAsset {
         ERC20 asset;
         bool isPeggedToBase;
         address rateProvider;
@@ -65,7 +63,17 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
         bytes32[8] params;
     }
 
-    AlternativeAsset[] public alternativeAssets;
+    DepositAsset[] public depositAssets;
+
+    struct WithdrawAsset {
+        ERC20 asset;
+        uint32 withdrawDelay;
+        uint32 completionWindow;
+        uint16 withdrawFee;
+        uint16 maxLoss;
+    }
+
+    WithdrawAsset[] public withdrawAssets;
 
     // Contracts to deploy
     Deployer public deployer = Deployer(deployerAddress);
@@ -76,6 +84,7 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
     address public rawDataDecoderAndSanitizer;
     TellerWithMultiAssetSupport public teller;
     AccountantWithRateProviders public accountant;
+    DelayedWithdraw public delayedWithdrawer;
 
     // Roles
     uint8 public constant MANAGER_ROLE = 1;
@@ -88,6 +97,13 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
     uint8 public constant STRATEGIST_MULTISIG_ROLE = 10;
     uint8 public constant STRATEGIST_ROLE = 7;
     uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 11;
+
+    string finalJson;
+    string coreOutput;
+    string depositAssetConfigurationOutput;
+    string withdrawAssetConfigurationOutput;
+    string accountantConfigurationOutput;
+    string depositConfigurationOutput;
 
     function _getAddressIfDeployed(string memory name) internal view returns (address) {
         address deployedAt = deployer.getAddress(name);
@@ -106,7 +122,9 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
         uint8 boringVaultDecimals,
         bytes memory decoderAndSanitizerCreationCode,
         bytes memory decoderAndSanitizerConstructorArgs,
+        address delayedWithdrawFeeAddress,
         bool allowPublicDeposits,
+        bool allowPublicWithdraws,
         uint64 shareLockPeriod,
         address developmentAddress
     ) internal {
@@ -164,7 +182,8 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
                 accountantParameters.allowedExchangeRateChangeUpper,
                 accountantParameters.allowedExchangeRateChangeLower,
                 accountantParameters.minimumUpateDelayInSeconds,
-                accountantParameters.managementFee
+                accountantParameters.managementFee,
+                accountantParameters.performanceFee
             );
             accountant =
                 AccountantWithRateProviders(deployer.deployContract(names.accountant, creationCode, constructorArgs, 0));
@@ -190,6 +209,16 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
             );
         } else {
             rawDataDecoderAndSanitizer = deployedAddress;
+        }
+
+        deployedAddress = _getAddressIfDeployed(names.delayedWithdrawer);
+        if (deployedAddress == address(0)) {
+            creationCode = type(DelayedWithdraw).creationCode;
+            constructorArgs = abi.encode(owner, address(boringVault), address(accountant), delayedWithdrawFeeAddress);
+            delayedWithdrawer =
+                DelayedWithdraw(deployer.deployContract(names.delayedWithdrawer, creationCode, constructorArgs, 0));
+        } else {
+            delayedWithdrawer = DelayedWithdraw(deployedAddress);
         }
 
         // Setup roles.
@@ -263,6 +292,17 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
         rolesAuthority.setRoleCapability(
             OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.setShareLockPeriod.selector, true
         );
+        rolesAuthority.setRoleCapability(OWNER_ROLE, address(delayedWithdrawer), Auth.setAuthority.selector, true);
+        rolesAuthority.setRoleCapability(OWNER_ROLE, address(delayedWithdrawer), Auth.transferOwnership.selector, true);
+        rolesAuthority.setRoleCapability(
+            OWNER_ROLE, address(delayedWithdrawer), DelayedWithdraw.changeWithdrawFee.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            OWNER_ROLE, address(delayedWithdrawer), DelayedWithdraw.setupWithdrawAsset.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            OWNER_ROLE, address(delayedWithdrawer), DelayedWithdraw.changeMaxLoss.selector, true
+        );
         // MULTISIG_ROLE
         rolesAuthority.setRoleCapability(
             MULTISIG_ROLE, address(accountant), AccountantWithRateProviders.pause.selector, true
@@ -282,9 +322,40 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
         rolesAuthority.setRoleCapability(
             MULTISIG_ROLE, address(manager), ManagerWithMerkleVerification.unpause.selector, true
         );
+        rolesAuthority.setRoleCapability(
+            MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.pause.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.unpause.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.stopWithdrawalsInAsset.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.changeWithdrawDelay.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.changeCompletionWindow.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.cancelUserWithdraw.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.completeUserWithdraw.selector, true
+        );
+
         // STRATEGIST_MULTISIG_ROLE
         rolesAuthority.setRoleCapability(
             STRATEGIST_MULTISIG_ROLE, address(teller), TellerWithMultiAssetSupport.refundDeposit.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            STRATEGIST_MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.completeUserWithdraw.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            STRATEGIST_MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.cancelUserWithdraw.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            STRATEGIST_MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.setFeeAddress.selector, true
         );
         // STRATEGIST_ROLE
         rolesAuthority.setRoleCapability(
@@ -308,35 +379,57 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
                 address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
             );
         }
+        if (allowPublicWithdraws) {
+            rolesAuthority.setPublicCapability(
+                address(delayedWithdrawer), DelayedWithdraw.setAllowThirdPartyToComplete.selector, true
+            );
+            rolesAuthority.setPublicCapability(
+                address(delayedWithdrawer), DelayedWithdraw.requestWithdraw.selector, true
+            );
+            rolesAuthority.setPublicCapability(
+                address(delayedWithdrawer), DelayedWithdraw.cancelWithdraw.selector, true
+            );
+            rolesAuthority.setPublicCapability(
+                address(delayedWithdrawer), DelayedWithdraw.completeWithdraw.selector, true
+            );
+        }
 
-        // Give roles to appropriate contracts
-        rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
-        rolesAuthority.setUserRole(address(manager), MANAGER_INTERNAL_ROLE, true);
-        rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
-        rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
+        // Setup deposit asset.
+        teller.addAsset(accountantParameters.base);
 
-        // Setup alternative assets.
-        for (uint256 i; i < alternativeAssets.length; i++) {
-            AlternativeAsset storage alternativeAsset = alternativeAssets[i];
-            if (alternativeAsset.isPeggedToBase) {
+        // Setup extra deposit assets.
+        for (uint256 i; i < depositAssets.length; i++) {
+            DepositAsset storage depositAsset = depositAssets[i];
+            if (depositAsset.isPeggedToBase) {
                 // Rate provider is not needed.
-                accountant.setRateProviderData(alternativeAsset.asset, true, address(0));
-                teller.addAsset(alternativeAsset.asset);
-            } else if (alternativeAsset.rateProvider != address(0)) {
+                accountant.setRateProviderData(depositAsset.asset, true, address(0));
+                teller.addAsset(depositAsset.asset);
+            } else if (depositAsset.rateProvider != address(0)) {
                 // Rate provider is provided.
-                accountant.setRateProviderData(alternativeAsset.asset, false, alternativeAsset.rateProvider);
-                teller.addAsset(alternativeAsset.asset);
+                accountant.setRateProviderData(depositAsset.asset, false, depositAsset.rateProvider);
+                teller.addAsset(depositAsset.asset);
             } else {
                 // We need a generic rate provider.
                 creationCode = type(GenericRateProvider).creationCode;
-                constructorArgs =
-                    abi.encode(alternativeAsset.target, alternativeAsset.selector, alternativeAsset.params);
-                alternativeAsset.rateProvider =
-                    deployer.deployContract(alternativeAsset.genericRateProviderName, creationCode, constructorArgs, 0);
+                constructorArgs = abi.encode(depositAsset.target, depositAsset.selector, depositAsset.params);
+                depositAsset.rateProvider =
+                    deployer.deployContract(depositAsset.genericRateProviderName, creationCode, constructorArgs, 0);
 
-                accountant.setRateProviderData(alternativeAsset.asset, false, alternativeAsset.rateProvider);
-                teller.addAsset(alternativeAsset.asset);
+                accountant.setRateProviderData(depositAsset.asset, false, depositAsset.rateProvider);
+                teller.addAsset(depositAsset.asset);
             }
+        }
+
+        // Setup withdraw assets.
+        for (uint256 i; i < withdrawAssets.length; i++) {
+            WithdrawAsset memory withdrawAsset = withdrawAssets[i];
+            delayedWithdrawer.setupWithdrawAsset(
+                withdrawAsset.asset,
+                withdrawAsset.withdrawDelay,
+                withdrawAsset.completionWindow,
+                withdrawAsset.withdrawFee,
+                withdrawAsset.maxLoss
+            );
         }
 
         // Setup share lock period.
@@ -347,18 +440,20 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
         manager.setAuthority(rolesAuthority);
         accountant.setAuthority(rolesAuthority);
         teller.setAuthority(rolesAuthority);
+        delayedWithdrawer.setAuthority(rolesAuthority);
 
         // Renounce ownership
         boringVault.transferOwnership(address(0));
         manager.transferOwnership(address(0));
         accountant.transferOwnership(address(0));
         teller.transferOwnership(address(0));
+        delayedWithdrawer.transferOwnership(address(0));
 
         // Setup roles.
         rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
         rolesAuthority.setUserRole(address(manager), MANAGER_INTERNAL_ROLE, true);
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
-        rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
+        rolesAuthority.setUserRole(address(delayedWithdrawer), BURNER_ROLE, true);
 
         // Give development address straetgist and owner roles, and transfer ownership if needed.
         rolesAuthority.setUserRole(developmentAddress, STRATEGIST_ROLE, true);
@@ -372,11 +467,7 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
             // Need to delete it
             vm.removeFile(filePath);
         }
-        string memory finalJson;
-        string memory coreOutput;
-        string memory assetConfigurationOutput;
-        string memory accountantConfigurationOutput;
-        string memory depositConfigurationOutput;
+
         {
             string memory coreContracts = "core contracts key";
             vm.serializeAddress(coreContracts, "RolesAuthority", address(rolesAuthority));
@@ -385,23 +476,41 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
             vm.serializeAddress(coreContracts, "ManagerWithMerkleVerification", address(manager));
             vm.serializeAddress(coreContracts, "AccountantWithRateProviders", address(accountant));
             vm.serializeAddress(coreContracts, "TellerWithMultiAssetSupport", address(teller));
-            coreOutput = vm.serializeAddress(coreContracts, "DecoderAndSanitizer", rawDataDecoderAndSanitizer);
+            vm.serializeAddress(coreContracts, "DecoderAndSanitizer", rawDataDecoderAndSanitizer);
+            coreOutput = vm.serializeAddress(coreContracts, "DelayedWithdraw", address(delayedWithdrawer));
         }
 
         {
-            string memory assetConfiguration = "asset configuration key";
-            for (uint256 i; i < alternativeAssets.length; i++) {
-                AlternativeAsset memory alternativeAsset = alternativeAssets[i];
-                string memory assetKey = "asset key";
-                vm.serializeBool(assetKey, "depositable", true);
-                vm.serializeBool(assetKey, "withdrawable", true);
-                vm.serializeBool(assetKey, "isPeggedToBase", alternativeAsset.isPeggedToBase);
-                string memory assetOutput = vm.serializeAddress(assetKey, "rateProvider", alternativeAsset.rateProvider);
-                assetConfigurationOutput =
-                    vm.serializeString(assetConfiguration, alternativeAsset.asset.symbol(), assetOutput);
+            string memory depositAssetConfiguration = "deposit asset configuration key";
+            // Add the base asset.
+            string memory assetKey = "asset key 0";
+            vm.serializeBool(assetKey, "isPeggedToBase", true);
+            string memory assetOutput = vm.serializeAddress(assetKey, "rateProvider", address(0));
+            depositAssetConfigurationOutput =
+                vm.serializeString(depositAssetConfiguration, accountantParameters.base.symbol(), assetOutput);
+            for (uint256 i; i < depositAssets.length; i++) {
+                DepositAsset memory depositAsset = depositAssets[i];
+                assetKey = "asset key";
+                vm.serializeBool(assetKey, "isPeggedToBase", depositAsset.isPeggedToBase);
+                assetOutput = vm.serializeAddress(assetKey, "rateProvider", depositAsset.rateProvider);
+                depositAssetConfigurationOutput =
+                    vm.serializeString(depositAssetConfiguration, depositAsset.asset.symbol(), assetOutput);
             }
         }
 
+        {
+            string memory withdrawAssetConfiguration = "withdraw asset configuration key";
+            for (uint256 i; i < withdrawAssets.length; i++) {
+                WithdrawAsset memory withdrawAsset = withdrawAssets[i];
+                string memory assetKey = "asset key 1";
+                vm.serializeUint(assetKey, "WithdrawDelay", withdrawAsset.withdrawDelay);
+                vm.serializeUint(assetKey, "CompletionWindow", withdrawAsset.completionWindow);
+                vm.serializeUint(assetKey, "WithdrawFee", withdrawAsset.withdrawFee);
+                string memory assetOutput = vm.serializeUint(assetKey, "MaxLoss", withdrawAsset.maxLoss);
+                withdrawAssetConfigurationOutput =
+                    vm.serializeString(withdrawAssetConfiguration, withdrawAsset.asset.symbol(), assetOutput);
+            }
+        }
         {
             string memory accountantConfiguration = "accountant key";
             vm.serializeAddress(accountantConfiguration, "PayoutAddress", accountantParameters.payoutAddress);
@@ -427,13 +536,15 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
         {
             string memory depositConfiguration = "deposit configuration key";
             vm.serializeBool(depositConfiguration, "AllowPublicDeposits", allowPublicDeposits);
+            vm.serializeBool(depositConfiguration, "AllowPublicWithdraws", allowPublicWithdraws);
             depositConfigurationOutput = vm.serializeUint(depositConfiguration, "ShareLockPeriod", shareLockPeriod);
         }
 
         vm.serializeString(finalJson, "depositConfiguration", depositConfigurationOutput);
         vm.serializeString(finalJson, "core", coreOutput);
         vm.serializeString(finalJson, "accountantConfiguration", accountantConfigurationOutput);
-        finalJson = vm.serializeString(finalJson, "assetConfiguration", assetConfigurationOutput);
+        vm.serializeString(finalJson, "WithdrawAssets", withdrawAssetConfigurationOutput);
+        finalJson = vm.serializeString(finalJson, "DepositAssets", depositAssetConfigurationOutput);
 
         vm.writeJson(finalJson, filePath);
     }
