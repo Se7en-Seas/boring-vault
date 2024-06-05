@@ -2,13 +2,23 @@
 pragma solidity 0.8.21;
 
 import {TellerWithMultiAssetSupport, ERC20} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
+import {MessageLib} from "src/base/Roles/CrossChain/MessageLib.sol";
 
-contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSupport {
+abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSupport {
+    using MessageLib for uint256;
+    using MessageLib for MessageLib.Message;
     // ========================================= STRUCTS =========================================
+
+    struct ChainLimts {
+        uint256 maxCumulativeOutflow;
+    }
     // ========================================= CONSTANTS =========================================
     // ========================================= STATE =========================================
     //============================== ERRORS ===============================
     //============================== EVENTS ===============================
+
+    event MessageSent(bytes32 messageId, uint256 shareAmount, address to);
+    event MessageReceived(bytes32 messageId, uint256 shareAmount, address to);
     //============================== IMMUTABLES ===============================
 
     constructor(address _owner, address _vault, address _accountant, address _weth)
@@ -18,13 +28,71 @@ contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSupport {
     // ========================================= ADMIN FUNCTIONS =========================================
     // ========================================= PUBLIC FUNCTIONS =========================================
 
-    function bridge() external requiresAuth {}
+    function bridge(uint96 shareAmount, address to, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
+        external
+        requiresAuth
+    {
+        if (isPaused) revert TellerWithMultiAssetSupport__Paused();
+        // Burn shares from sender
+        vault.exit(address(0), ERC20(address(0)), 0, msg.sender, shareAmount);
 
-    function depositAndBridge() external requiresAuth {
-        // TODO so if this is used, the shares should become locked on the destination chain.
+        // Send the message.
+        MessageLib.Message memory m = MessageLib.Message(shareAmount, to);
+        // `messageToUnit256` reverts on overflow, eventhough it is not possible to overflow.
+        // This was done for future proofing.
+        uint256 message = m.messageToUint256();
+
+        bytes32 messageId = _sendMessage(message, bridgeWildCard, feeToken, maxFee);
+
+        emit MessageSent(messageId, shareAmount, to);
     }
 
-    function depositWithPermitAndBridge() external requiresAuth {
-        // TODO so if this is used, the shares should become locked on the destination chain.
+    function previewFee(uint96 shareAmount, address to, bytes calldata bridgeWildCard, ERC20 feeToken)
+        external
+        view
+        returns (uint256 fee)
+    {
+        MessageLib.Message memory m = MessageLib.Message(shareAmount, to);
+        uint256 message = m.messageToUint256();
+
+        return _previewFee(message, bridgeWildCard, feeToken);
     }
+
+    // ========================================= INTERNAL BRIDGE FUNCTIONS =========================================
+    // Should be called in the receive message function for given bridge implementation, once message has been confirmed is legit.
+    /**
+     * @notice Complete the message receive process, should be called in child contract once
+     *         message has been confirmed as legit.`
+     */
+    function _completeMessageReceive(bytes32 messageId, uint256 message) internal {
+        MessageLib.Message memory m = message.uint256ToMessage();
+
+        // Mint shares to message.to
+        vault.enter(address(0), ERC20(address(0)), 0, m.to, m.shareAmount);
+
+        emit MessageReceived(messageId, m.shareAmount, m.to);
+    }
+
+    /**
+     * @notice Send the message to the bridge implementation.
+     * @dev This function should handle reverting if maxFee exceeds the fee required to send the message.
+     * @dev This function should handle collecting the fee.
+     * @param message The message to send.
+     * @param bridgeWildCard The bridge specific data to configure message.
+     * @param feeToken The token to pay the bridge fee in.
+     * @param maxFee The maximum fee to pay the bridge.
+     */
+    function _sendMessage(uint256 message, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
+        internal
+        virtual
+        returns (bytes32 messageId);
+
+    /**
+     * @notice Preview fee required to bridge shares in a given token.
+     */
+    function _previewFee(uint256 message, bytes calldata bridgeWildCard, ERC20 feeToken)
+        internal
+        view
+        virtual
+        returns (uint256 fee);
 }
