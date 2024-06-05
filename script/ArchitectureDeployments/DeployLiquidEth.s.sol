@@ -29,6 +29,15 @@ contract DeployLiquidEthScript is DeployArcticArchitecture {
     }
 
     function run() external {
+        // Configure the deployment.
+        configureDeployment.deployContracts = true;
+        configureDeployment.setupRoles = false;
+        configureDeployment.setupDepositAssets = false;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = false;
+        configureDeployment.setupTestUser = false;
+        configureDeployment.saveDeploymentDetails = true;
+
         // Define names to determine where contracts are deployed.
         names.rolesAuthority = EtherFiLiquidEthRolesAuthorityName;
         names.lens = ArcticArchitectureLensName;
