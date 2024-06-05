@@ -64,9 +64,19 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     mapping(address => uint256) public shareUnlockTime;
 
     /**
-     * @notice Mapping user address to a bool to deny them from transferring or receiving shares.
+     * @notice Mapping `from` address to a bool to deny them from transferring shares.
      */
-    mapping(address => bool) public denyList;
+    mapping(address => bool) public fromDenyList;
+
+    /**
+     * @notice Mapping `to` address to a bool to deny them from receiving shares.
+     */
+    mapping(address => bool) public toDenyList;
+
+    /**
+     * @notice Mapping `opeartor` address to a bool to deny them from calling `transfer` or `transferFrom`.
+     */
+    mapping(address => bool) public operatorDenyList;
 
     //============================== ERRORS ===============================
 
@@ -102,8 +112,12 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     event BulkDeposit(address indexed asset, uint256 depositAmount);
     event BulkWithdraw(address indexed asset, uint256 shareAmount);
     event DepositRefunded(uint256 indexed nonce, bytes32 depositHash, address indexed user);
-    event DenyTransfer(address indexed user);
-    event AllowTransfer(address indexed user);
+    event DenyFrom(address indexed user);
+    event DenyTo(address indexed user);
+    event DenyOperator(address indexed user);
+    event AllowFrom(address indexed user);
+    event AllowTo(address indexed user);
+    event AllowOperator(address indexed user);
 
     //============================== IMMUTABLES ===============================
 
@@ -193,18 +207,80 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
      * @notice Deny a user from transferring or receiving shares.
      * @dev Callable by OWNER_ROLE, and DENIER_ROLE.
      */
-    function denyTransfer(address user) external requiresAuth {
-        denyList[user] = true;
-        emit DenyTransfer(user);
+    function denyAll(address user) external requiresAuth {
+        fromDenyList[user] = true;
+        toDenyList[user] = true;
+        operatorDenyList[user] = true;
+        emit DenyFrom(user);
+        emit DenyTo(user);
+        emit DenyOperator(user);
     }
 
     /**
      * @notice Allow a user to transfer or receive shares.
      * @dev Callable by OWNER_ROLE, and DENIER_ROLE.
      */
-    function allowTransfer(address user) external requiresAuth {
-        denyList[user] = false;
-        emit AllowTransfer(user);
+    function allowAll(address user) external requiresAuth {
+        fromDenyList[user] = false;
+        toDenyList[user] = false;
+        operatorDenyList[user] = false;
+        emit AllowFrom(user);
+        emit AllowTo(user);
+        emit AllowOperator(user);
+    }
+
+    /**
+     * @notice Deny a user from transferring shares.
+     * @dev Callable by OWNER_ROLE, and DENIER_ROLE.
+     */
+    function denyFrom(address user) external requiresAuth {
+        fromDenyList[user] = true;
+        emit DenyFrom(user);
+    }
+
+    /**
+     * @notice Allow a user to transfer shares.
+     * @dev Callable by OWNER_ROLE, and DENIER_ROLE.
+     */
+    function allowFrom(address user) external requiresAuth {
+        fromDenyList[user] = false;
+        emit AllowFrom(user);
+    }
+
+    /**
+     * @notice Deny a user from receiving shares.
+     * @dev Callable by OWNER_ROLE, and DENIER_ROLE.
+     */
+    function denyTo(address user) external requiresAuth {
+        toDenyList[user] = true;
+        emit DenyTo(user);
+    }
+
+    /**
+     * @notice Allow a user to receive shares.
+     * @dev Callable by OWNER_ROLE, and DENIER_ROLE.
+     */
+    function allowTo(address user) external requiresAuth {
+        toDenyList[user] = false;
+        emit AllowTo(user);
+    }
+
+    /**
+     * @notice Deny an operator from transferring shares.
+     * @dev Callable by OWNER_ROLE, and DENIER_ROLE.
+     */
+    function denyOperator(address user) external requiresAuth {
+        operatorDenyList[user] = true;
+        emit DenyOperator(user);
+    }
+
+    /**
+     * @notice Allow an operator to transfer shares.
+     * @dev Callable by OWNER_ROLE, and DENIER_ROLE.
+     */
+    function allowOperator(address user) external requiresAuth {
+        operatorDenyList[user] = false;
+        emit AllowOperator(user);
     }
 
     // ========================================= BeforeTransferHook FUNCTIONS =========================================
@@ -212,8 +288,10 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     /**
      * @notice Implement beforeTransfer hook to check if shares are locked, or if `from`, `to`, or `operator` are on the deny list.
      */
-    function beforeTransfer(address from, address to, address operator) external view {
-        if (denyList[from] || denyList[to] || denyList[operator]) revert TellerWithMultiAssetSupport__TransferDenied(from, to, operator);
+    function beforeTransfer(address from, address to, address operator) public view virtual {
+        if (fromDenyList[from] || toDenyList[to] || operatorDenyList[operator]) {
+            revert TellerWithMultiAssetSupport__TransferDenied(from, to, operator);
+        }
         if (shareUnlockTime[from] >= block.timestamp) revert TellerWithMultiAssetSupport__SharesAreLocked();
     }
 
