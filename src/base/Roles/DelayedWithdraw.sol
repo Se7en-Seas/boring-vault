@@ -85,6 +85,11 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
      */
     mapping(address => mapping(ERC20 => WithdrawRequest)) public withdrawRequests;
 
+    /**
+     * @notice Used to pause calls to `requestWithdraw`, and `completeWithdraw`.
+     */
+    bool public isPaused;
+
     //============================== ERRORS ===============================
 
     error DelayedWithdraw__WithdrawFeeTooHigh();
@@ -97,6 +102,7 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
     error DelayedWithdraw__BadAddress();
     error DelayedWithdraw__ThirdPartyCompletionNotAllowed();
     error DelayedWithdraw__RequestPastCompletionWindow();
+    error DelayedWithdraw__Paused();
 
     //============================== EVENTS ===============================
 
@@ -111,6 +117,8 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
     event MaxLossUpdated(address indexed asset, uint16 newMaxLoss);
     event WithdrawalsStopped(address indexed asset);
     event ThirdPartyCompletionChanged(address indexed account, ERC20 indexed asset, bool allowed);
+    event Paused();
+    event Unpaused();
 
     //============================== IMMUTABLES ===============================
 
@@ -140,6 +148,24 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
     }
 
     // ========================================= ADMIN FUNCTIONS =========================================
+
+    /**
+     * @notice Pause this contract, which prevents future calls to `manageVaultWithMerkleVerification`.
+     * @dev Callable by MULTISIG_ROLE.
+     */
+    function pause() external requiresAuth {
+        isPaused = true;
+        emit Paused();
+    }
+
+    /**
+     * @notice Unpause this contract, which allows future calls to `manageVaultWithMerkleVerification`.
+     * @dev Callable by MULTISIG_ROLE.
+     */
+    function unpause() external requiresAuth {
+        isPaused = false;
+        emit Unpaused();
+    }
 
     /**
      * @notice Stops withdrawals for a specific asset.
@@ -291,6 +317,7 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
         requiresAuth
         nonReentrant
     {
+        if (isPaused) revert DelayedWithdraw__Paused();
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
         if (!withdrawAsset.allowWithdraws) revert DelayedWithdraw__WithdrawsNotAllowed();
         if (maxLoss > MAX_LOSS) revert DelayedWithdraw__MaxLossTooLarge();
@@ -329,6 +356,7 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
         nonReentrant
         returns (uint256 assetsOut)
     {
+        if (isPaused) revert DelayedWithdraw__Paused();
         WithdrawAsset storage withdrawAsset = withdrawAssets[asset];
         WithdrawRequest storage req = withdrawRequests[account][asset];
         uint32 completionWindow =

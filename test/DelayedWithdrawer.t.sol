@@ -443,6 +443,28 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         assertEq(boringVault.balanceOf(payoutAddress), expectedFee, "Payout address should have received expectedFee.");
     }
 
+    function testPauseLogic() external {
+        // Pausing should make isPaused true.
+        withdrawer.pause();
+        assertEq(withdrawer.isPaused(), true, "isPaused should be true.");
+
+        // Unpausing should make isPaused false.
+        withdrawer.unpause();
+        assertEq(withdrawer.isPaused(), false, "isPaused should be false.");
+
+        // When paused new requests should not be allowed.
+        withdrawer.pause();
+
+        address user = vm.addr(1);
+        vm.startPrank(user);
+        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__Paused.selector)));
+        withdrawer.requestWithdraw(WETH, 100e18, 0, true);
+
+        // And calling completeWithdraw should revert.
+        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__Paused.selector)));
+        withdrawer.completeWithdraw(WETH, user);
+    }
+
     function testUserFunctionReverts() external {
         address user = vm.addr(1);
 
