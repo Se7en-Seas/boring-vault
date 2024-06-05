@@ -60,8 +60,7 @@ contract DeployTestVaultScript is DeployArcticArchitecture {
         bool allowPublicDeposits = true;
         uint64 shareLockPeriod = 1 days;
 
-        // vm.startBroadcast(privateKey);
-        vm.startBroadcast();
+        vm.startBroadcast(privateKey);
 
         _deploy(
             "TestVaultDeployment.json",
