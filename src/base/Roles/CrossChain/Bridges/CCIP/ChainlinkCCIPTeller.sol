@@ -9,16 +9,16 @@ import {Client} from "@ccip/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {IRouterClient} from "@ccip/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-abstract contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver {
+contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver {
     using SafeTransferLib for ERC20;
 
     // ========================================= STRUCTS =========================================
 
     struct Chain {
         bool allowMessagesFrom;
-        address fromAddress;
         bool allowMessagesTo;
-        address toAddress;
+        address targetTeller;
+        uint64 messageGasLimit;
     }
     // ========================================= CONSTANTS =========================================
     // ========================================= STATE =========================================
@@ -33,38 +33,27 @@ abstract contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIP
     //============================== EVENTS ===============================
 
     event ChainAdded(
-        uint256 chainId, bool allowMessagesFrom, address fromAddress, bool allowMessagesTo, address toAddress
+        uint256 chainId, bool allowMessagesFrom, bool allowMessagesTo, address targetTeller, uint64 messageGasLimit
     );
     //============================== IMMUTABLES ===============================
-    /**
-     * @notice The message gas limit to use for CCIP messages.
-     */
 
-    uint256 public immutable messageGasLimit;
-
-    constructor(
-        address _owner,
-        address _vault,
-        address _accountant,
-        address _weth,
-        address _router,
-        uint256 _messageGasLimit
-    ) CrossChainTellerWithGenericBridge(_owner, _vault, _accountant, _weth) CCIPReceiver(_router) {
-        messageGasLimit = _messageGasLimit;
-    }
+    constructor(address _owner, address _vault, address _accountant, address _weth, address _router)
+        CrossChainTellerWithGenericBridge(_owner, _vault, _accountant, _weth)
+        CCIPReceiver(_router)
+    {}
 
     // ========================================= ADMIN FUNCTIONS =========================================
     // TODO methods to change params of a chain.
     function addChain(
         uint256 chainId,
         bool allowMessagesFrom,
-        address fromAddress,
         bool allowMessagesTo,
-        address toAddress
+        address targetTeller,
+        uint64 messageGasLimit
     ) external requiresAuth {
-        selectorToChains[chainId] = Chain(allowMessagesFrom, fromAddress, allowMessagesTo, toAddress);
+        selectorToChains[chainId] = Chain(allowMessagesFrom, allowMessagesTo, targetTeller, messageGasLimit);
 
-        emit ChainAdded(chainId, allowMessagesFrom, fromAddress, allowMessagesTo, toAddress);
+        emit ChainAdded(chainId, allowMessagesFrom, allowMessagesTo, targetTeller, messageGasLimit);
     }
     // ========================================= CCIP RECEIVER =========================================
 
@@ -74,7 +63,7 @@ abstract contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIP
             revert ChainlinkCCIPTeller__MessagesNotAllowedFrom(any2EvmMessage.sourceChainSelector);
         }
         address sender = abi.decode(any2EvmMessage.sender, (address));
-        if (source.fromAddress != sender) {
+        if (source.targetTeller != sender) {
             revert ChainlinkCCIPTeller__MessagesNotAllowedFromSender(any2EvmMessage.sourceChainSelector, sender);
         }
         uint256 message = abi.decode(any2EvmMessage.data, (uint256));
@@ -95,7 +84,8 @@ abstract contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIP
         }
 
         // Build the message.
-        Client.EVM2AnyMessage memory m = _buildMessage(message, chain.toAddress, address(feeToken));
+        Client.EVM2AnyMessage memory m =
+            _buildMessage(message, chain.targetTeller, address(feeToken), chain.messageGasLimit);
 
         IRouterClient router = IRouterClient(this.getRouter());
 
@@ -119,14 +109,15 @@ abstract contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIP
     {
         uint64 destinationId = abi.decode(bridgeWildCard, (uint64));
         Chain memory chain = selectorToChains[destinationId];
-        Client.EVM2AnyMessage memory m = _buildMessage(message, chain.toAddress, address(feeToken));
+        Client.EVM2AnyMessage memory m =
+            _buildMessage(message, chain.targetTeller, address(feeToken), chain.messageGasLimit);
 
         IRouterClient router = IRouterClient(this.getRouter());
 
         fee = router.getFee(destinationId, m);
     }
 
-    function _buildMessage(uint256 message, address to, address feeToken)
+    function _buildMessage(uint256 message, address to, address feeToken, uint64 gasLimit)
         internal
         view
         returns (Client.EVM2AnyMessage memory m)
@@ -137,7 +128,7 @@ abstract contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIP
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: Client._argsToBytes(
                 // Additional arguments, setting gas limit and non-strict sequencing mode
-                Client.EVMExtraArgsV1({gasLimit: messageGasLimit /*, strict: false*/ })
+                Client.EVMExtraArgsV1({gasLimit: gasLimit /*, strict: false*/ })
             ),
             feeToken: feeToken
         });
