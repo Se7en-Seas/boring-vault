@@ -7,27 +7,27 @@ import {MessageLib} from "src/base/Roles/CrossChain/MessageLib.sol";
 abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSupport {
     using MessageLib for uint256;
     using MessageLib for MessageLib.Message;
-    // ========================================= STRUCTS =========================================
-
-    struct ChainLimts {
-        uint256 maxCumulativeOutflow;
-    }
-    // ========================================= CONSTANTS =========================================
-    // ========================================= STATE =========================================
-    //============================== ERRORS ===============================
     //============================== EVENTS ===============================
 
     event MessageSent(bytes32 messageId, uint256 shareAmount, address to);
     event MessageReceived(bytes32 messageId, uint256 shareAmount, address to);
+
     //============================== IMMUTABLES ===============================
 
     constructor(address _owner, address _vault, address _accountant, address _weth)
         TellerWithMultiAssetSupport(_owner, _vault, _accountant, _weth)
     {}
 
-    // ========================================= ADMIN FUNCTIONS =========================================
     // ========================================= PUBLIC FUNCTIONS =========================================
 
+    /**
+     * @notice Bridge shares to another chain.
+     * @param shareAmount The amount of shares to bridge.
+     * @param to The address to send the shares to on the other chain.
+     * @param bridgeWildCard The bridge specific data to configure message.
+     * @param feeToken The token to pay the bridge fee in.
+     * @param maxFee The maximum fee to pay the bridge.
+     */
     function bridge(uint96 shareAmount, address to, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
         external
         requiresAuth
@@ -47,6 +47,9 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
         emit MessageSent(messageId, shareAmount, to);
     }
 
+    /**
+     * @notice Preview fee required to bridge shares in a given feeToken.
+     */
     function previewFee(uint96 shareAmount, address to, bytes calldata bridgeWildCard, ERC20 feeToken)
         external
         view
@@ -59,7 +62,6 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
     }
 
     // ========================================= INTERNAL BRIDGE FUNCTIONS =========================================
-    // Should be called in the receive message function for given bridge implementation, once message has been confirmed is legit.
     /**
      * @notice Complete the message receive process, should be called in child contract once
      *         message has been confirmed as legit.`

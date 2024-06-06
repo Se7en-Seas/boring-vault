@@ -58,6 +58,8 @@ contract ContractNames {
         "Bridging Test ETH Vault Decoder and Sanitizer V0.0";
     string public constant BridgingTestVaultEthDelayedWithdrawer = "Bridging Test ETH Vault Delayed Withdrawer V0.0";
 
+    string public constant TestCCIPTellerName = "Test CCIP Teller V0.0";
+
     string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.0";
     // gernic Rate Providers
     string public constant PendlePTweETHRateProviderName = "Pendle PT weETH Rate Provider V0.0";
