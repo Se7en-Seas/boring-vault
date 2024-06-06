@@ -46,6 +46,18 @@ contract ContractNames {
     string public constant EtherFiLiquidBtcDecoderAndSanitizerName = "EtherFi Liquid BTC Decoder and Sanitizer V0.0";
     string public constant EtherFiLiquidBtcDelayedWithdrawer = "EtherFi Liquid BTC Delayed Withdrawer V0.0";
 
+    string public constant BridgingTestVaultEthRolesAuthorityName = "Bridging Test ETH Vault RolesAuthority Version 0.0";
+    string public constant BridgingTestVaultEthName = "Bridging Test ETH Vault V0.0";
+    string public constant BridgingTestVaultEthManagerName =
+        "Bridging Test ETH Vault Manager With Merkle Verification V0.0";
+    string public constant BridgingTestVaultEthAccountantName =
+        "Bridging Test ETH Vault Accountant With Rate Providers V0.0";
+    string public constant BridgingTestVaultEthTellerName =
+        "Bridging Test ETH Vault Teller With Multi Asset Support V0.0";
+    string public constant BridgingTestVaultEthDecoderAndSanitizerName =
+        "Bridging Test ETH Vault Decoder and Sanitizer V0.0";
+    string public constant BridgingTestVaultEthDelayedWithdrawer = "Bridging Test ETH Vault Delayed Withdrawer V0.0";
+
     string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.0";
     // gernic Rate Providers
     string public constant PendlePTweETHRateProviderName = "Pendle PT weETH Rate Provider V0.0";

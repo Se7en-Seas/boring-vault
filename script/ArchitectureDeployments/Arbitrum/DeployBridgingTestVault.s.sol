@@ -3,56 +3,63 @@ pragma solidity 0.8.21;
 
 import {DeployArcticArchitecture, ERC20, Deployer} from "script/ArchitectureDeployments/DeployArcticArchitecture.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
+import {ArbitrumAddresses} from "test/resources/ArbitrumAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
-import {EtherFiLiquidUsdDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
+import {EtherFiLiquidEthDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/DeployLiquidUsd.s.sol:DeployLiquidUsdScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Arbitrum/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 10000000 --evm-version london --slow --broadcast --etherscan-api-key $ARBISCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployLiquidUsdScript is DeployArcticArchitecture {
+contract DeployBridgingTestVaultScript is DeployArcticArchitecture, ArbitrumAddresses {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Ether.Fi Liquid USD";
-    string public boringVaultSymbol = "liquidUSD";
-    uint8 public boringVaultDecimals = 6;
+    string public boringVaultName = "Bridging Test Vault";
+    string public boringVaultSymbol = "BTEV";
+    uint8 public boringVaultDecimals = 18;
     address public owner = dev0Address;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("mainnet");
+        vm.createSelectFork("arbitrum");
     }
 
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
         configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = false;
-        configureDeployment.setupTestUser = false;
+        configureDeployment.finishSetup = true;
+        configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
+        configureDeployment.deployerAddress = deployerAddress;
+        configureDeployment.balancerVault = balancerVault;
+        configureDeployment.WETH = address(WETH);
+
+        // Save deployer.
+        deployer = Deployer(configureDeployment.deployerAddress);
 
         // Define names to determine where contracts are deployed.
-        names.rolesAuthority = EtherFiLiquidUsdRolesAuthorityName;
+        names.rolesAuthority = BridgingTestVaultEthRolesAuthorityName;
         names.lens = ArcticArchitectureLensName;
-        names.boringVault = EtherFiLiquidUsdName;
-        names.manager = EtherFiLiquidUsdManagerName;
-        names.accountant = EtherFiLiquidUsdAccountantName;
-        names.teller = EtherFiLiquidUsdTellerName;
-        names.rawDataDecoderAndSanitizer = EtherFiLiquidUsdDecoderAndSanitizerName;
-        names.delayedWithdrawer = EtherFiLiquidUsdDelayedWithdrawer;
+        names.boringVault = BridgingTestVaultEthName;
+        names.manager = BridgingTestVaultEthManagerName;
+        names.accountant = BridgingTestVaultEthAccountantName;
+        names.teller = BridgingTestVaultEthTellerName;
+        names.rawDataDecoderAndSanitizer = BridgingTestVaultEthDecoderAndSanitizerName;
+        names.delayedWithdrawer = BridgingTestVaultEthDelayedWithdrawer;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = USDC;
+        accountantParameters.base = WETH;
         // Decimals are in terms of `base`.
-        accountantParameters.startingExchangeRate = 1e6;
+        accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
         accountantParameters.managementFee = 0.02e4;
         accountantParameters.performanceFee = 0;
@@ -62,17 +69,17 @@ contract DeployLiquidUsdScript is DeployArcticArchitecture {
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
-        bytes memory creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
+        bytes memory creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode;
         bytes memory constructorArgs =
             abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
         // Setup extra deposit assets.
-        // none to setup
+        // none
 
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: USDC,
+                asset: WETH,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -80,40 +87,15 @@ contract DeployLiquidUsdScript is DeployArcticArchitecture {
             })
         );
 
-        withdrawAssets.push(
-            WithdrawAsset({
-                asset: USDT,
-                withdrawDelay: 3 days,
-                completionWindow: 7 days,
-                withdrawFee: 0,
-                maxLoss: 0.01e4
-            })
-        );
-
-        withdrawAssets.push(
-            WithdrawAsset({asset: DAI, withdrawDelay: 3 days, completionWindow: 7 days, withdrawFee: 0, maxLoss: 0.01e4})
-        );
-
-        withdrawAssets.push(
-            WithdrawAsset({
-                asset: USDE,
-                withdrawDelay: 7 days,
-                completionWindow: 14 days,
-                withdrawFee: 0,
-                maxLoss: 0.01e4
-            })
-        );
-
-        bool allowPublicDeposits = false;
+        bool allowPublicDeposits = true;
         bool allowPublicWithdraws = true;
         uint64 shareLockPeriod = 1 days;
         address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
-        // vm.startBroadcast();
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "LiquidUsdDeployment.json",
+            "ArbitrumBridgingTestVaultDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
@@ -124,7 +106,7 @@ contract DeployLiquidUsdScript is DeployArcticArchitecture {
             allowPublicDeposits,
             allowPublicWithdraws,
             shareLockPeriod,
-            dev1Address
+            dev0Address
         );
 
         vm.stopBroadcast();
