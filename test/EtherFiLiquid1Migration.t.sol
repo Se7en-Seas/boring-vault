@@ -279,6 +279,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         etherFiLiquid1.addPosition(0, LIQUID_MIGRATION_POSITION, abi.encode(true), false);
         etherFiLiquid1.setHoldingPosition(LIQUID_MIGRATION_POSITION);
         etherFiLiquid1.forcePositionOut(1, ILLIQUID_MIGRATION_POSITION, false);
+        etherFiLiquid1.removeAdaptorFromCatalogue(address(migrationAdaptor));
+        etherFiLiquid1.removeAdaptorFromCatalogue(address(migrationAdaptor2));
         // Shutdown cellar again.
         etherFiLiquid1.initiateShutdown();
         etherFiLiquid1.toggleIgnorePause();
