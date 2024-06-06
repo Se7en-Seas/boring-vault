@@ -9,7 +9,7 @@ import {EtherFiLiquidUsdDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/DeployLiquidUsd.s.sol:DeployLiquidUsdScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/DeployLiquidUsd.s.sol:DeployLiquidUsdScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployLiquidUsdScript is DeployArcticArchitecture {
