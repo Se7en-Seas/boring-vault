@@ -26,7 +26,7 @@ import "forge-std/StdJson.sol";
  *  source .env && forge script script/DeployBoringVaultArctic.s.sol:DeployBoringVaultArcticScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
+contract DeployArcticArchitecture is Script, ContractNames {
     struct ConfigureDeployment {
         bool deployContracts;
         bool setupRoles;
@@ -35,6 +35,9 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
         bool finishSetup;
         bool setupTestUser;
         bool saveDeploymentDetails;
+        address deployerAddress;
+        address balancerVault;
+        address WETH;
     }
 
     ConfigureDeployment public configureDeployment;
@@ -88,7 +91,7 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
     WithdrawAsset[] public withdrawAssets;
 
     // Contracts to deploy
-    Deployer public deployer = Deployer(deployerAddress);
+    Deployer public deployer;
     ArcticArchitectureLens public lens;
     ManagerWithMerkleVerification public manager;
     BoringVault public boringVault;
@@ -175,7 +178,7 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
             deployedAddress = _getAddressIfDeployed(names.manager);
             if (deployedAddress == address(0)) {
                 creationCode = type(ManagerWithMerkleVerification).creationCode;
-                constructorArgs = abi.encode(owner, address(boringVault), balancerVault);
+                constructorArgs = abi.encode(owner, address(boringVault), configureDeployment.balancerVault);
                 manager = ManagerWithMerkleVerification(
                     deployer.deployContract(names.manager, creationCode, constructorArgs, 0)
                 );
@@ -208,7 +211,7 @@ contract DeployArcticArchitecture is Script, ContractNames, MainnetAddresses {
             deployedAddress = _getAddressIfDeployed(names.teller);
             if (deployedAddress == address(0)) {
                 creationCode = type(TellerWithMultiAssetSupport).creationCode;
-                constructorArgs = abi.encode(owner, address(boringVault), address(accountant), WETH);
+                constructorArgs = abi.encode(owner, address(boringVault), address(accountant), configureDeployment.WETH);
                 teller = TellerWithMultiAssetSupport(
                     payable(deployer.deployContract(names.teller, creationCode, constructorArgs, 0))
                 );
