@@ -18,7 +18,7 @@ contract DeployLiquidBtcScript is DeployArcticArchitecture {
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Ether.Fi Liquid BTC Vault";
+    string public boringVaultName = "Ether.Fi Liquid BTC";
     string public boringVaultSymbol = "liquidBTC";
     uint8 public boringVaultDecimals = 8;
     address public owner = dev0Address;
