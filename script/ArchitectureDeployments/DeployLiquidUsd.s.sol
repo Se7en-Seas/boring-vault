@@ -18,7 +18,7 @@ contract DeployLiquidUsdScript is DeployArcticArchitecture {
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Ether.Fi Liquid USD Vault";
+    string public boringVaultName = "Ether.Fi Liquid USD";
     string public boringVaultSymbol = "liquidUSD";
     uint8 public boringVaultDecimals = 6;
     address public owner = dev0Address;
