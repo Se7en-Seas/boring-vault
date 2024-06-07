@@ -139,9 +139,91 @@ contract ChainlinkCCIPTellerTest is Test, MainnetAddresses {
         assertEq(previewedFee, fee, "Previewed fee should match set fee.");
     }
 
-    // TODO admin function tests
+    function testAdminFunctions() external {
+        uint64 newSelector = 3;
+        address targetTeller = vm.addr(1);
+        uint64 messageGasLimit = 100_000;
+
+        sourceTeller.addChain(newSelector, true, true, targetTeller, messageGasLimit);
+
+        (bool allowMessagesFrom, bool allowMessagesTo, address target, uint64 gasLimit) =
+            sourceTeller.selectorToChains(newSelector);
+
+        assertEq(allowMessagesFrom, true, "Should allow messages from new chain.");
+        assertEq(allowMessagesTo, true, "Should allow messages to new chain.");
+        assertEq(target, targetTeller, "Target should be set to targetTeller.");
+        assertEq(gasLimit, messageGasLimit, "Gas limit should be set to messageGasLimit.");
+
+        sourceTeller.stopMessagesFromChain(newSelector);
+
+        (allowMessagesFrom, allowMessagesTo, target, gasLimit) = sourceTeller.selectorToChains(newSelector);
+        assertEq(allowMessagesFrom, false, "Should not allow messages from destination chain.");
+        assertEq(allowMessagesTo, true, "Should still allow messages to destination chain.");
+        assertEq(target, targetTeller, "Target should be set to destinationTeller.");
+        assertEq(gasLimit, messageGasLimit, "Gas limit should be set to messageGasLimit.");
+
+        sourceTeller.stopMessagesToChain(newSelector);
+        (allowMessagesFrom, allowMessagesTo, target, gasLimit) = sourceTeller.selectorToChains(newSelector);
+        assertEq(allowMessagesFrom, false, "Should not allow messages from destination chain.");
+        assertEq(allowMessagesTo, false, "Should not allow messages to destination chain.");
+        assertEq(target, targetTeller, "Target should be set to destinationTeller.");
+        assertEq(gasLimit, messageGasLimit, "Gas limit should be set to messageGasLimit.");
+
+        sourceTeller.setChainGasLimit(newSelector, 90_000);
+        (allowMessagesFrom, allowMessagesTo, target, gasLimit) = sourceTeller.selectorToChains(newSelector);
+        assertEq(allowMessagesFrom, false, "Should not allow messages from destination chain.");
+        assertEq(allowMessagesTo, false, "Should not allow messages to destination chain.");
+        assertEq(target, targetTeller, "Target should be set to destinationTeller.");
+        assertEq(gasLimit, 90_000, "Gas limit should be set to 90_000.");
+
+        address newTargetTeller = vm.addr(2);
+        uint64 newMessageGasLimit = 80_000;
+        sourceTeller.allowMessagesToChain(newSelector, newTargetTeller, newMessageGasLimit);
+        (allowMessagesFrom, allowMessagesTo, target, gasLimit) = sourceTeller.selectorToChains(newSelector);
+        assertEq(allowMessagesFrom, false, "Should allow messages from new chain.");
+        assertEq(allowMessagesTo, true, "Should not allow messages to new chain.");
+        assertEq(target, newTargetTeller, "Target should be set to newTargetTeller.");
+        assertEq(gasLimit, newMessageGasLimit, "Gas limit should be set to newMessageGasLimit.");
+
+        address anotherNewTargetTeller = vm.addr(3);
+        sourceTeller.allowMessagesFromChain(newSelector, anotherNewTargetTeller);
+        (allowMessagesFrom, allowMessagesTo, target, gasLimit) = sourceTeller.selectorToChains(newSelector);
+        assertEq(allowMessagesFrom, true, "Should allow messages from new chain.");
+        assertEq(allowMessagesTo, true, "Should allow messages to new chain.");
+        assertEq(target, anotherNewTargetTeller, "Target should be set to anotherNewTargetTeller.");
+        assertEq(gasLimit, newMessageGasLimit, "Gas limit should be set to newMessageGasLimit.");
+
+        sourceTeller.removeChain(newSelector);
+        (allowMessagesFrom, allowMessagesTo, target, gasLimit) = sourceTeller.selectorToChains(newSelector);
+        assertEq(allowMessagesFrom, false, "Should not allow messages from new chain.");
+        assertEq(allowMessagesTo, false, "Should not allow messages to new chain.");
+        assertEq(target, address(0), "Target should be set to 0.");
+        assertEq(gasLimit, 0, "Gas limit should be set to 0.");
+    }
 
     function testReverts() external {
+        // Adding a chain with a zero message gas limit should revert.
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(ChainlinkCCIPTeller.ChainlinkCCIPTeller__ZeroMessageGasLimit.selector))
+        );
+        sourceTeller.addChain(DESTINATION_SELECTOR, true, true, address(destinationTeller), 0);
+
+        // Allowing messages to a chain with a zero message gas limit should revert.
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(ChainlinkCCIPTeller.ChainlinkCCIPTeller__ZeroMessageGasLimit.selector))
+        );
+        sourceTeller.allowMessagesToChain(DESTINATION_SELECTOR, address(destinationTeller), 0);
+
+        // Changing the gas limit to zero should revert.
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(ChainlinkCCIPTeller.ChainlinkCCIPTeller__ZeroMessageGasLimit.selector))
+        );
+        sourceTeller.setChainGasLimit(DESTINATION_SELECTOR, 0);
+
+        // But you can add a chain with a non-zero message gas limit, if messages to are not supported.
+        uint64 newChainSelector = 3;
+        sourceTeller.addChain(newChainSelector, true, false, address(destinationTeller), 0);
+
         // If teller is paused bridging is not allowed.
         sourceTeller.pause();
         vm.expectRevert(

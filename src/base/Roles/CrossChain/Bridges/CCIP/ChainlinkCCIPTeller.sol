@@ -40,6 +40,7 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
     error ChainlinkCCIPTeller__MessagesNotAllowedFromSender(uint256 chainSelector, address sender);
     error ChainlinkCCIPTeller__MessagesNotAllowedTo(uint256 chainSelector);
     error ChainlinkCCIPTeller__FeeExceedsMax(uint256 chainSelector, uint256 fee, uint256 maxFee);
+    error ChainlinkCCIPTeller__ZeroMessageGasLimit();
 
     //============================== EVENTS ===============================
 
@@ -81,6 +82,9 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
         address targetTeller,
         uint64 messageGasLimit
     ) external requiresAuth {
+        if (allowMessagesTo && messageGasLimit == 0) {
+            revert ChainlinkCCIPTeller__ZeroMessageGasLimit();
+        }
         selectorToChains[chainSelector] = Chain(allowMessagesFrom, allowMessagesTo, targetTeller, messageGasLimit);
 
         emit ChainAdded(chainSelector, allowMessagesFrom, allowMessagesTo, targetTeller, messageGasLimit);
@@ -112,10 +116,17 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
      * @notice Allow messages to a chain.
      * @dev Callable by OWNER_ROLE.
      */
-    function allowMessagesToChain(uint64 chainSelector, address targetTeller) external requiresAuth {
+    function allowMessagesToChain(uint64 chainSelector, address targetTeller, uint64 messageGasLimit)
+        external
+        requiresAuth
+    {
+        if (messageGasLimit == 0) {
+            revert ChainlinkCCIPTeller__ZeroMessageGasLimit();
+        }
         Chain storage chain = selectorToChains[chainSelector];
         chain.allowMessagesTo = true;
         chain.targetTeller = targetTeller;
+        chain.messageGasLimit = messageGasLimit;
 
         emit ChainAllowMessagesTo(chainSelector, targetTeller);
     }
@@ -147,6 +158,9 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
      * @dev Callable by OWNER_ROLE.
      */
     function setChainGasLimit(uint64 chainSelector, uint64 messageGasLimit) external requiresAuth {
+        if (messageGasLimit == 0) {
+            revert ChainlinkCCIPTeller__ZeroMessageGasLimit();
+        }
         Chain storage chain = selectorToChains[chainSelector];
         chain.messageGasLimit = messageGasLimit;
 
@@ -175,6 +189,8 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
 
     /**
      * @notice Sends messages using CCIP router.
+     * @dev This function does NOT revert if the `feeToken` is invalid,
+     *      rather the CCIP bridge will revert.
      * @dev This function will revert if maxFee is exceeded.
      * @dev This function will revert if destination chain does not allow messages.
      * @param message The message to send.
