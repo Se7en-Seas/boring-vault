@@ -10,7 +10,7 @@ import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
@@ -41,6 +41,9 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
         configureDeployment.WETH = address(WETH);
+
+        // Save deployer.
+        deployer = Deployer(configureDeployment.deployerAddress);
 
         // Define names to determine where contracts are deployed.
         names.rolesAuthority = EtherFiLiquidEthRolesAuthorityName;

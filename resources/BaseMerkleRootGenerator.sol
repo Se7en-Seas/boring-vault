@@ -1106,6 +1106,70 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         leafs[leafIndex].argumentAddresses[0] = asset;
     }
 
+    function _addFluidFTokenLeafs(ManageLeaf[] memory leafs, address fToken) internal {
+        ERC20 asset = ERC4626(fToken).asset();
+        // Approval.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            address(asset),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Fluid ", ERC20(fToken).symbol(), " to spend ", asset.symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = fToken;
+
+        // Depositing
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            fToken,
+            false,
+            "deposit(uint256,address,uint256)",
+            new address[](1),
+            string.concat("Deposit ", asset.symbol(), " for ", ERC20(fToken).symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        // Withdrawing
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            fToken,
+            false,
+            "withdraw(uint256,address,address,uint256)",
+            new address[](2),
+            string.concat("Withdraw ", asset.symbol(), " from ", ERC20(fToken).symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[1] = _boringVault;
+
+        // Minting
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            fToken,
+            false,
+            "mint(uint256,address,uint256)",
+            new address[](1),
+            string.concat("Mint ", ERC20(fToken).symbol(), " using ", asset.symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+
+        // Redeeming
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            fToken,
+            false,
+            "redeem(uint256,address,address,uint256)",
+            new address[](2),
+            string.concat("Redeem ", ERC20(fToken).symbol(), " for ", asset.symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[1] = _boringVault;
+    }
+
     function _addBalancerLeafs(ManageLeaf[] memory leafs, bytes32 poolId, address gauge) internal {
         BalancerVault bv = BalancerVault(balancerVault);
 

@@ -512,4 +512,7 @@ contract MainnetAddresses {
     // Fluid
     address public fUSDT = 0x5C20B550819128074FD538Edf79791733ccEdd18;
     address public fUSDTStakingRewards = 0x490681095ed277B45377d28cA15Ac41d64583048;
+    address public fUSDC = 0x9Fb7b4477576Fe5B32be4C1843aFB1e55F251B33;
+    address public fWETH = 0x90551c1795392094FE6D29B758EcCD233cFAa260;
+    address public fWSTETH = 0x2411802D8BEA09be0aF8fD8D08314a63e706b29C;
 }

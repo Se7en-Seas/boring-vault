@@ -13,10 +13,10 @@ import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
     using FixedPointMathLib for uint256;
 
-    address public boringVault = 0x66BC9023f618C447e52c31dAF591d1943529D9e7;
-    address public rawDataDecoderAndSanitizer = 0x0c9fd99d67DF2AB4722640eC4A5b495371bc81d2;
-    address public managerAddress = 0x2f33E96790EF4A8b98E0F207CAB1e5972Be6989A;
-    address public accountantAddress = 0x3365AD279cD33508A837EBC23c61C0Ca0ac9950B;
+    address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
+    address public rawDataDecoderAndSanitizer = 0x5a0Bb1395661BDF781cF0Fcc2a6cc72f56Ed40a7;
+    address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
+    address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
 
     function setUp() external {}
 
@@ -84,6 +84,8 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         _addPendleMarketLeafs(leafs, pendleWeETHMarket);
         _addPendleMarketLeafs(leafs, pendleZircuitWeETHMarket);
         _addPendleMarketLeafs(leafs, pendleWeETHMarketNew);
+        _addPendleMarketLeafs(leafs, pendleWeETHMarketSeptember);
+        _addPendleMarketLeafs(leafs, pendleWeETHMarketDecember);
 
         // ========================== UniswapV3 ==========================
         /**
@@ -175,6 +177,10 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         // ========================== Flashloans ==========================
         _addBalancerFlashloanLeafs(leafs, address(WETH));
         _addBalancerFlashloanLeafs(leafs, address(WEETH));
+
+        // ========================== Fluid fToken ==========================
+        _addFluidFTokenLeafs(leafs, fWETH);
+        _addFluidFTokenLeafs(leafs, fWSTETH);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
