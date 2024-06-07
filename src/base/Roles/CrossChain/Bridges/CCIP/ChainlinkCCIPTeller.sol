@@ -14,22 +14,33 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
 
     // ========================================= STRUCTS =========================================
 
+    /**
+     * @notice Stores information about a chain.
+     * @param allowMessagesFrom Whether to allow messages from this chain.
+     * @param allowMessagesTo Whether to allow messages to this chain.
+     * @param targetTeller The address of the target teller on the other chain.
+     * @param messageGasLimit The gas limit for messages to this chain.
+     */
     struct Chain {
         bool allowMessagesFrom;
         bool allowMessagesTo;
         address targetTeller;
         uint64 messageGasLimit;
     }
-    // ========================================= CONSTANTS =========================================
     // ========================================= STATE =========================================
 
+    /**
+     * @notice Maps chain selector to chain information.
+     */
     mapping(uint64 => Chain) public selectorToChains;
+
     //============================== ERRORS ===============================
 
     error ChainlinkCCIPTeller__MessagesNotAllowedFrom(uint256 chainSelector);
     error ChainlinkCCIPTeller__MessagesNotAllowedFromSender(uint256 chainSelector, address sender);
     error ChainlinkCCIPTeller__MessagesNotAllowedTo(uint256 chainSelector);
     error ChainlinkCCIPTeller__FeeExceedsMax(uint256 chainSelector, uint256 fee, uint256 maxFee);
+
     //============================== EVENTS ===============================
 
     event ChainAdded(
@@ -40,6 +51,12 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
         uint64 messageGasLimit
     );
     event ChainRemoved(uint256 chainSelector);
+    event ChainAllowMessagesFrom(uint256 chainSelector, address targetTeller);
+    event ChainAllowMessagesTo(uint256 chainSelector, address targetTeller);
+    event ChainStopMessagesFrom(uint256 chainSelector);
+    event ChainStopMessagesTo(uint256 chainSelector);
+    event ChainSetGasLimit(uint256 chainSelector, uint64 messageGasLimit);
+
     //============================== IMMUTABLES ===============================
 
     constructor(address _owner, address _vault, address _accountant, address _weth, address _router)
@@ -79,40 +96,67 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
         emit ChainRemoved(chainSelector);
     }
 
-    function allowMessagesFrom(uint64 chainSelector, address targetTeller) external requiresAuth {
+    /**
+     * @notice Allow messages from a chain.
+     * @dev Callable by OWNER_ROLE.
+     */
+    function allowMessagesFromChain(uint64 chainSelector, address targetTeller) external requiresAuth {
         Chain storage chain = selectorToChains[chainSelector];
         chain.allowMessagesFrom = true;
         chain.targetTeller = targetTeller;
 
-        // TODO emit event
+        emit ChainAllowMessagesFrom(chainSelector, targetTeller);
     }
 
-    function allowMessagesTo(uint64 chainSelector, address targetTeller) external requiresAuth {
+    /**
+     * @notice Allow messages to a chain.
+     * @dev Callable by OWNER_ROLE.
+     */
+    function allowMessagesToChain(uint64 chainSelector, address targetTeller) external requiresAuth {
         Chain storage chain = selectorToChains[chainSelector];
         chain.allowMessagesTo = true;
         chain.targetTeller = targetTeller;
-        // TODO emit event
+
+        emit ChainAllowMessagesTo(chainSelector, targetTeller);
     }
 
-    function stopMessagesFrom(uint64 chainSelector) external requiresAuth {
+    /**
+     * @notice Stop messages from a chain.
+     * @dev Callable by MULTISIG_ROLE.
+     */
+    function stopMessagesFromChain(uint64 chainSelector) external requiresAuth {
         Chain storage chain = selectorToChains[chainSelector];
         chain.allowMessagesFrom = false;
-        // TODO emit event
+
+        emit ChainStopMessagesFrom(chainSelector);
     }
 
-    function stopMessagesTo(uint64 chainSelector) external requiresAuth {
+    /**
+     * @notice Stop messages to a chain.
+     * @dev Callable by MULTISIG_ROLE.
+     */
+    function stopMessagesToChain(uint64 chainSelector) external requiresAuth {
         Chain storage chain = selectorToChains[chainSelector];
         chain.allowMessagesTo = false;
-        // TODO emit event
+
+        emit ChainStopMessagesTo(chainSelector);
     }
 
+    /**
+     * @notice Set the gas limit for messages to a chain.
+     * @dev Callable by OWNER_ROLE.
+     */
     function setChainGasLimit(uint64 chainSelector, uint64 messageGasLimit) external requiresAuth {
         Chain storage chain = selectorToChains[chainSelector];
         chain.messageGasLimit = messageGasLimit;
-        // TODO emit event
+
+        emit ChainSetGasLimit(chainSelector, messageGasLimit);
     }
     // ========================================= CCIP RECEIVER =========================================
 
+    /**
+     * @notice Implement the CCIPReceiver interface to receive messages from the CCIP router.
+     */
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
         Chain memory source = selectorToChains[any2EvmMessage.sourceChainSelector];
         if (!source.allowMessagesFrom) {
@@ -128,6 +172,16 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
     }
 
     // ========================================= INTERNAL BRIDGE FUNCTIONS =========================================
+
+    /**
+     * @notice Sends messages using CCIP router.
+     * @dev This function will revert if maxFee is exceeded.
+     * @dev This function will revert if destination chain does not allow messages.
+     * @param message The message to send.
+     * @param bridgeWildCard An abi encoded uint64 containing the destination chain selector.
+     * @param feeToken The token to pay the bridge fee in.
+     * @param maxFee The maximum fee to pay the bridge.
+     */
     function _sendMessage(uint256 message, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
         internal
         override
@@ -157,6 +211,12 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
         messageId = router.ccipSend(destinationSelector, m);
     }
 
+    /**
+     * @notice Preview fee required to bridge shares in a given feeToken.
+     * @param message The message to send.
+     * @param bridgeWildCard An abi encoded uint64 containing the destination chain selector.
+     * @param feeToken The token to pay the bridge fee in.
+     */
     function _previewFee(uint256 message, bytes calldata bridgeWildCard, ERC20 feeToken)
         internal
         view
@@ -173,6 +233,9 @@ contract ChainlinkCCIPTeller is CrossChainTellerWithGenericBridge, CCIPReceiver 
         fee = router.getFee(destinationSelector, m);
     }
 
+    /**
+     * @notice Helper function to build a message.
+     */
     function _buildMessage(uint256 message, address to, address feeToken, uint64 gasLimit)
         internal
         pure

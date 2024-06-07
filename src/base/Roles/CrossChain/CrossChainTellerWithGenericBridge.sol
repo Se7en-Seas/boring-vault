@@ -7,6 +7,7 @@ import {MessageLib} from "src/base/Roles/CrossChain/MessageLib.sol";
 abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSupport {
     using MessageLib for uint256;
     using MessageLib for MessageLib.Message;
+
     //============================== EVENTS ===============================
 
     event MessageSent(bytes32 messageId, uint256 shareAmount, address to);
