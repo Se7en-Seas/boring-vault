@@ -146,8 +146,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         uint64 shareLockPeriod = 1 days;
         address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
-        vm.startBroadcast();
-        // vm.startBroadcast(privateKey);
+        vm.startBroadcast(privateKey);
 
         _deploy(
             "LiquidEthDeployment.json",
