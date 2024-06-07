@@ -18,7 +18,10 @@ import {PendleRouterDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/PendleRouterDecoderAndSanitizer.sol";
 import {AaveV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/AaveV3DecoderAndSanitizer.sol";
 import {LidoDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/LidoDecoderAndSanitizer.sol";
-import {EthenaWithdrawDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/EthenaWithdrawDecoderAndSanitizer.sol";
+import {EthenaWithdrawDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/EthenaWithdrawDecoderAndSanitizer.sol";
+import {FluidFTokenDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/FluidFTokenDecoderAndSanitizer.sol";
 
 contract EtherFiLiquidUsdDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
@@ -35,7 +38,8 @@ contract EtherFiLiquidUsdDecoderAndSanitizer is
     PendleRouterDecoderAndSanitizer,
     AaveV3DecoderAndSanitizer,
     LidoDecoderAndSanitizer,
-    EthenaWithdrawDecoderAndSanitizer
+    EthenaWithdrawDecoderAndSanitizer,
+    FluidFTokenDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
@@ -70,7 +74,7 @@ contract EtherFiLiquidUsdDecoderAndSanitizer is
     }
 
     /**
-     * @notice BalancerV2, NativeWrapper, Curve, and Gearbox all specify a `withdraw(uint256)`,
+     * @notice BalancerV2, NativeWrapper, Curve, Fluid FToken, and Gearbox all specify a `withdraw(uint256)`,
      *         all cases are handled the same way.
      */
     function withdraw(uint256)
@@ -80,7 +84,8 @@ contract EtherFiLiquidUsdDecoderAndSanitizer is
             BalancerV2DecoderAndSanitizer,
             CurveDecoderAndSanitizer,
             NativeWrapperDecoderAndSanitizer,
-            GearboxDecoderAndSanitizer
+            GearboxDecoderAndSanitizer,
+            FluidFTokenDecoderAndSanitizer
         )
         returns (bytes memory addressesFound)
     {

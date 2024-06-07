@@ -508,4 +508,8 @@ contract MainnetAddresses {
 
     // Mantle
     address public mantleLspStaking = 0xe3cBd06D7dadB3F4e6557bAb7EdD924CD1489E8f;
+
+    // Fluid
+    address public fUSDT = 0x5C20B550819128074FD538Edf79791733ccEdd18;
+    address public fUSDTStakingRewards = 0x490681095ed277B45377d28cA15Ac41d64583048;
 }
