@@ -41,24 +41,4 @@ abstract contract FluidFTokenDecoderAndSanitizer is BaseDecoderAndSanitizer {
     {
         addressesFound = abi.encodePacked(receiver_, owner_);
     }
-
-    function stake(uint256 /*amount*/ ) external pure virtual returns (bytes memory addressesFound) {
-        // Nothing to sanitize or return
-        return addressesFound;
-    }
-
-    function withdraw(uint256 /*amount*/ ) external pure virtual returns (bytes memory addressesFound) {
-        // Nothing to sanitize or return
-        return addressesFound;
-    }
-
-    function getReward() external pure virtual returns (bytes memory addressesFound) {
-        // Nothing to sanitize or return
-        return addressesFound;
-    }
-
-    function exit() external pure virtual returns (bytes memory addressesFound) {
-        // Nothing to sanitize or return
-        return addressesFound;
-    }
 }

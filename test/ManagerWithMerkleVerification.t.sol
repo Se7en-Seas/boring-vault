@@ -1758,25 +1758,19 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         rawDataDecoderAndSanitizer =
             address(new EtherFiLiquidUsdDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
         leafs[0] = ManageLeaf(address(USDT), false, "approve(address,uint256)", new address[](1));
         leafs[0].argumentAddresses[0] = fUSDT;
         leafs[1] = ManageLeaf(fUSDT, false, "deposit(uint256,address,uint256)", new address[](1));
         leafs[1].argumentAddresses[0] = address(boringVault);
         leafs[2] = ManageLeaf(fUSDT, false, "mint(uint256,address,uint256)", new address[](1));
         leafs[2].argumentAddresses[0] = address(boringVault);
-        leafs[3] = ManageLeaf(fUSDT, false, "approve(address,uint256)", new address[](1));
-        leafs[3].argumentAddresses[0] = fUSDTStakingRewards;
-        leafs[4] = ManageLeaf(fUSDTStakingRewards, false, "stake(uint256)", new address[](0));
-        leafs[5] = ManageLeaf(fUSDTStakingRewards, false, "withdraw(uint256)", new address[](0));
-        leafs[6] = ManageLeaf(fUSDTStakingRewards, false, "getReward()", new address[](0));
-        leafs[7] = ManageLeaf(fUSDTStakingRewards, false, "exit()", new address[](0));
-        leafs[8] = ManageLeaf(fUSDT, false, "withdraw(uint256,address,address,uint256)", new address[](2));
-        leafs[8].argumentAddresses[0] = address(boringVault);
-        leafs[8].argumentAddresses[1] = address(boringVault);
-        leafs[9] = ManageLeaf(fUSDT, false, "redeem(uint256,address,address,uint256)", new address[](2));
-        leafs[9].argumentAddresses[0] = address(boringVault);
-        leafs[9].argumentAddresses[1] = address(boringVault);
+        leafs[3] = ManageLeaf(fUSDT, false, "withdraw(uint256,address,address,uint256)", new address[](2));
+        leafs[3].argumentAddresses[0] = address(boringVault);
+        leafs[3].argumentAddresses[1] = address(boringVault);
+        leafs[4] = ManageLeaf(fUSDT, false, "redeem(uint256,address,address,uint256)", new address[](2));
+        leafs[4].argumentAddresses[0] = address(boringVault);
+        leafs[4].argumentAddresses[1] = address(boringVault);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -1796,7 +1790,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         targets[1] = fUSDT;
         targets[2] = fUSDT;
         targets[3] = fUSDT;
-        targets[4] = fUSDTStakingRewards;
+        targets[4] = fUSDT;
 
         bytes[] memory targetData = new bytes[](5);
         targetData[0] = abi.encodeWithSignature("approve(address,uint256)", fUSDT, type(uint256).max);
@@ -1804,8 +1798,16 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         targetData[2] = abi.encodeWithSignature(
             "mint(uint256,address,uint256)", type(uint256).max, address(boringVault), type(uint256).max
         ); // Use first type uint256 max to specify to use full USDT balanace.
-        targetData[3] = abi.encodeWithSignature("approve(address,uint256)", fUSDTStakingRewards, type(uint256).max);
-        targetData[4] = abi.encodeWithSignature("stake(uint256)", 96141038076);
+        targetData[3] = abi.encodeWithSignature(
+            "withdraw(uint256,address,address,uint256)",
+            assets / 2,
+            address(boringVault),
+            address(boringVault),
+            type(uint256).max
+        );
+        targetData[4] = abi.encodeWithSignature(
+            "redeem(uint256,address,address,uint256)", type(uint256).max, address(boringVault), address(boringVault), 0
+        );
 
         address[] memory decodersAndSanitizers = new address[](5);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
@@ -1818,57 +1820,8 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
-        // Wait for some rewards to accrue.
-        skip(8 days);
-
-        manageLeafs = new ManageLeaf[](5);
-        manageLeafs[0] = leafs[5];
-        manageLeafs[1] = leafs[6];
-        manageLeafs[2] = leafs[7];
-        manageLeafs[3] = leafs[8];
-        manageLeafs[4] = leafs[9];
-
-        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
-
-        targets = new address[](5);
-        targets[0] = fUSDTStakingRewards;
-        targets[1] = fUSDTStakingRewards;
-        targets[2] = fUSDTStakingRewards;
-        targets[3] = fUSDT;
-        targets[4] = fUSDT;
-
-        targetData = new bytes[](5);
-        uint256 fUSDTBalance = ERC20(fUSDTStakingRewards).balanceOf(address(boringVault));
-        targetData[0] = abi.encodeWithSignature("withdraw(uint256)", fUSDTBalance / 2);
-        targetData[1] = abi.encodeWithSignature("getReward()");
-        targetData[2] = abi.encodeWithSignature("exit()");
-        targetData[3] = abi.encodeWithSignature(
-            "withdraw(uint256,address,address,uint256)",
-            assets / 2,
-            address(boringVault),
-            address(boringVault),
-            type(uint256).max
-        );
-        targetData[4] = abi.encodeWithSignature(
-            "redeem(uint256,address,address,uint256)", type(uint256).max, address(boringVault), address(boringVault), 0
-        );
-        decodersAndSanitizers = new address[](5);
-        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
-        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
-        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
-        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
-
-        values = new uint256[](5);
-
-        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-
-        assertGt(USDT.balanceOf(address(boringVault)), assets, "BoringVault should have received interest on USDT.");
-        assertGt(INST.balanceOf(address(boringVault)), 0, "BoringVault should have received INST.");
-        assertEq(
-            ERC20(fUSDTStakingRewards).balanceOf(address(boringVault)),
-            0,
-            "BoringVault should have withdrawn all fUSDT from staking contract."
+        assertApproxEqAbs(
+            USDT.balanceOf(address(boringVault)), assets, 2, "BoringVault should have received all USDT back."
         );
         assertEq(ERC20(fUSDT).balanceOf(address(boringVault)), 0, "BoringVault should have withdrawn all fUSDT.");
     }

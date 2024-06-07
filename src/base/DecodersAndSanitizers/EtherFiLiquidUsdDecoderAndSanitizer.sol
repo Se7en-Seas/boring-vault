@@ -84,8 +84,7 @@ contract EtherFiLiquidUsdDecoderAndSanitizer is
             BalancerV2DecoderAndSanitizer,
             CurveDecoderAndSanitizer,
             NativeWrapperDecoderAndSanitizer,
-            GearboxDecoderAndSanitizer,
-            FluidFTokenDecoderAndSanitizer
+            GearboxDecoderAndSanitizer
         )
         returns (bytes memory addressesFound)
     {
