@@ -58,6 +58,14 @@ contract ContractNames {
         "Bridging Test ETH Vault Decoder and Sanitizer V0.0";
     string public constant BridgingTestVaultEthDelayedWithdrawer = "Bridging Test ETH Vault Delayed Withdrawer V0.0";
 
+    string public constant CanaryBtcRolesAuthorityName = "Canary BTC RolesAuthority Version 0.0";
+    string public constant CanaryBtcName = "Canary BTC V0.1";
+    string public constant CanaryBtcManagerName = "Canary BTC Manager With Merkle Verification V0.0";
+    string public constant CanaryBtcAccountantName = "Canary BTC Accountant With Rate Providers V0.0";
+    string public constant CanaryBtcTellerName = "Canary BTC Teller With Multi Asset Support V0.0";
+    string public constant CanaryBtcDecoderAndSanitizerName = "Canary BTC Decoder and Sanitizer V0.0";
+    string public constant CanaryBtcDelayedWithdrawer = "Canary BTC Delayed Withdrawer V0.0";
+
     string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.0";
     // gernic Rate Providers
     string public constant PendlePTweETHRateProviderName = "Pendle PT weETH Rate Provider V0.0";
