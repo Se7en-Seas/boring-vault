@@ -53,8 +53,8 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         // uint256 blockNumber = 19369928;
-        // uint256 blockNumber = 19826676;
-        uint256 blockNumber = 20036275;
+        uint256 blockNumber = 19826676;
+        // uint256 blockNumber = 20036275;
 
         _startFork(rpcKey, blockNumber);
 
@@ -428,7 +428,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         // add to an existing position rETH/weETH
         // pull from an existing position rETH/weETH
         // collect from a position rETH/weETH
-        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
         leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
         leafs[0].argumentAddresses[0] = uniV3Router;
         leafs[1] =
@@ -468,12 +468,13 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             uniswapV3NonFungiblePositionManager, false, "collect((uint256,address,uint128,uint128))", new address[](1)
         );
         leafs[7].argumentAddresses[0] = address(boringVault);
+        leafs[8] = ManageLeaf(uniswapV3NonFungiblePositionManager, false, "burn(uint256)", new address[](0));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](8);
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](9);
         manageLeafs[0] = leafs[0];
         manageLeafs[1] = leafs[1];
         manageLeafs[2] = leafs[2];
@@ -482,9 +483,10 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         manageLeafs[5] = leafs[5];
         manageLeafs[6] = leafs[6];
         manageLeafs[7] = leafs[7];
+        manageLeafs[8] = leafs[8];
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
-        address[] memory targets = new address[](8);
+        address[] memory targets = new address[](9);
         targets[0] = address(WETH);
         targets[1] = uniV3Router;
         targets[2] = address(RETH);
@@ -493,7 +495,8 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         targets[5] = uniswapV3NonFungiblePositionManager;
         targets[6] = uniswapV3NonFungiblePositionManager;
         targets[7] = uniswapV3NonFungiblePositionManager;
-        bytes[] memory targetData = new bytes[](8);
+        targets[8] = uniswapV3NonFungiblePositionManager;
+        bytes[] memory targetData = new bytes[](9);
         targetData[0] = abi.encodeWithSignature("approve(address,uint256)", uniV3Router, type(uint256).max);
         DecoderCustomTypes.ExactInputParams memory exactInputParams = DecoderCustomTypes.ExactInputParams(
             abi.encodePacked(WETH, uint24(100), RETH), address(boringVault), block.timestamp, 100e18, 0
@@ -526,7 +529,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         targetData[5] = abi.encodeWithSignature(
             "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))", increaseLiquidityParams
         );
-        uint128 expectedLiquidity = 17435811346020121907400;
+        uint128 expectedLiquidity = 14916033704815587156930 + 14916033704815587156930;
         DecoderCustomTypes.DecreaseLiquidityParams memory decreaseLiquidityParams =
             DecoderCustomTypes.DecreaseLiquidityParams(expectedTokenId, expectedLiquidity, 0, 0, block.timestamp);
         targetData[6] = abi.encodeWithSignature(
@@ -537,12 +540,9 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             expectedTokenId, address(boringVault), type(uint128).max, type(uint128).max
         );
         targetData[7] = abi.encodeWithSignature("collect((uint256,address,uint128,uint128))", collectParams);
+        targetData[8] = abi.encodeWithSignature("burn(uint256)", expectedTokenId);
 
-        // uint256 memSize = 0;
-        // assembly {
-        //     memSize := msize()
-        // }
-        address[] memory decodersAndSanitizers = new address[](8);
+        address[] memory decodersAndSanitizers = new address[](9);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
@@ -551,11 +551,10 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[7] = rawDataDecoderAndSanitizer;
-        uint256 gas = gasleft();
+        decodersAndSanitizers[8] = rawDataDecoderAndSanitizer;
         manager.manageVaultWithMerkleVerification(
-            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](9)
         );
-        console.log("Gas used", gas - gasleft());
     }
 
     function testCurveAndConvexIntegration() external {
@@ -1806,7 +1805,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
             "mint(uint256,address,uint256)", type(uint256).max, address(boringVault), type(uint256).max
         ); // Use first type uint256 max to specify to use full USDT balanace.
         targetData[3] = abi.encodeWithSignature("approve(address,uint256)", fUSDTStakingRewards, type(uint256).max);
-        targetData[4] = abi.encodeWithSignature("stake(uint256)", 1);
+        targetData[4] = abi.encodeWithSignature("stake(uint256)", 96141038076);
 
         address[] memory decodersAndSanitizers = new address[](5);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
@@ -1819,33 +1818,59 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
 
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
-        // EthenaSusde susde = EthenaSusde(address(SUSDE));
-        // (uint104 end, uint152 amount) = susde.cooldowns(address(boringVault));
-        // assertGt(end, block.timestamp, "Cooldown end should have been set.");
-        // assertEq(amount, assets, "Cooldown amount should equal assets.");
+        // Wait for some rewards to accrue.
+        skip(8 days);
 
-        // // Wait the cooldown duration.
-        // skip(susde.cooldownDuration());
+        manageLeafs = new ManageLeaf[](5);
+        manageLeafs[0] = leafs[5];
+        manageLeafs[1] = leafs[6];
+        manageLeafs[2] = leafs[7];
+        manageLeafs[3] = leafs[8];
+        manageLeafs[4] = leafs[9];
 
-        // manageLeafs = new ManageLeaf[](1);
-        // manageLeafs[0] = leafs[2];
+        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
-        // manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+        targets = new address[](5);
+        targets[0] = fUSDTStakingRewards;
+        targets[1] = fUSDTStakingRewards;
+        targets[2] = fUSDTStakingRewards;
+        targets[3] = fUSDT;
+        targets[4] = fUSDT;
 
-        // targets = new address[](1);
-        // targets[0] = address(SUSDE);
+        targetData = new bytes[](5);
+        uint256 fUSDTBalance = ERC20(fUSDTStakingRewards).balanceOf(address(boringVault));
+        targetData[0] = abi.encodeWithSignature("withdraw(uint256)", fUSDTBalance / 2);
+        targetData[1] = abi.encodeWithSignature("getReward()");
+        targetData[2] = abi.encodeWithSignature("exit()");
+        targetData[3] = abi.encodeWithSignature(
+            "withdraw(uint256,address,address,uint256)",
+            assets / 2,
+            address(boringVault),
+            address(boringVault),
+            type(uint256).max
+        );
+        targetData[4] = abi.encodeWithSignature(
+            "redeem(uint256,address,address,uint256)", type(uint256).max, address(boringVault), address(boringVault), 0
+        );
+        decodersAndSanitizers = new address[](5);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
 
-        // targetData = new bytes[](1);
-        // targetData[0] = abi.encodeWithSignature("unstake(address)", address(boringVault));
+        values = new uint256[](5);
 
-        // decodersAndSanitizers = new address[](1);
-        // decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
-        // values = new uint256[](1);
-
-        // manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-
-        // assertEq(USDE.balanceOf(address(boringVault)), amount, "BoringVault should have received unstaked USDe.");
+        assertGt(USDT.balanceOf(address(boringVault)), assets, "BoringVault should have received interest on USDT.");
+        assertGt(INST.balanceOf(address(boringVault)), 0, "BoringVault should have received INST.");
+        assertEq(
+            ERC20(fUSDTStakingRewards).balanceOf(address(boringVault)),
+            0,
+            "BoringVault should have withdrawn all fUSDT from staking contract."
+        );
+        assertEq(ERC20(fUSDT).balanceOf(address(boringVault)), 0, "BoringVault should have withdrawn all fUSDT.");
     }
 
     function testReverts() external {
