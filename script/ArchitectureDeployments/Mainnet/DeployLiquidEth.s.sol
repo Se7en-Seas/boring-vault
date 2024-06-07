@@ -22,7 +22,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
     string public boringVaultName = "Ether.Fi Liquid ETH Vault";
     string public boringVaultSymbol = "liquidETH";
     uint8 public boringVaultDecimals = 18;
-    address public owner = dev0Address;
+    address public owner = dev1Address;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
@@ -35,7 +35,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         configureDeployment.setupRoles = false;
         configureDeployment.setupDepositAssets = false;
         configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = false;
+        configureDeployment.finishSetup = true;
         configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
@@ -146,7 +146,8 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         uint64 shareLockPeriod = 1 days;
         address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
-        vm.startBroadcast(privateKey);
+        vm.startBroadcast();
+        // vm.startBroadcast(privateKey);
 
         _deploy(
             "LiquidEthDeployment.json",
