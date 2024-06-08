@@ -10,7 +10,7 @@ import {EtherFiLiquidBtcDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidBtcDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/DeployLiquidBtc.s.sol:DeployLiquidBtcScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLiquidBtc.s.sol:DeployLiquidBtcScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployLiquidBtcScript is DeployArcticArchitecture, MainnetAddresses {
@@ -22,7 +22,7 @@ contract DeployLiquidBtcScript is DeployArcticArchitecture, MainnetAddresses {
     string public boringVaultName = "Ether.Fi Liquid BTC";
     string public boringVaultSymbol = "liquidBTC";
     uint8 public boringVaultDecimals = 8;
-    address public owner = dev0Address;
+    address public owner = dev1Address;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
@@ -41,6 +41,9 @@ contract DeployLiquidBtcScript is DeployArcticArchitecture, MainnetAddresses {
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
         configureDeployment.WETH = address(WETH);
+
+        // Save deployer.
+        deployer = Deployer(configureDeployment.deployerAddress);
 
         // Define names to determine where contracts are deployed.
         names.rolesAuthority = EtherFiLiquidBtcRolesAuthorityName;
@@ -84,6 +87,15 @@ contract DeployLiquidBtcScript is DeployArcticArchitecture, MainnetAddresses {
         );
 
         // Setup withdraw assets.
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: WBTC,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
         withdrawAssets.push(
             WithdrawAsset({
                 asset: TBTC,
