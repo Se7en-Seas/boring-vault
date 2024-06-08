@@ -343,6 +343,8 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     OWNER_ROLE, address(boringVault), BoringVault.setBeforeTransferHook.selector, true
                 );
             }
+            // TODO need to add rolee to set performance fee
+            // TODO role to reset high water mark.
             if (!rolesAuthority.doesRoleHaveCapability(OWNER_ROLE, address(accountant), Auth.setAuthority.selector)) {
                 rolesAuthority.setRoleCapability(OWNER_ROLE, address(accountant), Auth.setAuthority.selector, true);
             }

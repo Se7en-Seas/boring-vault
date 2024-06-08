@@ -10,7 +10,7 @@ import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
@@ -31,12 +31,12 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
 
     function run() external {
         // Configure the deployment.
-        configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
+        configureDeployment.deployContracts = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
         configureDeployment.setupWithdrawAssets = true;
         configureDeployment.finishSetup = true;
-        configureDeployment.setupTestUser = false;
+        configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -96,19 +96,19 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
                 params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
             })
         );
-        bytes4 selector = bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)")));
-        uint256 amount = 1e18;
-        depositAssets.push(
-            DepositAsset({
-                asset: WSTETH,
-                isPeggedToBase: false,
-                rateProvider: address(0),
-                genericRateProviderName: WstETHRateProviderName,
-                target: liquidV1PriceRouter,
-                selector: selector,
-                params: [address(WSTETH).toBytes32(), bytes32(amount), address(WETH).toBytes32(), 0, 0, 0, 0, 0]
-            })
-        );
+        // bytes4 selector = bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)")));
+        // uint256 amount = 1e18;
+        // depositAssets.push(
+        //     DepositAsset({
+        //         asset: WSTETH,
+        //         isPeggedToBase: false,
+        //         rateProvider: address(0),
+        //         genericRateProviderName: WstETHRateProviderName,
+        //         target: liquidV1PriceRouter,
+        //         selector: selector,
+        //         params: [address(WSTETH).toBytes32(), bytes32(amount), address(WETH).toBytes32(), 0, 0, 0, 0, 0]
+        //     })
+        // );
 
         // Setup withdraw assets.
         withdrawAssets.push(
@@ -141,8 +141,8 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
             })
         );
 
-        bool allowPublicDeposits = true;
-        bool allowPublicWithdraws = true;
+        bool allowPublicDeposits = false;
+        bool allowPublicWithdraws = false;
         uint64 shareLockPeriod = 1 days;
         address delayedWithdrawFeeAddress = liquidPayoutAddress;
 

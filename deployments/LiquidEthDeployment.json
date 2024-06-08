@@ -11,10 +11,6 @@
     "weETH": {
       "isPeggedToBase": false,
       "rateProvider": "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee"
-    },
-    "wstETH": {
-      "isPeggedToBase": false,
-      "rateProvider": "0x0000000000000000000000000000000000000000"
     }
   },
   "WithdrawAssets": {
@@ -58,8 +54,8 @@
     "TellerWithMultiAssetSupport": "0x5c135e8eC99557b412b9B4492510dCfBD36066F5"
   },
   "depositConfiguration": {
-    "AllowPublicDeposits": true,
-    "AllowPublicWithdraws": true,
+    "AllowPublicDeposits": false,
+    "AllowPublicWithdraws": false,
     "ShareLockPeriod": 86400
   }
 }
