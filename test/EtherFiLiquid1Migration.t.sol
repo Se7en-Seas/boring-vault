@@ -94,7 +94,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     function setUp() external {
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 20062513;
+        uint256 blockNumber = 20064670;
         _startFork(rpcKey, blockNumber);
 
         registry = Registry(etherFiLiquid1.registry());
@@ -131,7 +131,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
         etherFiLiquid1.addPositionToCatalogue(ILLIQUID_MIGRATION_POSITION);
         etherFiLiquid1.addPosition(0, ILLIQUID_MIGRATION_POSITION, abi.encode(false), false);
-        rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
+        // rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
         vm.stopPrank();
 
         // Strategist begins rebalancing positions.
