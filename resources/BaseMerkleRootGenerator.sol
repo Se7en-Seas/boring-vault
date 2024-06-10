@@ -1386,6 +1386,13 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         leafs[leafIndex].argumentAddresses[0] = _boringVault;
     }
 
+    function _addLeafsForCurveLp(ManageLeaf[] memory leafs, address poolAddress) internal {
+        CurvePool pool = CurvePool(poolAddress);
+        // TODO
+
+        // Approve pool to spend tokens.
+    }
+
     function _generateLeafs(
         string memory filePath,
         ManageLeaf[] memory leafs,

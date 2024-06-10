@@ -69,6 +69,7 @@ contract MainnetAddresses {
     ERC20 public INST = ERC20(0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb);
     ERC20 public LBTC = ERC20(0x8236a87084f8B84306f72007F36F2618A5634494);
     ERC20 public RSR = ERC20(0x320623b8E4fF03373931769A31Fc52A4E78B5d70);
+    ERC20 public SFRXETH = ERC20(0xac3E018457B222d93114458476f3E3416Abbe38F);
 
     // Rate providers
     address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
@@ -153,6 +154,7 @@ contract MainnetAddresses {
     address public rsETH_ETHx_gauge = 0x0BcDb6d9b27Bd62d3De605393902C7d1a2c71Aab;
     address public aura_rsETH_ETHx = 0xf618102462Ff3cf7edbA4c067316F1C3AbdbA193;
 
+    bytes32 public rETH_wETH_id = 0x1e19cf2d73a72ef1332c882f20534b6519be0276000200000000000000000112;
     ERC20 public rETH_wETH = ERC20(0x1E19CF2D73a72Ef1332C882F20534B6519Be0276);
     address public rETH_wETH_gauge = 0x79eF6103A513951a3b25743DB509E267685726B7;
     address public aura_reth_weth = 0xDd1fE5AD401D4777cE89959b7fa587e569Bf125D;
@@ -439,11 +441,6 @@ contract MainnetAddresses {
     address public pendleZircuitEethPt = 0x4AE5411F3863CdB640309e84CEDf4B08B8b33FfF;
     address public pendleZircuitEethYt = 0x7C2D26182adeEf96976035986cF56474feC03bDa;
 
-    address public pendleWeETHMarketNew = 0x7d372819240D14fB477f17b964f95F33BeB4c704;
-    address public pendleWeethSyNew = 0xAC0047886a985071476a1186bE89222659970d65;
-    address public pendleEethPtNew = 0x6ee2b5E19ECBa773a352E5B21415Dc419A700d1d;
-    address public pendleEethYtNew = 0x129e6B5DBC0Ecc12F9e486C5BC9cDF1a6A80bc6A;
-
     address public pendleUSDeMarket = 0x19588F29f9402Bb508007FeADd415c875Ee3f19F;
     address public pendleUSDeSy = 0x42862F48eAdE25661558AFE0A630b132038553D0;
     address public pendleUSDePt = 0xa0021EF8970104c2d008F38D92f115ad56a9B8e1;
@@ -454,6 +451,11 @@ contract MainnetAddresses {
     address public pendleZircuitUSDePt = 0x3d4F535539A33FEAd4D76D7b3B7A9cB5B21C73f1;
     address public pendleZircuitUSDeYt = 0x40357b9f22B4DfF0Bf56A90661b8eC106C259d29;
 
+    address public pendleSUSDeMarketSeptember = 0xd1D7D99764f8a52Aff007b7831cc02748b2013b5;
+    address public pendleSUSDeMarketJuly = 0x107a2e3cD2BB9a32B9eE2E4d51143149F8367eBa;
+    address public pendleKarakSUSDeMarket = 0xB1f587B354a4a363f5332e88effbbC2E4961250A;
+    address public pendleKarakUSDeMarket = 0x1BCBDB8c8652345A5ACF04e6E74f70086c68FEfC;
+
     address public pendleWeETHMarketSeptember = 0xC8eDd52D0502Aa8b4D5C77361D4B3D300e8fC81c;
     address public pendleWeethSySeptember = 0xAC0047886a985071476a1186bE89222659970d65;
     address public pendleEethPtSeptember = 0x1c085195437738d73d75DC64bC5A3E098b7f93b1;
@@ -463,6 +465,8 @@ contract MainnetAddresses {
     address public pendleWeethSyDecember = 0xAC0047886a985071476a1186bE89222659970d65;
     address public pendleEethPtDecember = 0x6ee2b5E19ECBa773a352E5B21415Dc419A700d1d;
     address public pendleEethYtDecember = 0x129e6B5DBC0Ecc12F9e486C5BC9cDF1a6A80bc6A;
+
+    address public pendleKarakWeETHMarketSeptember = 0x18bAFcaBf2d5898956AE6AC31543d9657a604165;
 
     address public pendleSwethMarket = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303;
 
@@ -497,6 +501,7 @@ contract MainnetAddresses {
     address public FRAX_USDC_01 = 0x9A834b70C07C81a9fcD6F22E842BF002fBfFbe4D;
     address public DAI_FRAX_05 = 0x97e7d56A0408570bA1a7852De36350f7713906ec;
     address public FRAX_USDT_05 = 0xc2A856c3afF2110c1171B8f942256d40E980C726;
+    address public PYUSD_USDC_01 = 0x13394005C1012e708fCe1EB974F1130fDc73a5Ce;
 
     // EigenLayer
     address public strategyManager = 0x858646372CC42E1A627fcE94aa7A7033e7CF075A;

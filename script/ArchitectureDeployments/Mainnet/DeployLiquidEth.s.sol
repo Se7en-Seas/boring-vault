@@ -31,12 +31,12 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
 
     function run() external {
         // Configure the deployment.
-        configureDeployment.deployContracts = false;
-        configureDeployment.setupRoles = true;
-        configureDeployment.setupDepositAssets = true;
-        configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = true;
-        configureDeployment.setupTestUser = true;
+        configureDeployment.deployContracts = true;
+        configureDeployment.setupRoles = false;
+        configureDeployment.setupDepositAssets = false;
+        configureDeployment.setupWithdrawAssets = false;
+        configureDeployment.finishSetup = false;
+        configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;

@@ -83,29 +83,28 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         // ========================== Pendle ==========================
         _addPendleMarketLeafs(leafs, pendleWeETHMarket);
         _addPendleMarketLeafs(leafs, pendleZircuitWeETHMarket);
-        _addPendleMarketLeafs(leafs, pendleWeETHMarketNew);
         _addPendleMarketLeafs(leafs, pendleWeETHMarketSeptember);
         _addPendleMarketLeafs(leafs, pendleWeETHMarketDecember);
+        _addPendleMarketLeafs(leafs, pendleKarakWeETHMarketSeptember);
 
         // ========================== UniswapV3 ==========================
-        /**
-         * Full position management for USDC, USDT, DAI, USDe, sUSDe.
-         */
-        address[] memory token0 = new address[](6);
+        address[] memory token0 = new address[](7);
         token0[0] = address(WETH);
         token0[1] = address(WETH);
         token0[2] = address(WETH);
         token0[3] = address(WEETH);
         token0[4] = address(WEETH);
         token0[5] = address(WSTETH);
+        token0[6] = address(WETH);
 
-        address[] memory token1 = new address[](6);
+        address[] memory token1 = new address[](7);
         token1[0] = address(WEETH);
         token1[1] = address(WSTETH);
         token1[2] = address(RETH);
         token1[3] = address(WSTETH);
         token1[4] = address(RETH);
         token1[5] = address(RETH);
+        token1[6] = address(SFRXETH);
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
@@ -120,8 +119,8 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](10);
-        SwapKind[] memory kind = new SwapKind[](10);
+        address[] memory assets = new address[](13);
+        SwapKind[] memory kind = new SwapKind[](13);
         assets[0] = address(WETH);
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = address(WEETH);
@@ -142,6 +141,12 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         kind[8] = SwapKind.Sell;
         assets[9] = address(PENDLE);
         kind[9] = SwapKind.Sell;
+        assets[10] = address(SFRXETH);
+        kind[10] = SwapKind.BuyAndSell;
+        assets[11] = address(INST);
+        kind[11] = SwapKind.Sell;
+        assets[12] = address(RSR);
+        kind[12] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         _addLeafsFor1InchUniswapV3Swapping(leafs, wstETH_wETH_01);
@@ -158,10 +163,11 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
 
         // ========================== Swell ==========================
         _addSwellLeafs(leafs, address(WEETH), swellSimpleStaking);
-        _addSwellLeafs(leafs, address(EETH), swellSimpleStaking);
         _addSwellLeafs(leafs, address(WSTETH), swellSimpleStaking);
+        _addSwellLeafs(leafs, address(SFRXETH), swellSimpleStaking);
         _addSwellLeafs(leafs, pendleEethPt, swellSimpleStaking);
-        _addSwellLeafs(leafs, pendleEethPtNew, swellSimpleStaking);
+        _addSwellLeafs(leafs, pendleEethPtDecember, swellSimpleStaking);
+        _addSwellLeafs(leafs, pendleEethPtSeptember, swellSimpleStaking);
         _addSwellLeafs(leafs, pendleZircuitEethPt, swellSimpleStaking);
 
         // ========================== Zircuit ==========================
@@ -170,9 +176,11 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
 
         // ========================== Balancer ==========================
         _addBalancerLeafs(leafs, rETH_weETH_id, rETH_weETH_gauge);
+        _addBalancerLeafs(leafs, rETH_wETH_id, rETH_wETH_gauge);
 
         // ========================== Aura ==========================
         _addAuraLeafs(leafs, aura_reth_weeth);
+        _addAuraLeafs(leafs, aura_reth_weth);
 
         // ========================== Flashloans ==========================
         _addBalancerFlashloanLeafs(leafs, address(WETH));
@@ -181,6 +189,12 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         // ========================== Fluid fToken ==========================
         _addFluidFTokenLeafs(leafs, fWETH);
         _addFluidFTokenLeafs(leafs, fWSTETH);
+
+        // ========================== FrxEth ==========================
+        /**
+         * deposit, withdraw
+         */
+        _addERC4626Leafs(leafs, ERC4626(address(SFRXETH)));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 

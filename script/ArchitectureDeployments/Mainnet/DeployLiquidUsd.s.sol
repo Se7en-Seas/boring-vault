@@ -10,7 +10,7 @@ import {EtherFiLiquidUsdDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/DeployLiquidUsd.s.sol:DeployLiquidUsdScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLiquidUsd.s.sol:DeployLiquidUsdScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployLiquidUsdScript is DeployArcticArchitecture, MainnetAddresses {
@@ -34,13 +34,16 @@ contract DeployLiquidUsdScript is DeployArcticArchitecture, MainnetAddresses {
         configureDeployment.deployContracts = true;
         configureDeployment.setupRoles = false;
         configureDeployment.setupDepositAssets = false;
-        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.setupWithdrawAssets = false;
         configureDeployment.finishSetup = false;
         configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
         configureDeployment.WETH = address(WETH);
+
+        // Save deployer.
+        deployer = Deployer(configureDeployment.deployerAddress);
 
         // Define names to determine where contracts are deployed.
         names.rolesAuthority = EtherFiLiquidUsdRolesAuthorityName;
