@@ -1386,11 +1386,138 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         leafs[leafIndex].argumentAddresses[0] = _boringVault;
     }
 
-    function _addLeafsForCurveLp(ManageLeaf[] memory leafs, address poolAddress) internal {
+    function _addCurveLeafs(ManageLeaf[] memory leafs, address poolAddress, uint256 coinCount, address gauge)
+        internal
+    {
         CurvePool pool = CurvePool(poolAddress);
-        // TODO
+        ERC20[] memory coins = new ERC20[](coinCount);
 
         // Approve pool to spend tokens.
+        for (uint256 i; i < coinCount; i++) {
+            coins[i] = ERC20(pool.coins(i));
+            // Approvals.
+            if (!tokenToSpenderToApprovalInTree[address(coins[i])][poolAddress]) {
+                leafIndex++;
+                leafs[leafIndex] = ManageLeaf(
+                    address(coins[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Curve pool to spend ", coins[i].symbol()),
+                    _rawDataDecoderAndSanitizer
+                );
+                leafs[leafIndex].argumentAddresses[0] = poolAddress;
+                tokenToSpenderToApprovalInTree[address(coins[i])][poolAddress] = true;
+            }
+        }
+
+        // Add liquidity.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            poolAddress,
+            false,
+            "add_liquidity(uint256[],uint256)",
+            new address[](0),
+            string.concat("Add liquidity to Curve pool"),
+            _rawDataDecoderAndSanitizer
+        );
+
+        // Remove liquidity.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            poolAddress,
+            false,
+            "remove_liquidity(uint256,uint256[])",
+            new address[](0),
+            string.concat("Remove liquidity from Curve pool"),
+            _rawDataDecoderAndSanitizer
+        );
+
+        // Deposit into gauge.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            gauge,
+            false,
+            "deposit(uint256,address)",
+            new address[](1),
+            string.concat("Deposit into Curve gauge"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+
+        // Withdraw from gauge.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            gauge,
+            false,
+            "withdraw(uint256)",
+            new address[](0),
+            string.concat("Withdraw from Curve gauge"),
+            _rawDataDecoderAndSanitizer
+        );
+
+        // Claim rewards.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            gauge,
+            false,
+            "claim_rewards(address)",
+            new address[](1),
+            string.concat("Claim rewards from Curve gauge"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+    }
+
+    function _addConvexLeafs(ManageLeaf[] memory leafs, ERC20 token, address rewardsContract) internal {
+        // Approve convexCurveMainnetBooster to spend lp tokens.
+        if (!tokenToSpenderToApprovalInTree[address(token)][convexCurveMainnetBooster]) {
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(token),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Convex Curve Mainnet Booster to spend ", token.symbol()),
+                _rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = convexCurveMainnetBooster;
+            tokenToSpenderToApprovalInTree[address(token)][convexCurveMainnetBooster] = true;
+        }
+
+        // Deposit into convexCurveMainnetBooster.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            convexCurveMainnetBooster,
+            false,
+            "deposit(uint256,uint256,bool)",
+            new address[](0),
+            "Deposit into Convex Curve Mainnet Booster",
+            _rawDataDecoderAndSanitizer
+        );
+
+        // Withdraw from rewardsContract.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            rewardsContract,
+            false,
+            "withdrawAndUnwrap(uint256,bool)",
+            new address[](0),
+            "Withdraw and unwrap from Convex Curve Rewards Contract",
+            _rawDataDecoderAndSanitizer
+        );
+
+        // Get rewards from rewardsContract.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            rewardsContract,
+            false,
+            "getReward(address,bool)",
+            new address[](1),
+            "Get rewards from Convex Curve Rewards Contract",
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
     }
 
     function _generateLeafs(

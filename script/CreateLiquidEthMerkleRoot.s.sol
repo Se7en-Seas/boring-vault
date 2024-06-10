@@ -196,6 +196,12 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
          */
         _addERC4626Leafs(leafs, ERC4626(address(SFRXETH)));
 
+        // ========================== Curve ==========================
+        _addCurveLeafs(leafs, weETH_wETH_ng, 2, weETH_wETH_ng_gauge);
+
+        // ========================== Convex ==========================
+        _addConvexLeafs(leafs, ERC20(weETH_wETH_NG_Pool), weETH_wETH_NG_Convex_Reward);
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/LiquidEthStrategistLeafs.json";

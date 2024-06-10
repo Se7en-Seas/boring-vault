@@ -239,6 +239,8 @@ contract MainnetAddresses {
     address public stETHWethNg = 0x21E27a5E5513D6e65C4f830167390997aA84843a;
     address public EthFrxEthCurvePool = 0xa1F8A6807c402E4A15ef4EBa36528A3FED24E577;
     address public triCrypto2 = 0xD51a44d3FaE010294C616388b506AcdA1bfAAE46;
+    address public weETH_wETH_ng = 0xDB74dfDD3BB46bE8Ce6C33dC9D82777BCFc3dEd5;
+    address public weETH_wETH_ng_gauge = 0x053df3e4D0CeD9a3Bf0494F97E83CE1f13BdC0E2;
 
     address public UsdcCrvUsdPool = 0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E;
     address public UsdcCrvUsdToken = 0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E;
@@ -306,6 +308,7 @@ contract MainnetAddresses {
 
     address public weETH_wETH_Pool = 0x13947303F63b363876868D070F14dc865C36463b;
     address public weETH_wETH_NG_Pool = 0xDB74dfDD3BB46bE8Ce6C33dC9D82777BCFc3dEd5;
+    address public weETH_wETH_NG_Convex_Reward = 0x5411CC583f0b51104fA523eEF9FC77A29DF80F58;
 
     address public pyUsd_Usdc_Curve_Pool = 0x383E6b4437b59fff47B619CBA855CA29342A8559;
     address public pyUsd_Usdc_Convex_Id = address(270);
