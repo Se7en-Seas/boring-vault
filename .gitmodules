@@ -7,3 +7,6 @@
 [submodule "lib/openzeppelin-contracts"]
 	path = lib/openzeppelin-contracts
 	url = https://github.com/openzeppelin/openzeppelin-contracts
+[submodule "lib/ion-protocol"]
+	path = lib/ion-protocol
+	url = https://github.com/Ion-Protocol/ion-protocol

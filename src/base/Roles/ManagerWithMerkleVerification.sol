@@ -9,6 +9,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
+import { console2 } from "forge-std/console2.sol";
 
 contract ManagerWithMerkleVerification is Auth {
     using FixedPointMathLib for uint256;
@@ -133,6 +134,8 @@ contract ManagerWithMerkleVerification is Auth {
     ) external requiresAuth {
         if (isPaused) revert ManagerWithMerkleVerification__Paused();
         uint256 targetsLength = targets.length;
+        console2.log("targetsLength: ", targetsLength);
+        console2.log("manageProofs.length: ", manageProofs.length);
         if (targetsLength != manageProofs.length) revert ManagerWithMerkleVerification__InvalidManageProofLength();
         if (targetsLength != targetData.length) revert ManagerWithMerkleVerification__InvalidTargetDataLength();
         if (targetsLength != values.length) revert ManagerWithMerkleVerification__InvalidValuesLength();
@@ -242,8 +245,11 @@ contract ManagerWithMerkleVerification is Auth {
         bytes calldata targetData
     ) internal view {
         // Use address decoder to get addresses in call data.
+        console2.log('targetData');
+        console2.logBytes(targetData);
+        console2.log("decoderAndSanitizer: ", decoderAndSanitizer);
         bytes memory packedArgumentAddresses = abi.decode(decoderAndSanitizer.functionStaticCall(targetData), (bytes));
-
+        console2.logBytes(packedArgumentAddresses);
         if (
             !_verifyManageProof(
                 currentManageRoot,
@@ -271,9 +277,30 @@ contract ManagerWithMerkleVerification is Auth {
         bytes4 selector,
         bytes memory packedArgumentAddresses
     ) internal pure returns (bool) {
+        console2.log('--- RUNTIME LEAF ---');
+        console2.log('root');
+        console2.logBytes32(root);
+        console2.log("target: ", target);
+        console2.log("decoderAndSanitizer: ", decoderAndSanitizer);
+        console2.log("value: ", value);
+        console2.log('selector');
+        console2.logBytes4(selector);
+        console2.log('packedArgumentAddresses');
+        console2.logBytes(packedArgumentAddresses);
+        
         bool valueNonZero = value > 0;
+        
+        console2.log("valueNonZero: ", valueNonZero);
+        
+        console2.log("rawDigest");
+        console2.logBytes(abi.encodePacked(decoderAndSanitizer, target, valueNonZero, selector, packedArgumentAddresses));
+
         bytes32 leaf =
             keccak256(abi.encodePacked(decoderAndSanitizer, target, valueNonZero, selector, packedArgumentAddresses));
+        
+        console2.log('leaf');
+        console2.logBytes32(leaf);
+        
         return MerkleProofLib.verify(proof, root, leaf);
     }
 }

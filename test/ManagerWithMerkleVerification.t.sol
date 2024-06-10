@@ -3155,6 +3155,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         }
     }
 
+    // 2D bc it recurses as it builds new layers up to the root.
     function _buildTrees(bytes32[][] memory merkleTreeIn) internal pure returns (bytes32[][] memory merkleTreeOut) {
         // We are adding another row to the merkle tree, so make merkleTreeOut be 1 longer.
         uint256 merkleTreeIn_length = merkleTreeIn.length;
@@ -3162,7 +3163,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         uint256 layer_length;
         // Iterate through merkleTreeIn to copy over data.
         for (uint256 i; i < merkleTreeIn_length; ++i) {
-            layer_length = merkleTreeIn[i].length;
+            layer_length = merkleTreeIn[i].length; // number of leafs 
             merkleTreeOut[i] = new bytes32[](layer_length);
             for (uint256 j; j < layer_length; ++j) {
                 merkleTreeOut[i][j] = merkleTreeIn[i][j];

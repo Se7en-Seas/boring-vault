@@ -1,0 +1,10 @@
+{
+    "boringVault": "",   
+    "payoutAddress": "",
+    "startingExchangeRate": "",
+    "base": "",
+    "allowedExchangeRateChangeUpper": "",
+    "allowedExchangeRateChangeLower": "",
+    "minimumUpdateDelayInSeconds": "",
+    "managementFee": ""
+}

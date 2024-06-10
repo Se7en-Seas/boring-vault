@@ -2,6 +2,7 @@
 pragma solidity 0.8.21;
 
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
+import { console2 } from "forge-std/console2.sol";
 
 contract BaseDecoderAndSanitizer {
     //============================== IMMUTABLES ===============================
@@ -16,6 +17,7 @@ contract BaseDecoderAndSanitizer {
     }
 
     function approve(address spender, uint256) external pure returns (bytes memory addressesFound) {
+        console2.log('approve');
         addressesFound = abi.encodePacked(spender);
     }
 }
