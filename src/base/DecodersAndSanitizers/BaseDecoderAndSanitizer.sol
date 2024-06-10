@@ -18,4 +18,8 @@ contract BaseDecoderAndSanitizer {
     function approve(address spender, uint256) external pure returns (bytes memory addressesFound) {
         addressesFound = abi.encodePacked(spender);
     }
+
+    function claimFees(address feeAsset) external pure returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(feeAsset);
+    }
 }
