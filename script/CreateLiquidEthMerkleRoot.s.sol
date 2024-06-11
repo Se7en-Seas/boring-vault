@@ -14,7 +14,7 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
-    address public rawDataDecoderAndSanitizer = 0x5a0Bb1395661BDF781cF0Fcc2a6cc72f56Ed40a7;
+    address public rawDataDecoderAndSanitizer = 0x00965B60EFa746d41198aE844725AaB26D14e51b;
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
 
