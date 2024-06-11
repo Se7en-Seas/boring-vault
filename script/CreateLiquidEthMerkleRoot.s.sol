@@ -18,6 +18,9 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
 
+    address public itbDecoderAndSanitizer = address(65);
+    address public itbReserveProtocolPositionManager = 0xd7459a88211a5f34186c1CbEcbd211666aB1c905;
+
     function setUp() external {}
 
     /**
@@ -202,10 +205,150 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         // ========================== Convex ==========================
         _addConvexLeafs(leafs, ERC20(weETH_wETH_NG_Pool), weETH_wETH_NG_Convex_Reward);
 
+        // ========================== ITB Reserve ==========================
+        ERC20[] memory tokensUsed = new ERC20[](3);
+        tokensUsed[0] = SFRXETH;
+        tokensUsed[1] = WSTETH;
+        tokensUsed[2] = RETH;
+        _addLeafsForItbReserve(
+            leafs, itbReserveProtocolPositionManager, tokensUsed, "ETHPlus ITB Reserve Protocol Position Manager"
+        );
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/LiquidEthStrategistLeafs.json";
 
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
+    }
+
+    function _addLeafsForITBPositionManager(
+        ManageLeaf[] memory leafs,
+        address itbPositionManager,
+        ERC20[] memory tokensUsed,
+        string memory itbContractName
+    ) internal {
+        // acceptOwnership
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "acceptOwnership()",
+            new address[](0),
+            string.concat("Accept ownership of the ", itbContractName, " contract"),
+            itbDecoderAndSanitizer
+        );
+        for (uint256 i; i < tokensUsed.length; ++i) {
+            // Transfer
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(tokensUsed[i]),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                string.concat("Transfer ", tokensUsed[i].symbol(), " to the ", itbContractName, " contract"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = itbPositionManager;
+            // Withdraw
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbPositionManager,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                string.concat("Withdraw ", tokensUsed[i].symbol(), " from the ", itbContractName, " contract"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
+            // WithdrawAll
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbPositionManager,
+                false,
+                "withdrawAll(address)",
+                new address[](1),
+                string.concat("Withdraw all ", tokensUsed[i].symbol(), " from the ", itbContractName, " contract"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
+        }
+    }
+
+    function _addLeafsForItbReserve(
+        ManageLeaf[] memory leafs,
+        address itbPositionManager,
+        ERC20[] memory tokensUsed,
+        string memory itbContractName
+    ) internal {
+        _addLeafsForITBPositionManager(leafs, itbPositionManager, tokensUsed, itbContractName);
+
+        // mint
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "mint(uint256)",
+            new address[](0),
+            string.concat("Mint ", itbContractName),
+            itbDecoderAndSanitizer
+        );
+
+        // redeem
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "redeem(uint256,uint256[])",
+            new address[](0),
+            string.concat("Redeem ", itbContractName),
+            itbDecoderAndSanitizer
+        );
+
+        // redeemCustom
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "redeemCustom(uint256,uint48[],uint192[],address[],uint256[])",
+            new address[](tokensUsed.length),
+            string.concat("Redeem custom ", itbContractName),
+            itbDecoderAndSanitizer
+        );
+        for (uint256 i; i < tokensUsed.length; ++i) {
+            leafs[leafIndex].argumentAddresses[i] = address(tokensUsed[i]);
+        }
+
+        // assemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "assemble(uint256,uint256)",
+            new address[](0),
+            string.concat("Assemble ", itbContractName),
+            itbDecoderAndSanitizer
+        );
+
+        // disassemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "disassemble(uint256,uint256[])",
+            new address[](0),
+            string.concat("Disassemble ", itbContractName),
+            itbDecoderAndSanitizer
+        );
+
+        // fullDisassemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "fullDisassemble(uint256[])",
+            new address[](0),
+            string.concat("Full disassemble ", itbContractName),
+            itbDecoderAndSanitizer
+        );
     }
 }
