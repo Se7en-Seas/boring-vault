@@ -674,6 +674,33 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
                 tokenToSpenderToApprovalInTree[token1[i]][uniswapV3NonFungiblePositionManager] = true;
             }
 
+            if (!tokenToSpenderToApprovalInTree[token0[i]][uniV3Router]) {
+                leafIndex++;
+                leafs[leafIndex] = ManageLeaf(
+                    token0[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve UniswapV3 Router to spend ", ERC20(token0[i]).symbol()),
+                    _rawDataDecoderAndSanitizer
+                );
+                leafs[leafIndex].argumentAddresses[0] = uniV3Router;
+                tokenToSpenderToApprovalInTree[token0[i]][uniV3Router] = true;
+            }
+            if (!tokenToSpenderToApprovalInTree[token1[i]][uniV3Router]) {
+                leafIndex++;
+                leafs[leafIndex] = ManageLeaf(
+                    token1[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve UniswapV3 Router to spend ", ERC20(token1[i]).symbol()),
+                    _rawDataDecoderAndSanitizer
+                );
+                leafs[leafIndex].argumentAddresses[0] = uniV3Router;
+                tokenToSpenderToApprovalInTree[token1[i]][uniV3Router] = true;
+            }
+
             // Minting
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(

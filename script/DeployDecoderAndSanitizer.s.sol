@@ -20,7 +20,7 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
     uint256 public privateKey;
     Deployer public deployer = Deployer(deployerAddress);
 
-    address boringVault;
+    address boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
@@ -36,9 +36,9 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
         constructorArgs = abi.encode(boringVault);
         deployer.deployContract(ItbPositionDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
-        creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
-        constructorArgs = abi.encode(boringVault, uniswapV3NonFungiblePositionManager);
-        deployer.deployContract(EtherFiLiquidUsdDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+        // creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
+        // constructorArgs = abi.encode(boringVault, uniswapV3NonFungiblePositionManager);
+        // deployer.deployContract(EtherFiLiquidUsdDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
         vm.stopBroadcast();
     }

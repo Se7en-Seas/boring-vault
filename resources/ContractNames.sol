@@ -66,7 +66,7 @@ contract ContractNames {
     string public constant CanaryBtcDecoderAndSanitizerName = "Canary BTC Decoder and Sanitizer V0.0";
     string public constant CanaryBtcDelayedWithdrawer = "Canary BTC Delayed Withdrawer V0.0";
 
-    string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.0";
+    string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.3";
     // gernic Rate Providers
     string public constant PendlePTweETHRateProviderName = "Pendle PT weETH Rate Provider V0.0";
     string public constant PendleYTweETHRateProviderName = "Pendle YT weETH Rate Provider V0.0";

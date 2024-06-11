@@ -18,8 +18,8 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
 
-    address public itbDecoderAndSanitizer = address(65);
-    address public itbReserveProtocolPositionManager = 0xd7459a88211a5f34186c1CbEcbd211666aB1c905;
+    address public itbDecoderAndSanitizer = 0xEEb53299Cb894968109dfa420D69f0C97c835211;
+    address public itbReserveProtocolPositionManager = 0x778aC5d0EE062502fADaa2d300a51dE0869f7995;
 
     function setUp() external {}
 

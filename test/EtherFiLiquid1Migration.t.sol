@@ -94,7 +94,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     function setUp() external {
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 20064670;
+        uint256 blockNumber = 20070619;
         _startFork(rpcKey, blockNumber);
 
         registry = Registry(etherFiLiquid1.registry());
@@ -119,10 +119,10 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Setup the BoringVault position.
         // Add both migration adaptors and positions to the registry.
         // Also setAddress 1 to be the migration share price oracle.
-        vm.startPrank(registryMultisig);
-        registry.trustAdaptor(address(migrationAdaptor));
-        registry.trustPosition(ILLIQUID_MIGRATION_POSITION, address(migrationAdaptor), hex"");
-        vm.stopPrank();
+        // vm.startPrank(registryMultisig);
+        // registry.trustAdaptor(address(migrationAdaptor));
+        // registry.trustPosition(ILLIQUID_MIGRATION_POSITION, address(migrationAdaptor), hex"");
+        // vm.stopPrank();
 
         // Joint multisig only adds the first migration position/adaptor to the catalogue,
         // then adds the position ot the cellar, specifying it to be illiquid.
@@ -233,6 +233,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         vm.stopPrank();
 
         // Also check that BoringVault deposits fail.
+        // TODO This will fail until public deposits are turned off.
         vm.expectRevert(bytes("UNAUTHORIZED"));
         teller.deposit(WETH, 1, 0);
 
@@ -264,7 +265,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, true);
         rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, true);
         // Complete the migration.
-        migrator.completeMigration(true, 0.0001e4);
+        migrator.completeMigration(true, 0.0001e4); // TODO this reverts as jow has shares in the vault.
         // Update Share price oracle to use the migration share price oracle.
         etherFiLiquid1.setSharePriceOracle(ETHER_FI_LIQUID_SHARE_PRICE_ORACLE_ID, address(paritySharePriceOracle));
         // Revoke roles from migrator.
