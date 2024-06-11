@@ -1204,8 +1204,7 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         address pool = _getPoolAddressFromPoolId(poolId);
         uint256 tokenCount;
         for (uint256 i; i < tokens.length; i++) {
-            if (address(tokens[i]) == pool) continue;
-            if (!tokenToSpenderToApprovalInTree[address(tokens[i])][balancerVault]) {
+            if (address(tokens[i]) != pool && !tokenToSpenderToApprovalInTree[address(tokens[i])][balancerVault]) {
                 leafIndex++;
                 leafs[leafIndex] = ManageLeaf(
                     address(tokens[i]),
@@ -1240,11 +1239,11 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         addressArguments[0] = pool;
         addressArguments[1] = _boringVault;
         addressArguments[2] = _boringVault;
-        uint256 j;
+        // uint256 j;
         for (uint256 i; i < tokens.length; i++) {
-            if (address(tokens[i]) == pool) continue;
-            addressArguments[3 + j] = address(tokens[i]);
-            j++;
+            // if (address(tokens[i]) == pool) continue;
+            addressArguments[3 + i] = address(tokens[i]);
+            // j++;
         }
 
         // Join pool
@@ -1253,7 +1252,7 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
             balancerVault,
             false,
             "joinPool(bytes32,address,address,(address[],uint256[],bytes,bool))",
-            new address[](5),
+            new address[](addressArguments.length),
             string.concat("Join Balancer pool ", ERC20(pool).symbol()),
             _rawDataDecoderAndSanitizer
         );
@@ -1267,7 +1266,7 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
             balancerVault,
             false,
             "exitPool(exitPool(bytes32,address,address,(address[],uint256[],bytes,bool)))",
-            new address[](5),
+            new address[](addressArguments.length),
             string.concat("Exit Balancer pool ", ERC20(pool).symbol()),
             _rawDataDecoderAndSanitizer
         );
