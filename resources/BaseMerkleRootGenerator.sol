@@ -201,28 +201,34 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         // Approvals
         string memory baseApprovalString = string.concat("Approve ", protocolName, " Pool to spend ");
         for (uint256 i; i < supplyAssets.length; ++i) {
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(supplyAssets[i]),
-                false,
-                "approve(address,uint256)",
-                new address[](1),
-                string.concat(baseApprovalString, supplyAssets[i].symbol()),
-                _rawDataDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = protocolAddress;
+            if (!tokenToSpenderToApprovalInTree[address(supplyAssets[i])][protocolAddress]) {
+                leafIndex++;
+                leafs[leafIndex] = ManageLeaf(
+                    address(supplyAssets[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat(baseApprovalString, supplyAssets[i].symbol()),
+                    _rawDataDecoderAndSanitizer
+                );
+                leafs[leafIndex].argumentAddresses[0] = protocolAddress;
+                tokenToSpenderToApprovalInTree[address(supplyAssets[i])][protocolAddress] = true;
+            }
         }
         for (uint256 i; i < borrowAssets.length; ++i) {
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(borrowAssets[i]),
-                false,
-                "approve(address,uint256)",
-                new address[](1),
-                string.concat(baseApprovalString, borrowAssets[i].symbol()),
-                _rawDataDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = protocolAddress;
+            if (!tokenToSpenderToApprovalInTree[address(borrowAssets[i])][protocolAddress]) {
+                leafIndex++;
+                leafs[leafIndex] = ManageLeaf(
+                    address(borrowAssets[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat(baseApprovalString, borrowAssets[i].symbol()),
+                    _rawDataDecoderAndSanitizer
+                );
+                leafs[leafIndex].argumentAddresses[0] = protocolAddress;
+                tokenToSpenderToApprovalInTree[address(borrowAssets[i])][protocolAddress] = true;
+            }
         }
         // Lending
         for (uint256 i; i < supplyAssets.length; ++i) {
@@ -1265,7 +1271,7 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         leafs[leafIndex] = ManageLeaf(
             balancerVault,
             false,
-            "exitPool(exitPool(bytes32,address,address,(address[],uint256[],bytes,bool)))",
+            "exitPool(bytes32,address,address,(address[],uint256[],bytes,bool))",
             new address[](addressArguments.length),
             string.concat("Exit Balancer pool ", ERC20(pool).symbol()),
             _rawDataDecoderAndSanitizer
