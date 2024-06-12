@@ -526,4 +526,8 @@ contract MainnetAddresses {
     address public fUSDC = 0x9Fb7b4477576Fe5B32be4C1843aFB1e55F251B33;
     address public fWETH = 0x90551c1795392094FE6D29B758EcCD233cFAa260;
     address public fWSTETH = 0x2411802D8BEA09be0aF8fD8D08314a63e706b29C;
+
+    // Symbiotic
+    address public wstETHDefaultCollateral = 0xC329400492c6ff2438472D4651Ad17389fCb843a;
+    address public mETHDefaultCollateral = 0x475D3Eb031d250070B63Fa145F0fCFC5D97c304a;
 }
