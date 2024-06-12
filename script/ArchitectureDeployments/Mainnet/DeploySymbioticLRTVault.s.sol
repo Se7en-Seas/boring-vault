@@ -32,7 +32,7 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
         // Configure the deployment.
         configureDeployment.deployContracts = true;
         configureDeployment.setupRoles = true;
-        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupDepositAssets = false;
         configureDeployment.setupWithdrawAssets = true;
         configureDeployment.finishSetup = true;
         configureDeployment.setupTestUser = true;
