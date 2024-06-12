@@ -46,6 +46,14 @@ contract ContractNames {
     string public constant EtherFiLiquidBtcDecoderAndSanitizerName = "EtherFi Liquid BTC Decoder and Sanitizer V0.1";
     string public constant EtherFiLiquidBtcDelayedWithdrawer = "EtherFi Liquid BTC Delayed Withdrawer V0.0";
 
+    string public constant AvalancheVaultRolesAuthorityName = "Avalanche Vault RolesAuthority Version 0.0";
+    string public constant AvalancheVaultName = "Avalanche Vault V0.0";
+    string public constant AvalancheVaultManagerName = "Avalanche Vault Manager With Merkle Verification V0.0";
+    string public constant AvalancheVaultAccountantName = "Avalanche Vault Accountant With Rate Providers V0.0";
+    string public constant AvalancheVaultTellerName = "Avalanche Vault Teller With Multi Asset Support V0.0";
+    string public constant AvalancheVaultDecoderAndSanitizerName = "Avalanche Vault Decoder and Sanitizer V0.1";
+    string public constant AvalancheVaultDelayedWithdrawer = "Avalanche Vault Delayed Withdrawer V0.0";
+
     string public constant BridgingTestVaultEthRolesAuthorityName = "Bridging Test ETH Vault RolesAuthority Version 0.0";
     string public constant BridgingTestVaultEthName = "Bridging Test ETH Vault V0.0";
     string public constant BridgingTestVaultEthManagerName =
