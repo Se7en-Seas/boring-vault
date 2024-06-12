@@ -8,6 +8,10 @@
       "isPeggedToBase": false,
       "rateProvider": "0x075E62e22fee95D995F4D8fe03C0A81f0935DD2E"
     },
+    "eETH": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
     "mETH": {
       "isPeggedToBase": false,
       "rateProvider": "0x36b9e486C853690ee779Cda1d5061417494f65fA"
@@ -23,6 +27,10 @@
     "wBETH": {
       "isPeggedToBase": false,
       "rateProvider": "0xcd1D79F3E6dc99d38E86Ed379ce4e2A4Cb6654Fc"
+    },
+    "weETH": {
+      "isPeggedToBase": false,
+      "rateProvider": "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee"
     },
     "wstETH": {
       "isPeggedToBase": false,
@@ -42,6 +50,12 @@
       "WithdrawDelay": 259200,
       "WithdrawFee": 0
     },
+    "eETH": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
     "mETH": {
       "CompletionWindow": 604800,
       "MaxLoss": 100,
@@ -61,6 +75,12 @@
       "WithdrawFee": 0
     },
     "wBETH": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "weETH": {
       "CompletionWindow": 604800,
       "MaxLoss": 100,
       "WithdrawDelay": 259200,

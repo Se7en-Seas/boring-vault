@@ -18,8 +18,8 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Symbiotic LRT Vault";
-    string public boringVaultSymbol = "eETHs";
+    string public boringVaultName = "Super Symbiotic LRT";
+    string public boringVaultSymbol = "weETHs";
     uint8 public boringVaultDecimals = 18;
     address public owner = dev0Address;
 
@@ -61,7 +61,7 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
         accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
         accountantParameters.managementFee = 0;
-        accountantParameters.performanceFee = 0.2e4;
+        accountantParameters.performanceFee = 0;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;
         // Minimum time(in seconds) to pass between updated without triggering a pause.
@@ -73,6 +73,28 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
 
         // Setup extra deposit assets.
         uint256 amount = 1e18;
+        depositAssets.push(
+            DepositAsset({
+                asset: EETH,
+                isPeggedToBase: true,
+                rateProvider: address(0),
+                genericRateProviderName: "",
+                target: address(0),
+                selector: bytes4(0),
+                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
+        depositAssets.push(
+            DepositAsset({
+                asset: WEETH,
+                isPeggedToBase: false,
+                rateProvider: address(WEETH),
+                genericRateProviderName: "",
+                target: address(0),
+                selector: bytes4(0),
+                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
         depositAssets.push(
             DepositAsset({
                 asset: WSTETH,
@@ -168,6 +190,26 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
         withdrawAssets.push(
             WithdrawAsset({
                 asset: WETH,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: EETH,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: WEETH,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
