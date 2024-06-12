@@ -15,9 +15,9 @@ abstract contract BaseScript is Script {
     ICreateX constant CREATEX = ICreateX(0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed);
     address constant BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
 
-    string defaultConfigPath = "./deployment-config/DeploymentConfig.json";
-    string config = vm.readFile(defaultConfigPath);
-    address protocolAdmin = config.readAddress(".protocolAdmin");
+    string defaultConfigPath = "./deployment-config/00_DefaultConfig.json";
+    string defaultConfig = vm.readFile(defaultConfigPath);
+    address protocolAdmin = defaultConfig.readAddress(".protocolAdmin");
 
     /// @dev Included to enable compilation of the script without a $MNEMONIC environment variable.
     string internal constant TEST_MNEMONIC = "test test test test test test test test test test test junk";

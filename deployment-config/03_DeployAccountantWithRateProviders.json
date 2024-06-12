@@ -1,0 +1,11 @@
+{
+    "accountantSalt": "0x6a184dbea6f3cc0318679f000000000000000000000000000000000000000000",
+    "boringVault": "0x0000000000E7Ab44153eEBEF2343ba5289F65dAC",   
+    "payoutAddress": "0x0000000000E7Ab44153eEBEF2343ba5289F65dAC",
+    "startingExchangeRate": "1000000000000000000",
+    "base": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "allowedExchangeRateChangeUpper": "10050",
+    "allowedExchangeRateChangeLower": "9950",
+    "minimumUpdateDelayInSeconds": "3600",
+    "managementFee": "2000"
+}

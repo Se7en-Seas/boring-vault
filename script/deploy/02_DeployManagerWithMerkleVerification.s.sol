@@ -8,12 +8,12 @@ import { stdJson as StdJson } from "forge-std/StdJson.sol";
 contract DeployManagerWithMerkleVerification is BaseScript {
     using StdJson for string;
 
-    bytes32 managerSalt = config.readBytes32(".managerSalt");
 
-    string managerConfigPath = "../../deployment-config/03_DeployManagerWithMerkleVerification.json";
-    string managerConfig = vm.readFile(managerConfigPath);
-    
-    address boringVault = managerConfig.readAddress(".boringVault");
+    string path = "./deployment-config/02_DeployManagerWithMerkleVerification.json";
+    string config = vm.readFile(path);
+
+    bytes32 managerSalt = config.readBytes32(".managerSalt");
+    address boringVault = config.readAddress(".boringVault");
     
     function run() public broadcast returns (ManagerWithMerkleVerification manager) {
         bytes memory creationCode = type(ManagerWithMerkleVerification).creationCode;

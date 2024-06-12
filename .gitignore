@@ -16,3 +16,6 @@ docs/
 
 *.DS_Store
 broadcast/*
+
+# Bun
+node_modules/

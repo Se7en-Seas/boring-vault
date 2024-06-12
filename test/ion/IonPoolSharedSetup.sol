@@ -104,20 +104,6 @@ contract IonPoolSharedSetup is Test, MainnetAddresses {
 
         ionPoolDecoderAndSanitizer = new IonPoolDecoderAndSanitizer(address(boringVault));
         rawDataDecoderAndSanitizer = address(ionPoolDecoderAndSanitizer); // TODO Make this calculated at runtime instead 
-        
-        // Configure all the roles
-        rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
-
-        // Single Asset, ETH as base asset
-        // Setup rate providers
-        vm.prank(ACCOUNTANT_OWNER);
-        accountant.setAuthority(rolesAuthority);
-        vm.prank(VAULT_OWNER);
-        boringVault.setAuthority(rolesAuthority);
-        vm.prank(MANAGER_OWNER);
-        manager.setAuthority(rolesAuthority);
-        vm.prank(TELLER_OWNER);
-        teller.setAuthority(rolesAuthority);
 
         // Set the merkle root
         leafs.push(ManageLeaf(
@@ -166,7 +152,9 @@ contract IonPoolSharedSetup is Test, MainnetAddresses {
         bytes32[] memory leafBytes32 = _getLeafs(leafs);
 
         // --- ROLES CONFIGURATION ---
+        rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
 
+        // --- Roles ---
         rolesAuthority.setRoleCapability(
             STRATEGIST_ROLE,
             address(manager),
@@ -188,14 +176,6 @@ contract IonPoolSharedSetup is Test, MainnetAddresses {
             true
         );
 
-        rolesAuthority.setPublicCapability(
-            address(teller), 
-            TellerWithMultiAssetSupport.deposit.selector, 
-            true
-        );
-        // rolesAuthority.setPublicCapability(
-        //     address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
-        // );
 
         rolesAuthority.setRoleCapability(
             TELLER_ROLE,
@@ -210,6 +190,17 @@ contract IonPoolSharedSetup is Test, MainnetAddresses {
             BoringVault.exit.selector,
             true
         );
+
+        rolesAuthority.setPublicCapability(
+            address(teller), 
+            TellerWithMultiAssetSupport.deposit.selector, 
+            true
+        );
+
+        // rolesAuthority.setPublicCapability(
+        //     address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
+        // );
+        // --- Assign roles to users ---
 
         rolesAuthority.setUserRole(
             VAULT_STRATEGIST,
@@ -228,6 +219,17 @@ contract IonPoolSharedSetup is Test, MainnetAddresses {
             TELLER_ROLE,
             true
         );
+
+        // Single Asset, ETH as base asset
+        // Setup rate providers
+        vm.prank(ACCOUNTANT_OWNER);
+        accountant.setAuthority(rolesAuthority);
+        vm.prank(VAULT_OWNER);
+        boringVault.setAuthority(rolesAuthority);
+        vm.prank(MANAGER_OWNER);
+        manager.setAuthority(rolesAuthority);
+        vm.prank(TELLER_OWNER);
+        teller.setAuthority(rolesAuthority);
     }
 
     /**

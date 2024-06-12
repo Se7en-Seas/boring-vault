@@ -5,15 +5,11 @@ import {BoringVault} from "./../../src/base/BoringVault.sol";
 import { BaseScript } from "./../Base.s.sol";
 import { stdJson as StdJson } from "forge-std/StdJson.sol";
 
-/**
- * 1. Deploy `RolesAuthority`.
- * 2. Deploy `BoringVault`.
- * 3. Deploy `ManagerWithMerkleVerification
- * 4. Deploy `Accountant`
- * 5. Deploy `TellerWithMultiAssetSupport`
- */
 contract DeployIonBoringVaultScript is BaseScript {
     using StdJson for string;
+
+    string path = "./deployment-config/01_DeployIonBoringVault.json";
+    string config = vm.readFile(path);
 
     bytes32 boringVaultSalt = config.readBytes32(".boringVaultSalt");
     string boringVaultName = config.readString(".boringVaultName");
