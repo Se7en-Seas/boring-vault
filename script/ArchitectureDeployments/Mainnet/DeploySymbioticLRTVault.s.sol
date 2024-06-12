@@ -184,17 +184,17 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
                 params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
             })
         );
-        depositAssets.push(
-            DepositAsset({
-                asset: UNIETH,
-                isPeggedToBase: false,
-                rateProvider: UNIETH_RATE_PROVIDER,
-                genericRateProviderName: "",
-                target: address(0),
-                selector: bytes4(0),
-                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
-            })
-        );
+        // depositAssets.push(
+        //     DepositAsset({
+        //         asset: UNIETH,
+        //         isPeggedToBase: false,
+        //         rateProvider: UNIETH_RATE_PROVIDER,
+        //         genericRateProviderName: "",
+        //         target: address(0),
+        //         selector: bytes4(0),
+        //         params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+        //     })
+        // );
 
         // Setup withdraw assets.
         withdrawAssets.push(
@@ -299,15 +299,15 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
                 maxLoss: 0.01e4
             })
         );
-        withdrawAssets.push(
-            WithdrawAsset({
-                asset: UNIETH,
-                withdrawDelay: 3 days,
-                completionWindow: 7 days,
-                withdrawFee: 0,
-                maxLoss: 0.01e4
-            })
-        );
+        // withdrawAssets.push(
+        //     WithdrawAsset({
+        //         asset: UNIETH,
+        //         withdrawDelay: 3 days,
+        //         completionWindow: 7 days,
+        //         withdrawFee: 0,
+        //         maxLoss: 0.01e4
+        //     })
+        // );
 
         bool allowPublicDeposits = true;
         bool allowPublicWithdraws = false;

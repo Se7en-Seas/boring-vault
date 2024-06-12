@@ -46,7 +46,7 @@ contract CreateSuperSymbioticLRTMerkleRootScript is BaseMerkleRootGenerator {
         _addSymbioticApproveAndDepositLeaf(leafs, swETHDefaultCollateral);
         _addSymbioticApproveAndDepositLeaf(leafs, sfrxETHDefaultCollateral);
         _addSymbioticApproveAndDepositLeaf(leafs, ETHxDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, uniETHDefaultCollateral);
+        // _addSymbioticApproveAndDepositLeaf(leafs, uniETHDefaultCollateral);
 
         string memory filePath = "./leafs/SuperSymbioticSniperLeafs.json";
 
@@ -61,7 +61,7 @@ contract CreateSuperSymbioticLRTMerkleRootScript is BaseMerkleRootGenerator {
         ManageLeaf[] memory leafs = new ManageLeaf[](512);
 
         // ========================== Symbiotic ==========================
-        address[] memory defaultCollaterals = new address[](9);
+        address[] memory defaultCollaterals = new address[](8);
         defaultCollaterals[0] = wstETHDefaultCollateral;
         defaultCollaterals[1] = cbETHDefaultCollateral;
         defaultCollaterals[2] = wBETHDefaultCollateral;
@@ -70,7 +70,7 @@ contract CreateSuperSymbioticLRTMerkleRootScript is BaseMerkleRootGenerator {
         defaultCollaterals[5] = swETHDefaultCollateral;
         defaultCollaterals[6] = sfrxETHDefaultCollateral;
         defaultCollaterals[7] = ETHxDefaultCollateral;
-        defaultCollaterals[8] = uniETHDefaultCollateral;
+        // defaultCollaterals[8] = uniETHDefaultCollateral;
         _addSymbioticLeafs(leafs, defaultCollaterals);
 
         // ========================== Aave V3 ==========================
