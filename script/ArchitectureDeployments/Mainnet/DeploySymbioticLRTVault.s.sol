@@ -60,8 +60,8 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
-        accountantParameters.managementFee = 0.02e4;
-        accountantParameters.performanceFee = 0;
+        accountantParameters.managementFee = 0;
+        accountantParameters.performanceFee = 0.2e4;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;
         // Minimum time(in seconds) to pass between updated without triggering a pause.
