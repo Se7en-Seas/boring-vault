@@ -1,0 +1,101 @@
+{
+  "DepositAssets": {
+    "WETH": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "cbETH": {
+      "isPeggedToBase": false,
+      "rateProvider": "0x075E62e22fee95D995F4D8fe03C0A81f0935DD2E"
+    },
+    "mETH": {
+      "isPeggedToBase": false,
+      "rateProvider": "0x36b9e486C853690ee779Cda1d5061417494f65fA"
+    },
+    "rETH": {
+      "isPeggedToBase": false,
+      "rateProvider": "0xB5319e2AeB597D708C35a44872bDC5739B959772"
+    },
+    "swETH": {
+      "isPeggedToBase": false,
+      "rateProvider": "0x3d26571bE0A61A6F1b82a9051f4513298BdF78dE"
+    },
+    "wBETH": {
+      "isPeggedToBase": false,
+      "rateProvider": "0xcd1D79F3E6dc99d38E86Ed379ce4e2A4Cb6654Fc"
+    },
+    "wstETH": {
+      "isPeggedToBase": false,
+      "rateProvider": "0xccdc0529bE3a1394358273C2C3c758fc672A0dc6"
+    }
+  },
+  "WithdrawAssets": {
+    "WETH": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "cbETH": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "mETH": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "rETH": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "swETH": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "wBETH": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "wstETH": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    }
+  },
+  "accountantConfiguration": {
+    "AllowedExchangeRateChangeLower": 9950,
+    "AllowedExchangeRateChangeUpper": 10050,
+    "Base": "WETH",
+    "BaseAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "ManagementFee": 200,
+    "MinimumUpateDelayInSeconds": 21600,
+    "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
+    "StartingExchangeRate": 1000000000000000000
+  },
+  "core": {
+    "AccountantWithRateProviders": "0xbe16605B22a7faCEf247363312121670DFe5afBE",
+    "BoringVault": "0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88",
+    "DecoderAndSanitizer": "0x95e00919CDFC598dAE87944b5b4D1eCC7B943266",
+    "DelayedWithdraw": "0x1bd68bdb88bFc08F0e55Fd5996E4B19D8F306d53",
+    "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
+    "ManagerWithMerkleVerification": "0xA24dD7B978Fbe36125cC4817192f7b8AA18d213c",
+    "RolesAuthority": "0x402DFF43b4f24b006BBD6520a11C169f81085039",
+    "TellerWithMultiAssetSupport": "0x99dE9e5a3eC2750a6983C8732E6e795A35e7B861"
+  },
+  "depositConfiguration": {
+    "AllowPublicDeposits": true,
+    "AllowPublicWithdraws": false,
+    "ShareLockPeriod": 86400
+  }
+}

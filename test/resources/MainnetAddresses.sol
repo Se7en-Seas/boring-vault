@@ -70,6 +70,7 @@ contract MainnetAddresses {
     ERC20 public LBTC = ERC20(0x8236a87084f8B84306f72007F36F2618A5634494);
     ERC20 public RSR = ERC20(0x320623b8E4fF03373931769A31Fc52A4E78B5d70);
     ERC20 public SFRXETH = ERC20(0xac3E018457B222d93114458476f3E3416Abbe38F);
+    ERC20 public WBETH = ERC20(0xa2E3356610840701BDf5611a53974510Ae27E2e1);
 
     // Rate providers
     address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
@@ -529,5 +530,11 @@ contract MainnetAddresses {
 
     // Symbiotic
     address public wstETHDefaultCollateral = 0xC329400492c6ff2438472D4651Ad17389fCb843a;
+    address public cbETHDefaultCollateral = 0xB26ff591F44b04E78de18f43B46f8b70C6676984;
+    address public wBETHDefaultCollateral = 0x422F5acCC812C396600010f224b320a743695f85;
+    address public rETHDefaultCollateral = 0x03Bf48b8A1B37FBeAd1EcAbcF15B98B924ffA5AC;
     address public mETHDefaultCollateral = 0x475D3Eb031d250070B63Fa145F0fCFC5D97c304a;
+    address public swETHDefaultCollateral = 0x38B86004842D3FA4596f0b7A0b53DE90745Ab654;
+    address public sfrxETHDefaultCollateral = 0x5198CB44D7B2E993ebDDa9cAd3b9a0eAa32769D2;
+    address public ETHxDefaultCollateral = 0xBdea8e677F9f7C294A4556005c640Ee505bE6925;
 }

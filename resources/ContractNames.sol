@@ -66,6 +66,14 @@ contract ContractNames {
     string public constant CanaryBtcDecoderAndSanitizerName = "Canary BTC Decoder and Sanitizer V0.0";
     string public constant CanaryBtcDelayedWithdrawer = "Canary BTC Delayed Withdrawer V0.0";
 
+    string public constant SymbioticLRTVaultRolesAuthorityName = "Symbiotic LRT Vault RolesAuthority V0.0";
+    string public constant SymbioticLRTVaultName = "Symbiotic LRT Vault V0.0";
+    string public constant SymbioticLRTVaultManagerName = "Symbiotic LRT Vault Manager With Merkle Verification V0.0";
+    string public constant SymbioticLRTVaultAccountantName = "Symbiotic LRT Vault Accountant With Rate Providers V0.0";
+    string public constant SymbioticLRTVaultTellerName = "Symbiotic LRT Vault Teller With Multi Asset Support V0.0";
+    string public constant SymbioticLRTVaultDecoderAndSanitizerName = "Symbiotic LRT Vault Decoder and Sanitizer V0.0";
+    string public constant SymbioticLRTVaultDelayedWithdrawer = "Symbiotic LRT Vault Delayed Withdrawer V0.0";
+
     string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.3";
     // gernic Rate Providers
     string public constant PendlePTweETHRateProviderName = "Pendle PT weETH Rate Provider V0.0";
