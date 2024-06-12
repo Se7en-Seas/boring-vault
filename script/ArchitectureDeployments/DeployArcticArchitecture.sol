@@ -772,9 +772,12 @@ contract DeployArcticArchitecture is Script, ContractNames {
 
             // Setup extra deposit assets.
             for (uint256 i; i < depositAssets.length; i++) {
-                (bool isPeggedToBase, IRateProvider rateProvider) = accountant.rateProviderData(depositAssets[i].asset);
-                if (isPeggedToBase || address(rateProvider) != address(0)) continue;
                 DepositAsset storage depositAsset = depositAssets[i];
+                (bool isPeggedToBase, IRateProvider rateProvider) = accountant.rateProviderData(depositAssets[i].asset);
+                if (isPeggedToBase || address(rateProvider) != address(0)) {
+                    depositAsset.rateProvider = address(rateProvider);
+                    continue;
+                }
                 if (depositAsset.isPeggedToBase) {
                     // Rate provider is not needed.
                     accountant.setRateProviderData(depositAsset.asset, true, address(0));

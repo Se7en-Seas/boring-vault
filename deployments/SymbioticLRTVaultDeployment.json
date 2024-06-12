@@ -10,7 +10,7 @@
     },
     "cbETH": {
       "isPeggedToBase": false,
-      "rateProvider": "0x0000000000000000000000000000000000000000"
+      "rateProvider": "0x075E62e22fee95D995F4D8fe03C0A81f0935DD2E"
     },
     "eETH": {
       "isPeggedToBase": true,
@@ -18,11 +18,11 @@
     },
     "mETH": {
       "isPeggedToBase": false,
-      "rateProvider": "0x0000000000000000000000000000000000000000"
+      "rateProvider": "0x36b9e486C853690ee779Cda1d5061417494f65fA"
     },
     "rETH": {
       "isPeggedToBase": false,
-      "rateProvider": "0x0000000000000000000000000000000000000000"
+      "rateProvider": "0xB5319e2AeB597D708C35a44872bDC5739B959772"
     },
     "sfrxETH": {
       "isPeggedToBase": false,
@@ -30,7 +30,7 @@
     },
     "swETH": {
       "isPeggedToBase": false,
-      "rateProvider": "0x0000000000000000000000000000000000000000"
+      "rateProvider": "0x3d26571bE0A61A6F1b82a9051f4513298BdF78dE"
     },
     "uniETH": {
       "isPeggedToBase": false,
@@ -38,7 +38,7 @@
     },
     "wBETH": {
       "isPeggedToBase": false,
-      "rateProvider": "0x0000000000000000000000000000000000000000"
+      "rateProvider": "0xcd1D79F3E6dc99d38E86Ed379ce4e2A4Cb6654Fc"
     },
     "weETH": {
       "isPeggedToBase": false,
@@ -46,7 +46,7 @@
     },
     "wstETH": {
       "isPeggedToBase": false,
-      "rateProvider": "0x0000000000000000000000000000000000000000"
+      "rateProvider": "0xccdc0529bE3a1394358273C2C3c758fc672A0dc6"
     }
   },
   "WithdrawAssets": {
