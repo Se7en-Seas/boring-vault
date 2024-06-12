@@ -787,8 +787,14 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     // We need a generic rate provider.
                     creationCode = type(GenericRateProvider).creationCode;
                     constructorArgs = abi.encode(depositAsset.target, depositAsset.selector, depositAsset.params);
-                    depositAsset.rateProvider =
-                        deployer.deployContract(depositAsset.genericRateProviderName, creationCode, constructorArgs, 0);
+                    address deployedAddress = _getAddressIfDeployed(depositAsset.genericRateProviderName);
+                    if (deployedAddress == address(0)) {
+                        depositAsset.rateProvider = deployer.deployContract(
+                            depositAsset.genericRateProviderName, creationCode, constructorArgs, 0
+                        );
+                    } else {
+                        depositAsset.rateProvider = deployedAddress;
+                    }
 
                     accountant.setRateProviderData(depositAsset.asset, false, depositAsset.rateProvider);
                     teller.addAsset(depositAsset.asset);

@@ -21,7 +21,7 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
     string public boringVaultName = "Super Symbiotic LRT";
     string public boringVaultSymbol = "weETHs";
     uint8 public boringVaultDecimals = 18;
-    address public owner = dev0Address;
+    address public owner = dev1Address;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
@@ -31,11 +31,11 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = true;
-        configureDeployment.setupDepositAssets = false;
+        configureDeployment.setupRoles = false;
+        configureDeployment.setupDepositAssets = true;
         configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = true;
-        configureDeployment.setupTestUser = true;
+        configureDeployment.finishSetup = false;
+        configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -100,7 +100,7 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
                 asset: WSTETH,
                 isPeggedToBase: false,
                 rateProvider: address(0),
-                genericRateProviderName: "WSTETH Generic Rate Provider V0.0",
+                genericRateProviderName: WSTETHRateProviderName,
                 target: address(WSTETH),
                 selector: bytes4(keccak256(abi.encodePacked("getStETHByWstETH(uint256)"))),
                 params: [bytes32(amount), 0, 0, 0, 0, 0, 0, 0]
@@ -111,7 +111,7 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
                 asset: cbETH,
                 isPeggedToBase: false,
                 rateProvider: address(0),
-                genericRateProviderName: "cbETH Generic Rate Provider V0.0",
+                genericRateProviderName: CBETHRateProviderName,
                 target: address(cbETH),
                 selector: bytes4(keccak256(abi.encodePacked("exchangeRate()"))),
                 params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
@@ -122,7 +122,7 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
                 asset: WBETH,
                 isPeggedToBase: false,
                 rateProvider: address(0),
-                genericRateProviderName: "WBETH Generic Rate Provider V0.0",
+                genericRateProviderName: WBETHRateProviderName,
                 target: address(WBETH),
                 selector: bytes4(keccak256(abi.encodePacked("exchangeRate()"))),
                 params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
@@ -133,7 +133,7 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
                 asset: RETH,
                 isPeggedToBase: false,
                 rateProvider: address(0),
-                genericRateProviderName: "RETH Generic Rate Provider V0.0",
+                genericRateProviderName: RETHRateProviderName,
                 target: address(RETH),
                 selector: bytes4(keccak256(abi.encodePacked("getExchangeRate()"))),
                 params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
@@ -144,7 +144,7 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
                 asset: METH,
                 isPeggedToBase: false,
                 rateProvider: address(0),
-                genericRateProviderName: "METH Generic Rate Provider V0.0",
+                genericRateProviderName: METHRateProviderName,
                 target: mantleLspStaking,
                 selector: bytes4(keccak256(abi.encodePacked("mETHToETH(uint256)"))),
                 params: [bytes32(amount), 0, 0, 0, 0, 0, 0, 0]
@@ -155,36 +155,45 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
                 asset: SWETH,
                 isPeggedToBase: false,
                 rateProvider: address(0),
-                genericRateProviderName: "SWETH Generic Rate Provider V0.0",
+                genericRateProviderName: SWETHRateProviderName,
                 target: address(SWETH),
                 selector: bytes4(keccak256(abi.encodePacked("swETHToETHRate()"))),
                 params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
             })
         );
-        // TODO is previewRedeem safe to use for this?
-        // depositAssets.push(
-        //     DepositAsset({
-        //         asset: SFRXETH,
-        //         isPeggedToBase: false,
-        //         rateProvider: address(0),
-        //         genericRateProviderName: "SFRXETH Generic Rate Provider V0.0",
-        //         target: address(SFRXETH),
-        //         selector: bytes4(keccak256(abi.encodePacked("previewRedeem(uint256)"))),
-        //         params: [bytes32(amount), 0, 0, 0, 0, 0, 0, 0]
-        //     })
-        // );
-        // TODO find where to get this.
-        // depositAssets.push(
-        //     DepositAsset({
-        //         asset: ETHX,
-        //         isPeggedToBase: false,
-        //         rateProvider: address(0),
-        //         genericRateProviderName: "ETHX Generic Rate Provider V0.0",
-        //         target: address(ETHX),
-        //         selector: bytes4(keccak256(abi.encodePacked("previewRedeem(uint256)"))),
-        //         params: [bytes32(amount), 0, 0, 0, 0, 0, 0, 0]
-        //     })
-        // );
+        depositAssets.push(
+            DepositAsset({
+                asset: SFRXETH,
+                isPeggedToBase: false,
+                rateProvider: address(0),
+                genericRateProviderName: SFRXETHRateProviderName,
+                target: address(SFRXETH),
+                selector: bytes4(keccak256(abi.encodePacked("previewRedeem(uint256)"))),
+                params: [bytes32(amount), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
+        depositAssets.push(
+            DepositAsset({
+                asset: ETHX,
+                isPeggedToBase: false,
+                rateProvider: ETHX_RATE_PROVIDER,
+                genericRateProviderName: "",
+                target: address(0),
+                selector: bytes4(0),
+                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
+        depositAssets.push(
+            DepositAsset({
+                asset: UNIETH,
+                isPeggedToBase: false,
+                rateProvider: UNIETH_RATE_PROVIDER,
+                genericRateProviderName: "",
+                target: address(0),
+                selector: bytes4(0),
+                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
 
         // Setup withdraw assets.
         withdrawAssets.push(
@@ -271,24 +280,33 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
                 maxLoss: 0.01e4
             })
         );
-        // withdrawAssets.push(
-        //     WithdrawAsset({
-        //         asset: SFRXETH,
-        //         withdrawDelay: 3 days,
-        //         completionWindow: 7 days,
-        //         withdrawFee: 0,
-        //         maxLoss: 0.01e4
-        //     })
-        // );
-        // withdrawAssets.push(
-        //     WithdrawAsset({
-        //         asset: ETHX,
-        //         withdrawDelay: 3 days,
-        //         completionWindow: 7 days,
-        //         withdrawFee: 0,
-        //         maxLoss: 0.01e4
-        //     })
-        // );
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: SFRXETH,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: ETHX,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: UNIETH,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
 
         bool allowPublicDeposits = true;
         bool allowPublicWithdraws = false;

@@ -75,6 +75,8 @@ contract MainnetAddresses {
 
     // Rate providers
     address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
+    address public ETHX_RATE_PROVIDER = 0xAAE054B9b822554dd1D9d1F48f892B4585D3bbf0;
+    address public UNIETH_RATE_PROVIDER = 0x2c3b8c5e98A6e89AAAF21Deebf5FF9d08c4A9FF7;
 
     // Chainlink Datafeeds
     address public WETH_USD_FEED = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
