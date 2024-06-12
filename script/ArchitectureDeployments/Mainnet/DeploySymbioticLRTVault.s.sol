@@ -69,7 +69,8 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
 
         // Define Decoder and Sanitizer deployment details.
         bytes memory creationCode = type(SymbioticLRTDecoderAndSanitizer).creationCode;
-        bytes memory constructorArgs = abi.encode(deployer.getAddress(names.boringVault));
+        bytes memory constructorArgs =
+            abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
         // Setup extra deposit assets.
         uint256 amount = 1e18;

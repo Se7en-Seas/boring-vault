@@ -49,7 +49,8 @@ contract ManagerWithMerkleVerificationSymbioticTest is Test, MainnetAddresses {
 
         manager = new ManagerWithMerkleVerification(address(this), address(boringVault), vault);
 
-        rawDataDecoderAndSanitizer = address(new SymbioticLRTDecoderAndSanitizer(address(boringVault)));
+        rawDataDecoderAndSanitizer =
+            address(new SymbioticLRTDecoderAndSanitizer(address(boringVault), uniswapV3NonFungiblePositionManager));
 
         rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
         boringVault.setAuthority(rolesAuthority);

@@ -2,6 +2,7 @@
 pragma solidity 0.8.21;
 
 import {BaseDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
+import {UniswapV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/UniswapV3DecoderAndSanitizer.sol";
 import {SymbioticDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/SymbioticDecoderAndSanitizer.sol";
 import {EtherFiDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/EtherFiDecoderAndSanitizer.sol";
 import {NativeWrapperDecoderAndSanitizer} from
@@ -16,20 +17,27 @@ import {ZircuitSimpleStakingDecoderAndSanitizer} from
 import {FluidFTokenDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/FluidFTokenDecoderAndSanitizer.sol";
 import {LidoDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/LidoDecoderAndSanitizer.sol";
+import {AaveV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/AaveV3DecoderAndSanitizer.sol";
+import {ERC4626DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/ERC4626DecoderAndSanitizer.sol";
 
 contract SymbioticLRTDecoderAndSanitizer is
     BaseDecoderAndSanitizer,
+    UniswapV3DecoderAndSanitizer,
     SymbioticDecoderAndSanitizer,
     EtherFiDecoderAndSanitizer,
     NativeWrapperDecoderAndSanitizer,
     OneInchDecoderAndSanitizer,
-    EigenLayerLSTStakingDecoderAndSanitizer,
     SwellSimpleStakingDecoderAndSanitizer,
     ZircuitSimpleStakingDecoderAndSanitizer,
     FluidFTokenDecoderAndSanitizer,
-    LidoDecoderAndSanitizer
+    LidoDecoderAndSanitizer,
+    AaveV3DecoderAndSanitizer,
+    ERC4626DecoderAndSanitizer
 {
-    constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
+    constructor(address _boringVault, address _uniswapV3NonfungiblePositionManager)
+        BaseDecoderAndSanitizer(_boringVault)
+        UniswapV3DecoderAndSanitizer(_uniswapV3NonfungiblePositionManager)
+    {}
 
     // //============================== HANDLE FUNCTION COLLISIONS ===============================
     function wrap(uint256)
@@ -69,5 +77,14 @@ contract SymbioticLRTDecoderAndSanitizer is
     {
         // Nothing to sanitize or return
         return addressesFound;
+    }
+
+    function withdraw(address _token, uint256, /*_amount*/ address _receiver)
+        external
+        pure
+        override(SwellSimpleStakingDecoderAndSanitizer, AaveV3DecoderAndSanitizer)
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(_token, _receiver);
     }
 }
