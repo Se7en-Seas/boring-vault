@@ -790,6 +790,17 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
             _rawDataDecoderAndSanitizer
         );
         leafs[leafIndex].argumentAddresses[0] = _boringVault;
+
+        // burn
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager,
+            false,
+            "burn(uint256)",
+            new address[](0),
+            "Burn UniswapV3 position",
+            _rawDataDecoderAndSanitizer
+        );
     }
 
     function _addLeafsForFeeClaiming(ManageLeaf[] memory leafs, ERC20[] memory feeAssets) internal {
