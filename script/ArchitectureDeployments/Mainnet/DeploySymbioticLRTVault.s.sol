@@ -31,7 +31,7 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
+        configureDeployment.setupRoles = true;
         configureDeployment.setupDepositAssets = true;
         configureDeployment.setupWithdrawAssets = true;
         configureDeployment.finishSetup = false;

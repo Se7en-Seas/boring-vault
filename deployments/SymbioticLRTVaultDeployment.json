@@ -32,10 +32,6 @@
       "isPeggedToBase": false,
       "rateProvider": "0x3d26571bE0A61A6F1b82a9051f4513298BdF78dE"
     },
-    "uniETH": {
-      "isPeggedToBase": false,
-      "rateProvider": "0x2c3b8c5e98A6e89AAAF21Deebf5FF9d08c4A9FF7"
-    },
     "wBETH": {
       "isPeggedToBase": false,
       "rateProvider": "0xcd1D79F3E6dc99d38E86Ed379ce4e2A4Cb6654Fc"
@@ -93,12 +89,6 @@
       "WithdrawFee": 0
     },
     "swETH": {
-      "CompletionWindow": 604800,
-      "MaxLoss": 100,
-      "WithdrawDelay": 259200,
-      "WithdrawFee": 0
-    },
-    "uniETH": {
       "CompletionWindow": 604800,
       "MaxLoss": 100,
       "WithdrawDelay": 259200,
