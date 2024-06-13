@@ -1557,7 +1557,9 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         ERC20 depositAsset = dc.asset();
         // Approve
         if (!tokenToSpenderToApprovalInTree[address(depositAsset)][defaultCollateral]) {
-            leafIndex++;
+            unchecked {
+                leafIndex++;
+            }
             leafs[leafIndex] = ManageLeaf(
                 address(depositAsset),
                 false,

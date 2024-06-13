@@ -7,7 +7,6 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVerification.sol";
-import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 
 /**
  *  source .env && forge script script/CreateSuperSymbioticLRTMerkleRoot.s.sol:CreateSuperSymbioticLRTMerkleRootScript --rpc-url $MAINNET_RPC_URL
@@ -20,8 +19,6 @@ contract CreateSuperSymbioticLRTMerkleRootScript is BaseMerkleRootGenerator {
     address public accountantAddress = 0xbe16605B22a7faCEf247363312121670DFe5afBE;
     address public rawDataDecoderAndSanitizer = 0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781;
 
-    RolesAuthority public rolesAuthority = RolesAuthority(0xec8CE1a4eD2611c02A42B5B66dd968CdB20a20B9);
-
     function setUp() external {}
 
     /**
@@ -29,15 +26,15 @@ contract CreateSuperSymbioticLRTMerkleRootScript is BaseMerkleRootGenerator {
      */
     function run() external {
         /// NOTE Only have 1 function run at a time, otherwise the merkle root created will be wrong.
-        generateAdminStrategistMerkleRoot();
-        // generateSniperMerkleRoot();
+        // generateAdminStrategistMerkleRoot();
+        generateSniperMerkleRoot();
     }
 
     function generateSniperMerkleRoot() public {
         updateAddresses(boringVault, rawDataDecoderAndSanitizer, managerAddress, accountantAddress);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
-
+        leafIndex = type(uint256).max;
         _addSymbioticApproveAndDepositLeaf(leafs, wstETHDefaultCollateral);
         _addSymbioticApproveAndDepositLeaf(leafs, cbETHDefaultCollateral);
         _addSymbioticApproveAndDepositLeaf(leafs, wBETHDefaultCollateral);
