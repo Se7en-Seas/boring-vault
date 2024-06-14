@@ -7,8 +7,9 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {BoringVault} from "src/base/BoringVault.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
+import {IPausable} from "src/interfaces/IPausable.sol";
 
-contract AccountantWithRateProviders is Auth, IRateProvider {
+contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
 

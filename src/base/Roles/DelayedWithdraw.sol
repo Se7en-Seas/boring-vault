@@ -10,8 +10,9 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
+import {IPausable} from "src/interfaces/IPausable.sol";
 
-contract DelayedWithdraw is Auth, ReentrancyGuard {
+contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
     using SafeTransferLib for BoringVault;
     using FixedPointMathLib for uint256;
 
