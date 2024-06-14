@@ -36,7 +36,42 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
      * @notice Uncomment which script you want to run.
      */
     function run() external {
-        generateLiquidUsdStrategistMerkleRoot();
+        // generateLiquidUsdStrategistMerkleRoot();
+        generateMiniLiquidUsdStrategistMerkleRoot();
+    }
+
+    function generateMiniLiquidUsdStrategistMerkleRoot() public {
+        updateAddresses(boringVault, rawDataDecoderAndSanitizer, managerAddress, accountantAddress);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](32);
+
+        // burn
+        leafs[leafIndex] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager,
+            false,
+            "burn(uint256)",
+            new address[](0),
+            "Burn UniswapV3 position",
+            _rawDataDecoderAndSanitizer
+        );
+
+        // ========================== Fee Claiming ==========================
+        ERC20[] memory feeAssets = new ERC20[](4);
+        feeAssets[0] = USDC;
+        feeAssets[1] = DAI;
+        feeAssets[2] = USDT;
+        feeAssets[3] = USDE;
+        _addLeafsForFeeClaiming(leafs, feeAssets);
+
+        // ========================== Fluid fToken ==========================
+        _addFluidFTokenLeafs(leafs, fUSDC);
+        _addFluidFTokenLeafs(leafs, fUSDT);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        string memory filePath = "./leafs/MiniLiquidUsdStrategistLeafs.json";
+
+        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 
     function generateLiquidUsdStrategistMerkleRoot() public {

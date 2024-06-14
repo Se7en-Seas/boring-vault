@@ -343,8 +343,24 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     OWNER_ROLE, address(boringVault), BoringVault.setBeforeTransferHook.selector, true
                 );
             }
-            // TODO need to add rolee to set performance fee
-            // TODO role to reset high water mark.
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                    OWNER_ROLE, address(accountant), AccountantWithRateProviders.resetHighwaterMark.selector
+                )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    OWNER_ROLE, address(accountant), AccountantWithRateProviders.resetHighwaterMark.selector, true
+                );
+            }
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                    OWNER_ROLE, address(accountant), AccountantWithRateProviders.updatePerformanceFee.selector
+                )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    OWNER_ROLE, address(accountant), AccountantWithRateProviders.updatePerformanceFee.selector, true
+                );
+            }
             if (!rolesAuthority.doesRoleHaveCapability(OWNER_ROLE, address(accountant), Auth.setAuthority.selector)) {
                 rolesAuthority.setRoleCapability(OWNER_ROLE, address(accountant), Auth.setAuthority.selector, true);
             }
@@ -756,9 +772,12 @@ contract DeployArcticArchitecture is Script, ContractNames {
 
             // Setup extra deposit assets.
             for (uint256 i; i < depositAssets.length; i++) {
-                (bool isPeggedToBase, IRateProvider rateProvider) = accountant.rateProviderData(depositAssets[i].asset);
-                if (isPeggedToBase || address(rateProvider) != address(0)) continue;
                 DepositAsset storage depositAsset = depositAssets[i];
+                (bool isPeggedToBase, IRateProvider rateProvider) = accountant.rateProviderData(depositAssets[i].asset);
+                if (isPeggedToBase || address(rateProvider) != address(0)) {
+                    depositAsset.rateProvider = address(rateProvider);
+                    continue;
+                }
                 if (depositAsset.isPeggedToBase) {
                     // Rate provider is not needed.
                     accountant.setRateProviderData(depositAsset.asset, true, address(0));
@@ -771,8 +790,14 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     // We need a generic rate provider.
                     creationCode = type(GenericRateProvider).creationCode;
                     constructorArgs = abi.encode(depositAsset.target, depositAsset.selector, depositAsset.params);
-                    depositAsset.rateProvider =
-                        deployer.deployContract(depositAsset.genericRateProviderName, creationCode, constructorArgs, 0);
+                    address deployedAddress = _getAddressIfDeployed(depositAsset.genericRateProviderName);
+                    if (deployedAddress == address(0)) {
+                        depositAsset.rateProvider = deployer.deployContract(
+                            depositAsset.genericRateProviderName, creationCode, constructorArgs, 0
+                        );
+                    } else {
+                        depositAsset.rateProvider = deployedAddress;
+                    }
 
                     accountant.setRateProviderData(depositAsset.asset, false, depositAsset.rateProvider);
                     teller.addAsset(depositAsset.asset);

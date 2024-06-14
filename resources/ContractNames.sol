@@ -46,6 +46,14 @@ contract ContractNames {
     string public constant EtherFiLiquidBtcDecoderAndSanitizerName = "EtherFi Liquid BTC Decoder and Sanitizer V0.1";
     string public constant EtherFiLiquidBtcDelayedWithdrawer = "EtherFi Liquid BTC Delayed Withdrawer V0.0";
 
+    string public constant AvalancheVaultRolesAuthorityName = "Avalanche Vault RolesAuthority Version 0.0";
+    string public constant AvalancheVaultName = "Avalanche Vault V0.0";
+    string public constant AvalancheVaultManagerName = "Avalanche Vault Manager With Merkle Verification V0.0";
+    string public constant AvalancheVaultAccountantName = "Avalanche Vault Accountant With Rate Providers V0.0";
+    string public constant AvalancheVaultTellerName = "Avalanche Vault Teller With Multi Asset Support V0.0";
+    string public constant AvalancheVaultDecoderAndSanitizerName = "Avalanche Vault Decoder and Sanitizer V0.1";
+    string public constant AvalancheVaultDelayedWithdrawer = "Avalanche Vault Delayed Withdrawer V0.0";
+
     string public constant BridgingTestVaultEthRolesAuthorityName = "Bridging Test ETH Vault RolesAuthority Version 0.0";
     string public constant BridgingTestVaultEthName = "Bridging Test ETH Vault V0.0";
     string public constant BridgingTestVaultEthManagerName =
@@ -66,8 +74,17 @@ contract ContractNames {
     string public constant CanaryBtcDecoderAndSanitizerName = "Canary BTC Decoder and Sanitizer V0.0";
     string public constant CanaryBtcDelayedWithdrawer = "Canary BTC Delayed Withdrawer V0.0";
 
+    string public constant SymbioticLRTVaultRolesAuthorityName = "Symbiotic LRT Vault RolesAuthority V0.0";
+    string public constant SymbioticLRTVaultName = "Symbiotic LRT Vault V0.0";
+    string public constant SymbioticLRTVaultManagerName = "Symbiotic LRT Vault Manager With Merkle Verification V0.0";
+    string public constant SymbioticLRTVaultAccountantName = "Symbiotic LRT Vault Accountant With Rate Providers V0.0";
+    string public constant SymbioticLRTVaultTellerName = "Symbiotic LRT Vault Teller With Multi Asset Support V0.0";
+    string public constant SymbioticLRTVaultDecoderAndSanitizerName = "Symbiotic LRT Vault Decoder and Sanitizer V0.1";
+    string public constant SymbioticLRTVaultDelayedWithdrawer = "Symbiotic LRT Vault Delayed Withdrawer V0.0";
+
     string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.3";
-    // gernic Rate Providers
+
+    // Generic Rate Providers
     string public constant PendlePTweETHRateProviderName = "Pendle PT weETH Rate Provider V0.0";
     string public constant PendleYTweETHRateProviderName = "Pendle YT weETH Rate Provider V0.0";
     string public constant PendleLPweETHRateProviderName = "Pendle LP weETH Rate Provider V0.0";
@@ -84,4 +101,11 @@ contract ContractNames {
         "Pendle weETH Market December 2024 Rate Provider V0.0";
     string public constant PendleEethPtDecemberRateProviderName = "Pendle eETH PT December 2024 Rate Provider V0.0";
     string public constant PendleEethYtDecemberRateProviderName = "Pendle eETH YT December 2024 Rate Provider V0.0";
+    string public constant WSTETHRateProviderName = "WSTETH Generic Rate Provider V0.0";
+    string public constant CBETHRateProviderName = "cbETH Generic Rate Provider V0.0";
+    string public constant WBETHRateProviderName = "WBETH Generic Rate Provider V0.0";
+    string public constant RETHRateProviderName = "RETH Generic Rate Provider V0.0";
+    string public constant METHRateProviderName = "METH Generic Rate Provider V0.0";
+    string public constant SWETHRateProviderName = "SWETH Generic Rate Provider V0.0";
+    string public constant SFRXETHRateProviderName = "SFRXETH Generic Rate Provider V0.0";
 }
