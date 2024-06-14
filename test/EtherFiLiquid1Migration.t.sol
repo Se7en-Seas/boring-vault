@@ -94,22 +94,12 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     function setUp() external {
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 20070619;
+        uint256 blockNumber = 20080435;
         _startFork(rpcKey, blockNumber);
 
         registry = Registry(etherFiLiquid1.registry());
         registryMultisig = registry.owner();
         strategist = registryMultisig;
-
-        vm.prank(dev1Address);
-        rolesAuthority.transferOwnership(liquidMultisig);
-
-        vm.startPrank(liquidMultisig);
-        rolesAuthority.setUserRole(strategist, STRATEGIST_ROLE, true);
-        rolesAuthority.setUserRole(liquidMultisig, OWNER_ROLE, true);
-        rolesAuthority.setUserRole(liquidMultisig, MULTISIG_ROLE, true);
-        rolesAuthority.setUserRole(address(this), UPDATE_EXCHANGE_RATE_ROLE, true);
-        vm.stopPrank();
 
         // Give fake user some shares.
         deal(address(etherFiLiquid1), user, 10e18);
@@ -128,8 +118,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // then adds the position ot the cellar, specifying it to be illiquid.
         // Next it gives etherfi liquid the solver role so it can rebalance.
         vm.startPrank(liquidMultisig);
-        etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
-        etherFiLiquid1.addPositionToCatalogue(ILLIQUID_MIGRATION_POSITION);
+        // etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
+        // etherFiLiquid1.addPositionToCatalogue(ILLIQUID_MIGRATION_POSITION);
         etherFiLiquid1.addPosition(0, ILLIQUID_MIGRATION_POSITION, abi.encode(false), false);
         // rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
         vm.stopPrank();
@@ -203,6 +193,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         /// NOTE the above migration can happen over the course of multiple weeks, since all the assets are in the illiquid
         /// BoringVault position withdraws fail.
+        skip(1 days / 4);
 
         /// NOTE if we want to the UI could be updated to state that a migration is underway, and maybe prompt users to use the atomic queue for new deposits or withdraws?
 
@@ -233,7 +224,6 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         vm.stopPrank();
 
         // Also check that BoringVault deposits fail.
-        // TODO This will fail until public deposits are turned off.
         vm.expectRevert(bytes("UNAUTHORIZED"));
         teller.deposit(WETH, 1, 0);
 
@@ -265,7 +255,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, true);
         rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, true);
         // Complete the migration.
-        migrator.completeMigration(true, 0.0001e4); // TODO this reverts as jow has shares in the vault.
+        migrator.completeMigration(true, 0.0001e4);
         // Update Share price oracle to use the migration share price oracle.
         etherFiLiquid1.setSharePriceOracle(ETHER_FI_LIQUID_SHARE_PRICE_ORACLE_ID, address(paritySharePriceOracle));
         // Revoke roles from migrator.
@@ -359,6 +349,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Even as the rate changes, users still receieve BoringVault shares at a 1:1 ratio.
         // Rate goes down.
         uint256 newRate = accountant.getRate().mulDivDown(0.95e4, 1e4);
+        vm.prank(registryMultisig);
         accountant.updateExchangeRate(uint96(newRate));
 
         vm.startPrank(liquidMultisig);
@@ -376,6 +367,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         // Rate goes up.
         newRate = accountant.getRate().mulDivDown(1.05e4, 1e4);
+        vm.prank(registryMultisig);
         accountant.updateExchangeRate(uint96(newRate));
 
         vm.startPrank(liquidMultisig);
@@ -393,6 +385,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         // If exchangeRate is updated to some extreme value, pause it triggered which causes all Cellar withdraws to revert.
         newRate = accountant.getRate().mulDivDown(0.01e4, 1e4);
+        vm.prank(registryMultisig);
         accountant.updateExchangeRate(uint96(newRate));
 
         vm.expectRevert(bytes(abi.encodeWithSelector(EtherFiLiquid1.Cellar__OracleFailure.selector)));
@@ -416,8 +409,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
     function testCellarMigrationWithSharePriceParity() external {
         vm.startPrank(registryMultisig);
-        registry.trustAdaptor(address(migrationAdaptor));
-        registry.trustPosition(ILLIQUID_MIGRATION_POSITION, address(migrationAdaptor), hex"");
+        // registry.trustAdaptor(address(migrationAdaptor));
+        // registry.trustPosition(ILLIQUID_MIGRATION_POSITION, address(migrationAdaptor), hex"");
         registry.setAddress(1, address(paritySharePriceOracle));
         vm.stopPrank();
 
@@ -425,10 +418,10 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // then adds the position ot the cellar, specifying it to be illiquid.
         // Next it gives etherfi liquid the solver role so it can rebalance.
         vm.startPrank(liquidMultisig);
-        etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
-        etherFiLiquid1.addPositionToCatalogue(ILLIQUID_MIGRATION_POSITION);
+        // etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
+        // etherFiLiquid1.addPositionToCatalogue(ILLIQUID_MIGRATION_POSITION);
         etherFiLiquid1.addPosition(0, ILLIQUID_MIGRATION_POSITION, abi.encode(false), false);
-        rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
+        // rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
         rolesAuthority.setUserRole(address(migrator), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, true);
         rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, true);
