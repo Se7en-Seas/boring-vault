@@ -76,6 +76,11 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
     address public feeAddress;
 
     /**
+     * @notice Used to pause calls to `requestWithdraw`, and `completeWithdraw`.
+     */
+    bool public isPaused;
+
+    /**
      * @notice The mapping of assets to their respective withdrawal settings.
      */
     mapping(ERC20 => WithdrawAsset) public withdrawAssets;
@@ -84,11 +89,6 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
      * @notice The mapping of users to withdraw asset to their withdrawal requests.
      */
     mapping(address => mapping(ERC20 => WithdrawRequest)) public withdrawRequests;
-
-    /**
-     * @notice Used to pause calls to `requestWithdraw`, and `completeWithdraw`.
-     */
-    bool public isPaused;
 
     //============================== ERRORS ===============================
 
