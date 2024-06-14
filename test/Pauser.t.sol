@@ -41,7 +41,7 @@ contract PauserTest is Test {
     }
 
     function testSenderPause() external {
-        pauser.updateSenderToPausableIndex(address(this), pausables[0]);
+        pauser.updateSenderToPausable(address(this), pausables[0]);
 
         pauser.senderPause();
 
@@ -84,8 +84,8 @@ contract PauserTest is Test {
         }
     }
 
-    function testUpdateSenderToPausableIndex() external {
-        pauser.updateSenderToPausableIndex(address(this), pausables[0]);
+    function testUpdateSenderToPausable() external {
+        pauser.updateSenderToPausable(address(this), pausables[0]);
 
         IPausable pausable = pauser.senderToPausable(address(this));
 

@@ -77,7 +77,7 @@ contract Pauser is Auth {
      * @notice Updates the index of the pausable contract that the sender can pause and unpause.
      * @dev Callable by PAUSER_ADMIN_ROLE.
      */
-    function updateSenderToPausableIndex(address sender, IPausable pausable) external requiresAuth {
+    function updateSenderToPausable(address sender, IPausable pausable) external requiresAuth {
         senderToPausable[sender] = pausable;
 
         emit SenderToPausableUpdated(sender, address(pausable));
