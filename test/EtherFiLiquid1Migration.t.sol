@@ -94,22 +94,12 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     function setUp() external {
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 20019360;
+        uint256 blockNumber = 20080435;
         _startFork(rpcKey, blockNumber);
 
         registry = Registry(etherFiLiquid1.registry());
         registryMultisig = registry.owner();
         strategist = registryMultisig;
-
-        vm.prank(dev1Address);
-        rolesAuthority.transferOwnership(liquidMultisig);
-
-        vm.startPrank(liquidMultisig);
-        rolesAuthority.setUserRole(strategist, STRATEGIST_ROLE, true);
-        rolesAuthority.setUserRole(liquidMultisig, OWNER_ROLE, true);
-        rolesAuthority.setUserRole(liquidMultisig, MULTISIG_ROLE, true);
-        rolesAuthority.setUserRole(address(this), UPDATE_EXCHANGE_RATE_ROLE, true);
-        vm.stopPrank();
 
         // Give fake user some shares.
         deal(address(etherFiLiquid1), user, 10e18);
@@ -119,19 +109,19 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Setup the BoringVault position.
         // Add both migration adaptors and positions to the registry.
         // Also setAddress 1 to be the migration share price oracle.
-        vm.startPrank(registryMultisig);
-        registry.trustAdaptor(address(migrationAdaptor));
-        registry.trustPosition(ILLIQUID_MIGRATION_POSITION, address(migrationAdaptor), hex"");
-        vm.stopPrank();
+        // vm.startPrank(registryMultisig);
+        // registry.trustAdaptor(address(migrationAdaptor));
+        // registry.trustPosition(ILLIQUID_MIGRATION_POSITION, address(migrationAdaptor), hex"");
+        // vm.stopPrank();
 
         // Joint multisig only adds the first migration position/adaptor to the catalogue,
         // then adds the position ot the cellar, specifying it to be illiquid.
         // Next it gives etherfi liquid the solver role so it can rebalance.
         vm.startPrank(liquidMultisig);
-        etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
-        etherFiLiquid1.addPositionToCatalogue(ILLIQUID_MIGRATION_POSITION);
+        // etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
+        // etherFiLiquid1.addPositionToCatalogue(ILLIQUID_MIGRATION_POSITION);
         etherFiLiquid1.addPosition(0, ILLIQUID_MIGRATION_POSITION, abi.encode(false), false);
-        rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
+        // rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
         vm.stopPrank();
 
         // Strategist begins rebalancing positions.
@@ -203,6 +193,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         /// NOTE the above migration can happen over the course of multiple weeks, since all the assets are in the illiquid
         /// BoringVault position withdraws fail.
+        skip(1 days / 4);
 
         /// NOTE if we want to the UI could be updated to state that a migration is underway, and maybe prompt users to use the atomic queue for new deposits or withdraws?
 
@@ -358,6 +349,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Even as the rate changes, users still receieve BoringVault shares at a 1:1 ratio.
         // Rate goes down.
         uint256 newRate = accountant.getRate().mulDivDown(0.95e4, 1e4);
+        vm.prank(registryMultisig);
         accountant.updateExchangeRate(uint96(newRate));
 
         vm.startPrank(liquidMultisig);
@@ -375,6 +367,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         // Rate goes up.
         newRate = accountant.getRate().mulDivDown(1.05e4, 1e4);
+        vm.prank(registryMultisig);
         accountant.updateExchangeRate(uint96(newRate));
 
         vm.startPrank(liquidMultisig);
@@ -392,6 +385,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         // If exchangeRate is updated to some extreme value, pause it triggered which causes all Cellar withdraws to revert.
         newRate = accountant.getRate().mulDivDown(0.01e4, 1e4);
+        vm.prank(registryMultisig);
         accountant.updateExchangeRate(uint96(newRate));
 
         vm.expectRevert(bytes(abi.encodeWithSelector(EtherFiLiquid1.Cellar__OracleFailure.selector)));
@@ -415,8 +409,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
     function testCellarMigrationWithSharePriceParity() external {
         vm.startPrank(registryMultisig);
-        registry.trustAdaptor(address(migrationAdaptor));
-        registry.trustPosition(ILLIQUID_MIGRATION_POSITION, address(migrationAdaptor), hex"");
+        // registry.trustAdaptor(address(migrationAdaptor));
+        // registry.trustPosition(ILLIQUID_MIGRATION_POSITION, address(migrationAdaptor), hex"");
         registry.setAddress(1, address(paritySharePriceOracle));
         vm.stopPrank();
 
@@ -424,10 +418,10 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // then adds the position ot the cellar, specifying it to be illiquid.
         // Next it gives etherfi liquid the solver role so it can rebalance.
         vm.startPrank(liquidMultisig);
-        etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
-        etherFiLiquid1.addPositionToCatalogue(ILLIQUID_MIGRATION_POSITION);
+        // etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
+        // etherFiLiquid1.addPositionToCatalogue(ILLIQUID_MIGRATION_POSITION);
         etherFiLiquid1.addPosition(0, ILLIQUID_MIGRATION_POSITION, abi.encode(false), false);
-        rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
+        // rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
         rolesAuthority.setUserRole(address(migrator), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, true);
         rolesAuthority.setUserRole(address(migrator), UPDATE_EXCHANGE_RATE_ROLE, true);
@@ -532,8 +526,22 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     }
 
     function _closeUniswapV3Positions() internal {
-        uint256[3] memory tokenIds = [uint256(719349), 729916, 729917];
+        uint256[20] memory tokenIds;
+        uint256 index;
+        while (true) {
+            try PositionManager(uniswapV3PositionManager).tokenOfOwnerByIndex(address(etherFiLiquid1), index) {
+                tokenIds[index] =
+                    PositionManager(uniswapV3PositionManager).tokenOfOwnerByIndex(address(etherFiLiquid1), index);
+                index++;
+            } catch {
+                break;
+            }
+        }
+        // uint256[3] memory tokenIds = [uint256(719349), 729916, 729917];
         for (uint256 i; i < tokenIds.length; i++) {
+            if (tokenIds[i] == 0) {
+                break;
+            }
             EtherFiLiquid1.AdaptorCall[] memory data = new EtherFiLiquid1.AdaptorCall[](1);
             bytes[] memory adaptorCalls = new bytes[](1);
             adaptorCalls[0] = abi.encodeWithSignature("closePosition(uint256,uint256,uint256)", tokenIds[i], 0, 0);
@@ -638,8 +646,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         etherFiLiquid1.callOnAdaptor(data);
         vm.stopPrank();
 
-        // Now migrate half of the aTokens to BoringVault.
-        uint256 amountToMigrate = aV3WeETH.balanceOf(address(etherFiLiquid1)) / 2;
+        // Now migrate 1/3 of the aTokens to BoringVault.
+        uint256 amountToMigrate = aV3WeETH.balanceOf(address(etherFiLiquid1)) / 3;
         adaptorCalls[0] = abi.encodeWithSignature("deposit(address,uint256,uint256)", aV3WeETH, amountToMigrate, 0);
         data[0] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls});
         vm.startPrank(strategist);
@@ -647,7 +655,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         vm.stopPrank();
 
         // Now strategist rebalances BoringVault to take out a loan of wETH.
-        uint256 amountToBorrow = dV3WETH.balanceOf(address(etherFiLiquid1)) + 2;
+        uint256 amountToBorrow = dV3WETH.balanceOf(address(etherFiLiquid1)) / 3;
         vm.startPrank(address(manager));
         bytes memory callData = abi.encodeWithSignature(
             "borrow(address,uint256,uint256,uint16,address)", WETH, amountToBorrow, 2, 0, address(boringVault)
@@ -664,7 +672,79 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         etherFiLiquid1.callOnAdaptor(data);
         vm.stopPrank();
 
-        // Now that the Cellar has wETH, it can repay the loan, then deposit the remaining aTokens.
+        // Repay the wETH balance of the Cellar.
+        amountToRepay = WETH.balanceOf(address(etherFiLiquid1));
+        data = new EtherFiLiquid1.AdaptorCall[](1);
+        adaptorCalls = new bytes[](1);
+        adaptorCalls[0] = abi.encodeWithSignature("repayAaveDebt(address,uint256)", WETH, amountToRepay);
+        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: aaveV3DebtTokenAdaptor, callData: adaptorCalls});
+        vm.startPrank(strategist);
+        etherFiLiquid1.callOnAdaptor(data);
+        vm.stopPrank();
+
+        // Now migrate 1/2 of the aTokens to BoringVault.
+        amountToMigrate = aV3WeETH.balanceOf(address(etherFiLiquid1)) / 3;
+        adaptorCalls[0] = abi.encodeWithSignature("deposit(address,uint256,uint256)", aV3WeETH, amountToMigrate, 0);
+        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls});
+        vm.startPrank(strategist);
+        etherFiLiquid1.callOnAdaptor(data);
+        vm.stopPrank();
+
+        // Now strategist rebalances BoringVault to take out a loan of wETH.
+        amountToBorrow = dV3WETH.balanceOf(address(etherFiLiquid1)) / 2;
+        vm.startPrank(address(manager));
+        callData = abi.encodeWithSignature(
+            "borrow(address,uint256,uint256,uint16,address)", WETH, amountToBorrow, 2, 0, address(boringVault)
+        );
+        boringVault.manage(v3Pool, callData, 0);
+        vm.stopPrank();
+
+        // Now that the BoringVault is holding wETH, Cellar can redeem some BV tokens for wETH.
+        rate = accountant.getRate();
+        amountToRedeem = amountToBorrow.mulDivDown(1e18, rate);
+        adaptorCalls[0] = abi.encodeWithSignature("withdraw(address,uint256,uint256)", WETH, amountToRedeem, 0);
+        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls});
+        vm.startPrank(strategist);
+        etherFiLiquid1.callOnAdaptor(data);
+        vm.stopPrank();
+
+        // Repay the wETH balance of the Cellar.
+        amountToRepay = WETH.balanceOf(address(etherFiLiquid1));
+        data = new EtherFiLiquid1.AdaptorCall[](1);
+        adaptorCalls = new bytes[](1);
+        adaptorCalls[0] = abi.encodeWithSignature("repayAaveDebt(address,uint256)", WETH, amountToRepay);
+        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: aaveV3DebtTokenAdaptor, callData: adaptorCalls});
+        vm.startPrank(strategist);
+        etherFiLiquid1.callOnAdaptor(data);
+        vm.stopPrank();
+
+        // Now migrate 1/2 of the aTokens to BoringVault.
+        amountToMigrate = aV3WeETH.balanceOf(address(etherFiLiquid1)) / 2;
+        adaptorCalls[0] = abi.encodeWithSignature("deposit(address,uint256,uint256)", aV3WeETH, amountToMigrate, 0);
+        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls});
+        vm.startPrank(strategist);
+        etherFiLiquid1.callOnAdaptor(data);
+        vm.stopPrank();
+
+        // Now strategist rebalances BoringVault to take out a loan of wETH.
+        amountToBorrow = dV3WETH.balanceOf(address(etherFiLiquid1)) + 1e18; // Borrow extra
+        vm.startPrank(address(manager));
+        callData = abi.encodeWithSignature(
+            "borrow(address,uint256,uint256,uint16,address)", WETH, amountToBorrow, 2, 0, address(boringVault)
+        );
+        boringVault.manage(v3Pool, callData, 0);
+        vm.stopPrank();
+
+        // Now that the BoringVault is holding wETH, Cellar can redeem some BV tokens for wETH.
+        rate = accountant.getRate();
+        amountToRedeem = amountToBorrow.mulDivDown(1e18, rate);
+        adaptorCalls[0] = abi.encodeWithSignature("withdraw(address,uint256,uint256)", WETH, amountToRedeem, 0);
+        data[0] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls});
+        vm.startPrank(strategist);
+        etherFiLiquid1.callOnAdaptor(data);
+        vm.stopPrank();
+
+        // Now the liquid V1 should have enough ETH to repay full debt, so completely unwind position.
         data = new EtherFiLiquid1.AdaptorCall[](2);
         adaptorCalls = new bytes[](1);
         adaptorCalls[0] = abi.encodeWithSignature("repayAaveDebt(address,uint256)", WETH, type(uint256).max);
@@ -816,4 +896,8 @@ interface Registry {
 
 interface PriceRouter {
     function getValue(address base, uint256 amount, address quote) external view returns (uint256);
+}
+
+interface PositionManager {
+    function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256);
 }

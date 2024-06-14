@@ -66,9 +66,17 @@ contract MainnetAddresses {
     ERC20 public PYUSD = ERC20(0x6c3ea9036406852006290770BEdFcAbA0e23A0e8);
     ERC20 public METH = ERC20(0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa);
     ERC20 public TBTC = ERC20(0x18084fbA666a33d37592fA2633fD49a74DD93a88);
+    ERC20 public INST = ERC20(0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb);
+    ERC20 public LBTC = ERC20(0x8236a87084f8B84306f72007F36F2618A5634494);
+    ERC20 public RSR = ERC20(0x320623b8E4fF03373931769A31Fc52A4E78B5d70);
+    ERC20 public SFRXETH = ERC20(0xac3E018457B222d93114458476f3E3416Abbe38F);
+    ERC20 public WBETH = ERC20(0xa2E3356610840701BDf5611a53974510Ae27E2e1);
+    ERC20 public UNIETH = ERC20(0xF1376bceF0f78459C0Ed0ba5ddce976F1ddF51F4);
 
     // Rate providers
     address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
+    address public ETHX_RATE_PROVIDER = 0xAAE054B9b822554dd1D9d1F48f892B4585D3bbf0;
+    address public UNIETH_RATE_PROVIDER = 0x2c3b8c5e98A6e89AAAF21Deebf5FF9d08c4A9FF7;
 
     // Chainlink Datafeeds
     address public WETH_USD_FEED = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
@@ -150,6 +158,7 @@ contract MainnetAddresses {
     address public rsETH_ETHx_gauge = 0x0BcDb6d9b27Bd62d3De605393902C7d1a2c71Aab;
     address public aura_rsETH_ETHx = 0xf618102462Ff3cf7edbA4c067316F1C3AbdbA193;
 
+    bytes32 public rETH_wETH_id = 0x1e19cf2d73a72ef1332c882f20534b6519be0276000200000000000000000112;
     ERC20 public rETH_wETH = ERC20(0x1E19CF2D73a72Ef1332C882F20534B6519Be0276);
     address public rETH_wETH_gauge = 0x79eF6103A513951a3b25743DB509E267685726B7;
     address public aura_reth_weth = 0xDd1fE5AD401D4777cE89959b7fa587e569Bf125D;
@@ -234,6 +243,8 @@ contract MainnetAddresses {
     address public stETHWethNg = 0x21E27a5E5513D6e65C4f830167390997aA84843a;
     address public EthFrxEthCurvePool = 0xa1F8A6807c402E4A15ef4EBa36528A3FED24E577;
     address public triCrypto2 = 0xD51a44d3FaE010294C616388b506AcdA1bfAAE46;
+    address public weETH_wETH_ng = 0xDB74dfDD3BB46bE8Ce6C33dC9D82777BCFc3dEd5;
+    address public weETH_wETH_ng_gauge = 0x053df3e4D0CeD9a3Bf0494F97E83CE1f13BdC0E2;
 
     address public UsdcCrvUsdPool = 0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E;
     address public UsdcCrvUsdToken = 0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E;
@@ -301,6 +312,7 @@ contract MainnetAddresses {
 
     address public weETH_wETH_Pool = 0x13947303F63b363876868D070F14dc865C36463b;
     address public weETH_wETH_NG_Pool = 0xDB74dfDD3BB46bE8Ce6C33dC9D82777BCFc3dEd5;
+    address public weETH_wETH_NG_Convex_Reward = 0x5411CC583f0b51104fA523eEF9FC77A29DF80F58;
 
     address public pyUsd_Usdc_Curve_Pool = 0x383E6b4437b59fff47B619CBA855CA29342A8559;
     address public pyUsd_Usdc_Convex_Id = address(270);
@@ -436,11 +448,6 @@ contract MainnetAddresses {
     address public pendleZircuitEethPt = 0x4AE5411F3863CdB640309e84CEDf4B08B8b33FfF;
     address public pendleZircuitEethYt = 0x7C2D26182adeEf96976035986cF56474feC03bDa;
 
-    address public pendleWeETHMarketNew = 0x7d372819240D14fB477f17b964f95F33BeB4c704;
-    address public pendleWeethSyNew = 0xAC0047886a985071476a1186bE89222659970d65;
-    address public pendleEethPtNew = 0x6ee2b5E19ECBa773a352E5B21415Dc419A700d1d;
-    address public pendleEethYtNew = 0x129e6B5DBC0Ecc12F9e486C5BC9cDF1a6A80bc6A;
-
     address public pendleUSDeMarket = 0x19588F29f9402Bb508007FeADd415c875Ee3f19F;
     address public pendleUSDeSy = 0x42862F48eAdE25661558AFE0A630b132038553D0;
     address public pendleUSDePt = 0xa0021EF8970104c2d008F38D92f115ad56a9B8e1;
@@ -451,6 +458,11 @@ contract MainnetAddresses {
     address public pendleZircuitUSDePt = 0x3d4F535539A33FEAd4D76D7b3B7A9cB5B21C73f1;
     address public pendleZircuitUSDeYt = 0x40357b9f22B4DfF0Bf56A90661b8eC106C259d29;
 
+    address public pendleSUSDeMarketSeptember = 0xd1D7D99764f8a52Aff007b7831cc02748b2013b5;
+    address public pendleSUSDeMarketJuly = 0x107a2e3cD2BB9a32B9eE2E4d51143149F8367eBa;
+    address public pendleKarakSUSDeMarket = 0xB1f587B354a4a363f5332e88effbbC2E4961250A;
+    address public pendleKarakUSDeMarket = 0x1BCBDB8c8652345A5ACF04e6E74f70086c68FEfC;
+
     address public pendleWeETHMarketSeptember = 0xC8eDd52D0502Aa8b4D5C77361D4B3D300e8fC81c;
     address public pendleWeethSySeptember = 0xAC0047886a985071476a1186bE89222659970d65;
     address public pendleEethPtSeptember = 0x1c085195437738d73d75DC64bC5A3E098b7f93b1;
@@ -460,6 +472,8 @@ contract MainnetAddresses {
     address public pendleWeethSyDecember = 0xAC0047886a985071476a1186bE89222659970d65;
     address public pendleEethPtDecember = 0x6ee2b5E19ECBa773a352E5B21415Dc419A700d1d;
     address public pendleEethYtDecember = 0x129e6B5DBC0Ecc12F9e486C5BC9cDF1a6A80bc6A;
+
+    address public pendleKarakWeETHMarketSeptember = 0x18bAFcaBf2d5898956AE6AC31543d9657a604165;
 
     address public pendleSwethMarket = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303;
 
@@ -494,6 +508,7 @@ contract MainnetAddresses {
     address public FRAX_USDC_01 = 0x9A834b70C07C81a9fcD6F22E842BF002fBfFbe4D;
     address public DAI_FRAX_05 = 0x97e7d56A0408570bA1a7852De36350f7713906ec;
     address public FRAX_USDT_05 = 0xc2A856c3afF2110c1171B8f942256d40E980C726;
+    address public PYUSD_USDC_01 = 0x13394005C1012e708fCe1EB974F1130fDc73a5Ce;
 
     // EigenLayer
     address public strategyManager = 0x858646372CC42E1A627fcE94aa7A7033e7CF075A;
@@ -508,4 +523,22 @@ contract MainnetAddresses {
 
     // Mantle
     address public mantleLspStaking = 0xe3cBd06D7dadB3F4e6557bAb7EdD924CD1489E8f;
+
+    // Fluid
+    address public fUSDT = 0x5C20B550819128074FD538Edf79791733ccEdd18;
+    address public fUSDTStakingRewards = 0x490681095ed277B45377d28cA15Ac41d64583048;
+    address public fUSDC = 0x9Fb7b4477576Fe5B32be4C1843aFB1e55F251B33;
+    address public fWETH = 0x90551c1795392094FE6D29B758EcCD233cFAa260;
+    address public fWSTETH = 0x2411802D8BEA09be0aF8fD8D08314a63e706b29C;
+
+    // Symbiotic
+    address public wstETHDefaultCollateral = 0xC329400492c6ff2438472D4651Ad17389fCb843a;
+    address public cbETHDefaultCollateral = 0xB26ff591F44b04E78de18f43B46f8b70C6676984;
+    address public wBETHDefaultCollateral = 0x422F5acCC812C396600010f224b320a743695f85;
+    address public rETHDefaultCollateral = 0x03Bf48b8A1B37FBeAd1EcAbcF15B98B924ffA5AC;
+    address public mETHDefaultCollateral = 0x475D3Eb031d250070B63Fa145F0fCFC5D97c304a;
+    address public swETHDefaultCollateral = 0x38B86004842D3FA4596f0b7A0b53DE90745Ab654;
+    address public sfrxETHDefaultCollateral = 0x5198CB44D7B2E993ebDDa9cAd3b9a0eAa32769D2;
+    address public ETHxDefaultCollateral = 0xBdea8e677F9f7C294A4556005c640Ee505bE6925;
+    address public uniETHDefaultCollateral = 0x1C57ea879dd3e8C9fefa8224fdD1fa20dd54211E;
 }

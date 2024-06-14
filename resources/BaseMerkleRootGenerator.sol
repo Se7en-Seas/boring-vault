@@ -201,28 +201,34 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         // Approvals
         string memory baseApprovalString = string.concat("Approve ", protocolName, " Pool to spend ");
         for (uint256 i; i < supplyAssets.length; ++i) {
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(supplyAssets[i]),
-                false,
-                "approve(address,uint256)",
-                new address[](1),
-                string.concat(baseApprovalString, supplyAssets[i].symbol()),
-                _rawDataDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = protocolAddress;
+            if (!tokenToSpenderToApprovalInTree[address(supplyAssets[i])][protocolAddress]) {
+                leafIndex++;
+                leafs[leafIndex] = ManageLeaf(
+                    address(supplyAssets[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat(baseApprovalString, supplyAssets[i].symbol()),
+                    _rawDataDecoderAndSanitizer
+                );
+                leafs[leafIndex].argumentAddresses[0] = protocolAddress;
+                tokenToSpenderToApprovalInTree[address(supplyAssets[i])][protocolAddress] = true;
+            }
         }
         for (uint256 i; i < borrowAssets.length; ++i) {
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(borrowAssets[i]),
-                false,
-                "approve(address,uint256)",
-                new address[](1),
-                string.concat(baseApprovalString, borrowAssets[i].symbol()),
-                _rawDataDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = protocolAddress;
+            if (!tokenToSpenderToApprovalInTree[address(borrowAssets[i])][protocolAddress]) {
+                leafIndex++;
+                leafs[leafIndex] = ManageLeaf(
+                    address(borrowAssets[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat(baseApprovalString, borrowAssets[i].symbol()),
+                    _rawDataDecoderAndSanitizer
+                );
+                leafs[leafIndex].argumentAddresses[0] = protocolAddress;
+                tokenToSpenderToApprovalInTree[address(borrowAssets[i])][protocolAddress] = true;
+            }
         }
         // Lending
         for (uint256 i; i < supplyAssets.length; ++i) {
@@ -674,6 +680,33 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
                 tokenToSpenderToApprovalInTree[token1[i]][uniswapV3NonFungiblePositionManager] = true;
             }
 
+            if (!tokenToSpenderToApprovalInTree[token0[i]][uniV3Router]) {
+                leafIndex++;
+                leafs[leafIndex] = ManageLeaf(
+                    token0[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve UniswapV3 Router to spend ", ERC20(token0[i]).symbol()),
+                    _rawDataDecoderAndSanitizer
+                );
+                leafs[leafIndex].argumentAddresses[0] = uniV3Router;
+                tokenToSpenderToApprovalInTree[token0[i]][uniV3Router] = true;
+            }
+            if (!tokenToSpenderToApprovalInTree[token1[i]][uniV3Router]) {
+                leafIndex++;
+                leafs[leafIndex] = ManageLeaf(
+                    token1[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve UniswapV3 Router to spend ", ERC20(token1[i]).symbol()),
+                    _rawDataDecoderAndSanitizer
+                );
+                leafs[leafIndex].argumentAddresses[0] = uniV3Router;
+                tokenToSpenderToApprovalInTree[token1[i]][uniV3Router] = true;
+            }
+
             // Minting
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -757,6 +790,17 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
             _rawDataDecoderAndSanitizer
         );
         leafs[leafIndex].argumentAddresses[0] = _boringVault;
+
+        // burn
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            uniswapV3NonFungiblePositionManager,
+            false,
+            "burn(uint256)",
+            new address[](0),
+            "Burn UniswapV3 position",
+            _rawDataDecoderAndSanitizer
+        );
     }
 
     function _addLeafsForFeeClaiming(ManageLeaf[] memory leafs, ERC20[] memory feeAssets) internal {
@@ -1106,6 +1150,70 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         leafs[leafIndex].argumentAddresses[0] = asset;
     }
 
+    function _addFluidFTokenLeafs(ManageLeaf[] memory leafs, address fToken) internal {
+        ERC20 asset = ERC4626(fToken).asset();
+        // Approval.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            address(asset),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Fluid ", ERC20(fToken).symbol(), " to spend ", asset.symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = fToken;
+
+        // Depositing
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            fToken,
+            false,
+            "deposit(uint256,address,uint256)",
+            new address[](1),
+            string.concat("Deposit ", asset.symbol(), " for ", ERC20(fToken).symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        // Withdrawing
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            fToken,
+            false,
+            "withdraw(uint256,address,address,uint256)",
+            new address[](2),
+            string.concat("Withdraw ", asset.symbol(), " from ", ERC20(fToken).symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[1] = _boringVault;
+
+        // Minting
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            fToken,
+            false,
+            "mint(uint256,address,uint256)",
+            new address[](1),
+            string.concat("Mint ", ERC20(fToken).symbol(), " using ", asset.symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+
+        // Redeeming
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            fToken,
+            false,
+            "redeem(uint256,address,address,uint256)",
+            new address[](2),
+            string.concat("Redeem ", ERC20(fToken).symbol(), " for ", asset.symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[1] = _boringVault;
+    }
+
     function _addBalancerLeafs(ManageLeaf[] memory leafs, bytes32 poolId, address gauge) internal {
         BalancerVault bv = BalancerVault(balancerVault);
 
@@ -1113,8 +1221,7 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         address pool = _getPoolAddressFromPoolId(poolId);
         uint256 tokenCount;
         for (uint256 i; i < tokens.length; i++) {
-            if (address(tokens[i]) == pool) continue;
-            if (!tokenToSpenderToApprovalInTree[address(tokens[i])][balancerVault]) {
+            if (address(tokens[i]) != pool && !tokenToSpenderToApprovalInTree[address(tokens[i])][balancerVault]) {
                 leafIndex++;
                 leafs[leafIndex] = ManageLeaf(
                     address(tokens[i]),
@@ -1149,11 +1256,11 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         addressArguments[0] = pool;
         addressArguments[1] = _boringVault;
         addressArguments[2] = _boringVault;
-        uint256 j;
+        // uint256 j;
         for (uint256 i; i < tokens.length; i++) {
-            if (address(tokens[i]) == pool) continue;
-            addressArguments[3 + j] = address(tokens[i]);
-            j++;
+            // if (address(tokens[i]) == pool) continue;
+            addressArguments[3 + i] = address(tokens[i]);
+            // j++;
         }
 
         // Join pool
@@ -1162,7 +1269,7 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
             balancerVault,
             false,
             "joinPool(bytes32,address,address,(address[],uint256[],bytes,bool))",
-            new address[](5),
+            new address[](addressArguments.length),
             string.concat("Join Balancer pool ", ERC20(pool).symbol()),
             _rawDataDecoderAndSanitizer
         );
@@ -1175,8 +1282,8 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         leafs[leafIndex] = ManageLeaf(
             balancerVault,
             false,
-            "exitPool(exitPool(bytes32,address,address,(address[],uint256[],bytes,bool)))",
-            new address[](5),
+            "exitPool(bytes32,address,address,(address[],uint256[],bytes,bool))",
+            new address[](addressArguments.length),
             string.concat("Exit Balancer pool ", ERC20(pool).symbol()),
             _rawDataDecoderAndSanitizer
         );
@@ -1320,6 +1427,194 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
             _rawDataDecoderAndSanitizer
         );
         leafs[leafIndex].argumentAddresses[0] = _boringVault;
+    }
+
+    function _addCurveLeafs(ManageLeaf[] memory leafs, address poolAddress, uint256 coinCount, address gauge)
+        internal
+    {
+        CurvePool pool = CurvePool(poolAddress);
+        ERC20[] memory coins = new ERC20[](coinCount);
+
+        // Approve pool to spend tokens.
+        for (uint256 i; i < coinCount; i++) {
+            coins[i] = ERC20(pool.coins(i));
+            // Approvals.
+            if (!tokenToSpenderToApprovalInTree[address(coins[i])][poolAddress]) {
+                leafIndex++;
+                leafs[leafIndex] = ManageLeaf(
+                    address(coins[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Curve pool to spend ", coins[i].symbol()),
+                    _rawDataDecoderAndSanitizer
+                );
+                leafs[leafIndex].argumentAddresses[0] = poolAddress;
+                tokenToSpenderToApprovalInTree[address(coins[i])][poolAddress] = true;
+            }
+        }
+
+        // Add liquidity.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            poolAddress,
+            false,
+            "add_liquidity(uint256[],uint256)",
+            new address[](0),
+            string.concat("Add liquidity to Curve pool"),
+            _rawDataDecoderAndSanitizer
+        );
+
+        // Remove liquidity.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            poolAddress,
+            false,
+            "remove_liquidity(uint256,uint256[])",
+            new address[](0),
+            string.concat("Remove liquidity from Curve pool"),
+            _rawDataDecoderAndSanitizer
+        );
+
+        // Deposit into gauge.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            gauge,
+            false,
+            "deposit(uint256,address)",
+            new address[](1),
+            string.concat("Deposit into Curve gauge"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+
+        // Withdraw from gauge.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            gauge,
+            false,
+            "withdraw(uint256)",
+            new address[](0),
+            string.concat("Withdraw from Curve gauge"),
+            _rawDataDecoderAndSanitizer
+        );
+
+        // Claim rewards.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            gauge,
+            false,
+            "claim_rewards(address)",
+            new address[](1),
+            string.concat("Claim rewards from Curve gauge"),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+    }
+
+    function _addConvexLeafs(ManageLeaf[] memory leafs, ERC20 token, address rewardsContract) internal {
+        // Approve convexCurveMainnetBooster to spend lp tokens.
+        if (!tokenToSpenderToApprovalInTree[address(token)][convexCurveMainnetBooster]) {
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(token),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Convex Curve Mainnet Booster to spend ", token.symbol()),
+                _rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = convexCurveMainnetBooster;
+            tokenToSpenderToApprovalInTree[address(token)][convexCurveMainnetBooster] = true;
+        }
+
+        // Deposit into convexCurveMainnetBooster.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            convexCurveMainnetBooster,
+            false,
+            "deposit(uint256,uint256,bool)",
+            new address[](0),
+            "Deposit into Convex Curve Mainnet Booster",
+            _rawDataDecoderAndSanitizer
+        );
+
+        // Withdraw from rewardsContract.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            rewardsContract,
+            false,
+            "withdrawAndUnwrap(uint256,bool)",
+            new address[](0),
+            "Withdraw and unwrap from Convex Curve Rewards Contract",
+            _rawDataDecoderAndSanitizer
+        );
+
+        // Get rewards from rewardsContract.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            rewardsContract,
+            false,
+            "getReward(address,bool)",
+            new address[](1),
+            "Get rewards from Convex Curve Rewards Contract",
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+    }
+
+    function _addSymbioticApproveAndDepositLeaf(ManageLeaf[] memory leafs, address defaultCollateral) internal {
+        ERC4626 dc = ERC4626(defaultCollateral);
+        ERC20 depositAsset = dc.asset();
+        // Approve
+        if (!tokenToSpenderToApprovalInTree[address(depositAsset)][defaultCollateral]) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(depositAsset),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Symbiotic ", dc.name(), " to spend ", depositAsset.symbol()),
+                _rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = defaultCollateral;
+            tokenToSpenderToApprovalInTree[address(depositAsset)][defaultCollateral] = true;
+        }
+        // Deposit
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            defaultCollateral,
+            false,
+            "deposit(address,uint256)",
+            new address[](1),
+            string.concat("Deposit ", depositAsset.symbol(), " into Symbiotic ", ERC20(defaultCollateral).name()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+    }
+
+    function _addSymbioticLeafs(ManageLeaf[] memory leafs, address[] memory defaultCollaterals) internal {
+        for (uint256 i; i < defaultCollaterals.length; i++) {
+            _addSymbioticApproveAndDepositLeaf(leafs, defaultCollaterals[i]);
+            // Withdraw
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                defaultCollaterals[i],
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                string.concat(
+                    "Withdraw ",
+                    ERC20(defaultCollaterals[i]).symbol(),
+                    " from Symbiotic ",
+                    ERC20(defaultCollaterals[i]).name()
+                ),
+                _rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        }
     }
 
     function _generateLeafs(

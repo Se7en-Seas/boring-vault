@@ -11,10 +11,6 @@
     "weETH": {
       "isPeggedToBase": false,
       "rateProvider": "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee"
-    },
-    "wstETH": {
-      "isPeggedToBase": false,
-      "rateProvider": "0x0000000000000000000000000000000000000000"
     }
   },
   "WithdrawAssets": {
@@ -50,7 +46,7 @@
   "core": {
     "AccountantWithRateProviders": "0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198",
     "BoringVault": "0xf0bb20865277aBd641a307eCe5Ee04E79073416C",
-    "DecoderAndSanitizer": "0x0c9fd99d67DF2AB4722640eC4A5b495371bc81d2",
+    "DecoderAndSanitizer": "0x00965B60EFa746d41198aE844725AaB26D14e51b",
     "DelayedWithdraw": "0xA1177Bc62E42eF2f9225a6cBF1CfE5CbC360C33A",
     "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
     "ManagerWithMerkleVerification": "0x227975088C28DBBb4b421c6d96781a53578f19a8",
@@ -58,8 +54,8 @@
     "TellerWithMultiAssetSupport": "0x5c135e8eC99557b412b9B4492510dCfBD36066F5"
   },
   "depositConfiguration": {
-    "AllowPublicDeposits": true,
-    "AllowPublicWithdraws": true,
+    "AllowPublicDeposits": false,
+    "AllowPublicWithdraws": false,
     "ShareLockPeriod": 86400
   }
 }
