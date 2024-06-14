@@ -10,19 +10,19 @@ import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployCanaryBtc.s.sol:DeployCanaryBtcScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
+contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Ether.Fi Liquid ETH Vault";
-    string public boringVaultSymbol = "liquidETH";
-    uint8 public boringVaultDecimals = 18;
-    address public owner = dev1Address;
+    string public boringVaultName = "Canary BTC";
+    string public boringVaultSymbol = "cBTC";
+    uint8 public boringVaultDecimals = 8;
+    address public owner = dev0Address;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
@@ -32,11 +32,11 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
-        configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = false;
-        configureDeployment.setupTestUser = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = true;
+        configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -46,20 +46,20 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         deployer = Deployer(configureDeployment.deployerAddress);
 
         // Define names to determine where contracts are deployed.
-        names.rolesAuthority = EtherFiLiquidEthRolesAuthorityName;
+        names.rolesAuthority = CanaryBtcRolesAuthorityName;
         names.lens = ArcticArchitectureLensName;
-        names.boringVault = EtherFiLiquidEthName;
-        names.manager = EtherFiLiquidEthManagerName;
-        names.accountant = EtherFiLiquidEthAccountantName;
-        names.teller = EtherFiLiquidEthTellerName;
-        names.rawDataDecoderAndSanitizer = EtherFiLiquidEthDecoderAndSanitizerName;
-        names.delayedWithdrawer = EtherFiLiquidEthDelayedWithdrawer;
+        names.boringVault = CanaryBtcName;
+        names.manager = CanaryBtcManagerName;
+        names.accountant = CanaryBtcAccountantName;
+        names.teller = CanaryBtcTellerName;
+        names.rawDataDecoderAndSanitizer = CanaryBtcDecoderAndSanitizerName;
+        names.delayedWithdrawer = CanaryBtcDelayedWithdrawer;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = WETH;
+        accountantParameters.base = LBTC;
         // Decimals are in terms of `base`.
-        accountantParameters.startingExchangeRate = 1e18;
+        accountantParameters.startingExchangeRate = 1e8;
         //  4 decimals
         accountantParameters.managementFee = 0.02e4;
         accountantParameters.performanceFee = 0;
@@ -76,7 +76,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         // Setup extra deposit assets.
         depositAssets.push(
             DepositAsset({
-                asset: EETH,
+                asset: WBTC,
                 isPeggedToBase: true,
                 rateProvider: address(0),
                 genericRateProviderName: "",
@@ -85,35 +85,10 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
                 params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
             })
         );
-        depositAssets.push(
-            DepositAsset({
-                asset: WEETH,
-                isPeggedToBase: false,
-                rateProvider: address(WEETH),
-                genericRateProviderName: "",
-                target: address(0),
-                selector: bytes4(0),
-                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
-            })
-        );
-        // bytes4 selector = bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)")));
-        // uint256 amount = 1e18;
-        // depositAssets.push(
-        //     DepositAsset({
-        //         asset: WSTETH,
-        //         isPeggedToBase: false,
-        //         rateProvider: address(0),
-        //         genericRateProviderName: WstETHRateProviderName,
-        //         target: liquidV1PriceRouter,
-        //         selector: selector,
-        //         params: [address(WSTETH).toBytes32(), bytes32(amount), address(WETH).toBytes32(), 0, 0, 0, 0, 0]
-        //     })
-        // );
-
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: WETH,
+                asset: LBTC,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -123,7 +98,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
 
         withdrawAssets.push(
             WithdrawAsset({
-                asset: EETH,
+                asset: WBTC,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -131,25 +106,15 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
             })
         );
 
-        withdrawAssets.push(
-            WithdrawAsset({
-                asset: WEETH,
-                withdrawDelay: 3 days,
-                completionWindow: 7 days,
-                withdrawFee: 0,
-                maxLoss: 0.01e4
-            })
-        );
-
-        bool allowPublicDeposits = false;
-        bool allowPublicWithdraws = false;
+        bool allowPublicDeposits = true;
+        bool allowPublicWithdraws = true;
         uint64 shareLockPeriod = 1 days;
         address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "LiquidEthDeployment.json",
+            "CanaryBtcDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,

@@ -1,0 +1,271 @@
+{
+    "metadata": {
+        "AccountantAddress": "0xbe16605B22a7faCEf247363312121670DFe5afBE",
+        "BoringVaultAddress": "0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88",
+        "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+        "DigestComposition": [
+            "Bytes20(DECODER_AND_SANITIZER_ADDRESS)",
+            "Bytes20(TARGET_ADDRESS)",
+            "Bytes1(CAN_SEND_VALUE)",
+            "Bytes4(TARGET_FUNCTION_SELECTOR)",
+            "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)"
+        ],
+        "LeafCount": 16,
+        "ManageRoot": "0x9c530406667b32baf85ecac8cd1e7cb55a852632fa0627dadd1766e00a015958",
+        "ManagerAddress": "0xA24dD7B978Fbe36125cC4817192f7b8AA18d213c",
+        "TreeCapacity": 16
+    },
+    "leafs": [
+        {
+            "AddressArguments": [
+                "0xC329400492c6ff2438472D4651Ad17389fCb843a"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Approve Symbiotic DefaultCollateral_Wrapped liquid staked Ether 2.0 to spend wstETH",
+            "FunctionSelector": "0x095ea7b3",
+            "FunctionSignature": "approve(address,uint256)",
+            "LeafDigest": "0x535b19c8f1748c47cbeb4eaa4e541150bffd8109dfb939f024faba1bf7ba8848",
+            "PackedArgumentAddresses": "0xc329400492c6ff2438472d4651ad17389fcb843a",
+            "TargetAddress": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
+        },
+        {
+            "AddressArguments": [
+                "0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Deposit wstETH into Symbiotic DefaultCollateral_Wrapped liquid staked Ether 2.0",
+            "FunctionSelector": "0x47e7ef24",
+            "FunctionSignature": "deposit(address,uint256)",
+            "LeafDigest": "0x83bb52d19e7fb575e68502be0950953595725a76f37a67b6b1ef66f4447d22b4",
+            "PackedArgumentAddresses": "0x917cee801a67f933f2e6b33fc0cd1ed2d5909d88",
+            "TargetAddress": "0xC329400492c6ff2438472D4651Ad17389fCb843a"
+        },
+        {
+            "AddressArguments": [
+                "0xB26ff591F44b04E78de18f43B46f8b70C6676984"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Approve Symbiotic DefaultCollateral_Coinbase Wrapped Staked ETH to spend cbETH",
+            "FunctionSelector": "0x095ea7b3",
+            "FunctionSignature": "approve(address,uint256)",
+            "LeafDigest": "0x867c731e12024fb0a88da73b0b821d9de0fd41591d0cbfae65632e6148c68ee1",
+            "PackedArgumentAddresses": "0xb26ff591f44b04e78de18f43b46f8b70c6676984",
+            "TargetAddress": "0xBe9895146f7AF43049ca1c1AE358B0541Ea49704"
+        },
+        {
+            "AddressArguments": [
+                "0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Deposit cbETH into Symbiotic DefaultCollateral_Coinbase Wrapped Staked ETH",
+            "FunctionSelector": "0x47e7ef24",
+            "FunctionSignature": "deposit(address,uint256)",
+            "LeafDigest": "0xced5cf990db4493329a707513dabf0c2ee6e99ebe162f488b4770444f6569c04",
+            "PackedArgumentAddresses": "0x917cee801a67f933f2e6b33fc0cd1ed2d5909d88",
+            "TargetAddress": "0xB26ff591F44b04E78de18f43B46f8b70C6676984"
+        },
+        {
+            "AddressArguments": [
+                "0x422F5acCC812C396600010f224b320a743695f85"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Approve Symbiotic DefaultCollateral_Wrapped Binance Beacon ETH to spend wBETH",
+            "FunctionSelector": "0x095ea7b3",
+            "FunctionSignature": "approve(address,uint256)",
+            "LeafDigest": "0x471470562c65ca126ec7d24870b57107bbe1e02089ee289b20e7378ad334b5fc",
+            "PackedArgumentAddresses": "0x422f5accc812c396600010f224b320a743695f85",
+            "TargetAddress": "0xa2E3356610840701BDf5611a53974510Ae27E2e1"
+        },
+        {
+            "AddressArguments": [
+                "0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Deposit wBETH into Symbiotic DefaultCollateral_Wrapped Binance Beacon ETH",
+            "FunctionSelector": "0x47e7ef24",
+            "FunctionSignature": "deposit(address,uint256)",
+            "LeafDigest": "0x8ccdccb26fa6f0c3ef22bfd0ff8e75d4ca139665a12b017cc75fe4171266841e",
+            "PackedArgumentAddresses": "0x917cee801a67f933f2e6b33fc0cd1ed2d5909d88",
+            "TargetAddress": "0x422F5acCC812C396600010f224b320a743695f85"
+        },
+        {
+            "AddressArguments": [
+                "0x03Bf48b8A1B37FBeAd1EcAbcF15B98B924ffA5AC"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Approve Symbiotic DefaultCollateral_Rocket Pool ETH to spend rETH",
+            "FunctionSelector": "0x095ea7b3",
+            "FunctionSignature": "approve(address,uint256)",
+            "LeafDigest": "0x81c4862bec4c152ca7ba650c5b8e394b8a797c0b7416cade6c542f0c596ccec6",
+            "PackedArgumentAddresses": "0x03bf48b8a1b37fbead1ecabcf15b98b924ffa5ac",
+            "TargetAddress": "0xae78736Cd615f374D3085123A210448E74Fc6393"
+        },
+        {
+            "AddressArguments": [
+                "0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Deposit rETH into Symbiotic DefaultCollateral_Rocket Pool ETH",
+            "FunctionSelector": "0x47e7ef24",
+            "FunctionSignature": "deposit(address,uint256)",
+            "LeafDigest": "0x0aa9f34d67479db5079a9c8c06a9d56f3e840b3ff22d2454a98bdd326413b73b",
+            "PackedArgumentAddresses": "0x917cee801a67f933f2e6b33fc0cd1ed2d5909d88",
+            "TargetAddress": "0x03Bf48b8A1B37FBeAd1EcAbcF15B98B924ffA5AC"
+        },
+        {
+            "AddressArguments": [
+                "0x475D3Eb031d250070B63Fa145F0fCFC5D97c304a"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Approve Symbiotic DefaultCollateral_mETH to spend mETH",
+            "FunctionSelector": "0x095ea7b3",
+            "FunctionSignature": "approve(address,uint256)",
+            "LeafDigest": "0x762730ec6f7fb710cf7572cea303a9b046ec6b39fe37b94a96e0a73b6af084ca",
+            "PackedArgumentAddresses": "0x475d3eb031d250070b63fa145f0fcfc5d97c304a",
+            "TargetAddress": "0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa"
+        },
+        {
+            "AddressArguments": [
+                "0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Deposit mETH into Symbiotic DefaultCollateral_mETH",
+            "FunctionSelector": "0x47e7ef24",
+            "FunctionSignature": "deposit(address,uint256)",
+            "LeafDigest": "0x12044e7dc2a24601778b1838b72b3b2a6c29d1f2de59daa6bf66177b65ddf4c0",
+            "PackedArgumentAddresses": "0x917cee801a67f933f2e6b33fc0cd1ed2d5909d88",
+            "TargetAddress": "0x475D3Eb031d250070B63Fa145F0fCFC5D97c304a"
+        },
+        {
+            "AddressArguments": [
+                "0x38B86004842D3FA4596f0b7A0b53DE90745Ab654"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Approve Symbiotic DefaultCollateral_swETH to spend swETH",
+            "FunctionSelector": "0x095ea7b3",
+            "FunctionSignature": "approve(address,uint256)",
+            "LeafDigest": "0x80075c2201b8a109637716215608d7a72f6983cbc0c2c8d56aaaab791a10fa59",
+            "PackedArgumentAddresses": "0x38b86004842d3fa4596f0b7a0b53de90745ab654",
+            "TargetAddress": "0xf951E335afb289353dc249e82926178EaC7DEd78"
+        },
+        {
+            "AddressArguments": [
+                "0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Deposit swETH into Symbiotic DefaultCollateral_swETH",
+            "FunctionSelector": "0x47e7ef24",
+            "FunctionSignature": "deposit(address,uint256)",
+            "LeafDigest": "0x7e31b0caf79e19e93735ea8fc51080f9a4c0961457d32598ce6f4e910b170b7f",
+            "PackedArgumentAddresses": "0x917cee801a67f933f2e6b33fc0cd1ed2d5909d88",
+            "TargetAddress": "0x38B86004842D3FA4596f0b7A0b53DE90745Ab654"
+        },
+        {
+            "AddressArguments": [
+                "0x5198CB44D7B2E993ebDDa9cAd3b9a0eAa32769D2"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Approve Symbiotic DefaultCollateral_Staked Frax Ether to spend sfrxETH",
+            "FunctionSelector": "0x095ea7b3",
+            "FunctionSignature": "approve(address,uint256)",
+            "LeafDigest": "0x4ec68be8fd25f6bfcfc71d0392e495fefb7dcf9a8bd8263a67ec2888c313fdcb",
+            "PackedArgumentAddresses": "0x5198cb44d7b2e993ebdda9cad3b9a0eaa32769d2",
+            "TargetAddress": "0xac3E018457B222d93114458476f3E3416Abbe38F"
+        },
+        {
+            "AddressArguments": [
+                "0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Deposit sfrxETH into Symbiotic DefaultCollateral_Staked Frax Ether",
+            "FunctionSelector": "0x47e7ef24",
+            "FunctionSignature": "deposit(address,uint256)",
+            "LeafDigest": "0x68c7e0ec51cf722ad0772bf338c0a14a80a8ef959c0fda3a7eeb1ba40bbaabfd",
+            "PackedArgumentAddresses": "0x917cee801a67f933f2e6b33fc0cd1ed2d5909d88",
+            "TargetAddress": "0x5198CB44D7B2E993ebDDa9cAd3b9a0eAa32769D2"
+        },
+        {
+            "AddressArguments": [
+                "0xBdea8e677F9f7C294A4556005c640Ee505bE6925"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Approve Symbiotic DefaultCollateral_ETHx to spend ETHx",
+            "FunctionSelector": "0x095ea7b3",
+            "FunctionSignature": "approve(address,uint256)",
+            "LeafDigest": "0x65ba329d66bb429dbac38790fc1042adce1c060679b2fef2e580902baf6fa531",
+            "PackedArgumentAddresses": "0xbdea8e677f9f7c294a4556005c640ee505be6925",
+            "TargetAddress": "0xA35b1B31Ce002FBF2058D22F30f95D405200A15b"
+        },
+        {
+            "AddressArguments": [
+                "0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Deposit ETHx into Symbiotic DefaultCollateral_ETHx",
+            "FunctionSelector": "0x47e7ef24",
+            "FunctionSignature": "deposit(address,uint256)",
+            "LeafDigest": "0x3dbb66b467e1bd71f178d3ccd81009000efcec74d222388fdd3b0e2e6e0dd7c4",
+            "PackedArgumentAddresses": "0x917cee801a67f933f2e6b33fc0cd1ed2d5909d88",
+            "TargetAddress": "0xBdea8e677F9f7C294A4556005c640Ee505bE6925"
+        }
+    ],
+    "MerkleTree": {
+        "0": [
+            "0x9c530406667b32baf85ecac8cd1e7cb55a852632fa0627dadd1766e00a015958"
+        ],
+        "1": [
+            "0x7cd410532c7bb8595b16a76b03d6b6cd91252269d7106e6e7766613992fb6772",
+            "0xce531e68f74bb987eef072c94ae45121ae1dd1276fb997d672b2c3f6aedc2dce"
+        ],
+        "2": [
+            "0xfed748bfeae4ace95e21d58b785484caf11d635f9e3bc2ff4f01f65770413b9b",
+            "0x09185a516af6bb526ae1fcfa0a44fb820ac4af9fd4b8ec8ae4dee2a448df4ae4",
+            "0x7a0d8dc4818484c6f372c8e5fa80f976886ccf37cb1b112f16e84e762fac4f51",
+            "0x07554628383f4c5c980bbcc203bf0301f3e617d38b4e4befa0356a986afc0386"
+        ],
+        "3": [
+            "0x368bfa80fdf51274f4c7a190de587a34c1f695f01e41d753cae4878173ff40f5",
+            "0x89777691230b5ba0779c07f410b0c14e86b294d8385dc5a5c4b96d059189ab54",
+            "0xabef1b72aec5268a8c6e57fb7a5c3762e78aa0103b46a08c6a35c56d0eecb5a7",
+            "0x37a26b804c78e60951373104cb69955c87e7de2eba736913ff67cd8521404716",
+            "0xb87ff87bad5ecd92192bbd91d3af2872943685c6c1aa2785d1a65c874f9ea513",
+            "0x45eb4f7d11f9ff09a5887ce76f53c56bbf9a7597537fabd8fd43cd3e87e9aac2",
+            "0x905d946e61e39e43fffd2b0400ff63083af07ac175693822ce49854ab1deda02",
+            "0xcba59f829f443591ee62b229f494f115eebc4986910b9fa18cca982c70638293"
+        ],
+        "4": [
+            "0x535b19c8f1748c47cbeb4eaa4e541150bffd8109dfb939f024faba1bf7ba8848",
+            "0x83bb52d19e7fb575e68502be0950953595725a76f37a67b6b1ef66f4447d22b4",
+            "0x867c731e12024fb0a88da73b0b821d9de0fd41591d0cbfae65632e6148c68ee1",
+            "0xced5cf990db4493329a707513dabf0c2ee6e99ebe162f488b4770444f6569c04",
+            "0x471470562c65ca126ec7d24870b57107bbe1e02089ee289b20e7378ad334b5fc",
+            "0x8ccdccb26fa6f0c3ef22bfd0ff8e75d4ca139665a12b017cc75fe4171266841e",
+            "0x81c4862bec4c152ca7ba650c5b8e394b8a797c0b7416cade6c542f0c596ccec6",
+            "0x0aa9f34d67479db5079a9c8c06a9d56f3e840b3ff22d2454a98bdd326413b73b",
+            "0x762730ec6f7fb710cf7572cea303a9b046ec6b39fe37b94a96e0a73b6af084ca",
+            "0x12044e7dc2a24601778b1838b72b3b2a6c29d1f2de59daa6bf66177b65ddf4c0",
+            "0x80075c2201b8a109637716215608d7a72f6983cbc0c2c8d56aaaab791a10fa59",
+            "0x7e31b0caf79e19e93735ea8fc51080f9a4c0961457d32598ce6f4e910b170b7f",
+            "0x4ec68be8fd25f6bfcfc71d0392e495fefb7dcf9a8bd8263a67ec2888c313fdcb",
+            "0x68c7e0ec51cf722ad0772bf338c0a14a80a8ef959c0fda3a7eeb1ba40bbaabfd",
+            "0x65ba329d66bb429dbac38790fc1042adce1c060679b2fef2e580902baf6fa531",
+            "0x3dbb66b467e1bd71f178d3ccd81009000efcec74d222388fdd3b0e2e6e0dd7c4"
+        ]
+    }
+}

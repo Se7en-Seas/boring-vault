@@ -1,22 +1,22 @@
 {
   "DepositAssets": {
-    "WBTC": {
+    "LBTC": {
       "isPeggedToBase": true,
       "rateProvider": "0x0000000000000000000000000000000000000000"
     },
-    "tBTC": {
+    "WBTC": {
       "isPeggedToBase": true,
       "rateProvider": "0x0000000000000000000000000000000000000000"
     }
   },
   "WithdrawAssets": {
-    "WBTC": {
+    "LBTC": {
       "CompletionWindow": 604800,
       "MaxLoss": 100,
       "WithdrawDelay": 259200,
       "WithdrawFee": 0
     },
-    "tBTC": {
+    "WBTC": {
       "CompletionWindow": 604800,
       "MaxLoss": 100,
       "WithdrawDelay": 259200,
@@ -26,22 +26,22 @@
   "accountantConfiguration": {
     "AllowedExchangeRateChangeLower": 9950,
     "AllowedExchangeRateChangeUpper": 10050,
-    "Base": "WBTC",
-    "BaseAddress": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    "Base": "LBTC",
+    "BaseAddress": "0x8236a87084f8B84306f72007F36F2618A5634494",
     "ManagementFee": 200,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
     "StartingExchangeRate": 100000000
   },
   "core": {
-    "AccountantWithRateProviders": "0x2c280b764f25113156b025E55e1C68d41522B8D0",
-    "BoringVault": "0xA6d2c328431159bB872242Ea27f9773Ae545eB26",
-    "DecoderAndSanitizer": "0x7f595abdCf94Cf33C69fDc444C72939e28e77ca7",
-    "DelayedWithdraw": "0x1B7f5c7a860D9439C2f2d2D880AE048D91bA38ea",
+    "AccountantWithRateProviders": "0xBADB506d716B617fE560BF3A607d8A51f5aAb59F",
+    "BoringVault": "0xE30A0beCcaD7b0b4Fb7f9834bAfC7F8eD1D5a869",
+    "DecoderAndSanitizer": "0x9792705655773e58B2aD32B572D45971C4f6375d",
+    "DelayedWithdraw": "0xa49178b6853D3aA90EF83F8508B5B8A72De30da4",
     "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
-    "ManagerWithMerkleVerification": "0x6b4d2517EbE6914919582698f972aBd41958b092",
-    "RolesAuthority": "0xa2846D088be913AF640f5a085a88D97c2d76Ee73",
-    "TellerWithMultiAssetSupport": "0x55843302efD870d0f9FF2Fb3176f93D9Fc6c55aa"
+    "ManagerWithMerkleVerification": "0xbD35E964d17c5Fa4AC8987035eFdD0135f02fA24",
+    "RolesAuthority": "0x73096D3B3e8352d9082a25b9b01F1EBE8d648e56",
+    "TellerWithMultiAssetSupport": "0x0B38C0250f08C5A29815a13dA0449250Ca50Eb08"
   },
   "depositConfiguration": {
     "AllowPublicDeposits": true,
