@@ -41,7 +41,19 @@
     "06_TransferOwnerships:deployment:deploy:anvil": "forge script script/deploy/06_TransferOwnerships.s.sol.s.sol --rpc-url http://localhost:8545 --private-key $PRIVATE_KEY --slow",
     "06_TransferOwnerships:deployment:deploy:tenderly": "forge script script/deploy/06_TransferOwnerships.s.sol --rpc-url $TENDERLY_RPC_URL --private-key $PRIVATE_KEY --slow",
     "06_TransferOwnerships:deployment:deploy:sepolia": "forge script script/deploy/06_TransferOwnerships.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --slow",
-    "06_TransferOwnerships:deployment:deploy:mainnet": "forge script script/deploy/06_TransferOwnerships.s.sol --rpc-url $MAINNET_RPC_URL --private-key $PRIVATE_KEY --slow"
+    "06_TransferOwnerships:deployment:deploy:mainnet": "forge script script/deploy/06_TransferOwnerships.s.sol --rpc-url $MAINNET_RPC_URL --private-key $PRIVATE_KEY --slow",
+    
+    "07_DeployDecoderAndSanitizer:deployment:test": "forge test --mc 06_TransferOwnerships --ffi --nmp \"\"",
+    "07_DeployDecoderAndSanitizer:deployment:deploy:anvil": "forge script script/deploy/07_DeployDecoderAndSanitizer.s.sol.s.sol --rpc-url http://localhost:8545 --private-key $PRIVATE_KEY --slow",
+    "07_DeployDecoderAndSanitizer:deployment:deploy:tenderly": "forge script script/deploy/07_DeployDecoderAndSanitizer.s.sol --rpc-url $TENDERLY_RPC_URL --private-key $PRIVATE_KEY --slow",
+    "07_DeployDecoderAndSanitizer:deployment:deploy:sepolia": "forge script script/deploy/07_DeployDecoderAndSanitizer.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --slow",
+    "07_DeployDecoderAndSanitizer:deployment:deploy:mainnet": "forge script script/deploy/07_DeployDecoderAndSanitizer.s.sol --rpc-url $MAINNET_RPC_URL --private-key $PRIVATE_KEY --slow",
+  
+    "08_DeployRateProviders:deployment:test": "forge test --mc 06_TransferOwnerships --ffi --nmp \"\"",
+    "08_DeployRateProviders:deployment:deploy:anvil": "forge script script/deploy/08_DeployRateProviders.s.sol --rpc-url http://localhost:8545 --private-key $PRIVATE_KEY --slow",
+    "08_DeployRateProviders:deployment:deploy:tenderly": "forge script script/deploy/08_DeployRateProviders.s.sol --rpc-url $TENDERLY_RPC_URL --private-key $PRIVATE_KEY --slow",
+    "08_DeployRateProviders:deployment:deploy:sepolia": "forge script script/deploy/08_DeployRateProviders.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --slow",
+    "08_DeployRateProviders:deployment:deploy:mainnet": "forge script script/deploy/08_DeployRateProviders.s.sol --rpc-url $MAINNET_RPC_URL --private-key $PRIVATE_KEY --slow" 
   },
   "devDependencies": {
     "@types/bun": "latest"

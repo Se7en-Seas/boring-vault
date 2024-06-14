@@ -82,7 +82,7 @@ contract IonPoolSharedSetup is Test, MainnetAddresses {
             address(boringVault),
             PAYOUT_ADDRESS,
             STARTING_EXCHANGE_RATE,
-            address(WSTETH), // BASE
+            address(WETH), // BASE
             ALLOWED_EXCHANGE_RATE_CHANGE_UPPER,
             ALLOWED_EXCHANGE_RATE_CHANGE_LOWER,
             MINIMUM_UPDATE_DELAY_IN_SECONDS,
