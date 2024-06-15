@@ -38,15 +38,6 @@ contract StakingDecoderAndSanitizer is
         return addressesFound;
     }
 
-    function withdraw(address recipient, uint256 /*amount*/ )
-        external
-        pure
-        override(SymbioticDecoderAndSanitizer, ZircuitSimpleStakingDecoderAndSanitizer)
-        returns (bytes memory addressesFound)
-    {
-        addressesFound = abi.encodePacked(recipient);
-    }
-
     function deposit()
         external
         pure
