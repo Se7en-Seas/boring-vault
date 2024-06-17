@@ -21,12 +21,12 @@ contract DeploySymbioticUManagerScript is BaseMerkleRootGenerator, ContractNames
 
     uint256 public privateKey;
 
-    address public managerAddress = 0xA24dD7B978Fbe36125cC4817192f7b8AA18d213c;
+    address public managerAddress = 0xcFF411d5C54FE0583A984beE1eF43a4776854B9A;
     address public rawDataDecoderAndSanitizer = 0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781;
-    BoringVault public boringVault = BoringVault(payable(0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88));
+    BoringVault public boringVault = BoringVault(payable(0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C));
     ManagerWithMerkleVerification public manager =
-        ManagerWithMerkleVerification(0xA24dD7B978Fbe36125cC4817192f7b8AA18d213c);
-    address public accountantAddress = 0xbe16605B22a7faCEf247363312121670DFe5afBE;
+        ManagerWithMerkleVerification(0xcFF411d5C54FE0583A984beE1eF43a4776854B9A);
+    address public accountantAddress = 0xc315D6e14DDCDC7407784e2Caf815d131Bc1D3E7;
     RolesAuthority public rolesAuthority;
     SymbioticUManager public symbioticUManager;
 
@@ -52,18 +52,11 @@ contract DeploySymbioticUManagerScript is BaseMerkleRootGenerator, ContractNames
         rolesAuthority = RolesAuthority(deployer.getAddress(SevenSeasRolesAuthorityName));
         updateAddresses(address(boringVault), rawDataDecoderAndSanitizer, managerAddress, accountantAddress);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        ManageLeaf[] memory leafs = new ManageLeaf[](2);
         leafIndex = type(uint256).max;
-        _addSymbioticApproveAndDepositLeaf(leafs, wstETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, cbETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, wBETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, rETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, mETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, swETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, sfrxETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, ETHxDefaultCollateral);
+        _addSymbioticApproveAndDepositLeaf(leafs, sUSDeDefaultCollateral);
 
-        string memory filePath = "./leafs/SuperSymbioticSniperLeafs.json";
+        string memory filePath = "./leafs/LiquidUsdSniperLeafs.json";
 
         bytes32[][] memory merkleTree = _generateMerkleTree(leafs);
 
@@ -75,31 +68,15 @@ contract DeploySymbioticUManagerScript is BaseMerkleRootGenerator, ContractNames
 
         symbioticUManager.updateMerkleTree(merkleTree, false);
 
-        symbioticUManager.setConfiguration(DefaultCollateral(wstETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
-        symbioticUManager.setConfiguration(DefaultCollateral(cbETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
-        symbioticUManager.setConfiguration(DefaultCollateral(wBETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
-        symbioticUManager.setConfiguration(DefaultCollateral(rETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
-        symbioticUManager.setConfiguration(DefaultCollateral(mETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
-        symbioticUManager.setConfiguration(DefaultCollateral(swETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
-        symbioticUManager.setConfiguration(
-            DefaultCollateral(sfrxETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer
-        );
-        symbioticUManager.setConfiguration(DefaultCollateral(ETHxDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
+        symbioticUManager.setConfiguration(DefaultCollateral(sUSDeDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
 
-        rolesAuthority.setRoleCapability(
-            STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.updateMerkleTree.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.setConfiguration.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            SNIPER_ROLE, address(symbioticUManager), SymbioticUManager.assemble.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            SNIPER_ROLE, address(symbioticUManager), SymbioticUManager.fullAssemble.selector, true
-        );
+        // rolesAuthority.setRoleCapability(
+        //     STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.updateMerkleTree.selector, true
+        // );
+        // rolesAuthority.setRoleCapability(
+        //     STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.setConfiguration.selector, true
+        // );
 
-        rolesAuthority.transferOwnership(dev1Address);
         symbioticUManager.transferOwnership(dev1Address);
 
         /// Note need to give strategist role to symbioticUManager
