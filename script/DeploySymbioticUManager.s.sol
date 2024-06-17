@@ -79,7 +79,7 @@ contract DeploySymbioticUManagerScript is BaseMerkleRootGenerator, ContractNames
             STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.setConfiguration.selector, true
         );
 
-        symbioticUManager.transferOwnership(dev1Address);
+        // symbioticUManager.transferOwnership(dev1Address);
 
         /// Note need to give strategist role to symbioticUManager
         /// Note need to set merkle root in the manager
