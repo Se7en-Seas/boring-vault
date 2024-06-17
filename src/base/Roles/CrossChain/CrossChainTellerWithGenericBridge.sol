@@ -32,6 +32,7 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
     function bridge(uint96 shareAmount, address to, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
         external
         requiresAuth
+        nonReentrant
     {
         if (isPaused) revert TellerWithMultiAssetSupport__Paused();
         // Since shares are directly burned, call `beforeTransfer` to enforce before transfer hooks.
