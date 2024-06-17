@@ -64,18 +64,20 @@ contract DeploySymbioticUManagerScript is BaseMerkleRootGenerator, ContractNames
 
         vm.startBroadcast(privateKey);
 
-        symbioticUManager = new SymbioticUManager(dev0Address, rolesAuthority, address(manager), address(boringVault));
+        symbioticUManager = SymbioticUManager(0xC0Ef6577906665908FCe174a5D2D2CDFeDdEA46E));
 
         symbioticUManager.updateMerkleTree(merkleTree, false);
 
-        symbioticUManager.setConfiguration(DefaultCollateral(sUSDeDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
+        symbioticUManager.setConfiguration(
+            DefaultCollateral(sUSDeDefaultCollateral), 1_000e18, rawDataDecoderAndSanitizer
+        );
 
-        // rolesAuthority.setRoleCapability(
-        //     STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.updateMerkleTree.selector, true
-        // );
-        // rolesAuthority.setRoleCapability(
-        //     STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.setConfiguration.selector, true
-        // );
+        rolesAuthority.setRoleCapability(
+            STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.updateMerkleTree.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.setConfiguration.selector, true
+        );
 
         symbioticUManager.transferOwnership(dev1Address);
 
