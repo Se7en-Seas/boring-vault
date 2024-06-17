@@ -64,7 +64,7 @@ contract DeploySymbioticUManagerScript is BaseMerkleRootGenerator, ContractNames
 
         vm.startBroadcast(privateKey);
 
-        symbioticUManager = SymbioticUManager(0xC0Ef6577906665908FCe174a5D2D2CDFeDdEA46E));
+        symbioticUManager = SymbioticUManager(0xC0Ef6577906665908FCe174a5D2D2CDFeDdEA46E);
 
         symbioticUManager.updateMerkleTree(merkleTree, false);
 
