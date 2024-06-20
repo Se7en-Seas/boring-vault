@@ -19,8 +19,8 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Canary BTC";
-    string public boringVaultSymbol = "cBTC";
+    string public boringVaultName = "Lombard BTC Vault";
+    string public boringVaultSymbol = "LBTCv";
     uint8 public boringVaultDecimals = 8;
     address public owner = dev0Address;
 
@@ -32,11 +32,11 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = true;
-        configureDeployment.setupDepositAssets = true;
-        configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = true;
-        configureDeployment.setupTestUser = true;
+        configureDeployment.setupRoles = false;
+        configureDeployment.setupDepositAssets = false;
+        configureDeployment.setupWithdrawAssets = false;
+        configureDeployment.finishSetup = false;
+        configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -61,7 +61,7 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e8;
         //  4 decimals
-        accountantParameters.managementFee = 0.02e4;
+        accountantParameters.managementFee = 0.015e4;
         accountantParameters.performanceFee = 0;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;
@@ -114,7 +114,7 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "CanaryBtcDeployment.json",
+            "LombardBtcDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
