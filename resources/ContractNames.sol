@@ -69,8 +69,8 @@ contract ContractNames {
     string public constant CanaryBtcRolesAuthorityName = "Lombard BTC RolesAuthority Version 0.0";
     string public constant CanaryBtcName = "Lombard BTC V0.1";
     string public constant CanaryBtcManagerName = "Lombard BTC Manager With Merkle Verification V0.0";
-    string public constant CanaryBtcAccountantName = "Lombard BTC Accountant With Rate Providers V0.0";
-    string public constant CanaryBtcTellerName = "Lombard BTC Teller With Multi Asset Support V0.0";
+    string public constant CanaryBtcAccountantName = "Lombard BTC Accountant With Rate Providers V0.1";
+    string public constant CanaryBtcTellerName = "Lombard BTC Teller With Multi Asset Support V0.1";
     string public constant CanaryBtcDecoderAndSanitizerName = "Lombard BTC Decoder and Sanitizer V0.0";
     string public constant CanaryBtcDelayedWithdrawer = "Lombard BTC Delayed Withdrawer V0.0";
 
