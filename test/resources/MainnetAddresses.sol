@@ -541,5 +541,5 @@ contract MainnetAddresses {
     address public sfrxETHDefaultCollateral = 0x5198CB44D7B2E993ebDDa9cAd3b9a0eAa32769D2;
     address public ETHxDefaultCollateral = 0xBdea8e677F9f7C294A4556005c640Ee505bE6925;
     address public uniETHDefaultCollateral = 0x1C57ea879dd3e8C9fefa8224fdD1fa20dd54211E;
-    address public sUSDeDefaultCollateral = address(0);
+    address public sUSDeDefaultCollateral = 0x19d0D8e6294B7a04a2733FE433444704B791939A;
 }
