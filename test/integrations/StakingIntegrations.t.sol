@@ -435,7 +435,7 @@ contract StakingIntegrationsTest is Test, MainnetAddresses {
         targetData[0] = abi.encodeWithSignature("withdraw(uint256)", 100e18);
         targetData[1] = abi.encodeWithSignature("stake(uint256)", 0);
         targetData[2] = abi.encodeWithSignature("approve(address,uint256)", mantleLspStaking, type(uint256).max);
-        uint256 expectedMeth = 94453026416214353277;
+        uint256 expectedMeth = 96846201237918440407;
         targetData[3] = abi.encodeWithSignature("unstakeRequest(uint128,uint128)", expectedMeth, 0);
         uint256[] memory values = new uint256[](4);
         values[1] = 100e18;
@@ -444,21 +444,25 @@ contract StakingIntegrationsTest is Test, MainnetAddresses {
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+
+        // Go back in time, so that request can be finalized immediately.
+        vm.roll(block.number - 10_200);
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
-        uint256 withdrawRequestId = 5286;
+        uint256 withdrawRequestId = 1500;
 
-        // _finalizeSwellRequest(withdrawRequestId);
+        // TODO this test fails.
+        // _finalizeMantleRequest(withdrawRequestId, 1_000e18);
 
         // manageLeafs = new ManageLeaf[](1);
         // manageLeafs[0] = leafs[4];
         // manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         // targets = new address[](1);
-        // targets[0] = swEXIT;
+        // targets[0] = mantleLspStaking;
 
         // targetData = new bytes[](1);
-        // targetData[0] = abi.encodeWithSignature("finalizeWithdrawal(uint256)", withdrawRequestId);
+        // targetData[0] = abi.encodeWithSignature("claimUnstakeRequest(uint256)", withdrawRequestId);
         // values = new uint256[](1);
 
         // decodersAndSanitizers = new address[](1);
@@ -638,9 +642,25 @@ contract StakingIntegrationsTest is Test, MainnetAddresses {
         vm.stopPrank();
     }
 
+    function _finalizeMantleRequest(uint256 requestId, uint256 amount) internal {
+        vm.roll(block.number + 10_201);
+        deal(mantleLspStaking, amount);
+        vm.prank(mantleLspStaking);
+        MantleStaking(0x38fDF7b489316e03eD8754ad339cb5c4483FDcf9).allocateETH{value: amount}();
+        // Give dpeositManager a ton of ETH to cover all withdraws.
+        // deal(depositManager, type(uint96).max);
+        // vm.startPrank(0x289d600447A74B952AD16F0BD53b8eaAac2d2D71);
+        // ISWEXIT(swEXIT).processWithdrawals(requestId);
+        // vm.stopPrank();
+    }
+
     function withdraw(uint256 amount) external {
         boringVault.enter(address(0), ERC20(address(0)), 0, address(this), amount);
     }
+}
+
+interface MantleStaking {
+    function allocateETH() external payable;
 }
 
 interface IWithdrawRequestNft {

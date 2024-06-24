@@ -7,13 +7,15 @@ import {NativeWrapperDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/NativeWrapperDecoderAndSanitizer.sol";
 import {LidoDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/LidoDecoderAndSanitizer.sol";
 import {SwellDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/SwellDecoderAndSanitizer.sol";
+import {MantleDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/MantleDecoderAndSanitizer.sol";
 
 contract StakingDecoderAndSanitizer is
     BaseDecoderAndSanitizer,
     EtherFiDecoderAndSanitizer,
     NativeWrapperDecoderAndSanitizer,
     LidoDecoderAndSanitizer,
-    SwellDecoderAndSanitizer
+    SwellDecoderAndSanitizer,
+    MantleDecoderAndSanitizer
 {
     constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
 
