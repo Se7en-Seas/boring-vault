@@ -12,17 +12,22 @@ contract EthPerWstEthRateProviderTest is IonPoolSharedSetup {
     function setUp() public override {
         super.setUp();
 
-        ethPerWstEthRateProvider = new EthPerWstEthRateProvider(address(ETH_PER_STETH_CHAINLINK), address(WSTETH_ADDRESS), MAX_TIME_FROM_LAST_UPDATE);
+        ethPerWstEthRateProvider = new EthPerWstEthRateProvider(
+            address(ETH_PER_STETH_CHAINLINK), address(WSTETH_ADDRESS), MAX_TIME_FROM_LAST_UPDATE
+        );
     }
+
     function test_Revert_MaxTimeFromLastUpdate() public {
         (,,, uint256 lastUpdatedAt,) = ETH_PER_STETH_CHAINLINK.latestRoundData(); // price of stETH denominated in ETH
-        
-        ethPerWstEthRateProvider.getRate(); 
+
+        ethPerWstEthRateProvider.getRate();
 
         vm.warp(block.timestamp + 1 days);
 
         vm.expectRevert(
-            abi.encodeWithSelector(EthPerWstEthRateProvider.MaxTimeFromLastUpdatePassed.selector, block.timestamp, lastUpdatedAt)
+            abi.encodeWithSelector(
+                EthPerWstEthRateProvider.MaxTimeFromLastUpdatePassed.selector, block.timestamp, lastUpdatedAt
+            )
         );
         ethPerWstEthRateProvider.getRate();
     }

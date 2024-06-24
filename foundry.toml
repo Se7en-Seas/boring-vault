@@ -7,6 +7,7 @@ evm_version = 'shanghai'
 optimizer = true
 optimizer_runs = 200
 fs_permissions = [{ access = "read-write", path = "./" }]
+cbor_metadata = true
 
 [rpc_endpoints]
 mainnet = "${MAINNET_RPC_URL}"
@@ -17,7 +18,7 @@ arbitrum = "${ARBITRUM_RPC_URL}"
 optimism = "${OPTIMISM_RPC_URL}"
 base = "${BASE_RPC_URL}"
 
-# [etherscan]
+[etherscan]
 # mainnet = { key = "${ETHERSCAN_KEY}", url = "https://api.etherscan.io/api" }
 # polygon = { key = "${POLYGONSCAN_KEY}" }
 # bsc = { key = "${BSCSCAN_KEY}" }
@@ -25,6 +26,8 @@ base = "${BASE_RPC_URL}"
 # arbitrum = { key = "${ARBISCAN_KEY}" }
 # optimism = { key = "${OPTIMISMSCAN_KEY}" }
 # base = { key = "${BASESCAN_KEY}" }
+
+tenderly = { key = "${TENDERLY_ACCESS_KEY}", chain = 99099127, url = "${TENDERLY_ADMIN_RPC_URL}/verify/etherscan" }
 
 [fmt]
 FOUNDRY_FMT_LINE_LENGTH = 120

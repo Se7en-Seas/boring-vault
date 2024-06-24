@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.19 <=0.9.0;
 
-import { ICreateX } from "./../src/interfaces/ICreateX.sol";
-import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import {ICreateX} from "./../src/interfaces/ICreateX.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-import { Script, stdJson } from "forge-std/Script.sol";
-import { console2 } from "forge-std/console2.sol";
+import {Script, stdJson} from "forge-std/Script.sol";
+import {console2} from "forge-std/console2.sol";
 
 abstract contract BaseScript is Script {
     using stdJson for string;
@@ -41,13 +41,13 @@ abstract contract BaseScript is Script {
     ///
     /// The use case for $ETH_FROM is to specify the broadcaster key and its address via the command line.
     constructor() {
-        deployCreate2 = vm.envOr({ name: "CREATE2", defaultValue: true });
-        address from = vm.envOr({ name: "ETH_FROM", defaultValue: address(0) });
+        deployCreate2 = vm.envOr({name: "CREATE2", defaultValue: true});
+        address from = vm.envOr({name: "ETH_FROM", defaultValue: address(0)});
         if (from != address(0)) {
             broadcaster = from;
         } else {
-            mnemonic = vm.envOr({ name: "MNEMONIC", defaultValue: TEST_MNEMONIC });
-            (broadcaster,) = deriveRememberKey({ mnemonic: mnemonic, index: 0 });
+            mnemonic = vm.envOr({name: "MNEMONIC", defaultValue: TEST_MNEMONIC});
+            (broadcaster,) = deriveRememberKey({mnemonic: mnemonic, index: 0});
         }
 
         console2.log("broadcaster", broadcaster);

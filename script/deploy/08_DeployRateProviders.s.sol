@@ -7,7 +7,7 @@ import {EthPerWstEthRateProvider} from "./../../src/oracles/EthPerWstEthRateProv
 import {ETH_PER_STETH_CHAINLINK, WSTETH_ADDRESS} from "@ion-protocol/Constants.sol";
 
 import {BaseScript} from "./../Base.s.sol";
-import { stdJson as StdJson } from "forge-std/StdJson.sol";
+import {stdJson as StdJson} from "forge-std/StdJson.sol";
 
 /// NOTE This script must change based on the supported assets of each vault deployment.
 contract DeployRateProviders is BaseScript {
@@ -18,12 +18,9 @@ contract DeployRateProviders is BaseScript {
 
     uint256 maxTimeFromLastUpdate = config.readUint(".maxTimeFromLastUpdate");
 
-    function run() public broadcast returns (IRateProvider rateProvider) {        
-        
-        rateProvider = new EthPerWstEthRateProvider{ salt: ZERO_SALT }(
-            address(ETH_PER_STETH_CHAINLINK),
-            address(WSTETH_ADDRESS),
-            maxTimeFromLastUpdate
+    function run() public broadcast returns (IRateProvider rateProvider) {
+        rateProvider = new EthPerWstEthRateProvider{salt: ZERO_SALT}(
+            address(ETH_PER_STETH_CHAINLINK), address(WSTETH_ADDRESS), maxTimeFromLastUpdate
         );
     }
 }

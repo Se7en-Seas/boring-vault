@@ -3163,7 +3163,7 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         uint256 layer_length;
         // Iterate through merkleTreeIn to copy over data.
         for (uint256 i; i < merkleTreeIn_length; ++i) {
-            layer_length = merkleTreeIn[i].length; // number of leafs 
+            layer_length = merkleTreeIn[i].length; // number of leafs
             merkleTreeOut[i] = new bytes32[](layer_length);
             for (uint256 j; j < layer_length; ++j) {
                 merkleTreeOut[i][j] = merkleTreeIn[i][j];
