@@ -124,8 +124,9 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         DecoderCustomTypes.ApproxParams calldata,
         DecoderCustomTypes.LimitOrderData calldata limit
     ) external pure virtual returns (bytes memory addressesFound) {
-        // TODO is this check enough or should we also verify the limit order arrays are empty.
-        if (limit.limitRouter != address(0)) revert PendleRouterDecoderAndSanitizer__AggregatorSwapsNotPermitted();
+        if (limit.limitRouter != address(0) || limit.normalFills.length > 0 || limit.flashFills.length > 0) {
+            revert PendleRouterDecoderAndSanitizer__AggregatorSwapsNotPermitted();
+        }
         addressesFound = abi.encodePacked(receiver, market);
     }
 
@@ -136,8 +137,9 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         uint256, /*minSyOut*/
         DecoderCustomTypes.LimitOrderData calldata limit
     ) external pure virtual returns (bytes memory addressesFound) {
-        // TODO is this check enough or should we also verify the limit order arrays are empty.
-        if (limit.limitRouter != address(0)) revert PendleRouterDecoderAndSanitizer__AggregatorSwapsNotPermitted();
+        if (limit.limitRouter != address(0) || limit.normalFills.length > 0 || limit.flashFills.length > 0) {
+            revert PendleRouterDecoderAndSanitizer__AggregatorSwapsNotPermitted();
+        }
         addressesFound = abi.encodePacked(receiver, market);
     }
 }
