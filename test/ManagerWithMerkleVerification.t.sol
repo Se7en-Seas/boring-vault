@@ -1041,6 +1041,114 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         );
     }
 
+    function testPendleRouterSwapBetweenSyAndPt() external {
+        deal(address(WEETH), address(boringVault), 1_000e18);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        leafs[0] = ManageLeaf(address(WEETH), false, "approve(address,uint256)", new address[](1));
+        leafs[0].argumentAddresses[0] = pendleRouter;
+        leafs[1] = ManageLeaf(pendleWeethSy, false, "approve(address,uint256)", new address[](1));
+        leafs[1].argumentAddresses[0] = pendleRouter;
+        leafs[2] = ManageLeaf(pendleEethPt, false, "approve(address,uint256)", new address[](1));
+        leafs[2].argumentAddresses[0] = pendleRouter;
+        leafs[3] = ManageLeaf(
+            pendleRouter,
+            false,
+            "mintSyFromToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
+            new address[](6)
+        );
+        leafs[3].argumentAddresses[0] = address(boringVault);
+        leafs[3].argumentAddresses[1] = pendleWeethSy;
+        leafs[3].argumentAddresses[2] = address(WEETH);
+        leafs[3].argumentAddresses[3] = address(WEETH);
+        leafs[3].argumentAddresses[4] = address(0);
+        leafs[3].argumentAddresses[5] = address(0);
+        leafs[4] = ManageLeaf(
+            pendleRouter,
+            false,
+            "swapExactSyForPt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256),(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+            new address[](2)
+        );
+        leafs[4].argumentAddresses[0] = address(boringVault);
+        leafs[4].argumentAddresses[1] = pendleWeETHMarket;
+        leafs[5] = ManageLeaf(
+            pendleRouter,
+            false,
+            "swapExactPtForSy(address,address,uint256,uint256,(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+            new address[](2)
+        );
+        leafs[5].argumentAddresses[0] = address(boringVault);
+        leafs[5].argumentAddresses[1] = pendleWeETHMarket;
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](6);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+        manageLeafs[5] = leafs[5];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](6);
+        targets[0] = address(WEETH);
+        targets[1] = pendleWeethSy;
+        targets[2] = pendleEethPt;
+        targets[3] = pendleRouter;
+        targets[4] = pendleRouter;
+        targets[5] = pendleRouter;
+
+        bytes[] memory targetData = new bytes[](6);
+        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", pendleRouter, type(uint256).max);
+        targetData[1] = abi.encodeWithSignature("approve(address,uint256)", pendleRouter, type(uint256).max);
+        targetData[2] = abi.encodeWithSignature("approve(address,uint256)", pendleRouter, type(uint256).max);
+        DecoderCustomTypes.SwapData memory swapData =
+            DecoderCustomTypes.SwapData(DecoderCustomTypes.SwapType.NONE, address(0), hex"", false);
+        DecoderCustomTypes.TokenInput memory tokenInput =
+            DecoderCustomTypes.TokenInput(address(WEETH), 1_000e18, address(WEETH), address(0), swapData);
+        targetData[3] = abi.encodeWithSignature(
+            "mintSyFromToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
+            address(boringVault),
+            pendleWeethSy,
+            0,
+            tokenInput
+        );
+        DecoderCustomTypes.ApproxParams memory approxParams =
+            DecoderCustomTypes.ApproxParams(0, type(uint256).max, 0, 2566, 1e14);
+        DecoderCustomTypes.LimitOrderData memory limitOrderData;
+        targetData[4] = abi.encodeWithSignature(
+            "swapExactSyForPt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256),(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+            address(boringVault),
+            pendleWeETHMarket,
+            1_000e18,
+            0,
+            approxParams,
+            limitOrderData
+        );
+        targetData[5] = abi.encodeWithSignature(
+            "swapExactPtForSy(address,address,uint256,uint256,(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+            address(boringVault),
+            pendleWeETHMarket,
+            1067250850449490881768,
+            0,
+            limitOrderData
+        );
+
+        address[] memory decodersAndSanitizers = new address[](6);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+
+        uint256[] memory values = new uint256[](6);
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+    }
+
     function testPendleRouterIntegration() external {
         deal(address(WEETH), address(boringVault), 1_000e18);
 

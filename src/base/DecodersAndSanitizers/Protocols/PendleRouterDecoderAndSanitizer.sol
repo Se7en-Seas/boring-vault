@@ -115,4 +115,29 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
             addressesFound = abi.encodePacked(addressesFound, markets[i]);
         }
     }
+
+    function swapExactSyForPt(
+        address receiver,
+        address market,
+        uint256, /*exactSyIn*/
+        uint256, /*minPtOut*/
+        DecoderCustomTypes.ApproxParams calldata,
+        DecoderCustomTypes.LimitOrderData calldata limit
+    ) external pure virtual returns (bytes memory addressesFound) {
+        // TODO is this check enough or should we also verify the limit order arrays are empty.
+        if (limit.limitRouter != address(0)) revert PendleRouterDecoderAndSanitizer__AggregatorSwapsNotPermitted();
+        addressesFound = abi.encodePacked(receiver, market);
+    }
+
+    function swapExactPtForSy(
+        address receiver,
+        address market,
+        uint256, /*exactPtIn*/
+        uint256, /*minSyOut*/
+        DecoderCustomTypes.LimitOrderData calldata limit
+    ) external pure virtual returns (bytes memory addressesFound) {
+        // TODO is this check enough or should we also verify the limit order arrays are empty.
+        if (limit.limitRouter != address(0)) revert PendleRouterDecoderAndSanitizer__AggregatorSwapsNotPermitted();
+        addressesFound = abi.encodePacked(receiver, market);
+    }
 }
