@@ -451,25 +451,26 @@ contract StakingIntegrationsTest is Test, MainnetAddresses {
 
         uint256 withdrawRequestId = 1500;
 
-        // TODO this test fails.
-        // _finalizeMantleRequest(withdrawRequestId, 1_000e18);
+        _finalizeMantleRequest(2_000e18);
 
-        // manageLeafs = new ManageLeaf[](1);
-        // manageLeafs[0] = leafs[4];
-        // manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+        manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[4];
+        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
-        // targets = new address[](1);
-        // targets[0] = mantleLspStaking;
+        targets = new address[](1);
+        targets[0] = mantleLspStaking;
 
-        // targetData = new bytes[](1);
-        // targetData[0] = abi.encodeWithSignature("claimUnstakeRequest(uint256)", withdrawRequestId);
-        // values = new uint256[](1);
+        targetData = new bytes[](1);
+        targetData[0] = abi.encodeWithSignature("claimUnstakeRequest(uint256)", withdrawRequestId);
+        values = new uint256[](1);
 
-        // decodersAndSanitizers = new address[](1);
-        // decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-        // manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+        decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
-        // assertApproxEqAbs(address(boringVault).balance, 100e18, 1, "BoringVault should have withdrawn and got ETH.");
+        assertApproxEqRel(
+            address(boringVault).balance, 100e18, 0.0005e18, "BoringVault should have withdrawn and got ETH."
+        );
     }
 
     // ========================================= HELPER FUNCTIONS =========================================
@@ -642,16 +643,12 @@ contract StakingIntegrationsTest is Test, MainnetAddresses {
         vm.stopPrank();
     }
 
-    function _finalizeMantleRequest(uint256 requestId, uint256 amount) internal {
+    function _finalizeMantleRequest(uint256 amount) internal {
         vm.roll(block.number + 10_201);
         deal(mantleLspStaking, amount);
+
         vm.prank(mantleLspStaking);
         MantleStaking(0x38fDF7b489316e03eD8754ad339cb5c4483FDcf9).allocateETH{value: amount}();
-        // Give dpeositManager a ton of ETH to cover all withdraws.
-        // deal(depositManager, type(uint96).max);
-        // vm.startPrank(0x289d600447A74B952AD16F0BD53b8eaAac2d2D71);
-        // ISWEXIT(swEXIT).processWithdrawals(requestId);
-        // vm.stopPrank();
     }
 
     function withdraw(uint256 amount) external {
@@ -659,8 +656,37 @@ contract StakingIntegrationsTest is Test, MainnetAddresses {
     }
 }
 
+interface IRequest {
+    struct UnstakeRequest {
+        uint64 blockNumber;
+        address requester;
+        uint128 id;
+        uint128 mETHLocked;
+        uint128 ethRequested;
+        uint128 cumulativeETHRequested;
+    }
+
+    function requestByID(uint256 id) external view returns (UnstakeRequest memory);
+}
+
+interface IOracle {
+    struct OracleRecord {
+        uint64 updateStartBlock;
+        uint64 updateEndBlock;
+        uint64 currentNumValidatorsNotWithdrawable;
+        uint64 cumulativeNumValidatorsWithdrawable;
+        uint128 windowWithdrawnPrincipalAmount;
+        uint128 windowWithdrawnRewardAmount;
+        uint128 currentTotalValidatorBalance;
+        uint128 cumulativeProcessedDepositAmount;
+    }
+
+    function latestRecord() external view returns (OracleRecord memory);
+}
+
 interface MantleStaking {
     function allocateETH() external payable;
+    function allocatedETHForClaims() external view returns (uint256);
 }
 
 interface IWithdrawRequestNft {
