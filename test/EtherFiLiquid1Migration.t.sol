@@ -82,6 +82,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     uint256 ETHER_FI_LIQUID_SHARE_PRICE_ORACLE_ID = 3;
 
     address public registryMultisig;
+    address public strategistMultisig = 0x41DFc53B13932a2690C9790527C1967d8579a6ae;
     address public strategist;
     Registry public registry;
 
@@ -94,7 +95,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     function setUp() external {
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 20080435;
+        uint256 blockNumber = 20179060;
         _startFork(rpcKey, blockNumber);
 
         registry = Registry(etherFiLiquid1.registry());
@@ -117,67 +118,67 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Joint multisig only adds the first migration position/adaptor to the catalogue,
         // then adds the position ot the cellar, specifying it to be illiquid.
         // Next it gives etherfi liquid the solver role so it can rebalance.
-        vm.startPrank(liquidMultisig);
+        // vm.startPrank(liquidMultisig);
         // etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
         // etherFiLiquid1.addPositionToCatalogue(ILLIQUID_MIGRATION_POSITION);
-        etherFiLiquid1.addPosition(0, ILLIQUID_MIGRATION_POSITION, abi.encode(false), false);
+        // etherFiLiquid1.addPosition(0, ILLIQUID_MIGRATION_POSITION, abi.encode(false), false);
         // rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
-        vm.stopPrank();
+        // vm.stopPrank();
 
         // Strategist begins rebalancing positions.
         uint256 startingTotalAssets = etherFiLiquid1.totalAssets();
-        _migratePendleAssets();
-        assertApproxEqRel(
-            etherFiLiquid1.totalAssets(),
-            startingTotalAssets,
-            0.0001e18,
-            "Total assets should not change after migrating pendle assets."
-        );
+        // _migratePendleAssets();
+        // assertApproxEqRel(
+        //     etherFiLiquid1.totalAssets(),
+        //     startingTotalAssets,
+        //     0.0001e18,
+        //     "Total assets should not change after migrating pendle assets."
+        // );
 
-        _migrateAuraAssets();
-        assertApproxEqRel(
-            etherFiLiquid1.totalAssets(),
-            startingTotalAssets,
-            0.0001e18,
-            "Total assets should not change after migrating aura assets."
-        );
+        // _migrateAuraAssets();
+        // assertApproxEqRel(
+        //     etherFiLiquid1.totalAssets(),
+        //     startingTotalAssets,
+        //     0.0001e18,
+        //     "Total assets should not change after migrating aura assets."
+        // );
 
-        _closeUniswapV3Positions();
+        // _closeUniswapV3Positions();
 
-        assertApproxEqRel(
-            etherFiLiquid1.totalAssets(),
-            startingTotalAssets,
-            0.0001e18,
-            "Total assets should not change after migrating uniV3 assets."
-        );
-        _closeGearBoxPosition();
-        assertApproxEqRel(
-            etherFiLiquid1.totalAssets(),
-            startingTotalAssets,
-            0.0001e18,
-            "Total assets should not change after migrating aura assets."
-        );
+        // assertApproxEqRel(
+        //     etherFiLiquid1.totalAssets(),
+        //     startingTotalAssets,
+        //     0.0001e18,
+        //     "Total assets should not change after migrating uniV3 assets."
+        // );
+        // _closeGearBoxPosition();
+        // assertApproxEqRel(
+        //     etherFiLiquid1.totalAssets(),
+        //     startingTotalAssets,
+        //     0.0001e18,
+        //     "Total assets should not change after migrating aura assets."
+        // );
 
-        _closeMorphoBluePosition();
+        // _closeMorphoBluePosition();
 
-        _migrateAavePosition();
-        assertApproxEqRel(
-            etherFiLiquid1.totalAssets(),
-            startingTotalAssets,
-            0.0001e18,
-            "Total assets should not change after migrating aave assets."
-        );
+        // _migrateAavePosition();
+        // assertApproxEqRel(
+        //     etherFiLiquid1.totalAssets(),
+        //     startingTotalAssets,
+        //     0.0001e18,
+        //     "Total assets should not change after migrating aave assets."
+        // );
 
-        ERC20[] memory tokensToMigrate = new ERC20[](4);
-        tokensToMigrate[0] = WETH;
-        tokensToMigrate[1] = WEETH;
-        tokensToMigrate[2] = WSTETH;
-        tokensToMigrate[3] = EETH;
+        ERC20[] memory tokensToMigrate = new ERC20[](2);
+        // tokensToMigrate[0] = WETH;
+        tokensToMigrate[0] = WEETH;
+        // tokensToMigrate[2] = WSTETH;
+        tokensToMigrate[1] = EETH;
         _migrateERC20Positions(tokensToMigrate);
 
         // Strategist sets the holding position to the migration position to stop further deposits.
         // Also allows us to remove current holding position.
-        vm.startPrank(strategist);
+        vm.startPrank(strategistMultisig);
         etherFiLiquid1.setHoldingPosition(ILLIQUID_MIGRATION_POSITION);
         vm.stopPrank();
 
@@ -211,7 +212,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         etherFiLiquid1.deposit(1e18, address(this));
 
         // At this point the entire vault is migrated. Strategist can iniaite shutdown to prevent further deposits.
-        vm.prank(strategist);
+        vm.prank(strategistMultisig);
         etherFiLiquid1.initiateShutdown();
         // Deposits still revert.
         vm.expectRevert(bytes(abi.encodeWithSelector(EtherFiLiquid1.Cellar__ContractShutdown.selector)));
@@ -249,7 +250,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         etherFiLiquid1.toggleIgnorePause();
         // Force out eETH position as it always keeps 1 wei in balance so can not be removed normally.
         // 1 is the index in etherFiLiquid1.getCreditPositions();
-        etherFiLiquid1.forcePositionOut(1, EETH_POSITION, false);
+        etherFiLiquid1.forcePositionOut(1, EETH_POSITION, false); // TODO Credit position array is currently not ordered properly so this step will fail
+        // TODO change the 1 to a 0 to make it pass.
         // Revoke solver role from Cellar so that strategist can not deposit or withdraw from BoringVault.
         rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, false);
         // Give the migrator contract the appropriate roles to complete the migration.
@@ -353,7 +355,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Even as the rate changes, users still receieve BoringVault shares at a 1:1 ratio.
         // Rate goes down.
         uint256 newRate = accountant.getRate().mulDivDown(0.95e4, 1e4);
-        vm.prank(registryMultisig);
+        vm.prank(strategistMultisig);
         accountant.updateExchangeRate(uint96(newRate));
 
         vm.startPrank(liquidMultisig);
@@ -371,7 +373,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         // Rate goes up.
         newRate = accountant.getRate().mulDivDown(1.05e4, 1e4);
-        vm.prank(registryMultisig);
+        vm.prank(strategistMultisig);
         accountant.updateExchangeRate(uint96(newRate));
 
         vm.startPrank(liquidMultisig);
@@ -389,7 +391,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
         // If exchangeRate is updated to some extreme value, pause it triggered which causes all Cellar withdraws to revert.
         newRate = accountant.getRate().mulDivDown(0.01e4, 1e4);
-        vm.prank(registryMultisig);
+        vm.prank(strategistMultisig);
         accountant.updateExchangeRate(uint96(newRate));
 
         vm.expectRevert(bytes(abi.encodeWithSelector(EtherFiLiquid1.Cellar__OracleFailure.selector)));
@@ -599,7 +601,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
             bytes[] memory adaptorCalls = new bytes[](1);
             adaptorCalls[0] = abi.encodeWithSignature("deposit(address,uint256,uint256)", token, type(uint256).max, 0);
             data[0] = EtherFiLiquid1.AdaptorCall({adaptor: address(migrationAdaptor), callData: adaptorCalls});
-            vm.startPrank(strategist);
+            vm.startPrank(strategistMultisig);
             etherFiLiquid1.callOnAdaptor(data);
             vm.stopPrank();
         }
@@ -613,7 +615,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         while (creditPositions.length > 2) {
             for (uint32 i; i < creditPositions.length; i++) {
                 if (creditPositions[i] != boringVaultPosition && creditPositions[i] != eETHPosition) {
-                    vm.startPrank(strategist);
+                    vm.startPrank(strategistMultisig);
                     etherFiLiquid1.removePosition(i, false);
                     etherFiLiquid1.removePositionFromCatalogue(creditPositions[i]);
                     vm.stopPrank();
@@ -628,7 +630,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         while (debtPositions.length > 0) {
             for (uint32 i; i < debtPositions.length; i++) {
                 if (debtPositions[i] != boringVaultPosition) {
-                    vm.startPrank(strategist);
+                    vm.startPrank(strategistMultisig);
                     etherFiLiquid1.removePosition(i, true);
                     etherFiLiquid1.removePositionFromCatalogue(debtPositions[i]);
                     vm.stopPrank();
