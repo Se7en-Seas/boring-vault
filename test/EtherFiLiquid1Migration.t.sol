@@ -232,6 +232,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // - Sets the migration share price oracle to be the parity share price oracle
         // - Distrusts the eETH position, and the illiquid migration position
         // - Pauses the cellar
+        /// @notice Registry Multisig TX Nonce 1.
         vm.startPrank(registryMultisig);
         address[] memory _add = new address[](1);
         _add[0] = address(etherFiLiquid1);
@@ -243,6 +244,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         registry.batchPause(_add);
         vm.stopPrank();
 
+        /// @notice Joint Multisig TX Nonce 11.
         vm.startPrank(liquidMultisig);
         etherFiLiquid1.toggleIgnorePause();
         // Force out eETH position as it always keeps 1 wei in balance so can not be removed normally.
@@ -278,6 +280,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         vm.stopPrank();
 
         // If everything looks good registry can unpause the cellar.
+        /// @notice Registry Multisig TX Nonce 2.
         vm.startPrank(registryMultisig);
         registry.batchUnpause(_add);
         vm.stopPrank();
@@ -289,6 +292,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
             "Total assets should not change after completing migration."
         );
 
+        /// @notice Joint Multisig TX Nonce 12.
         vm.startPrank(liquidMultisig);
         teller.removeAsset(rETH_weETH);
         teller.removeAsset(WSTETH);
