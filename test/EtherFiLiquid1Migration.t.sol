@@ -176,10 +176,13 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         tokensToMigrate[1] = EETH;
         _migrateERC20Positions(tokensToMigrate);
 
-        // Strategist sets the holding position to the migration position to stop further deposits.
+        // Strategist sets the holding position to the migration position to stop further deposits.\
+        // Also drops al alternative asset data, to stop multiAssetDeposits.
         // Also allows us to remove current holding position.
         vm.startPrank(strategistMultisig);
         etherFiLiquid1.setHoldingPosition(ILLIQUID_MIGRATION_POSITION);
+        etherFiLiquid1.dropAlternativeAssetData(address(WEETH));
+        etherFiLiquid1.dropAlternativeAssetData(address(EETH));
         vm.stopPrank();
 
         // Remove remaning positions, except the migration position and the eETH position(since it cant be removed due to 1 wei balance).
