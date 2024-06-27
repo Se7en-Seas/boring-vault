@@ -19,8 +19,8 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Canary BTC";
-    string public boringVaultSymbol = "cBTC";
+    string public boringVaultName = "Lombard BTC Vault";
+    string public boringVaultSymbol = "LBTCv";
     uint8 public boringVaultDecimals = 8;
     address public owner = dev0Address;
 
@@ -34,7 +34,7 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         configureDeployment.deployContracts = true;
         configureDeployment.setupRoles = true;
         configureDeployment.setupDepositAssets = true;
-        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.setupWithdrawAssets = false;
         configureDeployment.finishSetup = true;
         configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
@@ -57,11 +57,11 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = LBTC;
+        accountantParameters.base = WBTC;
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e8;
         //  4 decimals
-        accountantParameters.managementFee = 0.02e4;
+        accountantParameters.managementFee = 0.015e4;
         accountantParameters.performanceFee = 0;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;
@@ -74,17 +74,17 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
             abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
         // Setup extra deposit assets.
-        depositAssets.push(
-            DepositAsset({
-                asset: WBTC,
-                isPeggedToBase: true,
-                rateProvider: address(0),
-                genericRateProviderName: "",
-                target: address(0),
-                selector: bytes4(0),
-                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
-            })
-        );
+        // depositAssets.push(
+        //     DepositAsset({
+        //         asset: WBTC,
+        //         isPeggedToBase: true,
+        //         rateProvider: address(0),
+        //         genericRateProviderName: "",
+        //         target: address(0),
+        //         selector: bytes4(0),
+        //         params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+        //     })
+        // );
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
@@ -96,15 +96,15 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
             })
         );
 
-        withdrawAssets.push(
-            WithdrawAsset({
-                asset: WBTC,
-                withdrawDelay: 3 days,
-                completionWindow: 7 days,
-                withdrawFee: 0,
-                maxLoss: 0.01e4
-            })
-        );
+        // withdrawAssets.push(
+        //     WithdrawAsset({
+        //         asset: WBTC,
+        //         withdrawDelay: 3 days,
+        //         completionWindow: 7 days,
+        //         withdrawFee: 0,
+        //         maxLoss: 0.01e4
+        //     })
+        // );
 
         bool allowPublicDeposits = true;
         bool allowPublicWithdraws = true;
@@ -114,7 +114,7 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "CanaryBtcDeployment.json",
+            "LombardBtcDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
