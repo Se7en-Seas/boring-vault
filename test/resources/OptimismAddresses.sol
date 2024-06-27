@@ -15,6 +15,7 @@ contract OptimismAddresses {
     address public uniV3Router = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
     address public uniV2Router = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
     address public uniswapV3NonFungiblePositionManager = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
+    address public ccipRouter = 0x3206695CaE29952f4b0c22a169725a865bc8Ce0f;
 
     ERC20 public WETH = ERC20(0x4200000000000000000000000000000000000006);
 
