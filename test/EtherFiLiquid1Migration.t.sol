@@ -28,6 +28,7 @@ import {CellarMigratorWithSharePriceParity, ERC4626} from "src/migration/CellarM
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Deployer} from "src/helper/Deployer.sol";
+import {AtomicSolverV4} from "src/atomic-queue/AtomicSolverV4.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -61,6 +62,10 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         ParitySharePriceOracle(0xdE6a8E421300fB785622A7AC0d487274333BC15d);
     CellarMigratorWithSharePriceParity public migrator =
         CellarMigratorWithSharePriceParity(0x16Ec46B07Ab9cDa589f57025d794B50c2ADBbECF);
+
+    RolesAuthority public sevenSeasRolesAuthority = RolesAuthority(0x4df6b73328B639073db150C4584196c4d97053b7);
+    AtomicSolverV4 public atomicSolver;
+    AtomicQueue public atomicQueue = AtomicQueue(0xD45884B592E316eB816199615A95C182F75dea07);
 
     uint8 public constant MANAGER_ROLE = 1;
     uint8 public constant MINTER_ROLE = 2;
@@ -413,6 +418,55 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         /// for the assert is increased.
         assertApproxEqAbs(
             boringVaultShareDelta, cellarSharesRedeemed, 100, "User should have received BoringVault shares."
+        );
+
+        // Add migration flow for users that have liquid v1 shares and want to exit using atomic queue.
+        atomicSolver = new AtomicSolverV4(dev1Address, sevenSeasRolesAuthority);
+        // Need to update 7seas roles authority to add the finishSolve selector to the Atomic Queue role 77.
+        vm.prank(dev1Address);
+        sevenSeasRolesAuthority.setRoleCapability(77, address(atomicSolver), AtomicSolverV4.finishSolve.selector, true);
+
+        // Since AtomicQueue already has role 77, we just need the multisig to give the atomic solver the solver role.
+        vm.prank(liquidMultisig);
+        rolesAuthority.setUserRole(address(atomicSolver), SOLVER_ROLE, true);
+
+        // Remove wETH from user and solver so we know it comes from BoringVault.
+        deal(address(WETH), user, 0);
+        deal(address(WETH), dev1Address, 0);
+
+        uint256 amountToSolve = 1e18;
+
+        // User makes atomic queue request to exit.
+        uint88 expectedWethOut = uint88(etherFiLiquid1.previewRedeem(amountToSolve).mulDivDown(0.9999e4, 1e4));
+        vm.startPrank(user);
+        etherFiLiquid1.approve(address(atomicQueue), amountToSolve);
+        AtomicQueue.AtomicRequest memory request = AtomicQueue.AtomicRequest({
+            deadline: uint64(block.timestamp + 1 days),
+            atomicPrice: expectedWethOut,
+            offerAmount: uint96(amountToSolve),
+            inSolve: false
+        });
+        atomicQueue.updateAtomicRequest(ERC20(address(etherFiLiquid1)), WETH, request);
+        vm.stopPrank();
+
+        uint256 userLiquidV1ShareBalance = etherFiLiquid1.balanceOf(user);
+
+        // Solver solves the request.
+        vm.startPrank(dev1Address);
+        WETH.approve(address(atomicSolver), expectedWethOut);
+        address[] memory users = new address[](1);
+        users[0] = user;
+        atomicSolver.migrationRedeemSolve(
+            atomicQueue, ERC20(address(etherFiLiquid1)), WETH, users, 0, expectedWethOut, teller
+        );
+        vm.stopPrank();
+
+        assertEq(WETH.balanceOf(user), expectedWethOut, "User should have received WETH from Atomic Solve.");
+        assertTrue(WETH.balanceOf(dev1Address) > 0, "Solver should have recieved fee to cover gas costs.");
+        assertEq(
+            etherFiLiquid1.balanceOf(user),
+            userLiquidV1ShareBalance - amountToSolve,
+            "User should have no more liquid V1 shares."
         );
     }
 
