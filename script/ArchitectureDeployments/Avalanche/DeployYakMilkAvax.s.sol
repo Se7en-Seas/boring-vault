@@ -3,61 +3,61 @@ pragma solidity 0.8.21;
 
 import {DeployArcticArchitecture, ERC20, Deployer} from "script/ArchitectureDeployments/DeployArcticArchitecture.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
-import {ArbitrumAddresses} from "test/resources/ArbitrumAddresses.sol";
+import {AvalancheAddresses} from "test/resources/AvalancheAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
 import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Arbitrum/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 10000000 --evm-version london --slow --broadcast --etherscan-api-key $ARBISCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Avalanche/DeployYakMilkAvax.s.sol:DeployYakMilkAvaxScript --with-gas-price 25000000000 --broadcast --etherscan-api-key $SNOWTRACE_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployBridgingTestVaultScript is DeployArcticArchitecture, ArbitrumAddresses {
+contract DeployYakMilkAvaxScript is DeployArcticArchitecture, AvalancheAddresses {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Bridging Test Vault";
-    string public boringVaultSymbol = "BTEV";
+    string public boringVaultName = "Yak Milk AVAX";
+    string public boringVaultSymbol = "AVAXMILK";
     uint8 public boringVaultDecimals = 18;
     address public owner = dev0Address;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("arbitrum");
+        vm.createSelectFork("avalanche");
     }
 
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
-        configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = false;
-        configureDeployment.setupTestUser = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = true;
+        configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
-        configureDeployment.WETH = address(WETH);
+        configureDeployment.WETH = address(WAVAX);
 
         // Save deployer.
         deployer = Deployer(configureDeployment.deployerAddress);
 
         // Define names to determine where contracts are deployed.
-        names.rolesAuthority = BridgingTestVaultEthRolesAuthorityName;
+        names.rolesAuthority = YakMilkAvaxVaultRolesAuthorityName;
         names.lens = ArcticArchitectureLensName;
-        names.boringVault = BridgingTestVaultEthName;
-        names.manager = BridgingTestVaultEthManagerName;
-        names.accountant = BridgingTestVaultEthAccountantName;
-        names.teller = BridgingTestVaultEthTellerName;
-        names.rawDataDecoderAndSanitizer = BridgingTestVaultEthDecoderAndSanitizerName;
-        names.delayedWithdrawer = BridgingTestVaultEthDelayedWithdrawer;
+        names.boringVault = YakMilkAvaxVaultName;
+        names.manager = YakMilkAvaxVaultManagerName;
+        names.accountant = YakMilkAvaxVaultAccountantName;
+        names.teller = YakMilkAvaxVaultTellerName;
+        names.rawDataDecoderAndSanitizer = YakMilkAvaxVaultDecoderAndSanitizerName;
+        names.delayedWithdrawer = YakMilkAvaxVaultDelayedWithdrawer;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = WETH;
+        accountantParameters.base = WAVAX;
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
@@ -77,15 +77,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, ArbitrumAddr
         // none
 
         // Setup withdraw assets.
-        withdrawAssets.push(
-            WithdrawAsset({
-                asset: WETH,
-                withdrawDelay: 3 days,
-                completionWindow: 7 days,
-                withdrawFee: 0,
-                maxLoss: 0.01e4
-            })
-        );
+        // none
 
         bool allowPublicDeposits = true;
         bool allowPublicWithdraws = true;
@@ -95,7 +87,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, ArbitrumAddr
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "ArbitrumBridgingTestVaultDeployment.json",
+            "YakMilkAvaxDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
@@ -106,7 +98,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, ArbitrumAddr
             allowPublicDeposits,
             allowPublicWithdraws,
             shareLockPeriod,
-            dev0Address
+            dev1Address
         );
 
         vm.stopBroadcast();
