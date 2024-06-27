@@ -193,6 +193,14 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         // Remove remaning positions, except the migration position and the eETH position(since it cant be removed due to 1 wei balance).
         _removeAnyPositionThatIsNotTheBoringVaultPosition(ILLIQUID_MIGRATION_POSITION, 2);
 
+        {
+            uint32[] memory creditPositions = etherFiLiquid1.getCreditPositions();
+            if (creditPositions[0] != ILLIQUID_MIGRATION_POSITION) {
+                vm.prank(strategistMultisig);
+                etherFiLiquid1.swapPositions(0, 1, false);
+            }
+        }
+
         assertApproxEqRel(
             etherFiLiquid1.totalAssets(),
             startingTotalAssets,
@@ -258,8 +266,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         etherFiLiquid1.toggleIgnorePause();
         // Force out eETH position as it always keeps 1 wei in balance so can not be removed normally.
         // 1 is the index in etherFiLiquid1.getCreditPositions();
-        etherFiLiquid1.forcePositionOut(1, EETH_POSITION, false); // TODO Credit position array is currently not ordered properly so this step will fail
-        // TODO change the 1 to a 0 to make it pass.
+        etherFiLiquid1.forcePositionOut(1, EETH_POSITION, false);
         // Revoke solver role from Cellar so that strategist can not deposit or withdraw from BoringVault.
         rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, false);
         // Give the migrator contract the appropriate roles to complete the migration.
@@ -483,7 +490,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         vm.startPrank(liquidMultisig);
         // etherFiLiquid1.addAdaptorToCatalogue(address(migrationAdaptor));
         // etherFiLiquid1.addPositionToCatalogue(ILLIQUID_MIGRATION_POSITION);
-        etherFiLiquid1.addPosition(0, ILLIQUID_MIGRATION_POSITION, abi.encode(false), false);
+        // etherFiLiquid1.addPosition(0, ILLIQUID_MIGRATION_POSITION, abi.encode(false), false);
         // rolesAuthority.setUserRole(address(etherFiLiquid1), SOLVER_ROLE, true);
         rolesAuthority.setUserRole(address(migrator), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(migrator), BURNER_ROLE, true);
@@ -491,6 +498,8 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         vm.stopPrank();
 
         // Strategist begins rebalancing positions.
+
+        deal(address(WETH), address(etherFiLiquid1), 1e18);
 
         ERC20[] memory tokensToMigrate = new ERC20[](1);
         tokensToMigrate[0] = WETH;
