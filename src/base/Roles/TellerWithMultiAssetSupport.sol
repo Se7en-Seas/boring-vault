@@ -10,8 +10,9 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
+import {IPausable} from "src/interfaces/IPausable.sol";
 
-contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuard {
+contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuard, IPausable {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
     using SafeTransferLib for WETH;
@@ -344,7 +345,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
      * @dev Publicly callable.
      */
     function deposit(ERC20 depositAsset, uint256 depositAmount, uint256 minimumMint)
-        external
+        public
         payable
         requiresAuth
         nonReentrant
@@ -382,7 +383,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external requiresAuth nonReentrant returns (uint256 shares) {
+    ) public requiresAuth nonReentrant returns (uint256 shares) {
         if (isPaused) revert TellerWithMultiAssetSupport__Paused();
         if (!isSupported[depositAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
 

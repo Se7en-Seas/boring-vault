@@ -10,9 +10,11 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {BeforeTransferHook} from "src/interfaces/BeforeTransferHook.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
+import {IPausable} from "src/interfaces/IPausable.sol";
 
-contract DelayedWithdraw is Auth, ReentrancyGuard {
+contract DelayedWithdraw is Auth, ReentrancyGuard, IPausable {
     using SafeTransferLib for BoringVault;
+    using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
     // ========================================= STRUCTS =========================================
@@ -76,6 +78,17 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
     address public feeAddress;
 
     /**
+     * @notice Used to pause calls to `requestWithdraw`, and `completeWithdraw`.
+     */
+    bool public isPaused;
+
+    /**
+     * @notice Whether or not the contract should pull funds from the Boring Vault when completing a withdrawal,
+     *         or use funds the BoringVault has previously sent to this contract.
+     */
+    bool public pullFundsFromVault;
+
+    /**
      * @notice The mapping of assets to their respective withdrawal settings.
      */
     mapping(ERC20 => WithdrawAsset) public withdrawAssets;
@@ -84,11 +97,6 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
      * @notice The mapping of users to withdraw asset to their withdrawal requests.
      */
     mapping(address => mapping(ERC20 => WithdrawRequest)) public withdrawRequests;
-
-    /**
-     * @notice Used to pause calls to `requestWithdraw`, and `completeWithdraw`.
-     */
-    bool public isPaused;
 
     //============================== ERRORS ===============================
 
@@ -103,6 +111,8 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
     error DelayedWithdraw__ThirdPartyCompletionNotAllowed();
     error DelayedWithdraw__RequestPastCompletionWindow();
     error DelayedWithdraw__Paused();
+    error DelayedWithdraw__CallerNotBoringVault();
+    error DelayedWithdraw__CannotWithdrawBoringToken();
 
     //============================== EVENTS ===============================
 
@@ -119,6 +129,7 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
     event ThirdPartyCompletionChanged(address indexed account, ERC20 indexed asset, bool allowed);
     event Paused();
     event Unpaused();
+    event PullFundsFromVaultUpdated(bool _pullFundsFromVault);
 
     //============================== IMMUTABLES ===============================
 
@@ -297,6 +308,36 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
         assetsOut = _completeWithdraw(asset, user, withdrawAsset, req);
     }
 
+    /**
+     * @notice Changes the global setting for whether or not to pull funds from the vault when completing a withdrawal.
+     * @dev Callable by OWNER_ROLE.
+     */
+    function setPullFundsFromVault(bool _pullFundsFromVault) external requiresAuth {
+        pullFundsFromVault = _pullFundsFromVault;
+
+        emit PullFundsFromVaultUpdated(_pullFundsFromVault);
+    }
+
+    /**
+     * @notice Withdraws a non boring token from the contract.
+     * @dev Callable by BoringVault.
+     * @dev Eventhough withdrawing the BoringVault share from this contract requires
+     *      a malicious leaf in the merkle tree, we explicitly revert if `token`
+     *      is the BoringVault.
+     * @dev For future reference if this function selector is ever changed, the
+     *      associated function selector must be updated in `BaseDecoderAndSanitizer.sol`.
+     */
+    function withdrawNonBoringToken(ERC20 token, uint256 amount) external {
+        if (msg.sender != address(boringVault)) revert DelayedWithdraw__CallerNotBoringVault();
+        if (address(token) == address(boringVault)) revert DelayedWithdraw__CannotWithdrawBoringToken();
+
+        if (amount == type(uint256).max) {
+            amount = token.balanceOf(address(this));
+        }
+
+        token.safeTransfer(address(boringVault), amount);
+    }
+
     // ========================================= PUBLIC FUNCTIONS =========================================
 
     /**
@@ -456,7 +497,15 @@ contract DelayedWithdraw is Auth, ReentrancyGuard {
 
         req.shares = 0;
 
-        boringVault.exit(account, asset, assetsOut, address(this), shares);
+        if (pullFundsFromVault) {
+            // Burn shares and transfer assets to user.
+            boringVault.exit(account, asset, assetsOut, address(this), shares);
+        } else {
+            // Burn shares.
+            boringVault.exit(account, asset, 0, address(this), shares);
+            // Transfer assets to user.
+            asset.safeTransfer(account, assetsOut);
+        }
 
         emit WithdrawCompleted(account, asset, shares, assetsOut);
     }
