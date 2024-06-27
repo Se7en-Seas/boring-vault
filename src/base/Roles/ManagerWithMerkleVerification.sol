@@ -9,8 +9,9 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
+import {IPausable} from "src/interfaces/IPausable.sol";
 
-contract ManagerWithMerkleVerification is Auth {
+contract ManagerWithMerkleVerification is Auth, IPausable {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
     using Address for address;
