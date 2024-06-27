@@ -517,6 +517,9 @@ contract MainnetAddresses {
 
     // Swell
     address public swellSimpleStaking = 0x38D43a6Cb8DA0E855A42fB6b0733A0498531d774;
+    address public swEXIT = 0x48C11b86807627AF70a34662D4865cF854251663;
+    address public accessControlManager = 0x625087d72c762254a72CB22cC2ECa40da6b95EAC;
+    address public depositManager = 0xb3D9cf8E163bbc840195a97E81F8A34E295B8f39;
 
     // Zircuit
     address public zircuitSimpleStaking = 0xF047ab4c75cebf0eB9ed34Ae2c186f3611aEAfa6;

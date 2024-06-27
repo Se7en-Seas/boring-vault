@@ -66,13 +66,14 @@ contract ContractNames {
         "Bridging Test ETH Vault Decoder and Sanitizer V0.0";
     string public constant BridgingTestVaultEthDelayedWithdrawer = "Bridging Test ETH Vault Delayed Withdrawer V0.0";
 
-    string public constant CanaryBtcRolesAuthorityName = "Canary BTC RolesAuthority Version 0.0";
-    string public constant CanaryBtcName = "Canary BTC V0.1";
-    string public constant CanaryBtcManagerName = "Canary BTC Manager With Merkle Verification V0.0";
-    string public constant CanaryBtcAccountantName = "Canary BTC Accountant With Rate Providers V0.0";
-    string public constant CanaryBtcTellerName = "Canary BTC Teller With Multi Asset Support V0.0";
-    string public constant CanaryBtcDecoderAndSanitizerName = "Canary BTC Decoder and Sanitizer V0.0";
-    string public constant CanaryBtcDelayedWithdrawer = "Canary BTC Delayed Withdrawer V0.0";
+    string public constant CanaryBtcRolesAuthorityName = "Lombard BTC RolesAuthority Version 0.0";
+    string public constant CanaryBtcName = "Lombard BTC V0.1";
+    string public constant CanaryBtcManagerName = "Lombard BTC Manager With Merkle Verification V0.0";
+    string public constant CanaryBtcAccountantName = "Lombard BTC Accountant With Rate Providers V0.1";
+    string public constant CanaryBtcTellerName = "Lombard BTC Teller With Multi Asset Support V0.1";
+    string public constant CanaryBtcDecoderAndSanitizerName = "Lombard BTC Decoder and Sanitizer V0.0";
+    string public constant CanaryBtcDelayedWithdrawer = "Lombard BTC Delayed Withdrawer V0.0";
+    string public constant TestCCIPTellerName = "Test CCIP Teller V0.0";
 
     string public constant SymbioticLRTVaultRolesAuthorityName = "Symbiotic LRT Vault RolesAuthority V0.0";
     string public constant SymbioticLRTVaultName = "Symbiotic LRT Vault V0.0";
@@ -81,6 +82,30 @@ contract ContractNames {
     string public constant SymbioticLRTVaultTellerName = "Symbiotic LRT Vault Teller With Multi Asset Support V0.0";
     string public constant SymbioticLRTVaultDecoderAndSanitizerName = "Symbiotic LRT Vault Decoder and Sanitizer V0.1";
     string public constant SymbioticLRTVaultDelayedWithdrawer = "Symbiotic LRT Vault Delayed Withdrawer V0.0";
+
+    string public constant YakMilkAvaxVaultRolesAuthorityName = "Yak Milk Avax Vault RolesAuthority V0.0";
+    string public constant YakMilkAvaxVaultName = "Yak Milk Avax Vault V0.0";
+    string public constant YakMilkAvaxVaultManagerName = "Yak Milk Avax Vault Manager With Merkle Verification V0.0";
+    string public constant YakMilkAvaxVaultAccountantName = "Yak Milk Avax Vault Accountant With Rate Providers V0.0";
+    string public constant YakMilkAvaxVaultTellerName = "Yak Milk Avax Vault Teller With Multi Asset Support V0.0";
+    string public constant YakMilkAvaxVaultDecoderAndSanitizerName = "Yak Milk Avax Vault Decoder and Sanitizer V0.0";
+    string public constant YakMilkAvaxVaultDelayedWithdrawer = "Yak Milk Avax Vault Delayed Withdrawer V0.0";
+
+    string public constant YakMilkBtcVaultRolesAuthorityName = "Yak Milk Btc Vault RolesAuthority V0.0";
+    string public constant YakMilkBtcVaultName = "Yak Milk Btc Vault V0.0";
+    string public constant YakMilkBtcVaultManagerName = "Yak Milk Btc Vault Manager With Merkle Verification V0.0";
+    string public constant YakMilkBtcVaultAccountantName = "Yak Milk Btc Vault Accountant With Rate Providers V0.0";
+    string public constant YakMilkBtcVaultTellerName = "Yak Milk Btc Vault Teller With Multi Asset Support V0.0";
+    string public constant YakMilkBtcVaultDecoderAndSanitizerName = "Yak Milk Btc Vault Decoder and Sanitizer V0.0";
+    string public constant YakMilkBtcVaultDelayedWithdrawer = "Yak Milk Btc Vault Delayed Withdrawer V0.0";
+
+    string public constant YakMilkUsdVaultRolesAuthorityName = "Yak Milk Usd Vault RolesAuthority V0.0";
+    string public constant YakMilkUsdVaultName = "Yak Milk Usd Vault V0.0";
+    string public constant YakMilkUsdVaultManagerName = "Yak Milk Usd Vault Manager With Merkle Verification V0.0";
+    string public constant YakMilkUsdVaultAccountantName = "Yak Milk Usd Vault Accountant With Rate Providers V0.0";
+    string public constant YakMilkUsdVaultTellerName = "Yak Milk Usd Vault Teller With Multi Asset Support V0.0";
+    string public constant YakMilkUsdVaultDecoderAndSanitizerName = "Yak Milk Usd Vault Decoder and Sanitizer V0.0";
+    string public constant YakMilkUsdVaultDelayedWithdrawer = "Yak Milk Usd Vault Delayed Withdrawer V0.0";
 
     string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.3";
 

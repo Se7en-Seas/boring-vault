@@ -51,6 +51,8 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         accountant.setAuthority(rolesAuthority);
         withdrawer.setAuthority(rolesAuthority);
 
+        withdrawer.setPullFundsFromVault(true);
+
         rolesAuthority.setRoleCapability(BURNER_ROLE, address(boringVault), BoringVault.exit.selector, true);
         rolesAuthority.setPublicCapability(address(withdrawer), DelayedWithdraw.cancelWithdraw.selector, true);
         rolesAuthority.setPublicCapability(address(withdrawer), DelayedWithdraw.requestWithdraw.selector, true);
@@ -97,6 +99,48 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
 
         (,,, outstandingShares,,) = withdrawer.withdrawAssets(WETH);
         assertEq(outstandingShares, 0, "Outstanding shares should be 0");
+    }
+
+    function testPullingFundsFromDelayedWithdraw() external {
+        withdrawer.setPullFundsFromVault(false);
+
+        withdrawer.setupWithdrawAsset(WETH, 1 days, 0, 0, 0);
+
+        address user = vm.addr(1);
+
+        // Simulate user deposit by minting 1_000 shares to them, and giving BoringVault 1_000 WETH/.
+        deal(address(boringVault), user, 1_000e18, true);
+        deal(address(WETH), address(boringVault), 1_000e18);
+
+        uint96 sharesToWithdraw = 100e18;
+        vm.startPrank(user);
+        boringVault.approve(address(withdrawer), sharesToWithdraw);
+        withdrawer.requestWithdraw(WETH, sharesToWithdraw, 0, false);
+        vm.stopPrank();
+
+        uint256 expectedOutstandingShraes = 100e18;
+        (,,, uint128 outstandingShares,,) = withdrawer.withdrawAssets(WETH);
+        assertEq(outstandingShares, expectedOutstandingShraes, "Outstanding shares should be 100e18");
+
+        uint256 expectedOustandingDebt = 100e18;
+        uint256 outstandingDebt = withdrawer.viewOutstandingDebt(WETH);
+        assertEq(outstandingDebt, expectedOustandingDebt, "Outstanding debt should be 100e18");
+
+        // User waits 1 day.
+        skip(1 days);
+
+        // BoringVault then transfers assets to withdrawer to cover withdraws.
+        vm.prank(address(boringVault));
+        WETH.safeTransfer(address(withdrawer), 100e18);
+
+        vm.startPrank(user);
+        withdrawer.completeWithdraw(WETH, user);
+        vm.stopPrank();
+
+        (,,, outstandingShares,,) = withdrawer.withdrawAssets(WETH);
+        assertEq(outstandingShares, 0, "Outstanding shares should be 0");
+        assertEq(WETH.balanceOf(user), 100e18, "User should have received 100e18 WETH");
+        assertEq(WETH.balanceOf(address(withdrawer)), 0, "DelayedWithdraw should have 0 WETH");
     }
 
     function testExchangeRateIncreasesAfterRequest() external {
@@ -413,6 +457,22 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
         withdrawer.setFeeAddress(newFeeAddress);
 
         assertEq(withdrawer.feeAddress(), newFeeAddress, "feeAddress should be newFeeAddress.");
+
+        withdrawer.setPullFundsFromVault(false);
+        bool pullFundsFromVault = withdrawer.pullFundsFromVault();
+        assertEq(pullFundsFromVault, false, "pullFundsFromVault should be false.");
+
+        withdrawer.setPullFundsFromVault(true);
+        pullFundsFromVault = withdrawer.pullFundsFromVault();
+        assertEq(pullFundsFromVault, true, "pullFundsFromVault should be true.");
+
+        deal(address(WETH), address(withdrawer), 1_000e18);
+
+        vm.prank(address(boringVault));
+        withdrawer.withdrawNonBoringToken(WETH, type(uint256).max);
+
+        assertEq(WETH.balanceOf(address(withdrawer)), 0, "DelayedWithdraw should have 0 WETH.");
+        assertEq(WETH.balanceOf(address(boringVault)), 1_000e18, "BoringVault should have 1_000 WETH.");
     }
 
     function testFeeLogic() external {
@@ -559,6 +619,16 @@ contract DelayedWithdrawTest is Test, MainnetAddresses {
 
         vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__BadAddress.selector)));
         withdrawer.setFeeAddress(address(0));
+
+        vm.expectRevert(bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__CallerNotBoringVault.selector)));
+        withdrawer.withdrawNonBoringToken(WETH, 1);
+
+        vm.startPrank(address(boringVault));
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(DelayedWithdraw.DelayedWithdraw__CannotWithdrawBoringToken.selector))
+        );
+        withdrawer.withdrawNonBoringToken(boringVault, 1);
+        vm.stopPrank();
     }
 
     // ========================================= HELPER FUNCTIONS =========================================
