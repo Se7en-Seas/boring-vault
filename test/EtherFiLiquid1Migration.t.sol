@@ -100,7 +100,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     function setUp() external {
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 20179060;
+        uint256 blockNumber = 20193602;
         _startFork(rpcKey, blockNumber);
 
         registry = Registry(etherFiLiquid1.registry());
@@ -174,11 +174,11 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         //     "Total assets should not change after migrating aave assets."
         // );
 
-        ERC20[] memory tokensToMigrate = new ERC20[](2);
-        // tokensToMigrate[0] = WETH;
-        tokensToMigrate[0] = WEETH;
+        ERC20[] memory tokensToMigrate = new ERC20[](3);
+        tokensToMigrate[0] = WETH;
+        tokensToMigrate[1] = WEETH;
         // tokensToMigrate[2] = WSTETH;
-        tokensToMigrate[1] = EETH;
+        tokensToMigrate[2] = EETH;
         _migrateERC20Positions(tokensToMigrate);
 
         // Strategist sets the holding position to the migration position to stop further deposits.\
@@ -428,7 +428,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         );
 
         // Add migration flow for users that have liquid v1 shares and want to exit using atomic queue.
-        atomicSolver = new AtomicSolverV4(dev1Address, sevenSeasRolesAuthority);
+        atomicSolver = AtomicSolverV4(0x566bFa809B88967c994d77ED924bebFFE80BD00C);
         // Need to update 7seas roles authority to add the finishSolve selector to the Atomic Queue role 77.
         vm.prank(dev1Address);
         sevenSeasRolesAuthority.setRoleCapability(77, address(atomicSolver), AtomicSolverV4.finishSolve.selector, true);
