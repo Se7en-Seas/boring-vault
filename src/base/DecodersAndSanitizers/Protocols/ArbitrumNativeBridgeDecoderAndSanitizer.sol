@@ -1,0 +1,89 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.21;
+
+import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
+
+abstract contract ArbitrumNativeBridgeDecoderAndSanitizer is BaseDecoderAndSanitizer {
+    //============================== BRIDGING NATIVE ETH ===============================
+
+    // Used to deposit ETH into Arbitrum
+    // Target 0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f
+    // Example TX https://etherscan.io/tx/0x37e1d393f1abd8d83bc8a5c3da4a54b4f72e7dd24e7ba13a0c43cb765afef5aa
+    function depositETH() external pure virtual returns (bytes memory addressesFound) {
+        // Nothing to sanitize or return
+        return addressesFound;
+    }
+
+    // Used to withdraw ETH from Arbitrum
+    // Target 0x0000000000000000000000000000000000000064
+    // Example TX https://arbiscan.io/tx/0xc5882e2c94e26eb352be67fc1c97e4c605b39d4458ba8858dd0c96f7ad641d5b
+    function withdrawETH(address destination) external pure virtual returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(destination);
+    }
+
+    // Used to claim withdrawn ETH from Arbitrum
+    // Target 0x0B9857ae2D4A3DBe74ffE1d7DF045bb7F96E4840
+    // Example TX https://etherscan.io/tx/0x2db24bbaa8b7d8a282b9eb29d4ac3703561270c8a851ad7c697c96a4b31f707e
+    function executeTransaction(
+        bytes32[] calldata, /*proof*/
+        uint256, /*index*/
+        address l2Sender,
+        address to,
+        uint256, /*l2Block*/
+        uint256, /*l1Block*/
+        uint256, /*l2Timestamp*/
+        uint256, /*value*/
+        bytes calldata /*data*/
+    ) external pure virtual returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(l2Sender, to);
+    }
+
+    //============================== BRIDGING ERC20 ===============================
+
+    // Used to deposit ERC20 into Arbitrum
+    // Target 0x72Ce9c846789fdB6fC1f34aC4AD25Dd9ef7031ef
+    // Example TX https://etherscan.io/tx/0xb8f15f2ce92f7a2a492fec769209f93a4d7b379539253b6092ecdfe292fb6ef1
+    // TODO bridge UI directs users to use this function but it looks like it is being deprectated, so maybe we keep it, but also add the custom refund function
+    function outboundTransfer(
+        address _token,
+        address _to,
+        uint256, /*_amount*/
+        uint256, /*_maxGas*/
+        uint256, /*_gasPriceBid*/
+        bytes calldata /*_data*/
+    ) external pure virtual returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(_token, _to);
+    }
+
+    // Used to withdraw ERC20 from Arbitrum
+    // Target 0x5288c571Fd7aD117beA99bF60FE0846C4E84F933
+    // Example TX https://arbiscan.io/tx/0x4d0ccd99024b3ee0d49820625371fc7117036459bff67ed3887ffc7648c7d020
+    function outboundTransfer(address _l1Token, address _to, uint256, /*_amount*/ bytes calldata /*_data*/ )
+        external
+        pure
+        virtual
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(_l1Token, _to);
+    }
+
+    // Used to claim withdrawn ERC20 from Arbitrum
+    // Target 0x0B9857ae2D4A3DBe74ffE1d7DF045bb7F96E4840
+    // Example TX https://etherscan.io/tx/0x576736e900bb0c45d693aa7e6cc13f07ba4e967b19c453aa01d16f4144c71f68
+    /// @notice This function is the exact same for both ERC20 and ETH bridging.
+    // function executeTransaction(
+    //     bytes32[] calldata, /*proof*/
+    //     uint256, /*index*/
+    //     address l2Sender,
+    //     address to,
+    //     uint256, /*l2Block*/
+    //     uint256, /*l1Block*/
+    //     uint256, /*l2Timestamp*/
+    //     uint256, /*value*/
+    //     bytes calldata /*data*/
+    // ) external pure virtual returns (bytes memory addressesFound) {
+    //     addressesFound = abi.encodePacked(l2Sender, to);
+    // }
+
+    // TODO how do we handle failed bridge TXs on L1?
+}
