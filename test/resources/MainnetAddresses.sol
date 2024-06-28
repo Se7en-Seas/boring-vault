@@ -473,6 +473,7 @@ contract MainnetAddresses {
     address public pendleEethPtDecember = 0x6ee2b5E19ECBa773a352E5B21415Dc419A700d1d;
     address public pendleEethYtDecember = 0x129e6B5DBC0Ecc12F9e486C5BC9cDF1a6A80bc6A;
 
+    address public pendleUSDeZircuitMarketAugust = 0xF148a0B15712f5BfeefAdb4E6eF9739239F88b07;
     address public pendleKarakWeETHMarketSeptember = 0x18bAFcaBf2d5898956AE6AC31543d9657a604165;
 
     address public pendleSwethMarket = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303;
@@ -541,4 +542,5 @@ contract MainnetAddresses {
     address public sfrxETHDefaultCollateral = 0x5198CB44D7B2E993ebDDa9cAd3b9a0eAa32769D2;
     address public ETHxDefaultCollateral = 0xBdea8e677F9f7C294A4556005c640Ee505bE6925;
     address public uniETHDefaultCollateral = 0x1C57ea879dd3e8C9fefa8224fdD1fa20dd54211E;
+    address public sUSDeDefaultCollateral = 0x19d0D8e6294B7a04a2733FE433444704B791939A;
 }

@@ -158,6 +158,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         _addPendleMarketLeafs(leafs, pendleSUSDeMarketJuly);
         _addPendleMarketLeafs(leafs, pendleKarakUSDeMarket);
         _addPendleMarketLeafs(leafs, pendleKarakSUSDeMarket);
+        _addPendleMarketLeafs(leafs, pendleUSDeZircuitMarketAugust);
 
         // ========================== Ethena ==========================
         /**
@@ -169,7 +170,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         /**
          * Full position management for USDC, USDT, DAI, USDe, sUSDe.
          */
-        address[] memory token0 = new address[](11);
+        address[] memory token0 = new address[](10);
         token0[0] = address(USDC);
         token0[1] = address(USDC);
         token0[2] = address(USDC);
@@ -180,9 +181,8 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         token0[7] = address(DAI);
         token0[8] = address(DAI);
         token0[9] = address(USDE);
-        token0[10] = address(USDC);
 
-        address[] memory token1 = new address[](11);
+        address[] memory token1 = new address[](10);
         token1[0] = address(USDT);
         token1[1] = address(DAI);
         token1[2] = address(USDE);
@@ -193,7 +193,6 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         token1[7] = address(USDE);
         token1[8] = address(SUSDE);
         token1[9] = address(SUSDE);
-        token1[10] = address(PYUSD);
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
@@ -220,18 +219,6 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
          * GHO <-> USDC,
          * GHO <-> USDT,
          * GHO <-> DAI,
-         * wETH -> USDC,
-         * weETH -> USDC,
-         * wstETH -> USDC,
-         * wETH -> USDT,
-         * weETH -> USDT,
-         * wstETH -> USDT,
-         * wETH -> DAI,
-         * weETH -> DAI,
-         * wstETH -> DAI,
-         * wETH <-> wstETH,
-         * weETH <-> wstETH,
-         * weETH <-> wETH
          * Swap GEAR -> USDC
          * Swap crvUSD <-> USDC
          * Swap crvUSD <-> USDT
@@ -243,8 +230,8 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
          * Swap PYUSD <-> FRAX
          * Swap PYUSD <-> crvUSD
          */
-        address[] memory assets = new address[](15);
-        SwapKind[] memory kind = new SwapKind[](15);
+        address[] memory assets = new address[](16);
+        SwapKind[] memory kind = new SwapKind[](16);
         assets[0] = address(USDC);
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = address(USDT);
@@ -275,6 +262,8 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         kind[13] = SwapKind.Sell;
         assets[14] = address(RSR);
         kind[14] = SwapKind.Sell;
+        assets[15] = address(PENDLE);
+        kind[15] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         _addLeafsFor1InchUniswapV3Swapping(leafs, PENDLE_wETH_30);
@@ -954,6 +943,11 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         //     leafs[leafIndex].argumentAddresses[0] = sDai_sUsde_Curve_Pool;
         //     leafs[leafIndex].argumentAddresses[1] = sDai_sUsde_Curve_Gauge;
         // }
+
+        // ========================== SYMBIOTIC ==========================
+        address[] memory defaultCollaterals = new address[](1);
+        defaultCollaterals[0] = sUSDeDefaultCollateral;
+        _addSymbioticLeafs(leafs, defaultCollaterals);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
