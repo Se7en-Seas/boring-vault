@@ -36,8 +36,8 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
      * @notice Uncomment which script you want to run.
      */
     function run() external {
-        // generateLiquidUsdStrategistMerkleRoot();
-        generateMiniLiquidUsdStrategistMerkleRoot();
+        generateLiquidUsdStrategistMerkleRoot();
+        // generateMiniLiquidUsdStrategistMerkleRoot();
     }
 
     function generateMiniLiquidUsdStrategistMerkleRoot() public {
@@ -77,44 +77,34 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
     function generateLiquidUsdStrategistMerkleRoot() public {
         updateAddresses(boringVault, rawDataDecoderAndSanitizer, managerAddress, accountantAddress);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](1024);
+        ManageLeaf[] memory leafs = new ManageLeaf[](512);
 
         // ========================== Aave V3 ==========================
-        /**
-         * lend USDC, USDT, DAI, sDAI
-         * borrow wETH, wstETH
-         */
-        ERC20[] memory supplyAssets = new ERC20[](4);
+        ERC20[] memory supplyAssets = new ERC20[](6);
         supplyAssets[0] = USDC;
         supplyAssets[1] = USDT;
         supplyAssets[2] = DAI;
         supplyAssets[3] = ERC20(sDAI);
-        ERC20[] memory borrowAssets = new ERC20[](2);
-        borrowAssets[0] = WETH;
-        borrowAssets[1] = WSTETH;
+        supplyAssets[4] = USDE;
+        supplyAssets[5] = SUSDE;
+        ERC20[] memory borrowAssets = new ERC20[](4);
+        borrowAssets[0] = USDC;
+        borrowAssets[1] = USDT;
+        borrowAssets[2] = DAI;
+        borrowAssets[3] = USDE;
         _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
 
         // ========================== SparkLend ==========================
-        /**
-         * lend USDC, USDT, DAI, sDAI
-         * borrow wETH, wstETH
-         */
+        supplyAssets = new ERC20[](4);
+        supplyAssets[0] = USDC;
+        supplyAssets[1] = USDT;
+        supplyAssets[2] = DAI;
+        supplyAssets[3] = ERC20(sDAI);
+        borrowAssets = new ERC20[](3);
+        borrowAssets[0] = USDC;
+        borrowAssets[1] = USDT;
+        borrowAssets[2] = DAI;
         _addSparkLendLeafs(leafs, supplyAssets, borrowAssets);
-
-        // ========================== Lido ==========================
-        _addLidoLeafs(leafs);
-
-        // ========================== EtherFi ==========================
-        /**
-         * stake, unstake, wrap, unwrap
-         */
-        _addEtherFiLeafs(leafs);
-
-        // ========================== Native ==========================
-        /**
-         * wrap, unwrap
-         */
-        _addNativeLeafs(leafs);
 
         // ========================== MakerDAO ==========================
         /**
@@ -162,13 +152,13 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         _addMorphoBlueSupplyLeafs(leafs, 0xb323495f7e4148be5643a4ea4a8221eef163e4bccfdedc2a6f4696baacbc86cc);
 
         // ========================== Pendle ==========================
-        _addPendleMarketLeafs(leafs, pendleWeETHMarket);
         _addPendleMarketLeafs(leafs, pendleUSDeMarket);
         _addPendleMarketLeafs(leafs, pendleZircuitUSDeMarket);
         _addPendleMarketLeafs(leafs, pendleSUSDeMarketSeptember);
         _addPendleMarketLeafs(leafs, pendleSUSDeMarketJuly);
         _addPendleMarketLeafs(leafs, pendleKarakUSDeMarket);
         _addPendleMarketLeafs(leafs, pendleKarakSUSDeMarket);
+        _addPendleMarketLeafs(leafs, pendleUSDeZircuitMarketAugust);
 
         // ========================== Ethena ==========================
         /**
@@ -180,7 +170,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         /**
          * Full position management for USDC, USDT, DAI, USDe, sUSDe.
          */
-        address[] memory token0 = new address[](11);
+        address[] memory token0 = new address[](10);
         token0[0] = address(USDC);
         token0[1] = address(USDC);
         token0[2] = address(USDC);
@@ -191,9 +181,8 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         token0[7] = address(DAI);
         token0[8] = address(DAI);
         token0[9] = address(USDE);
-        token0[10] = address(USDC);
 
-        address[] memory token1 = new address[](11);
+        address[] memory token1 = new address[](10);
         token1[0] = address(USDT);
         token1[1] = address(DAI);
         token1[2] = address(USDE);
@@ -204,7 +193,6 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         token1[7] = address(USDE);
         token1[8] = address(SUSDE);
         token1[9] = address(SUSDE);
-        token1[10] = address(PYUSD);
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
@@ -231,18 +219,6 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
          * GHO <-> USDC,
          * GHO <-> USDT,
          * GHO <-> DAI,
-         * wETH -> USDC,
-         * weETH -> USDC,
-         * wstETH -> USDC,
-         * wETH -> USDT,
-         * weETH -> USDT,
-         * wstETH -> USDT,
-         * wETH -> DAI,
-         * weETH -> DAI,
-         * wstETH -> DAI,
-         * wETH <-> wstETH,
-         * weETH <-> wstETH,
-         * weETH <-> wETH
          * Swap GEAR -> USDC
          * Swap crvUSD <-> USDC
          * Swap crvUSD <-> USDT
@@ -254,8 +230,8 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
          * Swap PYUSD <-> FRAX
          * Swap PYUSD <-> crvUSD
          */
-        address[] memory assets = new address[](18);
-        SwapKind[] memory kind = new SwapKind[](18);
+        address[] memory assets = new address[](16);
+        SwapKind[] memory kind = new SwapKind[](16);
         assets[0] = address(USDC);
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = address(USDT);
@@ -272,34 +248,25 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         kind[6] = SwapKind.BuyAndSell;
         assets[7] = address(PYUSD);
         kind[7] = SwapKind.BuyAndSell;
-        assets[9] = address(WETH);
-        kind[9] = SwapKind.BuyAndSell;
-        assets[10] = address(WEETH);
-        kind[10] = SwapKind.BuyAndSell;
-        assets[11] = address(WSTETH);
-        kind[11] = SwapKind.BuyAndSell;
         assets[8] = address(GEAR);
         kind[8] = SwapKind.Sell;
-        assets[12] = address(CRV);
+        assets[9] = address(CRV);
+        kind[9] = SwapKind.Sell;
+        assets[10] = address(CVX);
+        kind[10] = SwapKind.Sell;
+        assets[11] = address(AURA);
+        kind[11] = SwapKind.Sell;
+        assets[12] = address(BAL);
         kind[12] = SwapKind.Sell;
-        assets[13] = address(CVX);
+        assets[13] = address(INST);
         kind[13] = SwapKind.Sell;
-        assets[14] = address(AURA);
+        assets[14] = address(RSR);
         kind[14] = SwapKind.Sell;
-        assets[15] = address(BAL);
+        assets[15] = address(PENDLE);
         kind[15] = SwapKind.Sell;
-        assets[16] = address(INST);
-        kind[16] = SwapKind.Sell;
-        assets[17] = address(RSR);
-        kind[17] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
-        _addLeafsFor1InchUniswapV3Swapping(leafs, wstETH_wETH_01);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, rETH_wETH_01);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, rETH_wETH_05);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, wstETH_rETH_05);
         _addLeafsFor1InchUniswapV3Swapping(leafs, PENDLE_wETH_30);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, wETH_weETH_05);
         _addLeafsFor1InchUniswapV3Swapping(leafs, USDe_USDT_01);
         _addLeafsFor1InchUniswapV3Swapping(leafs, USDe_USDC_01);
         _addLeafsFor1InchUniswapV3Swapping(leafs, USDe_DAI_01);
@@ -976,6 +943,11 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         //     leafs[leafIndex].argumentAddresses[0] = sDai_sUsde_Curve_Pool;
         //     leafs[leafIndex].argumentAddresses[1] = sDai_sUsde_Curve_Gauge;
         // }
+
+        // ========================== SYMBIOTIC ==========================
+        address[] memory defaultCollaterals = new address[](1);
+        defaultCollaterals[0] = sUSDeDefaultCollateral;
+        _addSymbioticLeafs(leafs, defaultCollaterals);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
