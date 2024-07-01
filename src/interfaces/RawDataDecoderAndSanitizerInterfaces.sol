@@ -42,3 +42,20 @@ interface INonFungiblePositionManager {
             uint128 tokensOwed1
         );
 }
+
+interface PancakeSwapV3MasterChef {
+    function userPositionInfos(uint256 id)
+        external
+        view
+        returns (
+            uint128 liquidity,
+            uint128 boostLiquidity,
+            int24 tickLower,
+            int24 tickUpper,
+            uint256 rewardsGrowthInside,
+            uint256 reward,
+            address user,
+            uint256 pid,
+            uint256 boostMultiplier
+        );
+}

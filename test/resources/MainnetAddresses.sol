@@ -546,4 +546,9 @@ contract MainnetAddresses {
     address public ETHxDefaultCollateral = 0xBdea8e677F9f7C294A4556005c640Ee505bE6925;
     address public uniETHDefaultCollateral = 0x1C57ea879dd3e8C9fefa8224fdD1fa20dd54211E;
     address public sUSDeDefaultCollateral = 0x19d0D8e6294B7a04a2733FE433444704B791939A;
+
+    // PancakeSwap V3
+    address public pancakeSwapV3NonFungiblePositionManager = 0x46A15B0b27311cedF172AB29E4f4766fbE7F4364;
+    address public pancakeSwapV3MasterChefV3 = 0x556B9306565093C855AEA9AE92A594704c2Cd59e;
+    address public pancakeSwapV3Router = 0x13f4EA83D0bd40E75C8222255bc855a974568Dd4;
 }
