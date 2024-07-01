@@ -32,6 +32,10 @@ import {AtomicSolverV4} from "src/atomic-queue/AtomicSolverV4.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
+/**
+ * To run test for newest block number
+ * source .env && forge test -vv --match-test testMigration --fork-url $MAINNET_RPC_URL
+ */
 contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -99,9 +103,9 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
     function setUp() external {
         // Setup forked environment.
-        string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 20193602;
-        _startFork(rpcKey, blockNumber);
+        // string memory rpcKey = "MAINNET_RPC_URL";
+        // uint256 blockNumber = 20212255;
+        // _startFork(rpcKey, blockNumber);
 
         registry = Registry(etherFiLiquid1.registry());
         registryMultisig = registry.owner();
