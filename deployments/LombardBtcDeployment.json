@@ -1,5 +1,9 @@
 {
   "DepositAssets": {
+    "LBTC": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
     "WBTC": {
       "isPeggedToBase": true,
       "rateProvider": "0x0000000000000000000000000000000000000000"
@@ -7,6 +11,12 @@
   },
   "WithdrawAssets": {
     "LBTC": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "WBTC": {
       "CompletionWindow": 604800,
       "MaxLoss": 100,
       "WithdrawDelay": 259200,
