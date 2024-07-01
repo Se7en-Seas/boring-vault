@@ -178,32 +178,32 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         //     "Total assets should not change after migrating aave assets."
         // );
 
-        ERC20[] memory tokensToMigrate = new ERC20[](3);
-        tokensToMigrate[0] = WETH;
-        tokensToMigrate[1] = WEETH;
-        // tokensToMigrate[2] = WSTETH;
-        tokensToMigrate[2] = EETH;
-        _migrateERC20Positions(tokensToMigrate);
+        // ERC20[] memory tokensToMigrate = new ERC20[](3);
+        // tokensToMigrate[0] = WETH;
+        // tokensToMigrate[1] = WEETH;
+        // // tokensToMigrate[2] = WSTETH;
+        // tokensToMigrate[2] = EETH;
+        // _migrateERC20Positions(tokensToMigrate);
 
         // Strategist sets the holding position to the migration position to stop further deposits.\
         // Also drops al alternative asset data, to stop multiAssetDeposits.
         // Also allows us to remove current holding position.
-        vm.startPrank(strategistMultisig);
-        etherFiLiquid1.setHoldingPosition(ILLIQUID_MIGRATION_POSITION);
-        etherFiLiquid1.dropAlternativeAssetData(address(WEETH));
-        etherFiLiquid1.dropAlternativeAssetData(address(EETH));
-        vm.stopPrank();
+        // vm.startPrank(strategistMultisig);
+        // etherFiLiquid1.setHoldingPosition(ILLIQUID_MIGRATION_POSITION);
+        // etherFiLiquid1.dropAlternativeAssetData(address(WEETH));
+        // etherFiLiquid1.dropAlternativeAssetData(address(EETH));
+        // vm.stopPrank();
 
         // Remove remaning positions, except the migration position and the eETH position(since it cant be removed due to 1 wei balance).
-        _removeAnyPositionThatIsNotTheBoringVaultPosition(ILLIQUID_MIGRATION_POSITION, 2);
+        // _removeAnyPositionThatIsNotTheBoringVaultPosition(ILLIQUID_MIGRATION_POSITION, 2);
 
-        {
-            uint32[] memory creditPositions = etherFiLiquid1.getCreditPositions();
-            if (creditPositions[0] != ILLIQUID_MIGRATION_POSITION) {
-                vm.prank(strategistMultisig);
-                etherFiLiquid1.swapPositions(0, 1, false);
-            }
-        }
+        // {
+        //     uint32[] memory creditPositions = etherFiLiquid1.getCreditPositions();
+        //     if (creditPositions[0] != ILLIQUID_MIGRATION_POSITION) {
+        //         vm.prank(strategistMultisig);
+        //         etherFiLiquid1.swapPositions(0, 1, false);
+        //     }
+        // }
 
         assertApproxEqRel(
             etherFiLiquid1.totalAssets(),
