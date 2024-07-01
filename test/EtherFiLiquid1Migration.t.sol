@@ -32,10 +32,6 @@ import {AtomicSolverV4} from "src/atomic-queue/AtomicSolverV4.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-/**
- * To run test for newest block number
- * source .env && forge test -vv --match-test testMigration --fork-url $MAINNET_RPC_URL
- */
 contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -103,9 +99,9 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
 
     function setUp() external {
         // Setup forked environment.
-        // string memory rpcKey = "MAINNET_RPC_URL";
-        // uint256 blockNumber = 20212255;
-        // _startFork(rpcKey, blockNumber);
+        string memory rpcKey = "MAINNET_RPC_URL";
+        uint256 blockNumber = 20179060;
+        _startFork(rpcKey, blockNumber);
 
         registry = Registry(etherFiLiquid1.registry());
         registryMultisig = registry.owner();
@@ -178,32 +174,32 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         //     "Total assets should not change after migrating aave assets."
         // );
 
-        // ERC20[] memory tokensToMigrate = new ERC20[](3);
+        ERC20[] memory tokensToMigrate = new ERC20[](2);
         // tokensToMigrate[0] = WETH;
-        // tokensToMigrate[1] = WEETH;
-        // // tokensToMigrate[2] = WSTETH;
-        // tokensToMigrate[2] = EETH;
-        // _migrateERC20Positions(tokensToMigrate);
+        tokensToMigrate[0] = WEETH;
+        // tokensToMigrate[2] = WSTETH;
+        tokensToMigrate[1] = EETH;
+        _migrateERC20Positions(tokensToMigrate);
 
         // Strategist sets the holding position to the migration position to stop further deposits.\
         // Also drops al alternative asset data, to stop multiAssetDeposits.
         // Also allows us to remove current holding position.
-        // vm.startPrank(strategistMultisig);
-        // etherFiLiquid1.setHoldingPosition(ILLIQUID_MIGRATION_POSITION);
-        // etherFiLiquid1.dropAlternativeAssetData(address(WEETH));
-        // etherFiLiquid1.dropAlternativeAssetData(address(EETH));
-        // vm.stopPrank();
+        vm.startPrank(strategistMultisig);
+        etherFiLiquid1.setHoldingPosition(ILLIQUID_MIGRATION_POSITION);
+        etherFiLiquid1.dropAlternativeAssetData(address(WEETH));
+        etherFiLiquid1.dropAlternativeAssetData(address(EETH));
+        vm.stopPrank();
 
         // Remove remaning positions, except the migration position and the eETH position(since it cant be removed due to 1 wei balance).
-        // _removeAnyPositionThatIsNotTheBoringVaultPosition(ILLIQUID_MIGRATION_POSITION, 2);
+        _removeAnyPositionThatIsNotTheBoringVaultPosition(ILLIQUID_MIGRATION_POSITION, 2);
 
-        // {
-        //     uint32[] memory creditPositions = etherFiLiquid1.getCreditPositions();
-        //     if (creditPositions[0] != ILLIQUID_MIGRATION_POSITION) {
-        //         vm.prank(strategistMultisig);
-        //         etherFiLiquid1.swapPositions(0, 1, false);
-        //     }
-        // }
+        {
+            uint32[] memory creditPositions = etherFiLiquid1.getCreditPositions();
+            if (creditPositions[0] != ILLIQUID_MIGRATION_POSITION) {
+                vm.prank(strategistMultisig);
+                etherFiLiquid1.swapPositions(0, 1, false);
+            }
+        }
 
         assertApproxEqRel(
             etherFiLiquid1.totalAssets(),
@@ -432,7 +428,7 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
         );
 
         // Add migration flow for users that have liquid v1 shares and want to exit using atomic queue.
-        atomicSolver = AtomicSolverV4(0x566bFa809B88967c994d77ED924bebFFE80BD00C);
+        atomicSolver = new AtomicSolverV4(dev1Address, sevenSeasRolesAuthority);
         // Need to update 7seas roles authority to add the finishSolve selector to the Atomic Queue role 77.
         vm.prank(dev1Address);
         sevenSeasRolesAuthority.setRoleCapability(77, address(atomicSolver), AtomicSolverV4.finishSolve.selector, true);
