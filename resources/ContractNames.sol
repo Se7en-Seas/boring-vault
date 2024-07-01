@@ -83,6 +83,14 @@ contract ContractNames {
     string public constant SymbioticLRTVaultDecoderAndSanitizerName = "Symbiotic LRT Vault Decoder and Sanitizer V0.1";
     string public constant SymbioticLRTVaultDelayedWithdrawer = "Symbiotic LRT Vault Delayed Withdrawer V0.0";
 
+    string public constant KarakVaultRolesAuthorityName = "Karak Vault RolesAuthority V0.0";
+    string public constant KarakVaultName = "Karak Vault V0.0";
+    string public constant KarakVaultManagerName = "Karak Vault Manager With Merkle Verification V0.0";
+    string public constant KarakVaultAccountantName = "Karak Vault Accountant With Rate Providers V0.0";
+    string public constant KarakVaultTellerName = "Karak Vault Teller With Multi Asset Support V0.0";
+    string public constant KarakVaultDecoderAndSanitizerName = "Karak Vault Decoder and Sanitizer V0.0";
+    string public constant KarakVaultDelayedWithdrawer = "Karak Vault Delayed Withdrawer V0.0";
+
     string public constant YakMilkAvaxVaultRolesAuthorityName = "Yak Milk Avax Vault RolesAuthority V0.0";
     string public constant YakMilkAvaxVaultName = "Yak Milk Avax Vault V0.0";
     string public constant YakMilkAvaxVaultManagerName = "Yak Milk Avax Vault Manager With Merkle Verification V0.0";
