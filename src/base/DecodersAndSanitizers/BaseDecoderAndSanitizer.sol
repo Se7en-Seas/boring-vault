@@ -22,4 +22,12 @@ contract BaseDecoderAndSanitizer {
     function claimFees(address feeAsset) external pure returns (bytes memory addressesFound) {
         addressesFound = abi.encodePacked(feeAsset);
     }
+
+    function withdrawNonBoringToken(address token, uint256 /*amount*/ )
+        external
+        pure
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(token);
+    }
 }

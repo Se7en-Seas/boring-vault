@@ -158,8 +158,12 @@ contract SymbioticUManager is Auth {
      * @dev Callable by SNIPER_ROLE
      * @dev Use type(uint256).max to deposit as much as possible.
      */
-    function assemble(DefaultCollateral defaultCollateral, uint256 amount) external requiresAuth {
-        _assemble(defaultCollateral, amount);
+    function assemble(DefaultCollateral defaultCollateral, uint256 amount)
+        external
+        requiresAuth
+        returns (uint256 assembled)
+    {
+        assembled = _assemble(defaultCollateral, amount);
     }
 
     /**
@@ -167,28 +171,30 @@ contract SymbioticUManager is Auth {
      * @param defaultCollateral The default collateral to assemble.
      * @dev Callable by SNIPER_ROLE
      */
-    function fullAssemble(DefaultCollateral defaultCollateral) external requiresAuth {
-        _assemble(defaultCollateral, type(uint256).max);
+    function fullAssemble(DefaultCollateral defaultCollateral) external requiresAuth returns (uint256 assembled) {
+        assembled = _assemble(defaultCollateral, type(uint256).max);
     }
 
     // ========================================= HELPER FUNCTIONS =========================================
 
     /**
      * @notice Helper function to handle approving and depositing into a default collateral.
+     * @return the amount assembled.
      */
-    function _assemble(DefaultCollateral defaultCollateral, uint256 amount) internal {
+    function _assemble(DefaultCollateral defaultCollateral, uint256 amount) internal returns (uint256) {
         ERC20 asset = defaultCollateral.asset();
         uint256 allowance = asset.allowance(boringVault, address(defaultCollateral));
 
-        Configuration memory configuration = configurations[address(defaultCollateral)];
-
-        amount = _maxDeposit(defaultCollateral, asset, amount, configuration.minimumDeposit);
+        address[] memory unoDecoderAndSanitizer = new address[](1);
+        {
+            Configuration memory configuration = configurations[address(defaultCollateral)];
+            amount = _maxDeposit(defaultCollateral, asset, amount, configuration.minimumDeposit);
+            unoDecoderAndSanitizer[0] = configuration.decoderAndSanitizer;
+        }
 
         bytes32 leaf;
         bytes32[][] memory merkleTree = viewMerkleTree();
         bytes32[][] memory unoProof = new bytes32[][](1);
-        address[] memory unoDecoderAndSanitizer = new address[](1);
-        unoDecoderAndSanitizer[0] = configuration.decoderAndSanitizer;
         if (unoDecoderAndSanitizer[0] == address(0)) {
             revert SymbioticUManager__DecoderAndSanitizerNotSet();
         }
@@ -236,6 +242,8 @@ contract SymbioticUManager is Auth {
         }
 
         emit Assembled(address(defaultCollateral), amount);
+
+        return amount;
     }
 
     /**
