@@ -3,10 +3,13 @@ pragma solidity 0.8.21;
 import {BoringVault, ERC20} from "src/base/BoringVault.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
+import {DelayedWithdraw} from "src/base/Roles/DelayedWithdraw.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 contract ArcticArchitectureLens {
     using FixedPointMathLib for uint256;
+    using Address for address;
 
     /**
      * @dev Calculates the total assets held in the BoringVault for a given vault and accountant.
@@ -143,5 +146,135 @@ contract ArcticArchitectureLens {
      */
     function isTellerPaused(TellerWithMultiAssetSupport teller) external view returns (bool) {
         return teller.isPaused();
+    }
+
+    /**
+     */
+    function getWithdrawAssetAndWithdrawRequest(ERC20 asset, address account, DelayedWithdraw delayedWithdraw)
+        public
+        view
+        returns (DelayedWithdraw.WithdrawAsset memory withdrawAsset, DelayedWithdraw.WithdrawRequest memory req)
+    {
+        (
+            withdrawAsset.allowWithdraws,
+            withdrawAsset.withdrawDelay,
+            withdrawAsset.completionWindow,
+            withdrawAsset.outstandingShares,
+            withdrawAsset.withdrawFee,
+            withdrawAsset.maxLoss
+        ) = delayedWithdraw.withdrawAssets(asset);
+        (req.allowThirdPartyToComplete, req.maxLoss, req.maturity, req.shares, req.exchangeRateAtTimeOfRequest) =
+            delayedWithdraw.withdrawRequests(account, asset);
+    }
+
+    function getWithdrawAssetAndWithdrawRequests(
+        ERC20[] calldata assets,
+        address[] calldata accounts,
+        DelayedWithdraw delayedWithdraw
+    )
+        external
+        view
+        returns (DelayedWithdraw.WithdrawAsset[] memory withdrawAssets, DelayedWithdraw.WithdrawRequest[] memory reqs)
+    {
+        uint256 assetsLength = assets.length;
+        withdrawAssets = new DelayedWithdraw.WithdrawAsset[](assetsLength);
+        reqs = new DelayedWithdraw.WithdrawRequest[](assetsLength);
+
+        for (uint256 i = 0; i < assetsLength; i++) {
+            (withdrawAssets[i], reqs[i]) = getWithdrawAssetAndWithdrawRequest(assets[i], accounts[i], delayedWithdraw);
+        }
+    }
+
+    struct PreviewWithdrawResult {
+        uint256 assetsOut;
+        bool withdrawsNotAllowed;
+        bool withdrawNotMatured;
+        bool noShares;
+        bool maxLossExceeded;
+        bool notEnoughAssetsForWithdraw;
+    }
+
+    /**
+     * @notice Helper function to preview a users withdraw for a specific asset.
+     */
+    function previewWithdraw(
+        ERC20 asset,
+        address account,
+        BoringVault boringVault,
+        AccountantWithRateProviders accountant,
+        DelayedWithdraw delayedWithdraw
+    ) public view returns (PreviewWithdrawResult memory res) {
+        // Not all DelayedWithdraw contracts support pullFundsFromVault,
+        // so use staticcall to query it.
+        bool pullFundsFromVault = true;
+        {
+            (bool success, bytes memory result) =
+                address(delayedWithdraw).staticcall(abi.encodeWithSignature("pullFundsFromVault()"));
+            if (success && !abi.decode(result, (bool))) {
+                pullFundsFromVault = false;
+            }
+        }
+
+        (DelayedWithdraw.WithdrawAsset memory withdrawAsset, DelayedWithdraw.WithdrawRequest memory req) =
+            getWithdrawAssetAndWithdrawRequest(asset, account, delayedWithdraw);
+
+        if (!withdrawAsset.allowWithdraws) res.withdrawsNotAllowed = true;
+
+        if (block.timestamp < req.maturity) res.withdrawNotMatured = true;
+        if (req.shares == 0) res.noShares = true;
+
+        uint256 currentExchangeRate = accountant.getRateInQuoteSafe(asset);
+
+        uint256 minRate = req.exchangeRateAtTimeOfRequest < currentExchangeRate
+            ? req.exchangeRateAtTimeOfRequest
+            : currentExchangeRate;
+        uint256 maxRate = req.exchangeRateAtTimeOfRequest < currentExchangeRate
+            ? currentExchangeRate
+            : req.exchangeRateAtTimeOfRequest;
+
+        // If user has set a maxLoss use that, otherwise use the global maxLoss.
+        uint16 maxLoss = req.maxLoss > 0 ? req.maxLoss : withdrawAsset.maxLoss;
+
+        // Make sure minRate * maxLoss is greater than or equal to maxRate.
+        if (minRate.mulDivDown(1e4 + maxLoss, 1e4) < maxRate) res.maxLossExceeded = true;
+
+        uint256 shares = req.shares;
+
+        if (withdrawAsset.withdrawFee > 0) {
+            // Handle withdraw fee.
+            uint256 fee = uint256(shares).mulDivDown(withdrawAsset.withdrawFee, 1e4);
+            shares -= fee;
+        }
+
+        // Calculate assets out.
+        res.assetsOut = shares.mulDivDown(minRate, 10 ** boringVault.decimals());
+
+        if (pullFundsFromVault) {
+            if (asset.balanceOf(address(boringVault)) < res.assetsOut) {
+                res.notEnoughAssetsForWithdraw = true;
+            }
+        } else {
+            if (asset.balanceOf(address(this)) < res.assetsOut) {
+                res.notEnoughAssetsForWithdraw = true;
+            }
+        }
+    }
+
+    /**
+     * @notice Helper function to preview a multiple users withdraw for multiple assets.
+     */
+    function previewWithdraws(
+        ERC20[] calldata assets,
+        address[] calldata accounts,
+        BoringVault boringVault,
+        AccountantWithRateProviders accountant,
+        DelayedWithdraw delayedWithdraw
+    ) external view returns (PreviewWithdrawResult[] memory res) {
+        uint256 assetsLength = assets.length;
+        res = new PreviewWithdrawResult[](assetsLength);
+
+        for (uint256 i = 0; i < assetsLength; i++) {
+            res[i] = previewWithdraw(assets[i], accounts[i], boringVault, accountant, delayedWithdraw);
+        }
     }
 }

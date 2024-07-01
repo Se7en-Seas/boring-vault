@@ -1,0 +1,34 @@
+{
+  "DepositAssets": {
+    "BTC.b": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    }
+  },
+  "WithdrawAssets": "",
+  "accountantConfiguration": {
+    "AllowedExchangeRateChangeLower": 9950,
+    "AllowedExchangeRateChangeUpper": 10050,
+    "Base": "BTC.b",
+    "BaseAddress": "0x152b9d0FdC40C096757F570A51E494bd4b943E50",
+    "ManagementFee": 200,
+    "MinimumUpateDelayInSeconds": 21600,
+    "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
+    "StartingExchangeRate": 100000000
+  },
+  "core": {
+    "AccountantWithRateProviders": "0x0618ce82B22862F5Aad9A0116C6C00De2e8c1B41",
+    "BoringVault": "0x67CD6D785D6a0458ef6FbD464ab22F237f86bC5F",
+    "DecoderAndSanitizer": "0x534F739289c0E37D47ac9f47714358a524e91126",
+    "DelayedWithdraw": "0xFD1dC3dC44cfFe594d07E723550b6ebe754F1EB4",
+    "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
+    "ManagerWithMerkleVerification": "0x38287aFe588690418041Ea50ca31a59402956f3a",
+    "RolesAuthority": "0xEDc04F9AD4922d8Ffd20BEF9b2B3d5613B06Ab42",
+    "TellerWithMultiAssetSupport": "0x3A8eed1C68c9F812a7FD0a955214B1ABA2BE20c9"
+  },
+  "depositConfiguration": {
+    "AllowPublicDeposits": true,
+    "AllowPublicWithdraws": true,
+    "ShareLockPeriod": 86400
+  }
+}
