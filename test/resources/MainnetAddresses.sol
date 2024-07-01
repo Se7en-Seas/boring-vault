@@ -435,7 +435,7 @@ contract MainnetAddresses {
 
     // Pendle
     address public pendleMarketFactory = 0x1A6fCc85557BC4fB7B534ed835a03EF056552D52;
-    address public pendleRouter = 0x00000000005BBB0EF59571E58418F9a4357b68A0;
+    address public pendleRouter = 0x888888888889758F76e7103c6CbF23ABbF58F946;
     address public pendleOracle = 0x66a1096C6366b2529274dF4f5D8247827fe4CEA8;
 
     address public pendleWeETHMarket = 0xF32e58F92e60f4b0A37A69b95d642A471365EAe8;
