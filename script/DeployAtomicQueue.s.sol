@@ -7,7 +7,7 @@ import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {Deployer} from "src/helper/Deployer.sol";
 import {AtomicQueue} from "src/atomic-queue/AtomicQueue.sol";
-import {AtomicSolverV3} from "src/atomic-queue/AtomicSolverV3.sol";
+import {AtomicSolverV4} from "src/atomic-queue/AtomicSolverV4.sol";
 import {ContractNames} from "resources/ContractNames.sol";
 
 import "forge-std/Script.sol";
@@ -24,7 +24,7 @@ contract DeployAtomicQueueScript is Script, ContractNames, MainnetAddresses {
     Deployer public deployer = Deployer(deployerAddress);
     RolesAuthority public rolesAuthority;
     AtomicQueue public atomicQueue;
-    AtomicSolverV3 public atomicSolver;
+    AtomicSolverV4 public atomicSolver;
     address public owner = dev1Address;
 
     function setUp() external {
@@ -43,9 +43,9 @@ contract DeployAtomicQueueScript is Script, ContractNames, MainnetAddresses {
         // constructorArgs = hex"";
         // atomicQueue = AtomicQueue(deployer.deployContract(AtomicQueueName, creationCode, constructorArgs, 0));
 
-        creationCode = type(AtomicSolverV3).creationCode;
+        creationCode = type(AtomicSolverV4).creationCode;
         constructorArgs = abi.encode(owner, rolesAuthority);
-        atomicSolver = AtomicSolverV3(deployer.deployContract(AtomicSolverName, creationCode, constructorArgs, 0));
+        atomicSolver = AtomicSolverV4(deployer.deployContract(AtomicSolverName, creationCode, constructorArgs, 0));
 
         vm.stopBroadcast();
     }
