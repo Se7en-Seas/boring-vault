@@ -478,6 +478,9 @@ contract MainnetAddresses {
 
     address public pendleSwethMarket = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303;
 
+    address public pendleZircuitWeETHMarketAugust = 0x6c269DFc142259c52773430b3c78503CC994a93E;
+    address public pendleWeETHMarketJuly = 0xe1F19CBDa26b6418B0C8E1EE978a533184496066;
+
     // Aave V3
     address public v3Pool = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
 

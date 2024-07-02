@@ -89,6 +89,8 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         _addPendleMarketLeafs(leafs, pendleWeETHMarketSeptember);
         _addPendleMarketLeafs(leafs, pendleWeETHMarketDecember);
         _addPendleMarketLeafs(leafs, pendleKarakWeETHMarketSeptember);
+        _addPendleMarketLeafs(leafs, pendleZircuitWeETHMarketAugust);
+        _addPendleMarketLeafs(leafs, pendleWeETHMarketJuly);
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](7);
