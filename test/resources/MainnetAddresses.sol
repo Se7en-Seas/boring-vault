@@ -548,7 +548,7 @@ contract MainnetAddresses {
     address public sUSDeDefaultCollateral = 0x19d0D8e6294B7a04a2733FE433444704B791939A;
 
     // Karak
-    address public vaultSupervisor = 0xAfa904152E04aBFf56701223118Be2832A4449E0;
+    address public vaultSupervisor = 0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC;
 
     address public kmETH = 0x7C22725d1E0871f0043397c9761AD99A86ffD498;
     address public kweETH = 0x2DABcea55a12d73191AeCe59F508b191Fb68AdaC;
