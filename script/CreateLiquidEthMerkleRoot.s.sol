@@ -89,8 +89,8 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         _addPendleMarketLeafs(leafs, pendleWeETHMarketSeptember);
         _addPendleMarketLeafs(leafs, pendleWeETHMarketDecember);
         _addPendleMarketLeafs(leafs, pendleKarakWeETHMarketSeptember);
-        _addPendleMarketLeafs(leafs, pendleZircuitWeETHMarketAugust);
-        _addPendleMarketLeafs(leafs, pendleWeETHMarketJuly);
+        // _addPendleMarketLeafs(leafs, pendleZircuitWeETHMarketAugust);
+        // _addPendleMarketLeafs(leafs, pendleWeETHMarketJuly);
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](7);
@@ -215,6 +215,9 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         _addLeafsForItbReserve(
             leafs, itbReserveProtocolPositionManager, tokensUsed, "ETHPlus ITB Reserve Protocol Position Manager"
         );
+
+        _addPendleMarketLeafs(leafs, pendleZircuitWeETHMarketAugust);
+        _addPendleMarketLeafs(leafs, pendleWeETHMarketJuly);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
