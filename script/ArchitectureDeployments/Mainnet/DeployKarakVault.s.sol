@@ -19,10 +19,10 @@ contract DeployKarakVaultScript is DeployArcticArchitecture, MainnetAddresses {
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Karak King";
-    string public boringVaultSymbol = "KK";
+    string public boringVaultName = "King Karak LRT";
+    string public boringVaultSymbol = "weETHk";
     uint8 public boringVaultDecimals = 18;
-    address public owner = dev1Address;
+    address public owner = dev0Address;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
