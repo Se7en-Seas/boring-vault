@@ -84,12 +84,15 @@ abstract contract ArbitrumNativeBridgeDecoderAndSanitizer is BaseDecoderAndSanit
     // Used to withdraw ERC20 from Arbitrum
     // Target 0x5288c571Fd7aD117beA99bF60FE0846C4E84F933
     // Example TX https://arbiscan.io/tx/0x4d0ccd99024b3ee0d49820625371fc7117036459bff67ed3887ffc7648c7d020
-    function outboundTransfer(address _l1Token, address _to, uint256, /*_amount*/ bytes calldata /*_data*/ )
+    function outboundTransfer(address _l1Token, address _to, uint256, /*_amount*/ bytes calldata _data)
         external
         pure
         virtual
         returns (bytes memory addressesFound)
     {
+        if (_data.length > 0) {
+            revert ArbitrumNativeBridgeDecoderAndSanitizer__ExtraDataNotSupported();
+        }
         addressesFound = abi.encodePacked(_l1Token, _to);
     }
 

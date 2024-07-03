@@ -456,6 +456,32 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
         address[] memory decodersAndSanitizers = new address[](1);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
 
+        // If data is not empty it will revert.
+        targetData[0] = abi.encodeWithSignature(
+            "outboundTransfer(address,address,uint256,bytes)",
+            mainnetAddresses.WEETH(),
+            address(boringVault),
+            100e18,
+            hex"01"
+        );
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    ArbitrumNativeBridgeDecoderAndSanitizer
+                        .ArbitrumNativeBridgeDecoderAndSanitizer__ExtraDataNotSupported
+                        .selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        targetData[0] = abi.encodeWithSignature(
+            "outboundTransfer(address,address,uint256,bytes)",
+            mainnetAddresses.WEETH(),
+            address(boringVault),
+            100e18,
+            hex""
+        );
         // The manage call reverts with "InvalidEFOpcode", however this appears to be a foundry issue as the resulting sim succeeds on tenderly.
         vm.expectRevert();
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
