@@ -11,7 +11,7 @@ abstract contract ArbitrumNativeBridgeDecoderAndSanitizer is BaseDecoderAndSanit
     // Example TX https://etherscan.io/tx/0x37e1d393f1abd8d83bc8a5c3da4a54b4f72e7dd24e7ba13a0c43cb765afef5aa
     /// @notice Excess fee is transferred to recipient on L2
     // Example https://arbiscan.io/tx/0x4428b953549036adbaa880463ad3914eb1c0043ae017f8ea27bd0fa4f3842234
-    function depositETH() external pure virtual returns (bytes memory addressesFound) {
+    function depositEth() external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
     }
@@ -19,13 +19,14 @@ abstract contract ArbitrumNativeBridgeDecoderAndSanitizer is BaseDecoderAndSanit
     // Used to withdraw ETH from Arbitrum
     // Target 0x0000000000000000000000000000000000000064
     // Example TX https://arbiscan.io/tx/0xc5882e2c94e26eb352be67fc1c97e4c605b39d4458ba8858dd0c96f7ad641d5b
-    function withdrawETH(address destination) external pure virtual returns (bytes memory addressesFound) {
+    function withdrawEth(address destination) external pure virtual returns (bytes memory addressesFound) {
         addressesFound = abi.encodePacked(destination);
     }
 
-    // Used to claim withdrawn ETH from Arbitrum
+    // Used to claim withdrawn ETH/ERC20s from Arbitrum
     // Target 0x0B9857ae2D4A3DBe74ffE1d7DF045bb7F96E4840
-    // Example TX https://etherscan.io/tx/0x2db24bbaa8b7d8a282b9eb29d4ac3703561270c8a851ad7c697c96a4b31f707e
+    // Example TX for native https://etherscan.io/tx/0x2db24bbaa8b7d8a282b9eb29d4ac3703561270c8a851ad7c697c96a4b31f707e
+    // Example TX for ERC20 https://etherscan.io/tx/0x576736e900bb0c45d693aa7e6cc13f07ba4e967b19c453aa01d16f4144c71f68
     function executeTransaction(
         bytes32[] calldata, /*proof*/
         uint256, /*index*/
@@ -82,25 +83,6 @@ abstract contract ArbitrumNativeBridgeDecoderAndSanitizer is BaseDecoderAndSanit
         addressesFound = abi.encodePacked(_l1Token, _to);
     }
 
-    // Used to claim withdrawn ERC20 from Arbitrum
-    // Target 0x0B9857ae2D4A3DBe74ffE1d7DF045bb7F96E4840
-    // Example TX https://etherscan.io/tx/0x576736e900bb0c45d693aa7e6cc13f07ba4e967b19c453aa01d16f4144c71f68
-    /// @notice This function is the exact same for both ERC20 and ETH bridging.
-    // function executeTransaction(
-    //     bytes32[] calldata, /*proof*/
-    //     uint256, /*index*/
-    //     address l2Sender,
-    //     address to,
-    //     uint256, /*l2Block*/
-    //     uint256, /*l1Block*/
-    //     uint256, /*l2Timestamp*/
-    //     uint256, /*value*/
-    //     bytes calldata /*data*/
-    // ) external pure virtual returns (bytes memory addressesFound) {
-    //     addressesFound = abi.encodePacked(l2Sender, to);
-    // }
-
-    // TODO how do we handle failed bridge TXs on L1?
     // Called on the L2 when a bridge TX fails.
     // Target 0x000000000000000000000000000000000000006E
     // Example TX https://arbiscan.io/tx/0x4465fc37c9f970a2961c855f612cfb04536108dfe88873db44bcd75a08887ab4
