@@ -4,6 +4,8 @@ pragma solidity 0.8.21;
 import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
 
 abstract contract ArbitrumNativeBridgeDecoderAndSanitizer is BaseDecoderAndSanitizer {
+    error ArbitrumNativeBridgeDecoderAndSanitizer__ExtraDataNotSupported();
+
     //============================== BRIDGING NATIVE ETH ===============================
 
     // Used to deposit ETH into Arbitrum
@@ -52,8 +54,12 @@ abstract contract ArbitrumNativeBridgeDecoderAndSanitizer is BaseDecoderAndSanit
         uint256, /*_amount*/
         uint256, /*_maxGas*/
         uint256, /*_gasPriceBid*/
-        bytes calldata /*_data*/
+        bytes calldata _data
     ) external pure virtual returns (bytes memory addressesFound) {
+        (, bytes memory extraData) = abi.decode(_data, (uint256, bytes));
+        if (extraData.length > 0) {
+            revert ArbitrumNativeBridgeDecoderAndSanitizer__ExtraDataNotSupported();
+        }
         addressesFound = abi.encodePacked(_token, _to);
     }
 
@@ -66,8 +72,12 @@ abstract contract ArbitrumNativeBridgeDecoderAndSanitizer is BaseDecoderAndSanit
         uint256, /*_amount*/
         uint256, /*_maxGas*/
         uint256, /*_gasPriceBid*/
-        bytes calldata /*_data*/
+        bytes calldata _data
     ) external pure virtual returns (bytes memory addressesFound) {
+        (, bytes memory extraData) = abi.decode(_data, (uint256, bytes));
+        if (extraData.length > 0) {
+            revert ArbitrumNativeBridgeDecoderAndSanitizer__ExtraDataNotSupported();
+        }
         addressesFound = abi.encodePacked(_token, _refundTo, _to);
     }
 

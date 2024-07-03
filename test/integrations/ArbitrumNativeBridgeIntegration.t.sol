@@ -9,7 +9,10 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
-import {BridgingDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/BridgingDecoderAndSanitizer.sol";
+import {
+    BridgingDecoderAndSanitizer,
+    ArbitrumNativeBridgeDecoderAndSanitizer
+} from "src/base/DecodersAndSanitizers/BridgingDecoderAndSanitizer.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 
@@ -96,6 +99,39 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
         address[] memory decodersAndSanitizers = new address[](2);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
+        // Make sure we revert is bridgeData is not formatted properly.
+        bytes memory badFormedBridgeData = abi.encode(1, bytes("bad data"));
+        targetData[1] = abi.encodeWithSignature(
+            "outboundTransfer(address,address,uint256,uint256,uint256,bytes)",
+            mainnetAddresses.WEETH(),
+            address(boringVault),
+            100e18,
+            125062,
+            60000000,
+            badFormedBridgeData
+        );
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    ArbitrumNativeBridgeDecoderAndSanitizer
+                        .ArbitrumNativeBridgeDecoderAndSanitizer__ExtraDataNotSupported
+                        .selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        targetData[1] = abi.encodeWithSignature(
+            "outboundTransfer(address,address,uint256,uint256,uint256,bytes)",
+            mainnetAddresses.WEETH(),
+            address(boringVault),
+            100e18,
+            125062,
+            60000000,
+            bridgeData
+        );
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 
@@ -157,6 +193,40 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
         address[] memory decodersAndSanitizers = new address[](2);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
+        bytes memory badFormedBridgeData = abi.encode(1, bytes("bad data"));
+        targetData[1] = abi.encodeWithSignature(
+            "outboundTransferCustomRefund(address,address,address,uint256,uint256,uint256,bytes)",
+            mainnetAddresses.WEETH(),
+            address(boringVault),
+            address(boringVault),
+            100e18,
+            125062,
+            60000000,
+            badFormedBridgeData
+        );
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    ArbitrumNativeBridgeDecoderAndSanitizer
+                        .ArbitrumNativeBridgeDecoderAndSanitizer__ExtraDataNotSupported
+                        .selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        targetData[1] = abi.encodeWithSignature(
+            "outboundTransferCustomRefund(address,address,address,uint256,uint256,uint256,bytes)",
+            mainnetAddresses.WEETH(),
+            address(boringVault),
+            address(boringVault),
+            100e18,
+            125062,
+            60000000,
+            bridgeData
+        );
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 
