@@ -546,4 +546,8 @@ contract MainnetAddresses {
     address public ETHxDefaultCollateral = 0xBdea8e677F9f7C294A4556005c640Ee505bE6925;
     address public uniETHDefaultCollateral = 0x1C57ea879dd3e8C9fefa8224fdD1fa20dd54211E;
     address public sUSDeDefaultCollateral = 0x19d0D8e6294B7a04a2733FE433444704B791939A;
+
+    // CCIP token transfers.
+    address public ccipRouter = 0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D;
+    uint64 public arbitrumDestinationChainId = 4949039107694359620;
 }

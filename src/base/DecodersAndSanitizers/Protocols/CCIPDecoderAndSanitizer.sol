@@ -28,7 +28,8 @@ abstract contract CCIPDecoderAndSanitizer is BaseDecoderAndSanitizer {
         if (extraArgs.gasLimit != 0) revert CCIPDecoderAndSanitizer__NonZeroGasLimit();
 
         // Extract sensitive arguments.
-        sensitiveArguments = abi.encode(destinationChainSelector, message.receiver);
+        sensitiveArguments =
+            abi.encodePacked(address(uint160(destinationChainSelector)), abi.decode(message.receiver, (address)));
 
         uint256 tokenAmountsLength = message.tokenAmounts.length;
         for (uint256 i; i < tokenAmountsLength; ++i) {
