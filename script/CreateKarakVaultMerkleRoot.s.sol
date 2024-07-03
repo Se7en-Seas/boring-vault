@@ -22,15 +22,15 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
 
     address public itbDecoderAndSanitizer = 0xcfa57ea1b1E138cf89050253CcF5d0836566C06D;
 
-    address public itbKmETHPositionManager = address(420);
-    address public itbKweETHPositionManager = address(420);
-    address public itbKwstETHPositionManager = address(420);
-    address public itbKrETHPositionManager = address(420);
-    address public itbKcbETHPositionManager = address(420);
-    address public itbKwBETHPositionManager = address(420);
-    address public itbKswETHPositionManager = address(420);
-    address public itbKETHxPositionManager = address(420);
-    address public itbKsfrxETHPositionManager = address(420);
+    address public itbKmETHPositionManager = 0x280f4eE00dD5A96D328ec91B182b2c0F9d0eB815;
+    address public itbKweETHPositionManager = 0x276E81Fb6A0b445F923Fe113a934a5B22e62a54C;
+    address public itbKwstETHPositionManager = 0xFdc479a18d06e2721d17024b549f3f6173a68805;
+    address public itbKrETHPositionManager = 0xD0F54aDE213836b89c4B23672FEa229E5e93E32B;
+    address public itbKcbETHPositionManager = 0x7De645f12394531a614c1e83B5e944150adB4Ac3;
+    address public itbKwBETHPositionManager = 0x89572fc9410F7e9a99Ce2bE6483642658821bB06;
+    address public itbKswETHPositionManager = 0x2F43bC3eFcEDd87CeDe894Ad4155da0A1385D7Ee;
+    address public itbKETHxPositionManager = 0x6fCbdFF6CaBef0cDf1492Dc95FDb34702009358b;
+    address public itbKsfrxETHPositionManager = 0x2166064650f7E0E9B6cade910Fa135FC26FED40D;
 
     function setUp() external {}
 
