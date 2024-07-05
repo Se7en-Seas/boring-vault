@@ -435,7 +435,7 @@ contract MainnetAddresses {
 
     // Pendle
     address public pendleMarketFactory = 0x1A6fCc85557BC4fB7B534ed835a03EF056552D52;
-    address public pendleRouter = 0x00000000005BBB0EF59571E58418F9a4357b68A0;
+    address public pendleRouter = 0x888888888889758F76e7103c6CbF23ABbF58F946;
     address public pendleOracle = 0x66a1096C6366b2529274dF4f5D8247827fe4CEA8;
 
     address public pendleWeETHMarket = 0xF32e58F92e60f4b0A37A69b95d642A471365EAe8;
@@ -550,4 +550,11 @@ contract MainnetAddresses {
     // CCIP token transfers.
     address public ccipRouter = 0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D;
     uint64 public arbitrumDestinationChainId = 4949039107694359620;
+
+    // Arbitrum Bridge
+    address public arbitrumDelayedInbox = 0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f;
+    address public arbitrumOutbox = 0x0B9857ae2D4A3DBe74ffE1d7DF045bb7F96E4840;
+    address public arbitrumL1GatewayRouter = 0x72Ce9c846789fdB6fC1f34aC4AD25Dd9ef7031ef;
+    address public arbitrumL1ERC20Gateway = 0xa3A7B6F88361F48403514059F1F16C8E78d60EeC;
+    address public arbitrumL2Sender = 0x09e9222E96E7B4AE2a407B98d48e330053351EEe;
 }
