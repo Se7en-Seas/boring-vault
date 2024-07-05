@@ -1,0 +1,55 @@
+{
+    "metadata": {
+        "AccountantAddress": "0xc315D6e14DDCDC7407784e2Caf815d131Bc1D3E7",
+        "BoringVaultAddress": "0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C",
+        "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+        "DigestComposition": [
+            "Bytes20(DECODER_AND_SANITIZER_ADDRESS)",
+            "Bytes20(TARGET_ADDRESS)",
+            "Bytes1(CAN_SEND_VALUE)",
+            "Bytes4(TARGET_FUNCTION_SELECTOR)",
+            "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)"
+        ],
+        "LeafCount": 2,
+        "ManageRoot": "0x2a4228219fddc6120ea614bc81f3a1dd5f0aab48380baafe7c8e03642b8aa0a8",
+        "ManagerAddress": "0xcFF411d5C54FE0583A984beE1eF43a4776854B9A",
+        "TreeCapacity": 2
+    },
+    "leafs": [
+        {
+            "AddressArguments": [
+                "0x19d0D8e6294B7a04a2733FE433444704B791939A"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Approve Symbiotic DefaultCollateral_Staked USDe to spend sUSDe",
+            "FunctionSelector": "0x095ea7b3",
+            "FunctionSignature": "approve(address,uint256)",
+            "LeafDigest": "0x7d73325d7c073a23fd01b172c723e934fdf36345bdd128f1d1138470d23c519f",
+            "PackedArgumentAddresses": "0x19d0d8e6294b7a04a2733fe433444704b791939a",
+            "TargetAddress": "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497"
+        },
+        {
+            "AddressArguments": [
+                "0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+            "Description": "Deposit sUSDe into Symbiotic DefaultCollateral_Staked USDe",
+            "FunctionSelector": "0x47e7ef24",
+            "FunctionSignature": "deposit(address,uint256)",
+            "LeafDigest": "0x516afee23fb129078e3ab97404256ae63105a877d3d21fc11cc3b62d6eabd37b",
+            "PackedArgumentAddresses": "0x08c6f91e2b681faf5e17227f2a44c307b3c1364c",
+            "TargetAddress": "0x19d0D8e6294B7a04a2733FE433444704B791939A"
+        }
+    ],
+    "MerkleTree": {
+        "0": [
+            "0x2a4228219fddc6120ea614bc81f3a1dd5f0aab48380baafe7c8e03642b8aa0a8"
+        ],
+        "1": [
+            "0x7d73325d7c073a23fd01b172c723e934fdf36345bdd128f1d1138470d23c519f",
+            "0x516afee23fb129078e3ab97404256ae63105a877d3d21fc11cc3b62d6eabd37b"
+        ]
+    }
+}
