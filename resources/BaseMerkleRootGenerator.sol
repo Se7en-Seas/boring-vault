@@ -646,6 +646,30 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         leafs[leafIndex].argumentAddresses[1] = sy;
         leafs[leafIndex].argumentAddresses[2] = yt;
         leafs[leafIndex].argumentAddresses[3] = marketAddress;
+
+        // Swap between SY and PT
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            pendleRouter,
+            false,
+            "swapExactSyForPt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256),(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+            new address[](2),
+            string.concat("Swap ", ERC20(sy).symbol(), " for ", ERC20(pt).symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[1] = marketAddress;
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            pendleRouter,
+            false,
+            "swapExactPtForSy(address,address,uint256,uint256,(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+            new address[](2),
+            string.concat("Swap ", ERC20(pt).symbol(), " for ", ERC20(sy).symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[1] = marketAddress;
     }
 
     function _addUniswapV3Leafs(ManageLeaf[] memory leafs, address[] memory token0, address[] memory token1) internal {
