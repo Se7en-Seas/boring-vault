@@ -31,6 +31,7 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
     address public itbKswETHPositionManager = 0x2F43bC3eFcEDd87CeDe894Ad4155da0A1385D7Ee;
     address public itbKETHxPositionManager = 0x6fCbdFF6CaBef0cDf1492Dc95FDb34702009358b;
     address public itbKsfrxETHPositionManager = 0x2166064650f7E0E9B6cade910Fa135FC26FED40D;
+    address public itbKrswETHPositionManager = 0x94181838802D67C2e71EF3710b03819deD6E7734;
 
     function setUp() external {}
 
@@ -73,6 +74,9 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
         );
         _addLeafsForITBKarakPositionManager(
             leafs, itbDecoderAndSanitizer, itbKsfrxETHPositionManager, ksfrxETH, vaultSupervisor
+        );
+        _addLeafsForITBKarakPositionManager(
+            leafs, itbDecoderAndSanitizer, itbKrswETHPositionManager, krswETH, vaultSupervisor
         );
 
         // ========================== Lido ==========================

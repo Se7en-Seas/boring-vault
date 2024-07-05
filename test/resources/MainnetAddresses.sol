@@ -559,4 +559,5 @@ contract MainnetAddresses {
     address public kswETH = 0xc585DF3a8C9ca0c614D023A812624bE36161502B;
     address public kETHx = 0x989Ab830C6e2BdF3f28214fF54C9B7415C349a3F;
     address public ksfrxETH = 0x1751e1e4d2c9Fa99479C0c5574136F0dbD8f3EB8;
+    address public krswETH = 0x1B4d88f5f38988BEA334C79f48aa69BEEeFE2e1e;
 }
