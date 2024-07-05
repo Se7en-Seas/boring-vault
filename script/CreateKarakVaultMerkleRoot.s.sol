@@ -31,6 +31,7 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
     address public itbKswETHPositionManager = 0x2F43bC3eFcEDd87CeDe894Ad4155da0A1385D7Ee;
     address public itbKETHxPositionManager = 0x6fCbdFF6CaBef0cDf1492Dc95FDb34702009358b;
     address public itbKsfrxETHPositionManager = 0x2166064650f7E0E9B6cade910Fa135FC26FED40D;
+    address public itbKrswETHPositionManager = 0x94181838802D67C2e71EF3710b03819deD6E7734;
 
     function setUp() external {}
 
@@ -73,6 +74,9 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
         );
         _addLeafsForITBKarakPositionManager(
             leafs, itbDecoderAndSanitizer, itbKsfrxETHPositionManager, ksfrxETH, vaultSupervisor
+        );
+        _addLeafsForITBKarakPositionManager(
+            leafs, itbDecoderAndSanitizer, itbKrswETHPositionManager, krswETH, vaultSupervisor
         );
 
         // ========================== Lido ==========================
@@ -140,7 +144,7 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
         token0[51] = address(SWETH);
         token0[52] = address(ETHX);
         token0[53] = address(ETHX);
-        token0[54] = address(UNIETH);
+        token0[54] = address(RSWETH);
 
         address[] memory token1 = new address[](55);
         token1[0] = address(WEETH);
@@ -151,7 +155,7 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
         token1[5] = address(METH);
         token1[6] = address(SWETH);
         token1[7] = address(ETHX);
-        token1[8] = address(UNIETH);
+        token1[8] = address(RSWETH);
         token1[9] = address(SFRXETH);
         token1[10] = address(WSTETH);
         token1[11] = address(RETH);
@@ -160,7 +164,7 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
         token1[14] = address(METH);
         token1[15] = address(SWETH);
         token1[16] = address(ETHX);
-        token1[17] = address(UNIETH);
+        token1[17] = address(RSWETH);
         token1[18] = address(SFRXETH);
         token1[19] = address(RETH);
         token1[20] = address(cbETH);
@@ -168,34 +172,34 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
         token1[22] = address(METH);
         token1[23] = address(SWETH);
         token1[24] = address(ETHX);
-        token1[25] = address(UNIETH);
+        token1[25] = address(RSWETH);
         token1[26] = address(SFRXETH);
         token1[27] = address(cbETH);
         token1[28] = address(WBETH);
         token1[29] = address(METH);
         token1[30] = address(SWETH);
         token1[31] = address(ETHX);
-        token1[32] = address(UNIETH);
+        token1[32] = address(RSWETH);
         token1[33] = address(SFRXETH);
         token1[34] = address(WBETH);
         token1[35] = address(METH);
         token1[36] = address(SWETH);
         token1[37] = address(ETHX);
-        token1[38] = address(UNIETH);
+        token1[38] = address(RSWETH);
         token1[39] = address(SFRXETH);
         token1[40] = address(METH);
         token1[41] = address(SWETH);
         token1[42] = address(ETHX);
-        token1[43] = address(UNIETH);
+        token1[43] = address(RSWETH);
         token1[44] = address(SFRXETH);
         token1[45] = address(SWETH);
         token1[46] = address(ETHX);
-        token1[47] = address(UNIETH);
+        token1[47] = address(RSWETH);
         token1[48] = address(SFRXETH);
         token1[49] = address(ETHX);
-        token1[50] = address(UNIETH);
+        token1[50] = address(RSWETH);
         token1[51] = address(SFRXETH);
-        token1[52] = address(UNIETH);
+        token1[52] = address(RSWETH);
         token1[53] = address(SFRXETH);
         token1[54] = address(SFRXETH);
 
@@ -222,7 +226,7 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
         kind[7] = SwapKind.BuyAndSell;
         assets[8] = address(ETHX);
         kind[8] = SwapKind.BuyAndSell;
-        assets[9] = address(UNIETH);
+        assets[9] = address(RSWETH);
         kind[9] = SwapKind.BuyAndSell;
         assets[10] = address(SFRXETH);
         kind[10] = SwapKind.BuyAndSell;
