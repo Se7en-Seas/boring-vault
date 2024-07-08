@@ -10,7 +10,7 @@ import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 10000000000 --broadcast --etherscan-api-key $ARBISCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 10000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MainnetAddresses {
