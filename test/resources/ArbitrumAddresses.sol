@@ -64,4 +64,9 @@ contract ArbitrumAddresses {
     ERC20 public dV3ARB = ERC20(0x44705f578135cC5d703b4c9c122528C73Eb87145);
 
     address public balancerVault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+
+    // Arbitrum native bridging.
+    address public arbitrumL2GatewayRouter = 0x5288c571Fd7aD117beA99bF60FE0846C4E84F933;
+    address public arbitrumSys = 0x0000000000000000000000000000000000000064;
+    address public arbitrumRetryableTx = 0x000000000000000000000000000000000000006E;
 }
