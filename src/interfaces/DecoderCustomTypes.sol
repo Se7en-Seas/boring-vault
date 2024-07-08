@@ -160,6 +160,42 @@ contract DecoderCustomTypes {
         ETH_WETH
     }
 
+    struct LimitOrderData {
+        address limitRouter;
+        uint256 epsSkipMarket; // only used for swap operations, will be ignored otherwise
+        FillOrderParams[] normalFills;
+        FillOrderParams[] flashFills;
+        bytes optData;
+    }
+
+    struct FillOrderParams {
+        Order order;
+        bytes signature;
+        uint256 makingAmount;
+    }
+
+    struct Order {
+        uint256 salt;
+        uint256 expiry;
+        uint256 nonce;
+        OrderType orderType;
+        address token;
+        address YT;
+        address maker;
+        address receiver;
+        uint256 makingAmount;
+        uint256 lnImpliedRate;
+        uint256 failSafeRate;
+        bytes permit;
+    }
+
+    enum OrderType {
+        SY_FOR_PT,
+        PT_FOR_SY,
+        SY_FOR_YT,
+        YT_FOR_SY
+    }
+
     // ========================================= EIGEN LAYER =========================================
 
     struct QueuedWithdrawalParams {
