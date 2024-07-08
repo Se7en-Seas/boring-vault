@@ -15,6 +15,7 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
 
     address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
     address public rawDataDecoderAndSanitizer = 0x0C8B49b06544fA8B5c85755267498E407433edBB;
+    address public pancakeSwapDataDecoderAndSanitizer = 0x4dE66AA174b99481dAAe12F2Cdd5D76Dc14Eb3BC;
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
 
@@ -218,6 +219,28 @@ contract CreateLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
 
         _addPendleMarketLeafs(leafs, pendleZircuitWeETHMarketAugust);
         _addPendleMarketLeafs(leafs, pendleWeETHMarketJuly);
+
+        // ========================== PancakeSwapV3 ==========================
+        updateAddresses(boringVault, pancakeSwapDataDecoderAndSanitizer, managerAddress, accountantAddress);
+        token0 = new address[](7);
+        token0[0] = address(WETH);
+        token0[1] = address(WETH);
+        token0[2] = address(WETH);
+        token0[3] = address(WEETH);
+        token0[4] = address(WEETH);
+        token0[5] = address(WSTETH);
+        token0[6] = address(WETH);
+
+        token1 = new address[](7);
+        token1[0] = address(WEETH);
+        token1[1] = address(WSTETH);
+        token1[2] = address(RETH);
+        token1[3] = address(WSTETH);
+        token1[4] = address(RETH);
+        token1[5] = address(RETH);
+        token1[6] = address(SFRXETH);
+
+        _addPancakeSwapV3Leafs(leafs, token0, token1);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 

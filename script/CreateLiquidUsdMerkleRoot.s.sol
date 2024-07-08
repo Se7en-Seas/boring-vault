@@ -15,6 +15,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
 
     address public boringVault = 0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C;
     address public rawDataDecoderAndSanitizer = 0x8Ec63aabB2d7b5dDb588dC04AaA17Ee1ddD57c27;
+    address public pancakeSwapDataDecoderAndSanitizer = 0x47F62174e7A8EF939d8525C9670025d19DeFd821;
     address public managerAddress = 0xcFF411d5C54FE0583A984beE1eF43a4776854B9A;
     address public accountantAddress = 0xc315D6e14DDCDC7407784e2Caf815d131Bc1D3E7;
 
@@ -77,7 +78,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
     function generateLiquidUsdStrategistMerkleRoot() public {
         updateAddresses(boringVault, rawDataDecoderAndSanitizer, managerAddress, accountantAddress);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](512);
+        ManageLeaf[] memory leafs = new ManageLeaf[](1024);
 
         // ========================== Aave V3 ==========================
         ERC20[] memory supplyAssets = new ERC20[](6);
@@ -948,6 +949,37 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         address[] memory defaultCollaterals = new address[](1);
         defaultCollaterals[0] = sUSDeDefaultCollateral;
         _addSymbioticLeafs(leafs, defaultCollaterals);
+
+        // ========================== PancakeSwapV3 ==========================
+        updateAddresses(boringVault, pancakeSwapDataDecoderAndSanitizer, managerAddress, accountantAddress);
+        /**
+         * Full position management for USDC, USDT, DAI, USDe, sUSDe.
+         */
+        token0 = new address[](10);
+        token0[0] = address(USDC);
+        token0[1] = address(USDC);
+        token0[2] = address(USDC);
+        token0[3] = address(USDC);
+        token0[4] = address(USDT);
+        token0[5] = address(USDT);
+        token0[6] = address(USDT);
+        token0[7] = address(DAI);
+        token0[8] = address(DAI);
+        token0[9] = address(USDE);
+
+        token1 = new address[](10);
+        token1[0] = address(USDT);
+        token1[1] = address(DAI);
+        token1[2] = address(USDE);
+        token1[3] = address(SUSDE);
+        token1[4] = address(DAI);
+        token1[5] = address(USDE);
+        token1[6] = address(SUSDE);
+        token1[7] = address(USDE);
+        token1[8] = address(SUSDE);
+        token1[9] = address(SUSDE);
+
+        _addPancakeSwapV3Leafs(leafs, token0, token1);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
