@@ -34,13 +34,13 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
         bytes memory constructorArgs;
         vm.startBroadcast(privateKey);
 
-        creationCode = type(PancakeSwapV3FullDecoderAndSanitizer).creationCode;
-        constructorArgs = abi.encode(boringVault, pancakeSwapV3NonFungiblePositionManager, pancakeSwapV3MasterChefV3);
-        deployer.deployContract(EtherFiLiquidUsdPancakeSwapDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+        // creationCode = type(PancakeSwapV3FullDecoderAndSanitizer).creationCode;
+        // constructorArgs = abi.encode(boringVault, pancakeSwapV3NonFungiblePositionManager, pancakeSwapV3MasterChefV3);
+        // deployer.deployContract(EtherFiLiquidUsdPancakeSwapDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
-        // creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
-        // constructorArgs = abi.encode(boringVault, uniswapV3NonFungiblePositionManager);
-        // deployer.deployContract(EtherFiLiquidUsdDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+        creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
+        constructorArgs = abi.encode(boringVault, uniswapV3NonFungiblePositionManager);
+        deployer.deployContract(EtherFiLiquidUsdDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
         vm.stopBroadcast();
     }

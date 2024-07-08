@@ -14,7 +14,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C;
-    address public rawDataDecoderAndSanitizer = 0x8Ec63aabB2d7b5dDb588dC04AaA17Ee1ddD57c27;
+    address public rawDataDecoderAndSanitizer = 0xB240f07102a907B7B007A36f2ef70EbC9BFf14E8;
     address public pancakeSwapDataDecoderAndSanitizer = 0x47F62174e7A8EF939d8525C9670025d19DeFd821;
     address public managerAddress = 0xcFF411d5C54FE0583A984beE1eF43a4776854B9A;
     address public accountantAddress = 0xc315D6e14DDCDC7407784e2Caf815d131Bc1D3E7;
