@@ -1617,6 +1617,44 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         }
     }
 
+    function _addArbitrumNativeBridgeLeafs(ManageLeaf[] memory leafs) internal {
+        // BridgeNativeETHToArbitrum
+        // leafIndex++;
+        // leafs[leafIndex] = ManageLeaf(
+        //     arbitrumDelayedInbox,
+        //     true,
+        //     "depositEth()",
+        //     new address[](0),
+        //     "Bridge Native ETH to Arbitrum",
+        //     _rawDataDecoderAndSanitizer
+        // );
+
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(WETH),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Arbitrum L1 ERC20 Gateway to spend ", WETH.symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = 0xd92023E9d9911199a6711321D1277285e6d4e2db; // wETH gateway
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            arbitrumL1GatewayRouter,
+            true,
+            "outboundTransferCustomRefund(address,address,address,uint256,uint256,uint256,bytes)",
+            new address[](3),
+            "Bridge wETH to Arbitrum",
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(WETH);
+        leafs[leafIndex].argumentAddresses[1] = _boringVault;
+        leafs[leafIndex].argumentAddresses[2] = _boringVault;
+    }
+
     function _generateLeafs(
         string memory filePath,
         ManageLeaf[] memory leafs,

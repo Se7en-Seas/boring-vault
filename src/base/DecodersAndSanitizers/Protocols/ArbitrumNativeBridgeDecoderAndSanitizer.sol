@@ -5,14 +5,27 @@ import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndS
 
 abstract contract ArbitrumNativeBridgeDecoderAndSanitizer is BaseDecoderAndSanitizer {
     error ArbitrumNativeBridgeDecoderAndSanitizer__ExtraDataNotSupported();
+    error ArbitrumNativeBridgeDecoderAndSanitizer__GasLimitTooSmall();
+    error ArbitrumNativeBridgeDecoderAndSanitizer__NoCallDataForRetryables();
+    error ArbitrumNativeBridgeDecoderAndSanitizer__MaxGasPriceBid();
+
+    /**
+     * @notice The minimum gas limit for retryable tickets.
+     */
+    uint256 internal constant MINIMUM_RETRYABLE_GAS_LIMIT = 25_000;
+
+    /**
+     * @notice The maximum gas price bid for outbound transfers.
+     */
+    uint256 internal constant MAXIMUM_GAS_PRICE_BID = 100e9;
 
     //============================== BRIDGING NATIVE ETH ===============================
 
-    // Used to deposit ETH into Arbitrum
-    // Target 0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f
-    // Example TX https://etherscan.io/tx/0x37e1d393f1abd8d83bc8a5c3da4a54b4f72e7dd24e7ba13a0c43cb765afef5aa
-    /// @notice Excess fee is transferred to recipient on L2
-    // Example https://arbiscan.io/tx/0x4428b953549036adbaa880463ad3914eb1c0043ae017f8ea27bd0fa4f3842234
+    /// @notice This function will not be added to the merkle tree, as it will
+    /// transfer ETH to the BoringVault's aliased address on Arbitrum.
+    /// Money can be retrieved from this aliased address, but to limit the amount of money going
+    /// to this aliased address, if ETH needs to be bridged,
+    /// @notice It is left here in case the Arbitrum bridge contracts are upgraded to remove the Alias feature.
     function depositEth() external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
@@ -53,30 +66,39 @@ abstract contract ArbitrumNativeBridgeDecoderAndSanitizer is BaseDecoderAndSanit
         address _to,
         uint256, /*_amount*/
         uint256, /*_maxGas*/
-        uint256, /*_gasPriceBid*/
+        uint256 _gasPriceBid,
         bytes calldata _data
     ) external pure virtual returns (bytes memory addressesFound) {
         (, bytes memory extraData) = abi.decode(_data, (uint256, bytes));
         if (extraData.length > 0) {
             revert ArbitrumNativeBridgeDecoderAndSanitizer__ExtraDataNotSupported();
         }
+        if (_gasPriceBid > MAXIMUM_GAS_PRICE_BID) {
+            revert ArbitrumNativeBridgeDecoderAndSanitizer__MaxGasPriceBid();
+        }
         addressesFound = abi.encodePacked(_token, _to);
     }
 
     // Used to deposit ERC20 into Arbitrum
     // Target 0x72Ce9c846789fdB6fC1f34aC4AD25Dd9ef7031ef
+    /// @notice This function will not be added to the merkle tree for tree simplicity, as it behaves the same way as `outboundTransfer`,
+    /// sending excess ETH to the aliased address.
+    /// @notice It is left here in case the Arbitrum bridge contracts are upgraded such that `_refundTo` actually goes to the address provided.
     function outboundTransferCustomRefund(
         address _token,
         address _refundTo,
         address _to,
         uint256, /*_amount*/
         uint256, /*_maxGas*/
-        uint256, /*_gasPriceBid*/
+        uint256 _gasPriceBid,
         bytes calldata _data
     ) external pure virtual returns (bytes memory addressesFound) {
         (, bytes memory extraData) = abi.decode(_data, (uint256, bytes));
         if (extraData.length > 0) {
             revert ArbitrumNativeBridgeDecoderAndSanitizer__ExtraDataNotSupported();
+        }
+        if (_gasPriceBid > MAXIMUM_GAS_PRICE_BID) {
+            revert ArbitrumNativeBridgeDecoderAndSanitizer__MaxGasPriceBid();
         }
         addressesFound = abi.encodePacked(_token, _refundTo, _to);
     }
@@ -102,5 +124,51 @@ abstract contract ArbitrumNativeBridgeDecoderAndSanitizer is BaseDecoderAndSanit
     function redeem(bytes32 /*ticketId*/ ) external pure virtual returns (bytes memory addressesFound) {
         // Nothing to sanitize or return
         return addressesFound;
+    }
+
+    function createRetryableTicket(
+        address to,
+        uint256, /*l2CallValue*/
+        uint256, /*maxSubmissionCost*/
+        address excessFeeRefundAddress,
+        address callValueRefundAddress,
+        uint256 gasLimit,
+        uint256 maxFeePerGas,
+        bytes calldata data
+    ) external pure virtual returns (bytes memory addressesFound) {
+        if (gasLimit < MINIMUM_RETRYABLE_GAS_LIMIT) {
+            revert ArbitrumNativeBridgeDecoderAndSanitizer__GasLimitTooSmall();
+        }
+        if (data.length > 0) {
+            revert ArbitrumNativeBridgeDecoderAndSanitizer__NoCallDataForRetryables();
+        }
+        if (maxFeePerGas > MAXIMUM_GAS_PRICE_BID) {
+            revert ArbitrumNativeBridgeDecoderAndSanitizer__MaxGasPriceBid();
+        }
+        addressesFound = abi.encodePacked(to, excessFeeRefundAddress, callValueRefundAddress);
+    }
+
+    // Also unsafe one should not have gasLimit and maxFeePerGas set to 1
+    function unsafeCreateRetryableTicket(
+        address to,
+        uint256, /*l2CallValue*/
+        uint256, /*maxSubmissionCost*/
+        address excessFeeRefundAddress,
+        address callValueRefundAddress,
+        uint256 gasLimit,
+        uint256 maxFeePerGas,
+        bytes calldata data
+    ) external pure virtual returns (bytes memory addressesFound) {
+        if (gasLimit < MINIMUM_RETRYABLE_GAS_LIMIT) {
+            revert ArbitrumNativeBridgeDecoderAndSanitizer__GasLimitTooSmall();
+        }
+        if (data.length > 0) {
+            revert ArbitrumNativeBridgeDecoderAndSanitizer__NoCallDataForRetryables();
+        }
+        if (maxFeePerGas > MAXIMUM_GAS_PRICE_BID) {
+            revert ArbitrumNativeBridgeDecoderAndSanitizer__MaxGasPriceBid();
+        }
+
+        addressesFound = abi.encodePacked(to, excessFeeRefundAddress, callValueRefundAddress);
     }
 }
