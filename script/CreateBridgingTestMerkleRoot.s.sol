@@ -37,7 +37,9 @@ contract CreateBridgingTestMerkleRootScript is BaseMerkleRootGenerator {
         ManageLeaf[] memory leafs = new ManageLeaf[](2);
 
         // ========================== Native Bridge ==========================
-        _addArbitrumNativeBridgeLeafs(leafs);
+        ERC20[] memory nativeBridgeTokens = new ERC20[](1);
+        nativeBridgeTokens[0] = WETH;
+        _addArbitrumNativeBridgeLeafs(leafs, nativeBridgeTokens);
 
         string memory filePath = "./leafs/BridgingTestStrategistLeafs.json";
 
