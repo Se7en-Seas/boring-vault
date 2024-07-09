@@ -562,4 +562,7 @@ contract MainnetAddresses {
     address public arbitrumL1ERC20Gateway = 0xa3A7B6F88361F48403514059F1F16C8E78d60EeC;
     address public arbitrumL2Sender = 0x09e9222E96E7B4AE2a407B98d48e330053351EEe;
     address public arbitrumWethGateway = 0xd92023E9d9911199a6711321D1277285e6d4e2db;
+
+    // LayerZero
+    address public EtherFiOFTAdapter = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D;
 }
