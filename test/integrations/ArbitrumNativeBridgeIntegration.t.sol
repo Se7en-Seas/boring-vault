@@ -558,6 +558,135 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 
+    function testCreateRetryable() external {
+        // Setup forked environment.
+        string memory rpcKey = "MAINNET_RPC_URL";
+        // uint256 blockNumber = 19369928;
+        uint256 blockNumber = 19826676;
+        _createForkAndSetup(rpcKey, blockNumber);
+
+        deal(address(mainnetAddresses.WEETH()), address(boringVault), 100e18);
+        deal(address(boringVault), 1_000e18);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](2);
+        leafs[0] = ManageLeaf(
+            mainnetAddresses.arbitrumDelayedInbox(),
+            true,
+            "createRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
+            new address[](3)
+        );
+        leafs[0].argumentAddresses[0] = address(boringVault);
+        leafs[0].argumentAddresses[1] = address(boringVault);
+        leafs[0].argumentAddresses[2] = address(boringVault);
+
+        leafs[1] = ManageLeaf(
+            mainnetAddresses.arbitrumDelayedInbox(),
+            false,
+            "unsafeCreateRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
+            new address[](3)
+        );
+        leafs[1].argumentAddresses[0] = address(boringVault);
+        leafs[1].argumentAddresses[1] = address(boringVault);
+        leafs[1].argumentAddresses[2] = address(boringVault);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](2);
+        targets[0] = mainnetAddresses.arbitrumDelayedInbox();
+        targets[1] = mainnetAddresses.arbitrumDelayedInbox();
+
+        bytes[] memory targetData = new bytes[](2);
+        address to = address(boringVault);
+        uint256 l2CallValue = 0.1e18;
+        uint256 maxSubmissionCost = 0.05e18;
+        address excessFeeRefundAddress = address(boringVault);
+        address callValueRefundAddress = address(boringVault);
+        uint256 gasLimit = 25_000;
+        uint256 maxFeePerGas = 0.01e9;
+        bytes memory data = hex"";
+        targetData[0] = abi.encodeWithSignature(
+            "createRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
+            to,
+            l2CallValue,
+            maxSubmissionCost,
+            excessFeeRefundAddress,
+            callValueRefundAddress,
+            gasLimit,
+            maxFeePerGas,
+            data
+        );
+        targetData[1] = abi.encodeWithSignature(
+            "unsafeCreateRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
+            to,
+            l2CallValue,
+            maxSubmissionCost,
+            excessFeeRefundAddress,
+            callValueRefundAddress,
+            gasLimit,
+            maxFeePerGas,
+            data
+        );
+        uint256[] memory values = new uint256[](2);
+        values[0] = 1e18;
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        // Make sure we revert if gasLimit is too low.
+        targetData[0] = abi.encodeWithSignature(
+            "createRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
+            to,
+            l2CallValue,
+            maxSubmissionCost,
+            excessFeeRefundAddress,
+            callValueRefundAddress,
+            1,
+            maxFeePerGas,
+            data
+        );
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    ArbitrumNativeBridgeDecoderAndSanitizer
+                        .ArbitrumNativeBridgeDecoderAndSanitizer__GasLimitTooSmall
+                        .selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        targetData[0] = abi.encodeWithSignature(
+            "createRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
+            to,
+            l2CallValue,
+            maxSubmissionCost,
+            excessFeeRefundAddress,
+            callValueRefundAddress,
+            gasLimit,
+            maxFeePerGas,
+            hex"00"
+        );
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    ArbitrumNativeBridgeDecoderAndSanitizer
+                        .ArbitrumNativeBridgeDecoderAndSanitizer__NoCallDataForRetryables
+                        .selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+    }
     // ========================================= HELPER FUNCTIONS =========================================
 
     function _createForkAndSetup(string memory rpcKey, uint256 blockNumber) internal {

@@ -547,6 +547,10 @@ contract MainnetAddresses {
     address public uniETHDefaultCollateral = 0x1C57ea879dd3e8C9fefa8224fdD1fa20dd54211E;
     address public sUSDeDefaultCollateral = 0x19d0D8e6294B7a04a2733FE433444704B791939A;
 
+    // CCIP token transfers.
+    address public ccipRouter = 0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D;
+    uint64 public arbitrumDestinationChainId = 4949039107694359620;
+
     // PancakeSwap V3
     address public pancakeSwapV3NonFungiblePositionManager = 0x46A15B0b27311cedF172AB29E4f4766fbE7F4364;
     address public pancakeSwapV3MasterChefV3 = 0x556B9306565093C855AEA9AE92A594704c2Cd59e;
@@ -557,4 +561,5 @@ contract MainnetAddresses {
     address public arbitrumL1GatewayRouter = 0x72Ce9c846789fdB6fC1f34aC4AD25Dd9ef7031ef;
     address public arbitrumL1ERC20Gateway = 0xa3A7B6F88361F48403514059F1F16C8E78d60EeC;
     address public arbitrumL2Sender = 0x09e9222E96E7B4AE2a407B98d48e330053351EEe;
+    address public arbitrumWethGateway = 0xd92023E9d9911199a6711321D1277285e6d4e2db;
 }

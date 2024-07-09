@@ -1,0 +1,57 @@
+{
+    "metadata": {
+        "AccountantAddress": "0x99c836937305693A5518819ED457B0d3dfE99785",
+        "BoringVaultAddress": "0xaA6D4Fb1FF961f8E52334f433974d40484e8be8F",
+        "DecoderAndSanitizerAddress": "0x2001b6Ac051612cCf2C05e93B2335d5677b6B86f",
+        "DigestComposition": [
+            "Bytes20(DECODER_AND_SANITIZER_ADDRESS)",
+            "Bytes20(TARGET_ADDRESS)",
+            "Bytes1(CAN_SEND_VALUE)",
+            "Bytes4(TARGET_FUNCTION_SELECTOR)",
+            "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)"
+        ],
+        "LeafCount": 2,
+        "ManageRoot": "0x10ca2cd1a5e24e247673126955d6021dffeada71334472c11869756c5b961d49",
+        "ManagerAddress": "0x744d1f71a6d064204b4c59Cf2BDCF9De9C6c3430",
+        "TreeCapacity": 2
+    },
+    "leafs": [
+        {
+            "AddressArguments": [
+                "0xd92023E9d9911199a6711321D1277285e6d4e2db"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x2001b6Ac051612cCf2C05e93B2335d5677b6B86f",
+            "Description": "Approve Arbitrum L1 ERC20 Gateway to spend WETH",
+            "FunctionSelector": "0x095ea7b3",
+            "FunctionSignature": "approve(address,uint256)",
+            "LeafDigest": "0x6acd06f13a53597963b6b7cca146c0b26aebd89ec99386c45db1629db110042f",
+            "PackedArgumentAddresses": "0xd92023e9d9911199a6711321d1277285e6d4e2db",
+            "TargetAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+        },
+        {
+            "AddressArguments": [
+                "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                "0xaA6D4Fb1FF961f8E52334f433974d40484e8be8F",
+                "0xaA6D4Fb1FF961f8E52334f433974d40484e8be8F"
+            ],
+            "CanSendValue": true,
+            "DecoderAndSanitizerAddress": "0x2001b6Ac051612cCf2C05e93B2335d5677b6B86f",
+            "Description": "Bridge wETH to Arbitrum",
+            "FunctionSelector": "0x4fb1a07b",
+            "FunctionSignature": "outboundTransferCustomRefund(address,address,address,uint256,uint256,uint256,bytes)",
+            "LeafDigest": "0xaec0b768980284c940924ad30dbad4659398fa3f40424d97a4b12e836c420ce4",
+            "PackedArgumentAddresses": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2aa6d4fb1ff961f8e52334f433974d40484e8be8faa6d4fb1ff961f8e52334f433974d40484e8be8f",
+            "TargetAddress": "0x72Ce9c846789fdB6fC1f34aC4AD25Dd9ef7031ef"
+        }
+    ],
+    "MerkleTree": {
+        "0": [
+            "0x10ca2cd1a5e24e247673126955d6021dffeada71334472c11869756c5b961d49"
+        ],
+        "1": [
+            "0x6acd06f13a53597963b6b7cca146c0b26aebd89ec99386c45db1629db110042f",
+            "0xaec0b768980284c940924ad30dbad4659398fa3f40424d97a4b12e836c420ce4"
+        ]
+    }
+}
