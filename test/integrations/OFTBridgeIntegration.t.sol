@@ -251,35 +251,6 @@ contract OFTBridgeIntegrationTest is Test, MainnetAddresses {
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 
-    function testHunch() external {
-        bytes memory a = abi.encodeWithSignature("approve(address,uint256)", EtherFiOFTAdapter, type(uint256).max);
-        console.logBytes(a);
-
-        console.log("--------------------");
-
-        DecoderCustomTypes.SendParam memory param;
-        param.dstEid = baseEndpointId;
-        param.to = address(0xaA6D4Fb1FF961f8E52334f433974d40484e8be8F).toBytes32();
-        param.amountLD = 0.001e18;
-        param.minAmountLD = 0.0009e18;
-        param.extraOptions = hex"0003";
-        param.composeMsg = hex"";
-        param.oftCmd = hex"";
-
-        DecoderCustomTypes.MessagingFee memory fee;
-        fee.nativeFee = 0.0006e18;
-        fee.lzTokenFee = 0;
-
-        bytes memory d = abi.encodeWithSignature(
-            "send((uint32,bytes32,uint256,uint256,bytes,bytes,bytes),(uint256,uint256),address)",
-            param,
-            fee,
-            boringVault
-        );
-
-        console.logBytes(d);
-    }
-
     // ========================================= HELPER FUNCTIONS =========================================
 
     function _generateProof(bytes32 leaf, bytes32[][] memory tree) internal pure returns (bytes32[] memory proof) {
