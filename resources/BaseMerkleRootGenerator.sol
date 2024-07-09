@@ -1704,32 +1704,56 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         ERC20[] memory feeTokens
     ) internal {
         // Bridge ERC20 Assets
-        for (uint256 i; i < bridgeAssets.length; i++) {
-            // TODO need to approve router to spend fee token if it has not already been approved.
-            for (uint256 j; j < feeTokens.length; j++) {
-                address spender =
-                    address(bridgeAssets[i]) == address(WETH) ? arbitrumWethGateway : arbitrumL1ERC20Gateway;
+        for (uint256 i; i < feeTokens.length; i++) {
+            if (!tokenToSpenderToApprovalInTree[address(feeTokens[i])][ccipRouter]) {
+                // Add fee token approval.
                 leafIndex++;
                 leafs[leafIndex] = ManageLeaf(
-                    address(bridgeAssets[i]),
+                    address(feeTokens[i]),
                     false,
                     "approve(address,uint256)",
                     new address[](1),
-                    string.concat("Approve Arbitrum L1 Gateway to spend ", bridgeAssets[i].symbol()),
+                    string.concat("Approve CCIP Router to spend ", feeTokens[i].symbol()),
                     _rawDataDecoderAndSanitizer
                 );
-                leafs[leafIndex].argumentAddresses[0] = spender;
+                leafs[leafIndex].argumentAddresses[0] = ccipRouter;
+                tokenToSpenderToApprovalInTree[address(feeTokens[i])][ccipRouter] = true;
+            }
+            for (uint256 j; j < bridgeAssets.length; j++) {
+                if (!tokenToSpenderToApprovalInTree[address(bridgeAssets[i])][ccipRouter]) {
+                    // Add bridge asset approval.
+                    leafIndex++;
+                    leafs[leafIndex] = ManageLeaf(
+                        address(bridgeAssets[j]),
+                        false,
+                        "approve(address,uint256)",
+                        new address[](1),
+                        string.concat("Approve CCIP Router to spend ", bridgeAssets[j].symbol()),
+                        _rawDataDecoderAndSanitizer
+                    );
+                    leafs[leafIndex].argumentAddresses[0] = ccipRouter;
+                    tokenToSpenderToApprovalInTree[address(bridgeAssets[j])][ccipRouter] = true;
+                }
+                // Add ccipSend leaf.
                 leafIndex++;
                 leafs[leafIndex] = ManageLeaf(
-                    arbitrumL1GatewayRouter,
+                    ccipRouter,
                     true,
-                    "outboundTransfer(address,address,uint256,uint256,uint256,bytes)",
-                    new address[](2),
-                    string.concat("Bridge ", bridgeAssets[i].symbol(), " to Arbitrum"),
+                    "ccipSend(uint64,(bytes,bytes,(address,uint256)[],address,bytes))",
+                    new address[](4),
+                    string.concat(
+                        "Bridge ",
+                        bridgeAssets[j].symbol(),
+                        " to chain ",
+                        vm.toString(destinationChainId),
+                        " using CCIP"
+                    ),
                     _rawDataDecoderAndSanitizer
                 );
-                leafs[leafIndex].argumentAddresses[0] = address(bridgeAssets[i]);
+                leafs[leafIndex].argumentAddresses[0] = address(uint160(destinationChainId));
                 leafs[leafIndex].argumentAddresses[1] = _boringVault;
+                leafs[leafIndex].argumentAddresses[2] = address(bridgeAssets[j]);
+                leafs[leafIndex].argumentAddresses[3] = address(feeTokens[i]);
             }
         }
     }

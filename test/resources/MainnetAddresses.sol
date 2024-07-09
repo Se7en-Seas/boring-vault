@@ -551,6 +551,10 @@ contract MainnetAddresses {
     address public ccipRouter = 0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D;
     uint64 public arbitrumDestinationChainId = 4949039107694359620;
 
+    // PancakeSwap V3
+    address public pancakeSwapV3NonFungiblePositionManager = 0x46A15B0b27311cedF172AB29E4f4766fbE7F4364;
+    address public pancakeSwapV3MasterChefV3 = 0x556B9306565093C855AEA9AE92A594704c2Cd59e;
+    address public pancakeSwapV3Router = 0x13f4EA83D0bd40E75C8222255bc855a974568Dd4;
     // Arbitrum Bridge
     address public arbitrumDelayedInbox = 0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f;
     address public arbitrumOutbox = 0x0B9857ae2D4A3DBe74ffE1d7DF045bb7F96E4840;
