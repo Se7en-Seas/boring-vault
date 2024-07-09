@@ -978,9 +978,9 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
             // Swapping to move tick in pool.
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
-                uniV3Router,
+                pancakeSwapV3Router,
                 false,
-                "exactInput((bytes,address,uint256,uint256,uint256))",
+                "exactInput((bytes,address,uint256,uint256))",
                 new address[](3),
                 string.concat(
                     "Swap ",
@@ -996,9 +996,9 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
             leafs[leafIndex].argumentAddresses[2] = address(_boringVault);
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
-                uniV3Router,
+                pancakeSwapV3Router,
                 false,
-                "exactInput((bytes,address,uint256,uint256,uint256))",
+                "exactInput((bytes,address,uint256,uint256))",
                 new address[](3),
                 string.concat(
                     "Swap ",
