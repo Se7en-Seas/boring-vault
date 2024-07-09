@@ -36,6 +36,10 @@ contract ArbitrumAddresses {
     ERC20 public FRXETH = ERC20(0x178412e79c25968a32e89b11f63B33F733770c2A);
     ERC20 public ARB = ERC20(0x912CE59144191C1204E64559FE8253a0e49E6548);
     ERC20 public WEETH = ERC20(0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe);
+    ERC20 public USDE = ERC20(0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34);
+
+    // Aave V3
+    address public v3Pool = 0x794a61358D6845594F94dc1DB02A252b5b4814aD;
 
     // Aave V3 Tokens
     ERC20 public aV3USDC = ERC20(0x724dc807b04555b71ed48a6896b6F41593b8C637);
@@ -63,10 +67,26 @@ contract ArbitrumAddresses {
     ERC20 public aV3ARB = ERC20(0x6533afac2E7BCCB20dca161449A13A32D391fb00);
     ERC20 public dV3ARB = ERC20(0x44705f578135cC5d703b4c9c122528C73Eb87145);
 
+    // 1Inch
+    address public aggregationRouterV5 = 0x1111111254EEB25477B68fb85Ed929f73A960582;
+    address public oneInchExecutor = 0xE37e799D5077682FA0a244D46E5649F71457BD09;
+
     address public balancerVault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
 
     // Arbitrum native bridging.
     address public arbitrumL2GatewayRouter = 0x5288c571Fd7aD117beA99bF60FE0846C4E84F933;
     address public arbitrumSys = 0x0000000000000000000000000000000000000064;
     address public arbitrumRetryableTx = 0x000000000000000000000000000000000000006E;
+
+    // Pendle
+    address public pendleMarketFactory = 0x2FCb47B58350cD377f94d3821e7373Df60bD9Ced;
+    address public pendleRouter = 0x888888888889758F76e7103c6CbF23ABbF58F946;
+
+    // Gearbox
+    address public dWETHV3 = 0x04419d3509f13054f60d253E0c79491d9E683399;
+    address public sdWETHV3 = 0xf3b7994e4dA53E04155057Fd61dc501599d57877;
+    address public dUSDCV3 = 0x890A69EF363C9c7BdD5E36eb95Ceb569F63ACbF6;
+    address public sdUSDCV3 = 0xD0181a36B0566a8645B7eECFf2148adE7Ecf2BE9;
+    address public dUSDCeV3 = 0xa76c604145D7394DEc36C49Af494C144Ff327861;
+    address public sdUSDCeV3 = 0x608F9e2E8933Ce6b39A8CddBc34a1e3E8D21cE75;
 }
