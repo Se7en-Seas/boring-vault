@@ -459,7 +459,7 @@ contract BaseMerkleRootGenerator is Script, ArbitrumAddresses {
         PendleSy SY = PendleSy(sy);
         address[] memory possibleTokensIn = SY.getTokensIn();
         address[] memory possibleTokensOut = SY.getTokensOut();
-        (, ERC20 underlyingAsset,) = SY.assetInfo();
+        // (, ERC20 underlyingAsset,) = SY.assetInfo();
         // Approve router to spend all tokens in, skipping zero addresses.
         for (uint256 i; i < possibleTokensIn.length; ++i) {
             if (possibleTokensIn[i] != address(0) && !tokenToSpenderToApprovalInTree[possibleTokensIn[i]][pendleRouter])
@@ -485,7 +485,7 @@ contract BaseMerkleRootGenerator is Script, ArbitrumAddresses {
             false,
             "approve(address,uint256)",
             new address[](1),
-            string.concat("Approve Pendle router to spend LP-", underlyingAsset.symbol()),
+            string.concat("Approve Pendle router to spend LP-", ERC20(sy).symbol()),
             _rawDataDecoderAndSanitizer
         );
         leafs[leafIndex].argumentAddresses[0] = pendleRouter;
@@ -581,9 +581,7 @@ contract BaseMerkleRootGenerator is Script, ArbitrumAddresses {
             false,
             "addLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
             new address[](2),
-            string.concat(
-                "Mint LP-", underlyingAsset.symbol(), " using ", ERC20(sy).symbol(), " and ", ERC20(pt).symbol()
-            ),
+            string.concat("Mint LP-", ERC20(sy).symbol(), " using ", ERC20(sy).symbol(), " and ", ERC20(pt).symbol()),
             _rawDataDecoderAndSanitizer
         );
         leafs[leafIndex].argumentAddresses[0] = _boringVault;
@@ -594,9 +592,7 @@ contract BaseMerkleRootGenerator is Script, ArbitrumAddresses {
             false,
             "removeLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
             new address[](2),
-            string.concat(
-                "Burn LP-", underlyingAsset.symbol(), " for ", ERC20(sy).symbol(), " and ", ERC20(pt).symbol()
-            ),
+            string.concat("Burn LP-", ERC20(sy).symbol(), " for ", ERC20(sy).symbol(), " and ", ERC20(pt).symbol()),
             _rawDataDecoderAndSanitizer
         );
         leafs[leafIndex].argumentAddresses[0] = _boringVault;
@@ -640,13 +636,37 @@ contract BaseMerkleRootGenerator is Script, ArbitrumAddresses {
             false,
             "redeemDueInterestAndRewards(address,address[],address[],address[])",
             new address[](4),
-            string.concat("Redeem due interest and rewards for ", underlyingAsset.symbol(), " Pendle"),
+            string.concat("Redeem due interest and rewards for ", ERC20(sy).symbol(), " Pendle"),
             _rawDataDecoderAndSanitizer
         );
         leafs[leafIndex].argumentAddresses[0] = _boringVault;
         leafs[leafIndex].argumentAddresses[1] = sy;
         leafs[leafIndex].argumentAddresses[2] = yt;
         leafs[leafIndex].argumentAddresses[3] = marketAddress;
+
+        // Swap between SY and PT
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            pendleRouter,
+            false,
+            "swapExactSyForPt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256),(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+            new address[](2),
+            string.concat("Swap ", ERC20(sy).symbol(), " for ", ERC20(pt).symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[1] = marketAddress;
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            pendleRouter,
+            false,
+            "swapExactPtForSy(address,address,uint256,uint256,(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+            new address[](2),
+            string.concat("Swap ", ERC20(pt).symbol(), " for ", ERC20(sy).symbol()),
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[1] = marketAddress;
     }
 
     function _addUniswapV3Leafs(ManageLeaf[] memory leafs, address[] memory token0, address[] memory token1) internal {
@@ -1629,7 +1649,7 @@ contract BaseMerkleRootGenerator is Script, ArbitrumAddresses {
                 false,
                 "outboundTransfer(address,address,uint256,bytes)",
                 new address[](2),
-                string.concat("Withdraw ", bridgeAssets[i].symbol(), " from Arbitrum"),
+                string.concat("Withdraw ", vm.toString(address(bridgeAssets[i])), " from Arbitrum"),
                 _rawDataDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = address(bridgeAssets[i]);
@@ -1683,7 +1703,7 @@ contract BaseMerkleRootGenerator is Script, ArbitrumAddresses {
                 tokenToSpenderToApprovalInTree[address(feeTokens[i])][ccipRouter] = true;
             }
             for (uint256 j; j < bridgeAssets.length; j++) {
-                if (!tokenToSpenderToApprovalInTree[address(bridgeAssets[i])][ccipRouter]) {
+                if (!tokenToSpenderToApprovalInTree[address(bridgeAssets[j])][ccipRouter]) {
                     // Add bridge asset approval.
                     leafIndex++;
                     leafs[leafIndex] = ManageLeaf(

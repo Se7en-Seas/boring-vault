@@ -6,6 +6,7 @@ import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
+import {ArbitrumAddresses} from "test/resources/ArbitrumAddresses.sol";
 
 /**
  *  source .env && forge script script/CreateMultiChainLiquidEthMerkleRoot.s.sol:CreateMultiChainLiquidEthMerkleRootScript --rpc-url $MAINNET_RPC_URL
@@ -13,13 +14,15 @@ import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
     using FixedPointMathLib for uint256;
 
-    address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
-    address public rawDataDecoderAndSanitizer = 0x00965B60EFa746d41198aE844725AaB26D14e51b;
-    address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
-    address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
+    address public boringVault = 0xaA6D4Fb1FF961f8E52334f433974d40484e8be8F;
+    address public rawDataDecoderAndSanitizer = 0xD5678900d413591513216E386332Db21c1bEc131;
+    address public managerAddress = 0x744d1f71a6d064204b4c59Cf2BDCF9De9C6c3430;
+    address public accountantAddress = 0x99c836937305693A5518819ED457B0d3dfE99785;
 
     address public itbDecoderAndSanitizer = 0xEEb53299Cb894968109dfa420D69f0C97c835211;
     address public itbReserveProtocolPositionManager = 0x778aC5d0EE062502fADaa2d300a51dE0869f7995;
+
+    ArbitrumAddresses public arbitrumAddresses;
 
     function setUp() external {}
 
@@ -31,6 +34,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
     }
 
     function generateLiquidEthStrategistMerkleRoot() public {
+        arbitrumAddresses = new ArbitrumAddresses();
         updateAddresses(boringVault, rawDataDecoderAndSanitizer, managerAddress, accountantAddress);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](512);
@@ -89,6 +93,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         _addPendleMarketLeafs(leafs, pendleWeETHMarketSeptember);
         _addPendleMarketLeafs(leafs, pendleWeETHMarketDecember);
         _addPendleMarketLeafs(leafs, pendleKarakWeETHMarketSeptember);
+        _addPendleMarketLeafs(leafs, pendleZircuitWeETHMarketAugust);
+        _addPendleMarketLeafs(leafs, pendleWeETHMarketJuly);
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](7);
@@ -214,9 +220,24 @@ contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
             leafs, itbReserveProtocolPositionManager, tokensUsed, "ETHPlus ITB Reserve Protocol Position Manager"
         );
 
+        // ========================== Native Bridge Leafs ==========================
+        ERC20[] memory bridgeAssets = new ERC20[](3);
+        bridgeAssets[0] = WETH;
+        bridgeAssets[1] = WEETH;
+        bridgeAssets[2] = WSTETH;
+        _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
+
+        // ========================== CCIP Bridge Leafs ==========================
+        ERC20[] memory ccipBridgeAssets = new ERC20[](1);
+        ccipBridgeAssets[0] = WETH;
+        ERC20[] memory ccipBridgeFeeAssets = new ERC20[](2);
+        ccipBridgeFeeAssets[0] = WETH;
+        ccipBridgeFeeAssets[1] = LINK;
+        _addCcipBridgeLeafs(leafs, arbitrumDestinationChainId, ccipBridgeAssets, ccipBridgeFeeAssets);
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        string memory filePath = "./leafs/LiquidEthStrategistLeafs.json";
+        string memory filePath = "./leafs/MainnetMultiChainLiquidEthStrategistLeafs.json";
 
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
