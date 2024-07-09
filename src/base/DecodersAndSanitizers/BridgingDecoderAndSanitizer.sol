@@ -5,8 +5,13 @@ import {BaseDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/BaseDecode
 import {CCIPDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/CCIPDecoderAndSanitizer.sol";
 import {ArbitrumNativeBridgeDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/ArbitrumNativeBridgeDecoderAndSanitizer.sol";
+import {OFTDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/OFTDecoderAndSanitizer.sol";
 
-contract BridgingDecoderAndSanitizer is ArbitrumNativeBridgeDecoderAndSanitizer, CCIPDecoderAndSanitizer {
+contract BridgingDecoderAndSanitizer is
+    ArbitrumNativeBridgeDecoderAndSanitizer,
+    CCIPDecoderAndSanitizer,
+    OFTDecoderAndSanitizer
+{
     constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
 
     //============================== HANDLE FUNCTION COLLISIONS ===============================

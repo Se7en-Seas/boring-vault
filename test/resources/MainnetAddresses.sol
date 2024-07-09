@@ -565,4 +565,5 @@ contract MainnetAddresses {
 
     // LayerZero
     address public EtherFiOFTAdapter = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D;
+    uint32 public baseEndpointId = 30184;
 }
