@@ -3,17 +3,17 @@ pragma solidity 0.8.21;
 
 import {DeployArcticArchitecture, ERC20, Deployer} from "script/ArchitectureDeployments/DeployArcticArchitecture.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
-import {ArbitrumAddresses} from "test/resources/ArbitrumAddresses.sol";
+import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
 import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Arbitrum/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 10000000 --evm-version london --slow --broadcast --etherscan-api-key $ARBISCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 10000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployBridgingTestVaultScript is DeployArcticArchitecture, ArbitrumAddresses {
+contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MainnetAddresses {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
@@ -26,17 +26,17 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, ArbitrumAddr
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("arbitrum");
+        vm.createSelectFork("mainnet");
     }
 
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
-        configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = false;
-        configureDeployment.setupTestUser = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = true;
+        configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -95,7 +95,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, ArbitrumAddr
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "ArbitrumBridgingTestVaultDeployment.json",
+            "MainnetBridgingTestVaultDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,

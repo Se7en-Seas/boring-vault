@@ -1915,6 +1915,147 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         }
     }
 
+    function _addArbitrumNativeBridgeLeafs(ManageLeaf[] memory leafs, ERC20[] memory bridgeAssets) internal {
+        // Bridge ERC20 Assets to Arbitrum
+        for (uint256 i; i < bridgeAssets.length; i++) {
+            address spender = address(bridgeAssets[i]) == address(WETH) ? arbitrumWethGateway : arbitrumL1ERC20Gateway;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(bridgeAssets[i]),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Arbitrum L1 Gateway to spend ", bridgeAssets[i].symbol()),
+                _rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = spender;
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                arbitrumL1GatewayRouter,
+                true,
+                "outboundTransfer(address,address,uint256,uint256,uint256,bytes)",
+                new address[](2),
+                string.concat("Bridge ", bridgeAssets[i].symbol(), " to Arbitrum"),
+                _rawDataDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(bridgeAssets[i]);
+            leafs[leafIndex].argumentAddresses[1] = _boringVault;
+        }
+        // Unsafe Create Retryable Ticket
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            arbitrumDelayedInbox,
+            false,
+            "unsafeCreateRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
+            new address[](3),
+            "Unsafe Create retryable ticket for Arbitrum",
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[1] = _boringVault;
+        leafs[leafIndex].argumentAddresses[2] = _boringVault;
+
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            arbitrumDelayedInbox,
+            true,
+            "unsafeCreateRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
+            new address[](3),
+            "Unsafe Create retryable ticket for Arbitrum",
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[1] = _boringVault;
+        leafs[leafIndex].argumentAddresses[2] = _boringVault;
+
+        // Execute Transaction For ERC20 claim.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            arbitrumOutbox,
+            false,
+            "executeTransaction(bytes32[],uint256,address,address,uint256,uint256,uint256,uint256,bytes)",
+            new address[](2),
+            "Execute transaction to claim ERC20",
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = arbitrumL2Sender;
+        leafs[leafIndex].argumentAddresses[1] = arbitrumL1ERC20Gateway;
+
+        // Execute Transaction For ETH claim.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            arbitrumOutbox,
+            false,
+            "executeTransaction(bytes32[],uint256,address,address,uint256,uint256,uint256,uint256,bytes)",
+            new address[](2),
+            "Execute transaction to claim ETH",
+            _rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[1] = _boringVault;
+    }
+
+    function _addCcipBridgeLeafs(
+        ManageLeaf[] memory leafs,
+        uint64 destinationChainId,
+        ERC20[] memory bridgeAssets,
+        ERC20[] memory feeTokens
+    ) internal {
+        // Bridge ERC20 Assets
+        for (uint256 i; i < feeTokens.length; i++) {
+            if (!tokenToSpenderToApprovalInTree[address(feeTokens[i])][ccipRouter]) {
+                // Add fee token approval.
+                leafIndex++;
+                leafs[leafIndex] = ManageLeaf(
+                    address(feeTokens[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve CCIP Router to spend ", feeTokens[i].symbol()),
+                    _rawDataDecoderAndSanitizer
+                );
+                leafs[leafIndex].argumentAddresses[0] = ccipRouter;
+                tokenToSpenderToApprovalInTree[address(feeTokens[i])][ccipRouter] = true;
+            }
+            for (uint256 j; j < bridgeAssets.length; j++) {
+                if (!tokenToSpenderToApprovalInTree[address(bridgeAssets[i])][ccipRouter]) {
+                    // Add bridge asset approval.
+                    leafIndex++;
+                    leafs[leafIndex] = ManageLeaf(
+                        address(bridgeAssets[j]),
+                        false,
+                        "approve(address,uint256)",
+                        new address[](1),
+                        string.concat("Approve CCIP Router to spend ", bridgeAssets[j].symbol()),
+                        _rawDataDecoderAndSanitizer
+                    );
+                    leafs[leafIndex].argumentAddresses[0] = ccipRouter;
+                    tokenToSpenderToApprovalInTree[address(bridgeAssets[j])][ccipRouter] = true;
+                }
+                // Add ccipSend leaf.
+                leafIndex++;
+                leafs[leafIndex] = ManageLeaf(
+                    ccipRouter,
+                    true,
+                    "ccipSend(uint64,(bytes,bytes,(address,uint256)[],address,bytes))",
+                    new address[](4),
+                    string.concat(
+                        "Bridge ",
+                        bridgeAssets[j].symbol(),
+                        " to chain ",
+                        vm.toString(destinationChainId),
+                        " using CCIP"
+                    ),
+                    _rawDataDecoderAndSanitizer
+                );
+                leafs[leafIndex].argumentAddresses[0] = address(uint160(destinationChainId));
+                leafs[leafIndex].argumentAddresses[1] = _boringVault;
+                leafs[leafIndex].argumentAddresses[2] = address(bridgeAssets[j]);
+                leafs[leafIndex].argumentAddresses[3] = address(feeTokens[i]);
+            }
+        }
+    }
+
     function _generateLeafs(
         string memory filePath,
         ManageLeaf[] memory leafs,
