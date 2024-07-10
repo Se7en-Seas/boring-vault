@@ -1915,6 +1915,176 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         }
     }
 
+    function _addLeafsForITBKarakPositionManager(
+        ManageLeaf[] memory leafs,
+        address itbDecoderAndSanitizer,
+        address positionManager,
+        address _karakVault,
+        address _vaultSupervisor
+    ) internal {
+        ERC20 underlying = ERC4626(_karakVault).asset();
+        // acceptOwnership
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "acceptOwnership()",
+            new address[](0),
+            string.concat("Accept ownership of the ITB Contract: ", vm.toString(positionManager)),
+            itbDecoderAndSanitizer
+        );
+        // Transfer all tokens to the ITB contract.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            address(underlying),
+            false,
+            "transfer(address,uint256)",
+            new address[](1),
+            string.concat("Transfer ", underlying.symbol(), " to ITB Contract: ", vm.toString(positionManager)),
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = positionManager;
+        // Approval Karak Vault to spend all tokens.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "approveToken(address,address,uint256)",
+            new address[](2),
+            string.concat("Approve ", ERC20(_karakVault).name(), " to spend ", underlying.symbol()),
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(underlying);
+        leafs[leafIndex].argumentAddresses[1] = _karakVault;
+        // Withdraw all tokens
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "withdraw(address,uint256)",
+            new address[](1),
+            string.concat("Withdraw ", underlying.symbol(), " from ITB Contract: ", vm.toString(positionManager)),
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(underlying);
+
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "withdrawAll(address)",
+            new address[](1),
+            string.concat(
+                "Withdraw all ", underlying.symbol(), " from the ITB Contract: ", vm.toString(positionManager)
+            ),
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(underlying);
+        // Update Vault Supervisor.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "updateVaultSupervisor(address)",
+            new address[](1),
+            "Update the vault supervisor",
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = _vaultSupervisor;
+        // Update position config.
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "updatePositionConfig(address,address)",
+            new address[](2),
+            "Update the position config",
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(underlying);
+        leafs[leafIndex].argumentAddresses[1] = _karakVault;
+        // Deposit
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager, false, "deposit(uint256,uint256)", new address[](0), "Deposit", itbDecoderAndSanitizer
+        );
+        // Start Withdrawal
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "startWithdrawal(uint256)",
+            new address[](0),
+            "Start Withdrawal",
+            itbDecoderAndSanitizer
+        );
+        // Complete Withdrawal
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "completeWithdrawal(uint256,uint256)",
+            new address[](0),
+            "Complete Withdrawal",
+            itbDecoderAndSanitizer
+        );
+        // Complete Next Withdrawal
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "completeNextWithdrawal(uint256)",
+            new address[](0),
+            "Complete Next Withdrawal",
+            itbDecoderAndSanitizer
+        );
+        // Complete Next Withdrawals
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "completeNextWithdrawals(uint256)",
+            new address[](0),
+            "Complete Next Withdrawals",
+            itbDecoderAndSanitizer
+        );
+        // Override Withdrawal Indexes
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "overrideWithdrawalIndexes(uint256,uint256)",
+            new address[](0),
+            "Override Withdrawal Indexes",
+            itbDecoderAndSanitizer
+        );
+        // Assemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager, false, "assemble(uint256)", new address[](0), "Assemble", itbDecoderAndSanitizer
+        );
+        // Disassemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "disassemble(uint256,uint256)",
+            new address[](0),
+            "Disassemble",
+            itbDecoderAndSanitizer
+        );
+        // Full Disassemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            positionManager,
+            false,
+            "fullDisassemble(uint256)",
+            new address[](0),
+            "Full Disassemble",
+            itbDecoderAndSanitizer
+        );
+    }
+
     function _addArbitrumNativeBridgeLeafs(ManageLeaf[] memory leafs, ERC20[] memory bridgeAssets) internal {
         // Bridge ERC20 Assets to Arbitrum
         for (uint256 i; i < bridgeAssets.length; i++) {
