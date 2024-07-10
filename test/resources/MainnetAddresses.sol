@@ -432,6 +432,8 @@ contract MainnetAddresses {
     address public sdDAIV3 = 0xC853E4DA38d9Bd1d01675355b8c8f3BBC1451973;
     address public dUSDTV3 = 0x05A811275fE9b4DE503B3311F51edF6A856D936e;
     address public sdUSDTV3 = 0x16adAb68bDEcE3089D4f1626Bb5AEDD0d02471aD;
+    address public dWBTCV3 = 0xda00010eDA646913F273E10E7A5d1F659242757d;
+    address public sdWBTCV3 = 0xA8cE662E45E825DAF178DA2c8d5Fae97696A788A;
 
     // Pendle
     address public pendleMarketFactory = 0x1A6fCc85557BC4fB7B534ed835a03EF056552D52;
@@ -550,6 +552,19 @@ contract MainnetAddresses {
     address public uniETHDefaultCollateral = 0x1C57ea879dd3e8C9fefa8224fdD1fa20dd54211E;
     address public sUSDeDefaultCollateral = 0x19d0D8e6294B7a04a2733FE433444704B791939A;
 
+    // Karak
+    address public vaultSupervisor = 0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC;
+
+    address public kmETH = 0x7C22725d1E0871f0043397c9761AD99A86ffD498;
+    address public kweETH = 0x2DABcea55a12d73191AeCe59F508b191Fb68AdaC;
+    address public kwstETH = 0xa3726beDFD1a8AA696b9B4581277240028c4314b;
+    address public krETH = 0x8E475A4F7820A4b6c0FF229f74fB4762f0813C47;
+    address public kcbETH = 0xbD32b8aA6ff34BEDc447e503195Fb2524c72658f;
+    address public kwBETH = 0x04BB50329A1B7D943E7fD2368288b674c8180d5E;
+    address public kswETH = 0xc585DF3a8C9ca0c614D023A812624bE36161502B;
+    address public kETHx = 0x989Ab830C6e2BdF3f28214fF54C9B7415C349a3F;
+    address public ksfrxETH = 0x1751e1e4d2c9Fa99479C0c5574136F0dbD8f3EB8;
+    address public krswETH = 0x1B4d88f5f38988BEA334C79f48aa69BEEeFE2e1e;
     // CCIP token transfers.
     address public ccipRouter = 0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D;
     uint64 public arbitrumDestinationChainId = 4949039107694359620;
