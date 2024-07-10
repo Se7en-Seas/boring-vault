@@ -2188,7 +2188,7 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
                 tokenToSpenderToApprovalInTree[address(feeTokens[i])][ccipRouter] = true;
             }
             for (uint256 j; j < bridgeAssets.length; j++) {
-                if (!tokenToSpenderToApprovalInTree[address(bridgeAssets[i])][ccipRouter]) {
+                if (!tokenToSpenderToApprovalInTree[address(bridgeAssets[j])][ccipRouter]) {
                     // Add bridge asset approval.
                     leafIndex++;
                     leafs[leafIndex] = ManageLeaf(
@@ -2206,7 +2206,7 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
                 leafIndex++;
                 leafs[leafIndex] = ManageLeaf(
                     ccipRouter,
-                    true,
+                    false,
                     "ccipSend(uint64,(bytes,bytes,(address,uint256)[],address,bytes))",
                     new address[](4),
                     string.concat(
