@@ -432,6 +432,8 @@ contract MainnetAddresses {
     address public sdDAIV3 = 0xC853E4DA38d9Bd1d01675355b8c8f3BBC1451973;
     address public dUSDTV3 = 0x05A811275fE9b4DE503B3311F51edF6A856D936e;
     address public sdUSDTV3 = 0x16adAb68bDEcE3089D4f1626Bb5AEDD0d02471aD;
+    address public dWBTCV3 = 0xda00010eDA646913F273E10E7A5d1F659242757d;
+    address public sdWBTCV3 = 0xA8cE662E45E825DAF178DA2c8d5Fae97696A788A;
 
     // Pendle
     address public pendleMarketFactory = 0x1A6fCc85557BC4fB7B534ed835a03EF056552D52;
