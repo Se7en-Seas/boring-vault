@@ -7,15 +7,15 @@ import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import "forge-std/Base.sol";
 
 contract MerkleTreeHelper is CommonBase, ChainValues {
-    string public chain;
+    string public sourceChain;
     address public _boringVault;
     address public _rawDataDecoderAndSanitizer;
     address public _managerAddress;
     address public _accountantAddress;
     uint256 leafIndex = type(uint256).max;
 
-    function setChainName(string memory _chain) internal {
-        chain = _chain;
+    function setSourceChainName(string memory _chain) internal {
+        sourceChain = _chain;
     }
 
     // ========================================= StandardBridge =========================================
@@ -46,7 +46,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 "approve(address,uint256)",
                 new address[](1),
                 string.concat("Approve StandardBridge to spend ", localTokens[i].symbol()),
-                getAddress(chain, "rawDataDecoderAndSanitizer")
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
             leafs[leafIndex].argumentAddresses[0] = sourceStandardBridge;
         }
@@ -61,12 +61,12 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 false,
                 "bridgeERC20To(address,address,address,uint256,uint32,bytes)",
                 new address[](3),
-                string.concat("Bridge ", localTokens[i].symbol(), " from ", chain, " to ", destination),
-                getAddress(chain, "rawDataDecoderAndSanitizer")
+                string.concat("Bridge ", localTokens[i].symbol(), " from ", sourceChain, " to ", destination),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
             leafs[leafIndex].argumentAddresses[0] = address(localTokens[i]);
             leafs[leafIndex].argumentAddresses[1] = address(remoteTokens[i]);
-            leafs[leafIndex].argumentAddresses[2] = getAddress(chain, "boringVault");
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
         }
 
         // Bridge ETH.
@@ -78,10 +78,10 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             true,
             "bridgeETHTo(address,uint32,bytes)",
             new address[](1),
-            string.concat("Bridge ETH from ", chain, " to ", destination),
-            getAddress(chain, "rawDataDecoderAndSanitizer")
+            string.concat("Bridge ETH from ", sourceChain, " to ", destination),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
-        leafs[leafIndex].argumentAddresses[0] = getAddress(chain, "boringVault");
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
 
         // If we are generating leafs for some L2 back to mainnet, these leafs are not needed.
         if (keccak256(abi.encode(destination)) != keccak256(abi.encode(mainnet))) {
@@ -94,8 +94,8 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 false,
                 "proveWithdrawalTransaction((uint256,address,address,uint256,uint256,bytes),uint256,(bytes32,bytes32,bytes32,bytes32),bytes[])",
                 new address[](2),
-                string.concat("Prove withdrawal transaction from ", destination, " to ", chain),
-                getAddress(chain, "rawDataDecoderAndSanitizer")
+                string.concat("Prove withdrawal transaction from ", destination, " to ", sourceChain),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
             leafs[leafIndex].argumentAddresses[0] = destinationCrossDomainMessenger;
             leafs[leafIndex].argumentAddresses[1] = sourceResolvedDelegate;
@@ -109,8 +109,8 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 false,
                 "finalizeWithdrawalTransaction((uint256,address,address,uint256,uint256,bytes))",
                 new address[](2),
-                string.concat("Finalize withdrawal transaction from ", destination, " to ", chain),
-                getAddress(chain, "rawDataDecoderAndSanitizer")
+                string.concat("Finalize withdrawal transaction from ", destination, " to ", sourceChain),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
             leafs[leafIndex].argumentAddresses[0] = destinationCrossDomainMessenger;
             leafs[leafIndex].argumentAddresses[1] = sourceResolvedDelegate;
@@ -124,7 +124,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         bytes32 manageRoot,
         bytes32[][] memory manageTree
     ) internal {
-        _boringVault = getAddress(chain, "boringVault");
+        _boringVault = getAddress(sourceChain, "boringVault");
 
         if (vm.exists(filePath)) {
             // Need to delete it
@@ -302,7 +302,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             // Generate manage proof.
             bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
             bytes memory rawDigest = abi.encodePacked(
-                getAddress(chain, "rawDataDecoderAndSanitizer"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer"),
                 manageLeafs[i].target,
                 manageLeafs[i].canSendValue,
                 selector

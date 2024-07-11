@@ -38,25 +38,25 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
     function setUp() external {}
 
     function testBridgingToBaseERC20() external {
-        setChainName("mainnet");
+        setSourceChainName("mainnet");
         _createForkAndSetup("MAINNET_RPC_URL", 20279353);
-        setAddress(false, "mainnet", "boringVault", address(boringVault));
-        setAddress(false, "mainnet", "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        deal(getAddress("mainnet", "WETH"), address(boringVault), 101e18);
+        deal(getAddress(sourceChain, "WETH"), address(boringVault), 101e18);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](8);
         ERC20[] memory localTokens = new ERC20[](1);
-        localTokens[0] = getERC20("mainnet", "WETH");
+        localTokens[0] = getERC20(sourceChain, "WETH");
         ERC20[] memory remoteTokens = new ERC20[](1);
         remoteTokens[0] = getERC20("base", "WETH");
         _addStandardBridgeLeafs(
             leafs,
             "base",
             getAddress("base", "crossDomainMessenger"),
-            getAddress("mainnet", "baseResolvedDelegate"),
-            getAddress("mainnet", "baseStandardBridge"),
-            getAddress("mainnet", "basePortal"),
+            getAddress(sourceChain, "baseResolvedDelegate"),
+            getAddress(sourceChain, "baseStandardBridge"),
+            getAddress(sourceChain, "basePortal"),
             localTokens,
             remoteTokens
         );
@@ -72,12 +72,12 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](2);
-        targets[0] = getAddress("mainnet", "WETH");
-        targets[1] = getAddress("mainnet", "baseStandardBridge");
+        targets[0] = getAddress(sourceChain, "WETH");
+        targets[1] = getAddress(sourceChain, "baseStandardBridge");
 
         bytes[] memory targetData = new bytes[](2);
         targetData[0] = abi.encodeWithSignature(
-            "approve(address,uint256)", getAddress("mainnet", "baseStandardBridge"), type(uint256).max
+            "approve(address,uint256)", getAddress(sourceChain, "baseStandardBridge"), type(uint256).max
         );
 
         targetData[1] = abi.encodeWithSignature(
@@ -98,10 +98,10 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
     }
 
     function testBridgingToBaseETH() external {
-        setChainName("mainnet");
+        setSourceChainName("mainnet");
         _createForkAndSetup("MAINNET_RPC_URL", 20279353);
-        setAddress(false, "mainnet", "boringVault", address(boringVault));
-        setAddress(false, "mainnet", "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         deal(address(boringVault), 101e18);
 
@@ -112,9 +112,9 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
             leafs,
             "base",
             getAddress("base", "crossDomainMessenger"),
-            getAddress("mainnet", "baseResolvedDelegate"),
-            getAddress("mainnet", "baseStandardBridge"),
-            getAddress("mainnet", "basePortal"),
+            getAddress(sourceChain, "baseResolvedDelegate"),
+            getAddress(sourceChain, "baseStandardBridge"),
+            getAddress(sourceChain, "basePortal"),
             localTokens,
             remoteTokens
         );
@@ -129,7 +129,7 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
-        targets[0] = getAddress("mainnet", "baseStandardBridge");
+        targets[0] = getAddress(sourceChain, "baseStandardBridge");
 
         bytes[] memory targetData = new bytes[](1);
 
@@ -143,7 +143,7 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
     }
 
     function testBridgingFromBaseERC20() external {
-        setChainName("base");
+        setSourceChainName("base");
         _createForkAndSetup("BASE_RPC_URL", 16933485);
         setAddress(false, "base", "boringVault", address(boringVault));
         setAddress(false, "base", "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
@@ -202,10 +202,10 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
     }
 
     function testBridgingFromBaseETH() external {
-        setChainName("base");
+        setSourceChainName("base");
         _createForkAndSetup("BASE_RPC_URL", 16933485);
-        setAddress(false, "base", "boringVault", address(boringVault));
-        setAddress(false, "base", "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         deal(address(boringVault), 101e18);
 
@@ -214,10 +214,10 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
         ERC20[] memory remoteTokens;
         _addStandardBridgeLeafs(
             leafs,
-            "base",
+            "mainnet",
             address(0),
             address(0),
-            getAddress("base", "standardBridge"),
+            getAddress(sourceChain, "standardBridge"),
             address(0),
             localTokens,
             remoteTokens
@@ -233,7 +233,7 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
-        targets[0] = getAddress("base", "standardBridge");
+        targets[0] = getAddress(sourceChain, "standardBridge");
 
         bytes[] memory targetData = new bytes[](1);
 
@@ -247,10 +247,10 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
     }
 
     function testProvingWithdrawalTransactionFromBase() external {
-        setChainName("mainnet");
+        setSourceChainName("mainnet");
         _createForkAndSetup("MAINNET_RPC_URL", 20278158);
-        setAddress(false, "mainnet", "boringVault", address(boringVault));
-        setAddress(false, "mainnet", "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](8);
         ERC20[] memory localTokens;
@@ -259,9 +259,9 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
             leafs,
             "base",
             getAddress("base", "crossDomainMessenger"),
-            getAddress("mainnet", "baseResolvedDelegate"),
-            getAddress("mainnet", "baseStandardBridge"),
-            getAddress("mainnet", "basePortal"),
+            getAddress(sourceChain, "baseResolvedDelegate"),
+            getAddress(sourceChain, "baseStandardBridge"),
+            getAddress(sourceChain, "basePortal"),
             localTokens,
             remoteTokens
         );
@@ -276,7 +276,7 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
-        targets[0] = getAddress("mainnet", "basePortal");
+        targets[0] = getAddress(sourceChain, "basePortal");
 
         bytes[] memory targetData = new bytes[](1);
         targetData[0] =
@@ -290,10 +290,10 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
     }
 
     function testFinalizingWithdrawalTransactionFromBase() external {
-        setChainName("mainnet");
+        setSourceChainName("mainnet");
         _createForkAndSetup("MAINNET_RPC_URL", 20279615);
-        setAddress(false, "mainnet", "boringVault", address(boringVault));
-        setAddress(false, "mainnet", "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](8);
         ERC20[] memory localTokens;
@@ -302,9 +302,9 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
             leafs,
             "base",
             getAddress("base", "crossDomainMessenger"),
-            getAddress("mainnet", "baseResolvedDelegate"),
-            getAddress("mainnet", "baseStandardBridge"),
-            getAddress("mainnet", "basePortal"),
+            getAddress(sourceChain, "baseResolvedDelegate"),
+            getAddress(sourceChain, "baseStandardBridge"),
+            getAddress(sourceChain, "basePortal"),
             localTokens,
             remoteTokens
         );
@@ -319,7 +319,7 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
-        targets[0] = getAddress("mainnet", "basePortal");
+        targets[0] = getAddress(sourceChain, "basePortal");
 
         bytes[] memory targetData = new bytes[](1);
         targetData[0] =
@@ -344,7 +344,8 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
-        manager = new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(chain, "vault"));
+        manager =
+            new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
 
         rawDataDecoderAndSanitizer = address(new BridgingDecoderAndSanitizer(address(boringVault)));
 
@@ -394,7 +395,7 @@ contract StandardBridgeIntegrationTest is Test, MerkleTreeHelper {
         rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
         rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
         rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
-        rolesAuthority.setUserRole(getAddress(chain, "vault"), BALANCER_VAULT_ROLE, true);
+        rolesAuthority.setUserRole(getAddress(sourceChain, "vault"), BALANCER_VAULT_ROLE, true);
 
         // Allow the boring vault to receive ETH.
         rolesAuthority.setPublicCapability(address(boringVault), bytes4(0), true);
