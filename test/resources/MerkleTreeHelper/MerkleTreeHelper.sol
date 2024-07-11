@@ -318,6 +318,9 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         bytes32[][] memory manageTree
     ) internal {
         _boringVault = getAddress(sourceChain, "boringVault");
+        _rawDataDecoderAndSanitizer = getAddress(sourceChain, "rawDataDecoderAndSanitizer");
+        _managerAddress = getAddress(sourceChain, "managerAddress");
+        _accountantAddress = getAddress(sourceChain, "accountantAddress");
 
         if (vm.exists(filePath)) {
             // Need to delete it
