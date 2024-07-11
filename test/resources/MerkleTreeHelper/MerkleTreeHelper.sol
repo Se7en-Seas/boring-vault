@@ -383,7 +383,337 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
     }
 
+    // ========================================= PancakeSwap V3 =========================================
+
+    function _addPancakeSwapV3Leafs(ManageLeaf[] memory leafs, address[] memory token0, address[] memory token1)
+        internal
+    {
+        require(token0.length == token1.length, "Token arrays must be of equal length");
+        for (uint256 i; i < token0.length; ++i) {
+            (token0[i], token1[i]) = token0[i] < token1[i] ? (token0[i], token1[i]) : (token1[i], token0[i]);
+            // Approvals
+            if (
+                !tokenToSpenderToApprovalInTree[token0[i]][getAddress(
+                    sourceChain, "pancakeSwapV3NonFungiblePositionManager"
+                )]
+            ) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token0[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat(
+                        "Approve PancakeSwapV3 NonFungible Position Manager to spend ", ERC20(token0[i]).symbol()
+                    ),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] =
+                    getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
+                tokenToSpenderToApprovalInTree[token0[i]][getAddress(
+                    sourceChain, "pancakeSwapV3NonFungiblePositionManager"
+                )] = true;
+            }
+            if (
+                !tokenToSpenderToApprovalInTree[token1[i]][getAddress(
+                    sourceChain, "pancakeSwapV3NonFungiblePositionManager"
+                )]
+            ) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token1[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat(
+                        "Approve PancakeSwapV3 NonFungible Position Manager to spend ", ERC20(token1[i]).symbol()
+                    ),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] =
+                    getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
+                tokenToSpenderToApprovalInTree[token1[i]][getAddress(
+                    sourceChain, "pancakeSwapV3NonFungiblePositionManager"
+                )] = true;
+            }
+            if (!tokenToSpenderToApprovalInTree[token0[i]][getAddress(sourceChain, "pancakeSwapV3MasterChefV3")]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token0[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve PancakeSwapV3 Master Chef to spend ", ERC20(token0[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pancakeSwapV3MasterChefV3");
+                tokenToSpenderToApprovalInTree[token0[i]][getAddress(sourceChain, "pancakeSwapV3MasterChefV3")] = true;
+            }
+            if (!tokenToSpenderToApprovalInTree[token1[i]][getAddress(sourceChain, "pancakeSwapV3MasterChefV3")]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token1[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve PancakeSwapV3 Master Chef to spend ", ERC20(token1[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pancakeSwapV3MasterChefV3");
+                tokenToSpenderToApprovalInTree[token1[i]][getAddress(sourceChain, "pancakeSwapV3MasterChefV3")] = true;
+            }
+
+            if (!tokenToSpenderToApprovalInTree[token0[i]][getAddress(sourceChain, "pancakeSwapV3Router")]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token0[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve PancakeSwapV3 Router to spend ", ERC20(token0[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pancakeSwapV3Router");
+                tokenToSpenderToApprovalInTree[token0[i]][getAddress(sourceChain, "pancakeSwapV3Router")] = true;
+            }
+            if (!tokenToSpenderToApprovalInTree[token1[i]][getAddress(sourceChain, "pancakeSwapV3Router")]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token1[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve PancakeSwapV3 Router to spend ", ERC20(token1[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pancakeSwapV3Router");
+                tokenToSpenderToApprovalInTree[token1[i]][getAddress(sourceChain, "pancakeSwapV3Router")] = true;
+            }
+
+            // Minting
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager"),
+                false,
+                "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
+                new address[](3),
+                string.concat(
+                    "Mint PancakeSwapV3 ", ERC20(token0[i]).symbol(), " ", ERC20(token1[i]).symbol(), " position"
+                ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = token0[i];
+            leafs[leafIndex].argumentAddresses[1] = token1[i];
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+            // Increase liquidity
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager"),
+                false,
+                "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+                new address[](3),
+                string.concat(
+                    "Add liquidity to PancakeSwapV3 ",
+                    ERC20(token0[i]).symbol(),
+                    " ",
+                    ERC20(token1[i]).symbol(),
+                    " position"
+                ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(0);
+            leafs[leafIndex].argumentAddresses[1] = token0[i];
+            leafs[leafIndex].argumentAddresses[2] = token1[i];
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "pancakeSwapV3MasterChefV3"),
+                false,
+                "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+                new address[](3),
+                string.concat(
+                    "Add liquidity to PancakeSwapV3 ",
+                    ERC20(token0[i]).symbol(),
+                    " ",
+                    ERC20(token1[i]).symbol(),
+                    " staked position"
+                ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(0);
+            leafs[leafIndex].argumentAddresses[1] = token0[i];
+            leafs[leafIndex].argumentAddresses[2] = token1[i];
+
+            // Swapping to move tick in pool.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "pancakeSwapV3Router"),
+                false,
+                "exactInput((bytes,address,uint256,uint256))",
+                new address[](3),
+                string.concat(
+                    "Swap ",
+                    ERC20(token0[i]).symbol(),
+                    " for ",
+                    ERC20(token1[i]).symbol(),
+                    " using PancakeSwapV3 router"
+                ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = token0[i];
+            leafs[leafIndex].argumentAddresses[1] = token1[i];
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "pancakeSwapV3Router"),
+                false,
+                "exactInput((bytes,address,uint256,uint256))",
+                new address[](3),
+                string.concat(
+                    "Swap ",
+                    ERC20(token1[i]).symbol(),
+                    " for ",
+                    ERC20(token0[i]).symbol(),
+                    " using PancakeSwapV3 router"
+                ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = token1[i];
+            leafs[leafIndex].argumentAddresses[1] = token0[i];
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+        }
+        // Decrease liquidity
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager"),
+            false,
+            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
+            new address[](0),
+            "Remove liquidity from PancakeSwapV3 position",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pancakeSwapV3MasterChefV3"),
+            false,
+            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
+            new address[](0),
+            "Remove liquidity from PancakeSwapV3 staked position",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager"),
+            false,
+            "collect((uint256,address,uint128,uint128))",
+            new address[](1),
+            "Collect fees from PancakeSwapV3 position",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pancakeSwapV3MasterChefV3"),
+            false,
+            "collect((uint256,address,uint128,uint128))",
+            new address[](1),
+            "Collect fees from PancakeSwapV3 staked position",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+        // burn
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager"),
+            false,
+            "burn(uint256)",
+            new address[](0),
+            "Burn PancakeSwapV3 position",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Staking
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager"),
+            false,
+            "safeTransferFrom(address,address,uint256)",
+            new address[](2),
+            "Stake PancakeSwapV3 position",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "pancakeSwapV3MasterChefV3");
+
+        // Staking harvest.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pancakeSwapV3MasterChefV3"),
+            false,
+            "harvest(uint256,address)",
+            new address[](1),
+            "Harvest rewards from PancakeSwapV3 staked postiion",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+        // Unstaking
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pancakeSwapV3MasterChefV3"),
+            false,
+            "withdraw(uint256,address)",
+            new address[](1),
+            "Unstake PancakeSwapV3 position",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
+    function _generateTestLeafs(ManageLeaf[] memory leafs, bytes32[][] memory manageTree) internal {
+        string memory filePath = "./leafs/TemporaryLeafs.json";
+        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
+    }
+
     function _generateLeafs(
         string memory filePath,
         ManageLeaf[] memory leafs,
@@ -431,6 +761,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
 
         for (uint256 i; i < leafs.length; ++i) {
             string memory leaf = "leaf";
+            vm.serializeUint(leaf, "LeafIndex", i);
             vm.serializeAddress(leaf, "TargetAddress", leafs[i].target);
             vm.serializeAddress(leaf, "DecoderAndSanitizerAddress", leafs[i].decoderAndSanitizer);
             vm.serializeBool(leaf, "CanSendValue", leafs[i].canSendValue);
