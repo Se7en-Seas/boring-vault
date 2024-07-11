@@ -9,7 +9,7 @@ abstract contract StandardBridgeDecoderAndSanitizer is BaseDecoderAndSanitizer {
     // TODO we could require _minGasLimit is atleast 200_000.
     /// @notice Example TX https://etherscan.io/tx/0x0b1cc213286c328e3fb483cfef9342aee51409b67ee5af1dc409e37273710f9f
     /// @notice Eample TX https://basescan.org/tx/0x7805ac08f38bec2d98edafc2e6f9571271a76b5ede3928f96d3edbc459d0ea4d
-    function depositETHTo(address _to, uint32, /*_minGasLimit*/ bytes calldata /*_extraData*/ )
+    function bridgeETHTo(address _to, uint32, /*_minGasLimit*/ bytes calldata /*_extraData*/ )
         external
         pure
         virtual
@@ -46,6 +46,7 @@ abstract contract StandardBridgeDecoderAndSanitizer is BaseDecoderAndSanitizer {
     }
 
     // TODO do we need to sanitize _tx.data
+    /// @notice Eample TX https://etherscan.io/tx/0x5bb20258a0b151a6acb01f05ea42ee2f51123cba5d51e9be46a5033e675faefe
     function finalizeWithdrawalTransaction(DecoderCustomTypes.WithdrawalTransaction calldata _tx)
         external
         pure
