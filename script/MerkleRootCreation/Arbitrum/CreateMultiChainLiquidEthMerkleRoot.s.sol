@@ -15,10 +15,10 @@ import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
     using FixedPointMathLib for uint256;
 
-    address public boringVault = 0xaA6D4Fb1FF961f8E52334f433974d40484e8be8F;
-    address public rawDataDecoderAndSanitizer = 0xD5678900d413591513216E386332Db21c1bEc131;
-    address public managerAddress = 0x744d1f71a6d064204b4c59Cf2BDCF9De9C6c3430;
-    address public accountantAddress = 0x99c836937305693A5518819ED457B0d3dfE99785;
+    address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
+    address public rawDataDecoderAndSanitizer = 0x0C8B49b06544fA8B5c85755267498E407433edBB;
+    address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
+    address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
 
     // address public itbDecoderAndSanitizer = 0xEEb53299Cb894968109dfa420D69f0C97c835211;
     // address public itbReserveProtocolPositionManager = 0x778aC5d0EE062502fADaa2d300a51dE0869f7995;
@@ -149,6 +149,10 @@ contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         ccipBridgeFeeAssets[0] = WETH;
         ccipBridgeFeeAssets[1] = LINK;
         _addCcipBridgeLeafs(leafs, mainnetChainSelector, ccipBridgeAssets, ccipBridgeFeeAssets);
+
+        // ========================== Fluid fToken ==========================
+        _addFluidFTokenLeafs(leafs, fWETH);
+        _addFluidFTokenLeafs(leafs, fWSTETH);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 

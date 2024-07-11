@@ -109,4 +109,10 @@ contract ArbitrumAddresses {
 
     // Chainlink feeds
     address public weETH_ETH_ExchangeRate = 0x20bAe7e1De9c596f5F7615aeaa1342Ba99294e12;
+
+    // Fluid fTokens
+    address public fUSDC = 0x1A996cb54bb95462040408C06122D45D6Cdb6096;
+    address public fUSDT = 0x4A03F37e7d3fC243e3f99341d36f4b829BEe5E03;
+    address public fWETH = 0x45Df0656F8aDf017590009d2f1898eeca4F0a205;
+    address public fWSTETH = 0x66C25Cd75EBdAA7E04816F643d8E46cecd3183c9;
 }
