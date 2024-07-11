@@ -708,6 +708,225 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Native =========================================
+
+    function _addNativeLeafs(ManageLeaf[] memory leafs) internal {
+        // Wrapping
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "WETH"),
+            true,
+            "deposit()",
+            new address[](0),
+            "Wrap ETH for wETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "WETH"),
+            false,
+            "withdraw(uint256)",
+            new address[](0),
+            "Unwrap wETH for ETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+    }
+
+    // ========================================= EtherFi =========================================
+
+    function _addEtherFiLeafs(ManageLeaf[] memory leafs) internal {
+        // Approvals
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "EETH"),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve WEETH to spend eETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "WEETH");
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "EETH"),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve EtherFi Liquidity Pool to spend eETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "EETH_LIQUIDITY_POOL");
+        // Staking
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "EETH_LIQUIDITY_POOL"),
+            true,
+            "deposit()",
+            new address[](0),
+            "Stake ETH for eETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        // Unstaking
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "EETH_LIQUIDITY_POOL"),
+            false,
+            "requestWithdraw(address,uint256)",
+            new address[](1),
+            "Request withdrawal from eETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "withdrawalRequestNft"),
+            false,
+            "claimWithdraw(uint256)",
+            new address[](0),
+            "Claim eETH withdrawal",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        // Wrapping
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "WEETH"),
+            false,
+            "wrap(uint256)",
+            new address[](0),
+            "Wrap eETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "WEETH"),
+            false,
+            "unwrap(uint256)",
+            new address[](0),
+            "Unwrap weETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+    }
+
+    // ========================================= LIDO =========================================
+
+    function _addLidoLeafs(ManageLeaf[] memory leafs) internal {
+        // Approvals
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "STETH"),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve WSTETH to spend stETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "WSTETH");
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "STETH"),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve unstETH to spend stETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "unstETH");
+        // Staking
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "STETH"),
+            true,
+            "submit(address)",
+            new address[](1),
+            "Stake ETH for stETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(0);
+        // Unstaking
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "unstETH"),
+            false,
+            "requestWithdrawals(uint256[],address)",
+            new address[](1),
+            "Request withdrawals from stETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "unstETH"),
+            false,
+            "claimWithdrawal(uint256)",
+            new address[](0),
+            "Claim stETH withdrawal",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "unstETH"),
+            false,
+            "claimWithdrawals(uint256[],uint256[])",
+            new address[](0),
+            "Claim stETH withdrawals",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        // Wrapping
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "WSTETH"),
+            false,
+            "wrap(uint256)",
+            new address[](0),
+            "Wrap stETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "WSTETH"),
+            false,
+            "unwrap(uint256)",
+            new address[](0),
+            "Unwrap wstETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
     function _generateTestLeafs(ManageLeaf[] memory leafs, bytes32[][] memory manageTree) internal {
         string memory filePath = "./leafs/TemporaryLeafs.json";
