@@ -56,6 +56,7 @@ contract ChainValues {
         // Add mainnet values
         _addMainnetValues();
         _addBaseValues();
+        _addArbitrumValues();
     }
 
     function _addMainnetValues() private {
@@ -630,7 +631,6 @@ contract ChainValues {
         values[mainnet]["arbitrumOutbox"] = 0x0B9857ae2D4A3DBe74ffE1d7DF045bb7F96E4840.toBytes32();
         values[mainnet]["arbitrumL1GatewayRouter"] = 0x72Ce9c846789fdB6fC1f34aC4AD25Dd9ef7031ef.toBytes32();
         values[mainnet]["arbitrumL1ERC20Gateway"] = 0xa3A7B6F88361F48403514059F1F16C8E78d60EeC.toBytes32();
-        values[mainnet]["arbitrumL2Sender"] = 0x09e9222E96E7B4AE2a407B98d48e330053351EEe.toBytes32();
         values[mainnet]["arbitrumWethGateway"] = 0xd92023E9d9911199a6711321D1277285e6d4e2db.toBytes32();
 
         // Base Standard Bridge.
@@ -659,5 +659,83 @@ contract ChainValues {
         // Standard Bridge.
         values[base]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
         values[base]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
+    }
+
+    function _addArbitrumValues() private {
+        // Liquid Ecosystem
+        values[arbitrum]["deployerAddress"] = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d.toBytes32();
+        values[arbitrum]["dev0Address"] = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b.toBytes32();
+        values[arbitrum]["dev1Address"] = 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1.toBytes32();
+        values[arbitrum]["liquidPayoutAddress"] = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A.toBytes32();
+
+        // DeFi Ecosystem
+        values[arbitrum]["ETH"] = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE.toBytes32();
+        values[arbitrum]["uniV3Router"] = 0xE592427A0AEce92De3Edee1F18E0157C05861564.toBytes32();
+        values[arbitrum]["uniV2Router"] = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D.toBytes32();
+        values[arbitrum]["uniswapV3NonFungiblePositionManager"] = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88.toBytes32();
+        values[arbitrum]["ccipRouter"] = 0x141fa059441E0ca23ce184B6A78bafD2A517DdE8.toBytes32();
+        values[arbitrum]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
+
+        values[arbitrum]["USDC"] = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831.toBytes32();
+        values[arbitrum]["USDCe"] = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8.toBytes32();
+        values[arbitrum]["WETH"] = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1.toBytes32();
+        values[arbitrum]["WBTC"] = 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f.toBytes32();
+        values[arbitrum]["USDT"] = 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9.toBytes32();
+        values[arbitrum]["DAI"] = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1.toBytes32();
+        values[arbitrum]["WSTETH"] = 0x5979D7b546E38E414F7E9822514be443A4800529.toBytes32();
+        values[arbitrum]["FRAX"] = 0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F.toBytes32();
+        values[arbitrum]["BAL"] = 0x040d1EdC9569d4Bab2D15287Dc5A4F10F56a56B8.toBytes32();
+        values[arbitrum]["COMP"] = 0x354A6dA3fcde098F8389cad84b0182725c6C91dE.toBytes32();
+        values[arbitrum]["LINK"] = 0xf97f4df75117a78c1A5a0DBb814Af92458539FB4.toBytes32();
+        values[arbitrum]["rETH"] = 0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8.toBytes32();
+        values[arbitrum]["RETH"] = 0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8.toBytes32();
+        values[arbitrum]["cbETH"] = 0x1DEBd73E752bEaF79865Fd6446b0c970EaE7732f.toBytes32();
+        values[arbitrum]["LUSD"] = 0x93b346b6BC2548dA6A1E7d98E9a421B42541425b.toBytes32();
+        values[arbitrum]["UNI"] = 0xFa7F8980b0f1E64A2062791cc3b0871572f1F7f0.toBytes32();
+        values[arbitrum]["CRV"] = 0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978.toBytes32();
+        values[arbitrum]["FRXETH"] = 0x178412e79c25968a32e89b11f63B33F733770c2A.toBytes32();
+        values[arbitrum]["SFRXETH"] = 0x95aB45875cFFdba1E5f451B950bC2E42c0053f39.toBytes32();
+        values[arbitrum]["ARB"] = 0x912CE59144191C1204E64559FE8253a0e49E6548.toBytes32();
+        values[arbitrum]["WEETH"] = 0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe.toBytes32();
+        values[arbitrum]["USDE"] = 0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34.toBytes32();
+        values[arbitrum]["AURA"] = 0x1509706a6c66CA549ff0cB464de88231DDBe213B.toBytes32();
+        values[arbitrum]["PENDLE"] = 0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8.toBytes32();
+        values[arbitrum]["RSR"] = 0xCa5Ca9083702c56b481D1eec86F1776FDbd2e594.toBytes32();
+
+        // Aave V3
+        values[arbitrum]["v3Pool"] = 0x794a61358D6845594F94dc1DB02A252b5b4814aD.toBytes32();
+
+        // 1Inch
+        values[arbitrum]["aggregationRouterV5"] = 0x1111111254EEB25477B68fb85Ed929f73A960582.toBytes32();
+        values[arbitrum]["oneInchExecutor"] = 0xE37e799D5077682FA0a244D46E5649F71457BD09.toBytes32();
+
+        values[arbitrum]["balancerVault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
+
+        // Arbitrum native bridging.
+        values[arbitrum]["arbitrumL2GatewayRouter"] = 0x5288c571Fd7aD117beA99bF60FE0846C4E84F933.toBytes32();
+        values[arbitrum]["arbitrumSys"] = 0x0000000000000000000000000000000000000064.toBytes32();
+        values[arbitrum]["arbitrumRetryableTx"] = 0x000000000000000000000000000000000000006E.toBytes32();
+        values[arbitrum]["arbitrumL2Sender"] = 0x09e9222E96E7B4AE2a407B98d48e330053351EEe.toBytes32();
+
+        // Pendle
+        values[arbitrum]["pendleMarketFactory"] = 0x2FCb47B58350cD377f94d3821e7373Df60bD9Ced.toBytes32();
+        values[arbitrum]["pendleRouter"] = 0x888888888889758F76e7103c6CbF23ABbF58F946.toBytes32();
+        values[arbitrum]["pendleWeETHMarketSeptember"] = 0xf9F9779d8fF604732EBA9AD345E6A27EF5c2a9d6.toBytes32();
+
+        // Gearbox
+        values[arbitrum]["dWETHV3"] = 0x04419d3509f13054f60d253E0c79491d9E683399.toBytes32();
+        values[arbitrum]["sdWETHV3"] = 0xf3b7994e4dA53E04155057Fd61dc501599d57877.toBytes32();
+        values[arbitrum]["dUSDCV3"] = 0x890A69EF363C9c7BdD5E36eb95Ceb569F63ACbF6.toBytes32();
+        values[arbitrum]["sdUSDCV3"] = 0xD0181a36B0566a8645B7eECFf2148adE7Ecf2BE9.toBytes32();
+        values[arbitrum]["dUSDCeV3"] = 0xa76c604145D7394DEc36C49Af494C144Ff327861.toBytes32();
+        values[arbitrum]["sdUSDCeV3"] = 0x608F9e2E8933Ce6b39A8CddBc34a1e3E8D21cE75.toBytes32();
+
+        // Uniswap V3 pools
+        values[arbitrum]["wstETH_wETH_01"] = 0x35218a1cbaC5Bbc3E57fd9Bd38219D37571b3537.toBytes32();
+        values[arbitrum]["wstETH_wETH_05"] = 0xb93F8a075509e71325c1c2fc8FA6a75f2d536A13.toBytes32();
+        values[arbitrum]["PENDLE_wETH_30"] = 0xdbaeB7f0DFe3a0AAFD798CCECB5b22E708f7852c.toBytes32();
+        values[arbitrum]["wETH_weETH_30"] = 0xA169d1aB5c948555954D38700a6cDAA7A4E0c3A0.toBytes32();
+        values[arbitrum]["wETH_weETH_05"] = 0xd90660A0b8Ad757e7C1d660CE633776a0862b087.toBytes32();
+        values[arbitrum]["wETH_weETH_01"] = 0x14353445c8329Df76e6f15e9EAD18fA2D45A8BB6.toBytes32();
     }
 }

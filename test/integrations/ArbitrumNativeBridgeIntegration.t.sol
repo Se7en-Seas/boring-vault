@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.21;
 
-import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
-import {ArbitrumAddresses} from "test/resources/ArbitrumAddresses.sol";
 import {BoringVault} from "src/base/BoringVault.sol";
 import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVerification.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
@@ -15,10 +13,11 @@ import {
 } from "src/base/DecodersAndSanitizers/BridgingDecoderAndSanitizer.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract ArbitrumNativeBridgeIntegrationTest is Test {
+contract ArbitrumNativeBridgeIntegrationTest is Test, MerkleTreeHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -27,9 +26,6 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
     BoringVault public boringVault;
     address public rawDataDecoderAndSanitizer;
     RolesAuthority public rolesAuthority;
-
-    MainnetAddresses public mainnetAddresses;
-    ArbitrumAddresses public arbitrumAddresses;
 
     uint8 public constant MANAGER_ROLE = 1;
     uint8 public constant STRATEGIST_ROLE = 2;
@@ -44,26 +40,22 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
     function setUp() external {}
 
     function testBridgingToArbitrumERC20() external {
+        setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         // uint256 blockNumber = 19369928;
         uint256 blockNumber = 19826676;
         _createForkAndSetup(rpcKey, blockNumber);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        deal(address(mainnetAddresses.WEETH()), address(boringVault), 100e18);
+        deal(getAddress(sourceChain, "WEETH"), address(boringVault), 100e18);
         deal(address(boringVault), 1e18);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        leafs[0] = ManageLeaf(address(mainnetAddresses.WEETH()), false, "approve(address,uint256)", new address[](1));
-        leafs[0].argumentAddresses[0] = mainnetAddresses.arbitrumL1ERC20Gateway();
-        leafs[1] = ManageLeaf(
-            mainnetAddresses.arbitrumL1GatewayRouter(),
-            true,
-            "outboundTransfer(address,address,uint256,uint256,uint256,bytes)",
-            new address[](2)
-        );
-        leafs[1].argumentAddresses[0] = address(mainnetAddresses.WEETH());
-        leafs[1].argumentAddresses[1] = address(boringVault);
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        ERC20[] memory bridgeAssets = new ERC20[](1);
+        bridgeAssets[0] = ERC20(getAddress(sourceChain, "WEETH"));
+        _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -76,18 +68,18 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](2);
-        targets[0] = address(mainnetAddresses.WEETH());
-        targets[1] = mainnetAddresses.arbitrumL1GatewayRouter();
+        targets[0] = getAddress(sourceChain, "WEETH");
+        targets[1] = getAddress(sourceChain, "arbitrumL1GatewayRouter");
 
         bytes[] memory targetData = new bytes[](2);
         targetData[0] = abi.encodeWithSignature(
-            "approve(address,uint256)", mainnetAddresses.arbitrumL1ERC20Gateway(), type(uint256).max
+            "approve(address,uint256)", getAddress(sourceChain, "arbitrumL1ERC20Gateway"), type(uint256).max
         );
         bytes memory bridgeData =
             hex"00000000000000000000000000000000000000000000000000008c4dd2524fc000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000";
         targetData[1] = abi.encodeWithSignature(
             "outboundTransfer(address,address,uint256,uint256,uint256,bytes)",
-            mainnetAddresses.WEETH(),
+            getAddress(sourceChain, "WEETH"),
             address(boringVault),
             100e18,
             125062,
@@ -104,7 +96,7 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
         bytes memory badFormedBridgeData = abi.encode(1, bytes("bad data"));
         targetData[1] = abi.encodeWithSignature(
             "outboundTransfer(address,address,uint256,uint256,uint256,bytes)",
-            mainnetAddresses.WEETH(),
+            getAddress(sourceChain, "WEETH"),
             address(boringVault),
             100e18,
             125062,
@@ -125,7 +117,7 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
 
         targetData[1] = abi.encodeWithSignature(
             "outboundTransfer(address,address,uint256,uint256,uint256,bytes)",
-            mainnetAddresses.WEETH(),
+            getAddress(sourceChain, "WEETH"),
             address(boringVault),
             100e18,
             125062,
@@ -136,27 +128,22 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
     }
 
     function testBridgingToArbitrumERC20CustomRefund() external {
+        setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         // uint256 blockNumber = 19369928;
         uint256 blockNumber = 19826676;
         _createForkAndSetup(rpcKey, blockNumber);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        deal(address(mainnetAddresses.WEETH()), address(boringVault), 100e18);
+        deal(getAddress(sourceChain, "WEETH"), address(boringVault), 100e18);
         deal(address(boringVault), 1e18);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        leafs[0] = ManageLeaf(address(mainnetAddresses.WEETH()), false, "approve(address,uint256)", new address[](1));
-        leafs[0].argumentAddresses[0] = mainnetAddresses.arbitrumL1ERC20Gateway();
-        leafs[1] = ManageLeaf(
-            mainnetAddresses.arbitrumL1GatewayRouter(),
-            true,
-            "outboundTransferCustomRefund(address,address,address,uint256,uint256,uint256,bytes)",
-            new address[](3)
-        );
-        leafs[1].argumentAddresses[0] = address(mainnetAddresses.WEETH());
-        leafs[1].argumentAddresses[1] = address(boringVault);
-        leafs[1].argumentAddresses[2] = address(boringVault);
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        ERC20[] memory bridgeAssets = new ERC20[](1);
+        bridgeAssets[0] = ERC20(getAddress(sourceChain, "WEETH"));
+        _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -164,23 +151,23 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
         manageLeafs[0] = leafs[0];
-        manageLeafs[1] = leafs[1];
+        manageLeafs[1] = leafs[2];
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](2);
-        targets[0] = address(mainnetAddresses.WEETH());
-        targets[1] = mainnetAddresses.arbitrumL1GatewayRouter();
+        targets[0] = getAddress(sourceChain, "WEETH");
+        targets[1] = getAddress(sourceChain, "arbitrumL1GatewayRouter");
 
         bytes[] memory targetData = new bytes[](2);
         targetData[0] = abi.encodeWithSignature(
-            "approve(address,uint256)", mainnetAddresses.arbitrumL1ERC20Gateway(), type(uint256).max
+            "approve(address,uint256)", getAddress(sourceChain, "arbitrumL1ERC20Gateway"), type(uint256).max
         );
         bytes memory bridgeData =
             hex"00000000000000000000000000000000000000000000000000008c4dd2524fc000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000";
         targetData[1] = abi.encodeWithSignature(
             "outboundTransferCustomRefund(address,address,address,uint256,uint256,uint256,bytes)",
-            mainnetAddresses.WEETH(),
+            getAddress(sourceChain, "WEETH"),
             address(boringVault),
             address(boringVault),
             100e18,
@@ -197,7 +184,7 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
         bytes memory badFormedBridgeData = abi.encode(1, bytes("bad data"));
         targetData[1] = abi.encodeWithSignature(
             "outboundTransferCustomRefund(address,address,address,uint256,uint256,uint256,bytes)",
-            mainnetAddresses.WEETH(),
+            getAddress(sourceChain, "WEETH"),
             address(boringVault),
             address(boringVault),
             100e18,
@@ -219,7 +206,7 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
 
         targetData[1] = abi.encodeWithSignature(
             "outboundTransferCustomRefund(address,address,address,uint256,uint256,uint256,bytes)",
-            mainnetAddresses.WEETH(),
+            getAddress(sourceChain, "WEETH"),
             address(boringVault),
             address(boringVault),
             100e18,
@@ -230,17 +217,28 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 
+    /// @notice This leaf wil not be used in a normal merkle tree so MerkleTreeHelper does not create this leaf.
     function testBridgingToArbitrumNative() external {
+        setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         // uint256 blockNumber = 19369928;
         uint256 blockNumber = 19826676;
         _createForkAndSetup(rpcKey, blockNumber);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         deal(address(boringVault), 100e18);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        leafs[0] = ManageLeaf(mainnetAddresses.arbitrumDelayedInbox(), true, "depositEth()", new address[](0));
+        leafs[0] = ManageLeaf(
+            getAddress(sourceChain, "arbitrumDelayedInbox"),
+            true,
+            "depositEth()",
+            new address[](0),
+            "Deposit ETH into Arbitrum",
+            rawDataDecoderAndSanitizer
+        );
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -252,7 +250,7 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
-        targets[0] = mainnetAddresses.arbitrumDelayedInbox();
+        targets[0] = getAddress(sourceChain, "arbitrumDelayedInbox");
 
         bytes[] memory targetData = new bytes[](1);
         targetData[0] = abi.encodeWithSignature("depositEth()");
@@ -264,35 +262,33 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
     }
 
     function testClaimingBridgeFundsERC20() external {
+        setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         uint256 blockNumber = 20191506;
         _createForkAndSetup(rpcKey, blockNumber);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         // For this test we will claim on behalf of another user so that we do not need to replicate complicated state setup to simulate a bridge from Arbitrum to Ethereum.
         address userToClaimFor = 0x2Cc5F72937939244AAcE3Ff96Cf8bD2fE0294ec6;
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        leafs[0] = ManageLeaf(
-            mainnetAddresses.arbitrumOutbox(),
-            false,
-            "executeTransaction(bytes32[],uint256,address,address,uint256,uint256,uint256,uint256,bytes)",
-            new address[](2)
-        );
-        leafs[0].argumentAddresses[0] = mainnetAddresses.arbitrumL2Sender();
-        leafs[0].argumentAddresses[1] = mainnetAddresses.arbitrumL1ERC20Gateway();
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        ERC20[] memory bridgeAssets = new ERC20[](1);
+        bridgeAssets[0] = ERC20(getAddress(sourceChain, "WEETH"));
+        _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
-        manageLeafs[0] = leafs[0];
+        manageLeafs[0] = leafs[7];
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
-        targets[0] = mainnetAddresses.arbitrumOutbox();
+        targets[0] = getAddress(sourceChain, "arbitrumOutbox");
 
         bytes[] memory targetData = new bytes[](1);
         bytes32[] memory proof = new bytes32[](17);
@@ -319,8 +315,8 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
             "executeTransaction(bytes32[],uint256,address,address,uint256,uint256,uint256,uint256,bytes)",
             proof,
             121803,
-            mainnetAddresses.arbitrumL2Sender(),
-            mainnetAddresses.arbitrumL1ERC20Gateway(),
+            getAddress(arbitrum, "arbitrumL2Sender"),
+            getAddress(sourceChain, "arbitrumL1ERC20Gateway"),
             224245394,
             20141384,
             1718988440,
@@ -330,43 +326,43 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
         uint256[] memory values = new uint256[](1);
         address[] memory decodersAndSanitizers = new address[](1);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-        uint256 userWbtcBalanceBefore = mainnetAddresses.WBTC().balanceOf(userToClaimFor);
+        uint256 userWbtcBalanceBefore = getERC20(sourceChain, "WBTC").balanceOf(userToClaimFor);
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-        uint256 userWbtcBalanceAfter = mainnetAddresses.WBTC().balanceOf(userToClaimFor);
+        uint256 userWbtcBalanceAfter = getERC20(sourceChain, "WBTC").balanceOf(userToClaimFor);
 
         assertGt(userWbtcBalanceAfter, userWbtcBalanceBefore, "User should have received wBTC.");
     }
 
     function testClaimingBridgeFundsNative() external {
+        setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         uint256 blockNumber = 20188705;
         _createForkAndSetup(rpcKey, blockNumber);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         // For this test we will claim on behalf of another user so that we do not need to replicate complicated state setup to simulate a bridge from Arbitrum to Ethereum.
         address userToClaimFor = 0x8c140cbc0Fb9CcCDf698e0BeEc4faCA128d9d9E9;
+        // To accomplish this using MerkleTreeHelper we need to override the boringVault address to be the users.
+        setAddress(true, sourceChain, "boringVault", userToClaimFor);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        leafs[0] = ManageLeaf(
-            mainnetAddresses.arbitrumOutbox(),
-            false,
-            "executeTransaction(bytes32[],uint256,address,address,uint256,uint256,uint256,uint256,bytes)",
-            new address[](2)
-        );
-        leafs[0].argumentAddresses[0] = userToClaimFor;
-        leafs[0].argumentAddresses[1] = userToClaimFor;
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        ERC20[] memory bridgeAssets = new ERC20[](1);
+        bridgeAssets[0] = ERC20(getAddress(sourceChain, "WEETH"));
+        _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
-        manageLeafs[0] = leafs[0];
+        manageLeafs[0] = leafs[8];
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
-        targets[0] = mainnetAddresses.arbitrumOutbox();
+        targets[0] = getAddress(sourceChain, "arbitrumOutbox");
 
         bytes[] memory targetData = new bytes[](1);
         bytes32[] memory proof = new bytes32[](17);
@@ -415,22 +411,21 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
     }
 
     function testWithdrawingERC20FromArbitrum() external {
+        setSourceChainName("arbitrum");
         // Setup forked environment.
         string memory rpcKey = "ARBITRUM_RPC_URL";
         uint256 blockNumber = 228366826;
         _createForkAndSetup(rpcKey, blockNumber);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        deal(address(arbitrumAddresses.WEETH()), address(boringVault), 100e18);
+        deal(getAddress(sourceChain, "WEETH"), address(boringVault), 100e18);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        leafs[0] = ManageLeaf(
-            arbitrumAddresses.arbitrumL2GatewayRouter(),
-            false,
-            "outboundTransfer(address,address,uint256,bytes)",
-            new address[](2)
-        );
-        leafs[0].argumentAddresses[0] = address(mainnetAddresses.WEETH());
-        leafs[0].argumentAddresses[1] = address(boringVault);
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        ERC20[] memory bridgeAssets = new ERC20[](1);
+        // Need to use mainnet addresses for the ERC20s.
+        bridgeAssets[0] = ERC20(getAddress(mainnet, "WEETH"));
+        _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -442,12 +437,12 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
-        targets[0] = arbitrumAddresses.arbitrumL2GatewayRouter();
+        targets[0] = getAddress(sourceChain, "arbitrumL2GatewayRouter");
 
         bytes[] memory targetData = new bytes[](1);
         targetData[0] = abi.encodeWithSignature(
             "outboundTransfer(address,address,uint256,bytes)",
-            mainnetAddresses.WEETH(),
+            getAddress(mainnet, "WEETH"),
             address(boringVault),
             100e18,
             hex""
@@ -459,7 +454,7 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
         // If data is not empty it will revert.
         targetData[0] = abi.encodeWithSignature(
             "outboundTransfer(address,address,uint256,bytes)",
-            mainnetAddresses.WEETH(),
+            getAddress(mainnet, "WEETH"),
             address(boringVault),
             100e18,
             hex"01"
@@ -477,7 +472,7 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
 
         targetData[0] = abi.encodeWithSignature(
             "outboundTransfer(address,address,uint256,bytes)",
-            mainnetAddresses.WEETH(),
+            getAddress(mainnet, "WEETH"),
             address(boringVault),
             100e18,
             hex""
@@ -488,28 +483,33 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
     }
 
     function testWithdrawingNativeFromArbitrum() external {
+        setSourceChainName("arbitrum");
         // Setup forked environment.
         string memory rpcKey = "ARBITRUM_RPC_URL";
         uint256 blockNumber = 228366826;
         _createForkAndSetup(rpcKey, blockNumber);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         deal(address(boringVault), 100e18);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        leafs[0] = ManageLeaf(arbitrumAddresses.arbitrumSys(), true, "withdrawEth(address)", new address[](1));
-        leafs[0].argumentAddresses[0] = address(boringVault);
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        ERC20[] memory bridgeAssets = new ERC20[](1);
+        // Need to use mainnet addresses for the ERC20s.
+        bridgeAssets[0] = ERC20(getAddress(mainnet, "WEETH"));
+        _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
-        manageLeafs[0] = leafs[0];
+        manageLeafs[0] = leafs[1];
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
-        targets[0] = arbitrumAddresses.arbitrumSys();
+        targets[0] = getAddress(sourceChain, "arbitrumSys");
 
         bytes[] memory targetData = new bytes[](1);
         targetData[0] = abi.encodeWithSignature("withdrawEth(address)", address(boringVault));
@@ -524,27 +524,33 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
     }
 
     function testRedeemCall() external {
+        setSourceChainName("arbitrum");
         // Setup forked environment.
         string memory rpcKey = "ARBITRUM_RPC_URL";
         uint256 blockNumber = 226704376;
         _createForkAndSetup(rpcKey, blockNumber);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         deal(address(boringVault), 100e18);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        leafs[0] = ManageLeaf(arbitrumAddresses.arbitrumRetryableTx(), false, "redeem(bytes32)", new address[](0));
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        ERC20[] memory bridgeAssets = new ERC20[](1);
+        // Need to use mainnet addresses for the ERC20s.
+        bridgeAssets[0] = ERC20(getAddress(mainnet, "WEETH"));
+        _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
-        manageLeafs[0] = leafs[0];
+        manageLeafs[0] = leafs[2];
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
-        targets[0] = arbitrumAddresses.arbitrumRetryableTx();
+        targets[0] = getAddress(sourceChain, "arbitrumRetryableTx");
 
         bytes[] memory targetData = new bytes[](1);
         bytes32 ticketId = 0x4428b953549036adbaa880463ad3914eb1c0043ae017f8ea27bd0fa4f3842234;
@@ -559,49 +565,36 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
     }
 
     function testCreateRetryable() external {
+        setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         // uint256 blockNumber = 19369928;
         uint256 blockNumber = 19826676;
         _createForkAndSetup(rpcKey, blockNumber);
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        deal(address(mainnetAddresses.WEETH()), address(boringVault), 100e18);
+        deal(address(getAddress(sourceChain, "WEETH")), address(boringVault), 100e18);
         deal(address(boringVault), 1_000e18);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        leafs[0] = ManageLeaf(
-            mainnetAddresses.arbitrumDelayedInbox(),
-            true,
-            "createRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
-            new address[](3)
-        );
-        leafs[0].argumentAddresses[0] = address(boringVault);
-        leafs[0].argumentAddresses[1] = address(boringVault);
-        leafs[0].argumentAddresses[2] = address(boringVault);
-
-        leafs[1] = ManageLeaf(
-            mainnetAddresses.arbitrumDelayedInbox(),
-            false,
-            "unsafeCreateRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
-            new address[](3)
-        );
-        leafs[1].argumentAddresses[0] = address(boringVault);
-        leafs[1].argumentAddresses[1] = address(boringVault);
-        leafs[1].argumentAddresses[2] = address(boringVault);
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        ERC20[] memory bridgeAssets = new ERC20[](1);
+        bridgeAssets[0] = ERC20(getAddress(sourceChain, "WEETH"));
+        _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
-        manageLeafs[0] = leafs[0];
-        manageLeafs[1] = leafs[1];
+        manageLeafs[0] = leafs[5];
+        manageLeafs[1] = leafs[4];
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](2);
-        targets[0] = mainnetAddresses.arbitrumDelayedInbox();
-        targets[1] = mainnetAddresses.arbitrumDelayedInbox();
+        targets[0] = getAddress(sourceChain, "arbitrumDelayedInbox");
+        targets[1] = getAddress(sourceChain, "arbitrumDelayedInbox");
 
         bytes[] memory targetData = new bytes[](2);
         address to = address(boringVault);
@@ -692,12 +685,10 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
     function _createForkAndSetup(string memory rpcKey, uint256 blockNumber) internal {
         _startFork(rpcKey, blockNumber);
 
-        mainnetAddresses = new MainnetAddresses();
-        arbitrumAddresses = new ArbitrumAddresses();
-
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
-        manager = new ManagerWithMerkleVerification(address(this), address(boringVault), mainnetAddresses.vault());
+        manager =
+            new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
 
         rawDataDecoderAndSanitizer = address(new BridgingDecoderAndSanitizer(address(boringVault)));
 
@@ -747,218 +738,14 @@ contract ArbitrumNativeBridgeIntegrationTest is Test {
         rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
         rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
         rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
-        rolesAuthority.setUserRole(mainnetAddresses.vault(), BALANCER_VAULT_ROLE, true);
+        rolesAuthority.setUserRole(getAddress(sourceChain, "vault"), BALANCER_VAULT_ROLE, true);
 
         // Allow the boring vault to receive ETH.
         rolesAuthority.setPublicCapability(address(boringVault), bytes4(0), true);
-    }
-
-    function _generateProof(bytes32 leaf, bytes32[][] memory tree) internal pure returns (bytes32[] memory proof) {
-        // The length of each proof is the height of the tree - 1.
-        uint256 tree_length = tree.length;
-        proof = new bytes32[](tree_length - 1);
-
-        // Build the proof
-        for (uint256 i; i < tree_length - 1; ++i) {
-            // For each layer we need to find the leaf.
-            for (uint256 j; j < tree[i].length; ++j) {
-                if (leaf == tree[i][j]) {
-                    // We have found the leaf, so now figure out if the proof needs the next leaf or the previous one.
-                    proof[i] = j % 2 == 0 ? tree[i][j + 1] : tree[i][j - 1];
-                    leaf = _hashPair(leaf, proof[i]);
-                    break;
-                }
-            }
-        }
-    }
-
-    function _getProofsUsingTree(ManageLeaf[] memory manageLeafs, bytes32[][] memory tree)
-        internal
-        view
-        returns (bytes32[][] memory proofs)
-    {
-        proofs = new bytes32[][](manageLeafs.length);
-        for (uint256 i; i < manageLeafs.length; ++i) {
-            // Generate manage proof.
-            bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(
-                rawDataDecoderAndSanitizer, manageLeafs[i].target, manageLeafs[i].canSendValue, selector
-            );
-            uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
-            for (uint256 j; j < argumentAddressesLength; ++j) {
-                rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
-            }
-            bytes32 leaf = keccak256(rawDigest);
-            proofs[i] = _generateProof(leaf, tree);
-        }
-    }
-
-    function _buildTrees(bytes32[][] memory merkleTreeIn) internal pure returns (bytes32[][] memory merkleTreeOut) {
-        // We are adding another row to the merkle tree, so make merkleTreeOut be 1 longer.
-        uint256 merkleTreeIn_length = merkleTreeIn.length;
-        merkleTreeOut = new bytes32[][](merkleTreeIn_length + 1);
-        uint256 layer_length;
-        // Iterate through merkleTreeIn to copy over data.
-        for (uint256 i; i < merkleTreeIn_length; ++i) {
-            layer_length = merkleTreeIn[i].length;
-            merkleTreeOut[i] = new bytes32[](layer_length);
-            for (uint256 j; j < layer_length; ++j) {
-                merkleTreeOut[i][j] = merkleTreeIn[i][j];
-            }
-        }
-
-        uint256 next_layer_length;
-        if (layer_length % 2 != 0) {
-            next_layer_length = (layer_length + 1) / 2;
-        } else {
-            next_layer_length = layer_length / 2;
-        }
-        merkleTreeOut[merkleTreeIn_length] = new bytes32[](next_layer_length);
-        uint256 count;
-        for (uint256 i; i < layer_length; i += 2) {
-            merkleTreeOut[merkleTreeIn_length][count] =
-                _hashPair(merkleTreeIn[merkleTreeIn_length - 1][i], merkleTreeIn[merkleTreeIn_length - 1][i + 1]);
-            count++;
-        }
-
-        if (next_layer_length > 1) {
-            // We need to process the next layer of leaves.
-            merkleTreeOut = _buildTrees(merkleTreeOut);
-        }
-    }
-
-    struct ManageLeaf {
-        address target;
-        bool canSendValue;
-        string signature;
-        address[] argumentAddresses;
-    }
-
-    function _generateMerkleTree(ManageLeaf[] memory manageLeafs) internal view returns (bytes32[][] memory tree) {
-        uint256 leafsLength = manageLeafs.length;
-        bytes32[][] memory leafs = new bytes32[][](1);
-        leafs[0] = new bytes32[](leafsLength);
-        for (uint256 i; i < leafsLength; ++i) {
-            bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(
-                rawDataDecoderAndSanitizer, manageLeafs[i].target, manageLeafs[i].canSendValue, selector
-            );
-            uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
-            for (uint256 j; j < argumentAddressesLength; ++j) {
-                rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
-            }
-            leafs[0][i] = keccak256(rawDigest);
-        }
-        tree = _buildTrees(leafs);
-    }
-
-    function _hashPair(bytes32 a, bytes32 b) private pure returns (bytes32) {
-        return a < b ? _efficientHash(a, b) : _efficientHash(b, a);
-    }
-
-    function _efficientHash(bytes32 a, bytes32 b) private pure returns (bytes32 value) {
-        /// @solidity memory-safe-assembly
-        assembly {
-            mstore(0x00, a)
-            mstore(0x20, b)
-            value := keccak256(0x00, 0x40)
-        }
     }
 
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
     }
-}
-
-interface IRequest {
-    struct UnstakeRequest {
-        uint64 blockNumber;
-        address requester;
-        uint128 id;
-        uint128 mETHLocked;
-        uint128 ethRequested;
-        uint128 cumulativeETHRequested;
-    }
-
-    function requestByID(uint256 id) external view returns (UnstakeRequest memory);
-}
-
-interface IOracle {
-    struct OracleRecord {
-        uint64 updateStartBlock;
-        uint64 updateEndBlock;
-        uint64 currentNumValidatorsNotWithdrawable;
-        uint64 cumulativeNumValidatorsWithdrawable;
-        uint128 windowWithdrawnPrincipalAmount;
-        uint128 windowWithdrawnRewardAmount;
-        uint128 currentTotalValidatorBalance;
-        uint128 cumulativeProcessedDepositAmount;
-    }
-
-    function latestRecord() external view returns (OracleRecord memory);
-}
-
-interface MantleStaking {
-    function allocateETH() external payable;
-    function allocatedETHForClaims() external view returns (uint256);
-}
-
-interface IWithdrawRequestNft {
-    struct WithdrawRequest {
-        uint96 amountOfEEth;
-        uint96 shareOfEEth;
-        bool isValid;
-        uint32 feeGwei;
-    }
-
-    function claimWithdraw(uint256 tokenId) external;
-
-    function getRequest(uint256 requestId) external view returns (WithdrawRequest memory);
-
-    function finalizeRequests(uint256 requestId) external;
-
-    function owner() external view returns (address);
-
-    function updateAdmin(address admin, bool isAdmin) external;
-}
-
-interface ILiquidityPool {
-    function deposit() external payable returns (uint256);
-
-    function requestWithdraw(address recipient, uint256 amount) external returns (uint256);
-
-    function amountForShare(uint256 shares) external view returns (uint256);
-
-    function etherFiAdminContract() external view returns (address);
-
-    function addEthAmountLockedForWithdrawal(uint128 _amount) external;
-}
-
-interface IUNSTETH {
-    function finalize(uint256 _lastRequestIdToBeFinalized, uint256 _maxShareRate) external payable;
-
-    function getRoleMember(bytes32 role, uint256 index) external view returns (address);
-
-    function FINALIZE_ROLE() external view returns (bytes32);
-
-    function findCheckpointHints(uint256[] memory requestIds, uint256 firstIndex, uint256 lastIndex)
-        external
-        view
-        returns (uint256[] memory);
-
-    function getLastCheckpointIndex() external view returns (uint256);
-}
-
-interface ISWEXIT {
-    function processWithdrawals(uint256 id) external;
-}
-
-interface AccessControlManager {
-    function grantRole(bytes32 role, address account) external;
-}
-
-interface EthenaSusde {
-    function cooldownDuration() external view returns (uint24);
-    function cooldowns(address) external view returns (uint104 cooldownEnd, uint152 underlyingAmount);
 }

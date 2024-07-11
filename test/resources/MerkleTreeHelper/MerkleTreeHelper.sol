@@ -117,6 +117,199 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
     }
 
+    // ========================================= Arbitrum Native Bridge =========================================
+
+    /// @notice When sourceChain is arbitrum bridgeAssets MUST be mainnet addresses.
+    function _addArbitrumNativeBridgeLeafs(ManageLeaf[] memory leafs, ERC20[] memory bridgeAssets) internal {
+        if (keccak256(abi.encode(sourceChain)) == keccak256(abi.encode(mainnet))) {
+            // Bridge ERC20 Assets to Arbitrum
+            for (uint256 i; i < bridgeAssets.length; i++) {
+                address spender = address(bridgeAssets[i]) == getAddress(sourceChain, "WETH")
+                    ? getAddress(sourceChain, "arbitrumWethGateway")
+                    : getAddress(sourceChain, "arbitrumL1ERC20Gateway");
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    address(bridgeAssets[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Arbitrum L1 Gateway to spend ", bridgeAssets[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = spender;
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "arbitrumL1GatewayRouter"),
+                    true,
+                    "outboundTransfer(address,address,uint256,uint256,uint256,bytes)",
+                    new address[](2),
+                    string.concat("Bridge ", bridgeAssets[i].symbol(), " to Arbitrum"),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = address(bridgeAssets[i]);
+                leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "arbitrumL1GatewayRouter"),
+                    true,
+                    "outboundTransferCustomRefund(address,address,address,uint256,uint256,uint256,bytes)",
+                    new address[](3),
+                    string.concat("Bridge ", bridgeAssets[i].symbol(), " to Arbitrum"),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = address(bridgeAssets[i]);
+                leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+                leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+            }
+            // Create Retryable Ticket
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "arbitrumDelayedInbox"),
+                false,
+                "createRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
+                new address[](3),
+                "Create retryable ticket for Arbitrum",
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+
+            // Unsafe Create Retryable Ticket
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "arbitrumDelayedInbox"),
+                false,
+                "unsafeCreateRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
+                new address[](3),
+                "Unsafe Create retryable ticket for Arbitrum",
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+
+            // Create Retryable Ticket
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "arbitrumDelayedInbox"),
+                true,
+                "createRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
+                new address[](3),
+                "Create retryable ticket for Arbitrum",
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+
+            // Unsafe Create Retryable Ticket
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "arbitrumDelayedInbox"),
+                true,
+                "unsafeCreateRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)",
+                new address[](3),
+                "Unsafe Create retryable ticket for Arbitrum",
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+
+            // Execute Transaction For ERC20 claim.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "arbitrumOutbox"),
+                false,
+                "executeTransaction(bytes32[],uint256,address,address,uint256,uint256,uint256,uint256,bytes)",
+                new address[](2),
+                "Execute transaction to claim ERC20",
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(arbitrum, "arbitrumL2Sender");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "arbitrumL1ERC20Gateway");
+
+            // Execute Transaction For ETH claim.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "arbitrumOutbox"),
+                false,
+                "executeTransaction(bytes32[],uint256,address,address,uint256,uint256,uint256,uint256,bytes)",
+                new address[](2),
+                "Execute transaction to claim ETH",
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+        } else if (keccak256(abi.encode(sourceChain)) == keccak256(abi.encode(arbitrum))) {
+            // ERC20 bridge withdraws.
+            for (uint256 i; i < bridgeAssets.length; ++i) {
+                // outboundTransfer
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "arbitrumL2GatewayRouter"),
+                    false,
+                    "outboundTransfer(address,address,uint256,bytes)",
+                    new address[](2),
+                    string.concat("Withdraw ", vm.toString(address(bridgeAssets[i])), " from Arbitrum"),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = address(bridgeAssets[i]);
+                leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+            }
+
+            // WithdrawEth
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "arbitrumSys"),
+                true,
+                "withdrawEth(address)",
+                new address[](1),
+                "Withdraw ETH from Arbitrum",
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+            // Redeem
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "arbitrumRetryableTx"),
+                false,
+                "redeem(bytes32)",
+                new address[](0),
+                "Redeem retryable ticket on Arbitrum",
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+        } else {
+            revert("Unsupported chain for Arbitrum Native Bridge");
+        }
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
     function _generateLeafs(
         string memory filePath,
