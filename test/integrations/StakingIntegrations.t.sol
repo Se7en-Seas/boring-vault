@@ -333,73 +333,70 @@ contract StakingIntegrationsTest is Test, MerkleTreeHelper {
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 
-    // function testSwellIntegration() external {
-    //     deal(getAddress(sourceChain, "WETH"), address(boringVault), 100e18);
+    function testSwellIntegration() external {
+        deal(getAddress(sourceChain, "WETH"), address(boringVault), 100e18);
 
-    //     // unwrap weth
-    //     // mint swETH
-    //     // unstaking swETH
-    //     ManageLeaf[] memory leafs = new ManageLeaf[](8);
-    //     leafs[0] = ManageLeaf(getAddress(sourceChain, "WETH"), false, "withdraw(uint256)", new address[](0));
-    //     leafs[1] = ManageLeaf(address(SWETH), true, "deposit()", new address[](0));
-    //     leafs[2] = ManageLeaf(address(SWETH), false, "approve(address,uint256)", new address[](1));
-    //     leafs[2].argumentAddresses[0] = swEXIT;
-    //     leafs[3] = ManageLeaf(swEXIT, false, "createWithdrawRequest(uint256)", new address[](0));
-    //     leafs[4] = ManageLeaf(swEXIT, false, "finalizeWithdrawal(uint256)", new address[](0));
+        // unwrap weth
+        // mint swETH
+        // unstaking swETH
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        _addNativeLeafs(leafs);
+        _addSwellStakingLeafs(leafs);
 
-    //     bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-    //     manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
-    //     ManageLeaf[] memory manageLeafs = new ManageLeaf[](4);
-    //     manageLeafs[0] = leafs[0];
-    //     manageLeafs[1] = leafs[1];
-    //     manageLeafs[2] = leafs[2];
-    //     manageLeafs[3] = leafs[3];
-    //     bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](4);
+        manageLeafs[0] = leafs[1];
+        manageLeafs[1] = leafs[2];
+        manageLeafs[2] = leafs[3];
+        manageLeafs[3] = leafs[4];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
-    //     address[] memory targets = new address[](4);
-    //     targets[0] = getAddress(sourceChain, "WETH");
-    //     targets[1] = address(SWETH);
-    //     targets[2] = address(SWETH);
-    //     targets[3] = address(swEXIT);
+        address[] memory targets = new address[](4);
+        targets[0] = getAddress(sourceChain, "WETH");
+        targets[1] = getAddress(sourceChain, "SWETH");
+        targets[2] = getAddress(sourceChain, "SWETH");
+        targets[3] = getAddress(sourceChain, "swEXIT");
 
-    //     bytes[] memory targetData = new bytes[](4);
-    //     targetData[0] = abi.encodeWithSignature("withdraw(uint256)", 100e18);
-    //     targetData[1] = abi.encodeWithSignature("deposit()");
-    //     targetData[2] = abi.encodeWithSignature("approve(address,uint256)", swEXIT, type(uint256).max);
-    //     uint256 expectedSweth = 94453026416214353277;
-    //     targetData[3] = abi.encodeWithSignature("createWithdrawRequest(uint256)", expectedSweth);
-    //     uint256[] memory values = new uint256[](4);
-    //     values[1] = 100e18;
-    //     address[] memory decodersAndSanitizers = new address[](4);
-    //     decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-    //     decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
-    //     decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
-    //     decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
-    //     manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+        bytes[] memory targetData = new bytes[](4);
+        targetData[0] = abi.encodeWithSignature("withdraw(uint256)", 100e18);
+        targetData[1] = abi.encodeWithSignature("deposit()");
+        targetData[2] =
+            abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "swEXIT"), type(uint256).max);
+        uint256 expectedSweth = 94453026416214353277;
+        targetData[3] = abi.encodeWithSignature("createWithdrawRequest(uint256)", expectedSweth);
+        uint256[] memory values = new uint256[](4);
+        values[1] = 100e18;
+        address[] memory decodersAndSanitizers = new address[](4);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
-    //     uint256 withdrawRequestId = 5286;
+        uint256 withdrawRequestId = 5286;
 
-    //     _finalizeSwellRequest(withdrawRequestId);
+        _finalizeSwellRequest(withdrawRequestId);
 
-    //     manageLeafs = new ManageLeaf[](1);
-    //     manageLeafs[0] = leafs[4];
-    //     manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+        manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[5];
+        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
-    //     targets = new address[](1);
-    //     targets[0] = swEXIT;
+        targets = new address[](1);
+        targets[0] = getAddress(sourceChain, "swEXIT");
 
-    //     targetData = new bytes[](1);
-    //     targetData[0] = abi.encodeWithSignature("finalizeWithdrawal(uint256)", withdrawRequestId);
-    //     values = new uint256[](1);
+        targetData = new bytes[](1);
+        targetData[0] = abi.encodeWithSignature("finalizeWithdrawal(uint256)", withdrawRequestId);
+        values = new uint256[](1);
 
-    //     decodersAndSanitizers = new address[](1);
-    //     decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-    //     manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+        decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
-    //     assertApproxEqAbs(address(boringVault).balance, 100e18, 1, "BoringVault should have withdrawn and got ETH.");
-    // }
+        assertApproxEqAbs(address(boringVault).balance, 100e18, 1, "BoringVault should have withdrawn and got ETH.");
+    }
 
     // function testMantleIntegration() external {
     //     deal(getAddress(sourceChain, "WETH"), address(boringVault), 100e18);
