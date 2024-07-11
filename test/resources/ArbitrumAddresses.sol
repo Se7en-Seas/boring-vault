@@ -106,4 +106,7 @@ contract ArbitrumAddresses {
     address public wETH_weETH_30 = 0xA169d1aB5c948555954D38700a6cDAA7A4E0c3A0;
     address public wETH_weETH_05 = 0xd90660A0b8Ad757e7C1d660CE633776a0862b087;
     address public wETH_weETH_01 = 0x14353445c8329Df76e6f15e9EAD18fA2D45A8BB6;
+
+    // Chainlink feeds
+    address public weETH_ETH_ExchangeRate = 0x20bAe7e1De9c596f5F7615aeaa1342Ba99294e12;
 }
