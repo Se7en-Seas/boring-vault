@@ -977,6 +977,56 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
     }
 
+    // ========================================= Mantle Staking =========================================
+
+    function _addMantleStakingLeafs(ManageLeaf[] memory leafs) internal {
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "mantleLspStaking"),
+            true,
+            "stake(uint256)",
+            new address[](0),
+            "Stake ETH for mETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "METH"),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve Mantle LSP Staking to spend mETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "mantleLspStaking");
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "mantleLspStaking"),
+            false,
+            "unstakeRequest(uint128,uint128)",
+            new address[](0),
+            "Request Unstake mETH for ETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "mantleLspStaking"),
+            false,
+            "claimUnstakeRequest(uint256)",
+            new address[](0),
+            "Claim Unstake Request for ETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
     function _generateTestLeafs(ManageLeaf[] memory leafs, bytes32[][] memory manageTree) internal {
         string memory filePath = "./leafs/TemporaryLeafs.json";
