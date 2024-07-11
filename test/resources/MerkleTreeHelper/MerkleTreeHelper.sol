@@ -14,6 +14,9 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
     address public _accountantAddress;
     uint256 leafIndex = type(uint256).max;
 
+    mapping(address => mapping(address => bool)) public tokenToSpenderToApprovalInTree;
+    mapping(address => mapping(address => bool)) public oneInchSellTokenToBuyTokenToInTree;
+
     function setSourceChainName(string memory _chain) internal {
         sourceChain = _chain;
     }
@@ -307,6 +310,76 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             );
         } else {
             revert("Unsupported chain for Arbitrum Native Bridge");
+        }
+    }
+
+    // ========================================= CCIP Send =========================================
+
+    function _addCcipBridgeLeafs(
+        ManageLeaf[] memory leafs,
+        uint64 destinationChainId,
+        ERC20[] memory bridgeAssets,
+        ERC20[] memory feeTokens
+    ) internal {
+        // Bridge ERC20 Assets
+        for (uint256 i; i < feeTokens.length; i++) {
+            if (!tokenToSpenderToApprovalInTree[address(feeTokens[i])][getAddress(sourceChain, "ccipRouter")]) {
+                // Add fee token approval.
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    address(feeTokens[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve ", sourceChain, " CCIP Router to spend ", feeTokens[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "ccipRouter");
+                tokenToSpenderToApprovalInTree[address(feeTokens[i])][getAddress(sourceChain, "ccipRouter")] = true;
+            }
+            for (uint256 j; j < bridgeAssets.length; j++) {
+                if (!tokenToSpenderToApprovalInTree[address(bridgeAssets[j])][getAddress(sourceChain, "ccipRouter")]) {
+                    // Add bridge asset approval.
+                    unchecked {
+                        leafIndex++;
+                    }
+                    leafs[leafIndex] = ManageLeaf(
+                        address(bridgeAssets[j]),
+                        false,
+                        "approve(address,uint256)",
+                        new address[](1),
+                        string.concat("Approve ", sourceChain, " CCIP Router to spend ", bridgeAssets[j].symbol()),
+                        getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                    );
+                    leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "ccipRouter");
+                    tokenToSpenderToApprovalInTree[address(bridgeAssets[j])][getAddress(sourceChain, "ccipRouter")] =
+                        true;
+                }
+                // Add ccipSend leaf.
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "ccipRouter"),
+                    false,
+                    "ccipSend(uint64,(bytes,bytes,(address,uint256)[],address,bytes))",
+                    new address[](4),
+                    string.concat(
+                        "Bridge ",
+                        bridgeAssets[j].symbol(),
+                        " to chain ",
+                        vm.toString(destinationChainId),
+                        " using CCIP"
+                    ),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = address(uint160(destinationChainId));
+                leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+                leafs[leafIndex].argumentAddresses[2] = address(bridgeAssets[j]);
+                leafs[leafIndex].argumentAddresses[3] = address(feeTokens[i]);
+            }
         }
     }
 
