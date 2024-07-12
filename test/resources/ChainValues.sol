@@ -469,6 +469,7 @@ contract ChainValues {
         values[mainnet]["morphoBlue"] = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb.toBytes32();
         values[mainnet]["ezEthOracle"] = 0x61025e2B0122ac8bE4e37365A4003d87ad888Cc3.toBytes32();
         values[mainnet]["ezEthIrm"] = 0x870aC11D48B15DB9a138Cf899d20F13F79Ba00BC.toBytes32();
+        values[mainnet]["weETH_wETH_86_market"] = 0x698fe98247a40c5771537b5786b2f3f9d78eb487b4ce4d75533cd0e94d88a115;
 
         values[mainnet]["uniswapV3PositionManager"] = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88.toBytes32();
 

@@ -1836,6 +1836,200 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= MorphoBlue =========================================
+
+    function _addMorphoBlueSupplyLeafs(ManageLeaf[] memory leafs, bytes32 marketId) internal {
+        IMB.MarketParams memory marketParams = IMB(getAddress(sourceChain, "morphoBlue")).idToMarketParams(marketId);
+        ERC20 loanToken = ERC20(marketParams.loanToken);
+        ERC20 collateralToken = ERC20(marketParams.collateralToken);
+        uint256 leftSideLLTV = marketParams.lltv / 1e16;
+        uint256 rightSideLLTV = (marketParams.lltv / 1e14) % 100;
+        string memory morphoBlueMarketName = string.concat(
+            "MorphoBlue ",
+            collateralToken.symbol(),
+            "/",
+            loanToken.symbol(),
+            " ",
+            vm.toString(leftSideLLTV),
+            ".",
+            vm.toString(rightSideLLTV),
+            " LLTV market"
+        );
+        // Add approval leaf if not already added
+        if (!tokenToSpenderToApprovalInTree[marketParams.loanToken][getAddress(sourceChain, "morphoBlue")]) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                marketParams.loanToken,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve MorhoBlue to spend ", loanToken.symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "morphoBlue");
+            tokenToSpenderToApprovalInTree[marketParams.loanToken][getAddress(sourceChain, "morphoBlue")] = true;
+        }
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "morphoBlue"),
+            false,
+            "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            new address[](5),
+            string.concat("Supply ", loanToken.symbol(), " to ", morphoBlueMarketName),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+        leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+        leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+        leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+        leafs[leafIndex].argumentAddresses[4] = getAddress(sourceChain, "boringVault");
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "morphoBlue"),
+            false,
+            "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+            new address[](6),
+            string.concat("Withdraw ", loanToken.symbol(), " from ", morphoBlueMarketName),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+        leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+        leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+        leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+        leafs[leafIndex].argumentAddresses[4] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[5] = getAddress(sourceChain, "boringVault");
+    }
+
+    function _addMorphoBlueCollateralLeafs(ManageLeaf[] memory leafs, bytes32 marketId) internal {
+        IMB.MarketParams memory marketParams = IMB(getAddress(sourceChain, "morphoBlue")).idToMarketParams(marketId);
+        ERC20 loanToken = ERC20(marketParams.loanToken);
+        ERC20 collateralToken = ERC20(marketParams.collateralToken);
+        uint256 leftSideLLTV = marketParams.lltv / 1e16;
+        uint256 rightSideLLTV = (marketParams.lltv / 1e14) % 100;
+        string memory morphoBlueMarketName = string.concat(
+            "MorphoBlue ",
+            collateralToken.symbol(),
+            "/",
+            loanToken.symbol(),
+            " ",
+            vm.toString(leftSideLLTV),
+            ".",
+            vm.toString(rightSideLLTV),
+            " LLTV market"
+        );
+        // Approve MorphoBlue to spend collateral.
+        if (!tokenToSpenderToApprovalInTree[marketParams.collateralToken][getAddress(sourceChain, "morphoBlue")]) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                marketParams.collateralToken,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve MorhoBlue to spend ", collateralToken.symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "morphoBlue");
+            tokenToSpenderToApprovalInTree[marketParams.collateralToken][getAddress(sourceChain, "morphoBlue")] = true;
+        }
+        // Approve morpho blue to spend loan token.
+        if (!tokenToSpenderToApprovalInTree[marketParams.collateralToken][getAddress(sourceChain, "morphoBlue")]) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                marketParams.loanToken,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve MorhoBlue to spend ", loanToken.symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "morphoBlue");
+            tokenToSpenderToApprovalInTree[marketParams.loanToken][getAddress(sourceChain, "morphoBlue")] = true;
+        }
+        // Supply collateral to MorphoBlue.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "morphoBlue"),
+            false,
+            "supplyCollateral((address,address,address,address,uint256),uint256,address,bytes)",
+            new address[](5),
+            string.concat("Supply ", collateralToken.symbol(), " to ", morphoBlueMarketName),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+        leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+        leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+        leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+        leafs[leafIndex].argumentAddresses[4] = getAddress(sourceChain, "boringVault");
+
+        // Borrow loan token from MorphoBlue.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "morphoBlue"),
+            false,
+            "borrow((address,address,address,address,uint256),uint256,uint256,address,address)",
+            new address[](6),
+            string.concat("Borrow ", loanToken.symbol(), " from ", morphoBlueMarketName),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+        leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+        leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+        leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+        leafs[leafIndex].argumentAddresses[4] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[5] = getAddress(sourceChain, "boringVault");
+
+        // Repay loan token to MorphoBlue.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "morphoBlue"),
+            false,
+            "repay((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            new address[](5),
+            string.concat("Repay ", loanToken.symbol(), " to ", morphoBlueMarketName),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+        leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+        leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+        leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+        leafs[leafIndex].argumentAddresses[4] = getAddress(sourceChain, "boringVault");
+
+        // Withdraw collateral from MorphoBlue.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "morphoBlue"),
+            false,
+            "withdrawCollateral((address,address,address,address,uint256),uint256,address,address)",
+            new address[](6),
+            string.concat("Withdraw ", collateralToken.symbol(), " from ", morphoBlueMarketName),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = marketParams.loanToken;
+        leafs[leafIndex].argumentAddresses[1] = marketParams.collateralToken;
+        leafs[leafIndex].argumentAddresses[2] = marketParams.oracle;
+        leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
+        leafs[leafIndex].argumentAddresses[4] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[5] = getAddress(sourceChain, "boringVault");
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
     function _generateTestLeafs(ManageLeaf[] memory leafs, bytes32[][] memory manageTree) internal {
         string memory filePath = "./leafs/TemporaryLeafs.json";
