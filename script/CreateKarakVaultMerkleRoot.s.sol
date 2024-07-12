@@ -32,6 +32,7 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
     address public itbKETHxPositionManager = 0x6fCbdFF6CaBef0cDf1492Dc95FDb34702009358b;
     address public itbKsfrxETHPositionManager = 0x2166064650f7E0E9B6cade910Fa135FC26FED40D;
     address public itbKrswETHPositionManager = 0x94181838802D67C2e71EF3710b03819deD6E7734;
+    address public itbKrsETHPositionManager = 0xCeba81baFc7958ea51731869942326ffddB3554C;
 
     function setUp() external {}
 
@@ -78,6 +79,9 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
         _addLeafsForITBKarakPositionManager(
             leafs, itbDecoderAndSanitizer, itbKrswETHPositionManager, krswETH, vaultSupervisor
         );
+        _addLeafsForITBKarakPositionManager(
+            leafs, itbDecoderAndSanitizer, itbKrsETHPositionManager, krsETH, vaultSupervisor
+        );
 
         // ========================== Lido ==========================
         _addLidoLeafs(leafs);
@@ -89,7 +93,7 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
         _addNativeLeafs(leafs);
 
         // ========================== UniswapV3 ==========================
-        address[] memory token0 = new address[](55);
+        address[] memory token0 = new address[](56);
         token0[0] = address(WETH);
         token0[1] = address(WETH);
         token0[2] = address(WETH);
@@ -145,8 +149,9 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
         token0[52] = address(ETHX);
         token0[53] = address(ETHX);
         token0[54] = address(RSWETH);
+        token0[55] = address(WETH);
 
-        address[] memory token1 = new address[](55);
+        address[] memory token1 = new address[](56);
         token1[0] = address(WEETH);
         token1[1] = address(WSTETH);
         token1[2] = address(RETH);
@@ -202,12 +207,13 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
         token1[52] = address(RSWETH);
         token1[53] = address(SFRXETH);
         token1[54] = address(SFRXETH);
+        token1[55] = address(RSETH);
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](12);
-        SwapKind[] memory kind = new SwapKind[](12);
+        address[] memory assets = new address[](13);
+        SwapKind[] memory kind = new SwapKind[](13);
         assets[0] = address(WETH);
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = address(WEETH);
@@ -232,6 +238,8 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
         kind[10] = SwapKind.BuyAndSell;
         assets[11] = address(INST);
         kind[11] = SwapKind.Sell;
+        assets[12] = address(RSETH);
+        kind[12] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         /**

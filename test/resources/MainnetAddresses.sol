@@ -565,6 +565,7 @@ contract MainnetAddresses {
     address public kETHx = 0x989Ab830C6e2BdF3f28214fF54C9B7415C349a3F;
     address public ksfrxETH = 0x1751e1e4d2c9Fa99479C0c5574136F0dbD8f3EB8;
     address public krswETH = 0x1B4d88f5f38988BEA334C79f48aa69BEEeFE2e1e;
+    address public krsETH = 0x9a23e79a8E6D77F940F2C30eb3d9282Af2E4036c;
     // CCIP token transfers.
     address public ccipRouter = 0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D;
     uint64 public arbitrumDestinationChainId = 4949039107694359620;
