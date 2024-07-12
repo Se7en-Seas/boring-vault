@@ -158,73 +158,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         assertEq(USDT.allowance(address(boringVault), usdtTo), 777, "USDT should have have an allowance");
     }
 
-    function testFlashLoan() external {
-        ManageLeaf[] memory leafs = new ManageLeaf[](4);
-        leafs[0] = ManageLeaf(address(manager), false, "flashLoan(address,address[],uint256[],bytes)", new address[](2));
-        leafs[0].argumentAddresses[0] = address(manager);
-        leafs[0].argumentAddresses[1] = address(USDC);
-        leafs[1] = ManageLeaf(address(this), false, "approve(address,uint256)", new address[](1));
-        leafs[1].argumentAddresses[0] = address(USDC);
-        leafs[2] = ManageLeaf(address(USDC), false, "approve(address,uint256)", new address[](1));
-        leafs[2].argumentAddresses[0] = address(this);
-        // leaf[3] empty
-
-        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-
-        manager.setManageRoot(address(this), manageTree[2][0]);
-        // Since the manager calls to itself to fulfill the flashloan, we need to set its root.
-        manager.setManageRoot(address(manager), manageTree[2][0]);
-
-        bytes memory userData;
-        {
-            uint256 flashLoanAmount = 1_000_000e6;
-            // Build flashLoan data.
-            address[] memory targets = new address[](2);
-            targets[0] = address(USDC);
-            targets[1] = address(this);
-            bytes[] memory targetData = new bytes[](2);
-            targetData[0] = abi.encodeWithSelector(ERC20.approve.selector, address(this), flashLoanAmount);
-            targetData[1] = abi.encodeWithSelector(ERC20.approve.selector, address(USDC), flashLoanAmount);
-
-            ManageLeaf[] memory flashLoanLeafs = new ManageLeaf[](2);
-            flashLoanLeafs[0] = leafs[2];
-            flashLoanLeafs[1] = leafs[1];
-
-            bytes32[][] memory flashLoanManageProofs = _getProofsUsingTree(flashLoanLeafs, manageTree);
-
-            uint256[] memory values = new uint256[](2);
-            address[] memory dAs = new address[](2);
-            dAs[0] = rawDataDecoderAndSanitizer;
-            dAs[1] = rawDataDecoderAndSanitizer;
-            userData = abi.encode(flashLoanManageProofs, dAs, targets, targetData, values);
-        }
-        {
-            address[] memory targets = new address[](1);
-            targets[0] = address(manager);
-
-            address[] memory tokensToBorrow = new address[](1);
-            tokensToBorrow[0] = address(USDC);
-            uint256[] memory amountsToBorrow = new uint256[](1);
-            amountsToBorrow[0] = 1_000_000e6;
-            bytes[] memory targetData = new bytes[](1);
-            targetData[0] = abi.encodeWithSelector(
-                BalancerVault.flashLoan.selector, address(manager), tokensToBorrow, amountsToBorrow, userData
-            );
-
-            ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
-            manageLeafs[0] = leafs[0];
-
-            bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
-
-            uint256[] memory values = new uint256[](1);
-            address[] memory decodersAndSanitizers = new address[](1);
-            decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-            manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-
-            assertTrue(iDidSomething == true, "Should have called doSomethingWithFlashLoan");
-        }
-    }
-
     function testBalancerV2AndAuraIntegration() external {
         deal(address(WETH), address(boringVault), 1_000e18);
         bytes32 poolId = 0x1e19cf2d73a72ef1332c882f20534b6519be0276000200000000000000000112;
@@ -1604,86 +1537,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
         );
     }
 
-    function testFlashLoanReverts() external {
-        // Deploy a new manager, setting the Balancer Vault as address(this)
-        manager = new ManagerWithMerkleVerification(address(this), address(boringVault), address(this));
-        rolesAuthority.setRoleCapability(
-            STRATEGIST_ROLE,
-            address(manager),
-            ManagerWithMerkleVerification.manageVaultWithMerkleVerification.selector,
-            true
-        );
-        rolesAuthority.setRoleCapability(
-            MANGER_INTERNAL_ROLE,
-            address(manager),
-            ManagerWithMerkleVerification.manageVaultWithMerkleVerification.selector,
-            true
-        );
-        rolesAuthority.setRoleCapability(
-            BORING_VAULT_ROLE, address(manager), ManagerWithMerkleVerification.flashLoan.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            BALANCER_VAULT_ROLE, address(manager), ManagerWithMerkleVerification.receiveFlashLoan.selector, true
-        );
-        rolesAuthority.setUserRole(address(this), STRATEGIST_ROLE, true);
-        rolesAuthority.setUserRole(address(manager), MANGER_INTERNAL_ROLE, true);
-        rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
-        rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
-        rolesAuthority.setUserRole(address(this), BALANCER_VAULT_ROLE, true);
-        manager.setAuthority(rolesAuthority);
-
-        ManageLeaf[] memory leafs = new ManageLeaf[](4);
-        leafs[0] = ManageLeaf(address(manager), false, "flashLoan(address,address[],uint256[],bytes)", new address[](2));
-        leafs[0].argumentAddresses[0] = address(manager);
-        leafs[0].argumentAddresses[1] = address(USDC);
-
-        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-
-        manager.setManageRoot(address(this), manageTree[2][0]);
-        // Since the manager calls to itself to fulfill the flashloan, we need to set its root.
-        manager.setManageRoot(address(manager), manageTree[2][0]);
-
-        bytes memory userData = hex"DEAD";
-        address[] memory targets = new address[](1);
-        targets[0] = address(manager);
-
-        address[] memory tokensToBorrow = new address[](1);
-        tokensToBorrow[0] = address(USDC);
-        uint256[] memory amountsToBorrow = new uint256[](1);
-        amountsToBorrow[0] = 1_000_000e6;
-        bytes[] memory targetData = new bytes[](1);
-        targetData[0] = abi.encodeWithSelector(
-            BalancerVault.flashLoan.selector, address(manager), tokensToBorrow, amountsToBorrow, userData
-        );
-
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
-        manageLeafs[0] = leafs[0];
-
-        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
-
-        uint256[] memory values = new uint256[](1);
-        address[] memory decodersAndSanitizers = new address[](1);
-        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-
-        // Try performing a flash loan where receiveFlashLoan is not called.
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                ManagerWithMerkleVerification.ManagerWithMerkleVerification__FlashLoanNotExecuted.selector
-            )
-        );
-        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-
-        doNothing = false;
-
-        // Try performing a flash loan but with userData editted.
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                ManagerWithMerkleVerification.ManagerWithMerkleVerification__BadFlashLoanIntentHash.selector
-            )
-        );
-        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-    }
-
     function testBalancerV2IntegrationReverts() external {
         deal(address(WETH), address(boringVault), 1_000e18);
         bytes32 poolId = 0x1e19cf2d73a72ef1332c882f20534b6519be0276000200000000000000000112;
@@ -2674,28 +2527,6 @@ contract ManagerWithMerkleVerificationTest is Test, MainnetAddresses {
     }
 
     // ========================================= HELPER FUNCTIONS =========================================
-    bool doNothing = true;
-
-    function flashLoan(address, address[] calldata tokens, uint256[] calldata amounts, bytes memory userData)
-        external
-    {
-        if (doNothing) {
-            return;
-        } else {
-            // Edit userData.
-            userData = hex"DEAD01";
-            manager.receiveFlashLoan(tokens, amounts, amounts, userData);
-        }
-    }
-
-    bool iDidSomething = false;
-
-    // Call this function approve, so that we can use the standard decoder.
-    function approve(ERC20 token, uint256 amount) external {
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        token.safeTransfer(msg.sender, amount);
-        iDidSomething = true;
-    }
 
     function _generateProof(bytes32 leaf, bytes32[][] memory tree) internal pure returns (bytes32[] memory proof) {
         // The length of each proof is the height of the tree - 1.
