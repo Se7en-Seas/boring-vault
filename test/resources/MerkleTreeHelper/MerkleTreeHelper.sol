@@ -1027,6 +1027,155 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
     }
 
+    // ========================================= Aave V3 =========================================
+
+    function _addAaveV3Leafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets)
+        internal
+    {
+        _addAaveV3ForkLeafs("Aave V3", getAddress(sourceChain, "v3Pool"), leafs, supplyAssets, borrowAssets);
+    }
+
+    function _addSparkLendLeafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets)
+        internal
+    {
+        _addAaveV3ForkLeafs("SparkLend", getAddress(sourceChain, "sparkLendPool"), leafs, supplyAssets, borrowAssets);
+    }
+
+    function _addAaveV3ForkLeafs(
+        string memory protocolName,
+        address protocolAddress,
+        ManageLeaf[] memory leafs,
+        ERC20[] memory supplyAssets,
+        ERC20[] memory borrowAssets
+    ) internal {
+        // Approvals
+        string memory baseApprovalString = string.concat("Approve ", protocolName, " Pool to spend ");
+        for (uint256 i; i < supplyAssets.length; ++i) {
+            if (!tokenToSpenderToApprovalInTree[address(supplyAssets[i])][protocolAddress]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    address(supplyAssets[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat(baseApprovalString, supplyAssets[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = protocolAddress;
+                tokenToSpenderToApprovalInTree[address(supplyAssets[i])][protocolAddress] = true;
+            }
+        }
+        for (uint256 i; i < borrowAssets.length; ++i) {
+            if (!tokenToSpenderToApprovalInTree[address(borrowAssets[i])][protocolAddress]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    address(borrowAssets[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat(baseApprovalString, borrowAssets[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = protocolAddress;
+                tokenToSpenderToApprovalInTree[address(borrowAssets[i])][protocolAddress] = true;
+            }
+        }
+        // Lending
+        for (uint256 i; i < supplyAssets.length; ++i) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                protocolAddress,
+                false,
+                "supply(address,uint256,address,uint16)",
+                new address[](2),
+                string.concat("Supply ", supplyAssets[i].symbol(), " to ", protocolName),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(supplyAssets[i]);
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+        }
+        // Withdrawing
+        for (uint256 i; i < supplyAssets.length; ++i) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                protocolAddress,
+                false,
+                "withdraw(address,uint256,address)",
+                new address[](2),
+                string.concat("Withdraw ", supplyAssets[i].symbol(), " from ", protocolName),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(supplyAssets[i]);
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+        }
+        // Borrowing
+        for (uint256 i; i < borrowAssets.length; ++i) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                protocolAddress,
+                false,
+                "borrow(address,uint256,uint256,uint16,address)",
+                new address[](2),
+                string.concat("Borrow ", borrowAssets[i].symbol(), " from ", protocolName),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(borrowAssets[i]);
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+        }
+        // Repaying
+        for (uint256 i; i < borrowAssets.length; ++i) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                protocolAddress,
+                false,
+                "repay(address,uint256,uint256,address)",
+                new address[](2),
+                string.concat("Repay ", borrowAssets[i].symbol(), " to ", protocolName),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(borrowAssets[i]);
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+        }
+        // Misc
+        for (uint256 i; i < supplyAssets.length; ++i) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                protocolAddress,
+                false,
+                "setUserUseReserveAsCollateral(address,bool)",
+                new address[](1),
+                string.concat("Toggle ", supplyAssets[i].symbol(), " as collateral in ", protocolName),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(supplyAssets[i]);
+        }
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            protocolAddress,
+            false,
+            "setUserEMode(uint8)",
+            new address[](0),
+            string.concat("Set user e-mode in ", protocolName),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
     function _generateTestLeafs(ManageLeaf[] memory leafs, bytes32[][] memory manageTree) internal {
         string memory filePath = "./leafs/TemporaryLeafs.json";
