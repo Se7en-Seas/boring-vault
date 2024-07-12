@@ -1379,6 +1379,262 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[1] = tokenToFlashloan;
     }
 
+    // ========================================= Pendle Router =========================================
+
+    function _addPendleMarketLeafs(ManageLeaf[] memory leafs, address marketAddress) internal {
+        PendleMarket market = PendleMarket(marketAddress);
+        (address sy, address pt, address yt) = market.readTokens();
+        PendleSy SY = PendleSy(sy);
+        address[] memory possibleTokensIn = SY.getTokensIn();
+        address[] memory possibleTokensOut = SY.getTokensOut();
+        (, ERC20 underlyingAsset,) = SY.assetInfo();
+        // Approve router to spend all tokens in, skipping zero addresses.
+        for (uint256 i; i < possibleTokensIn.length; ++i) {
+            if (
+                possibleTokensIn[i] != address(0)
+                    && !tokenToSpenderToApprovalInTree[possibleTokensIn[i]][getAddress(sourceChain, "pendleRouter")]
+            ) {
+                ERC20 tokenIn = ERC20(possibleTokensIn[i]);
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    possibleTokensIn[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Pendle router to spend ", tokenIn.symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pendleRouter");
+                tokenToSpenderToApprovalInTree[possibleTokensIn[i]][getAddress(sourceChain, "pendleRouter")] = true;
+            }
+        }
+        // Approve router to spend LP, SY, PT, YT
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            marketAddress,
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Pendle router to spend LP-", underlyingAsset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pendleRouter");
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            sy,
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Pendle router to spend ", ERC20(sy).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pendleRouter");
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pt,
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Pendle router to spend ", ERC20(pt).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pendleRouter");
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            yt,
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Pendle router to spend ", ERC20(yt).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pendleRouter");
+        // Mint SY using input token.
+        for (uint256 i; i < possibleTokensIn.length; ++i) {
+            if (possibleTokensIn[i] != address(0)) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "pendleRouter"),
+                    false,
+                    "mintSyFromToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
+                    new address[](6),
+                    string.concat("Mint ", ERC20(sy).symbol(), " using ", ERC20(possibleTokensIn[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+                leafs[leafIndex].argumentAddresses[1] = sy;
+                leafs[leafIndex].argumentAddresses[2] = possibleTokensIn[i];
+                leafs[leafIndex].argumentAddresses[3] = possibleTokensIn[i];
+                leafs[leafIndex].argumentAddresses[4] = address(0);
+                leafs[leafIndex].argumentAddresses[5] = address(0);
+            }
+        }
+        // Mint PT and YT using SY.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pendleRouter"),
+            false,
+            "mintPyFromSy(address,address,uint256,uint256)",
+            new address[](2),
+            string.concat("Mint ", ERC20(pt).symbol(), " and ", ERC20(yt).symbol(), " from ", ERC20(sy).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = yt;
+        // Swap between PT and YT.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pendleRouter"),
+            false,
+            "swapExactYtForPt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256))",
+            new address[](2),
+            string.concat("Swap ", ERC20(yt).symbol(), " for ", ERC20(pt).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = marketAddress;
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pendleRouter"),
+            false,
+            "swapExactPtForYt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256))",
+            new address[](2),
+            string.concat("Swap ", ERC20(pt).symbol(), " for ", ERC20(yt).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = marketAddress;
+        // Manage Liquidity.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pendleRouter"),
+            false,
+            "addLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
+            new address[](2),
+            string.concat(
+                "Mint LP-", underlyingAsset.symbol(), " using ", ERC20(sy).symbol(), " and ", ERC20(pt).symbol()
+            ),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = marketAddress;
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pendleRouter"),
+            false,
+            "removeLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
+            new address[](2),
+            string.concat(
+                "Burn LP-", underlyingAsset.symbol(), " for ", ERC20(sy).symbol(), " and ", ERC20(pt).symbol()
+            ),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = marketAddress;
+        // Burn PT and YT for SY.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pendleRouter"),
+            false,
+            "redeemPyToSy(address,address,uint256,uint256)",
+            new address[](2),
+            string.concat("Burn ", ERC20(pt).symbol(), " and ", ERC20(yt).symbol(), " for ", ERC20(sy).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = yt;
+        // Redeem SY for output token.
+        for (uint256 i; i < possibleTokensOut.length; ++i) {
+            if (possibleTokensOut[i] != address(0)) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "pendleRouter"),
+                    false,
+                    "redeemSyToToken(address,address,uint256,(address,uint256,address,address,(uint8,address,bytes,bool)))",
+                    new address[](6),
+                    string.concat("Burn ", ERC20(sy).symbol(), " for ", ERC20(possibleTokensOut[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+                leafs[leafIndex].argumentAddresses[1] = sy;
+                leafs[leafIndex].argumentAddresses[2] = possibleTokensOut[i];
+                leafs[leafIndex].argumentAddresses[3] = possibleTokensOut[i];
+                leafs[leafIndex].argumentAddresses[4] = address(0);
+                leafs[leafIndex].argumentAddresses[5] = address(0);
+            }
+        }
+        // Harvest rewards.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pendleRouter"),
+            false,
+            "redeemDueInterestAndRewards(address,address[],address[],address[])",
+            new address[](4),
+            string.concat("Redeem due interest and rewards for ", underlyingAsset.symbol(), " Pendle"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = sy;
+        leafs[leafIndex].argumentAddresses[2] = yt;
+        leafs[leafIndex].argumentAddresses[3] = marketAddress;
+
+        // Swap between SY and PT
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pendleRouter"),
+            false,
+            "swapExactSyForPt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256),(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+            new address[](2),
+            string.concat("Swap ", ERC20(sy).symbol(), " for ", ERC20(pt).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = marketAddress;
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pendleRouter"),
+            false,
+            "swapExactPtForSy(address,address,uint256,uint256,(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+            new address[](2),
+            string.concat("Swap ", ERC20(pt).symbol(), " for ", ERC20(sy).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = marketAddress;
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
     function _generateTestLeafs(ManageLeaf[] memory leafs, bytes32[][] memory manageTree) internal {
         string memory filePath = "./leafs/TemporaryLeafs.json";
