@@ -4,6 +4,8 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {ChainValues} from "test/resources/ChainValues.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
+import {ERC4626} from "@solmate/tokens/ERC4626.sol";
+
 import "forge-std/Base.sol";
 
 contract MerkleTreeHelper is CommonBase, ChainValues {
@@ -1633,6 +1635,205 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
         leafs[leafIndex].argumentAddresses[1] = marketAddress;
+    }
+
+    // ========================================= Balancer =========================================
+
+    function _addBalancerLeafs(ManageLeaf[] memory leafs, bytes32 poolId, address gauge) internal {
+        BalancerVault bv = BalancerVault(getAddress(sourceChain, "balancerVault"));
+
+        (ERC20[] memory tokens,,) = bv.getPoolTokens(poolId);
+        address pool = _getPoolAddressFromPoolId(poolId);
+        uint256 tokenCount;
+        for (uint256 i; i < tokens.length; i++) {
+            if (
+                address(tokens[i]) != pool
+                    && !tokenToSpenderToApprovalInTree[address(tokens[i])][getAddress(sourceChain, "balancerVault")]
+            ) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    address(tokens[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Balancer Vault to spend ", tokens[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "balancerVault");
+                tokenToSpenderToApprovalInTree[address(tokens[i])][getAddress(sourceChain, "balancerVault")] = true;
+            }
+            tokenCount++;
+        }
+
+        // Approve gauge.
+        if (!tokenToSpenderToApprovalInTree[pool][gauge]) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                pool,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Balancer gauge to spend ", ERC20(pool).symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = gauge;
+            tokenToSpenderToApprovalInTree[pool][gauge] = true;
+        }
+
+        address[] memory addressArguments = new address[](3 + tokenCount);
+        addressArguments[0] = pool;
+        addressArguments[1] = getAddress(sourceChain, "boringVault");
+        addressArguments[2] = getAddress(sourceChain, "boringVault");
+        // uint256 j;
+        for (uint256 i; i < tokens.length; i++) {
+            // if (address(tokens[i]) == pool) continue;
+            addressArguments[3 + i] = address(tokens[i]);
+            // j++;
+        }
+
+        // Join pool
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "balancerVault"),
+            false,
+            "joinPool(bytes32,address,address,(address[],uint256[],bytes,bool))",
+            new address[](addressArguments.length),
+            string.concat("Join Balancer pool ", ERC20(pool).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        for (uint256 i; i < addressArguments.length; i++) {
+            leafs[leafIndex].argumentAddresses[i] = addressArguments[i];
+        }
+
+        // Exit pool
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "balancerVault"),
+            false,
+            "exitPool(bytes32,address,address,(address[],uint256[],bytes,bool))",
+            new address[](addressArguments.length),
+            string.concat("Exit Balancer pool ", ERC20(pool).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        for (uint256 i; i < addressArguments.length; i++) {
+            leafs[leafIndex].argumentAddresses[i] = addressArguments[i];
+        }
+
+        // Deposit into gauge.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            gauge,
+            false,
+            "deposit(uint256,address)",
+            new address[](1),
+            string.concat("Deposit ", ERC20(pool).symbol(), " into Balancer gauge"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+        // Withdraw from gauge.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            gauge,
+            false,
+            "withdraw(uint256)",
+            new address[](0),
+            string.concat("Withdraw ", ERC20(pool).symbol(), " from Balancer gauge"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Mint rewards.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "minter"),
+            false,
+            "mint(address)",
+            new address[](1),
+            string.concat("Mint rewards from Balancer gauge"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = gauge;
+    }
+
+    // ========================================= Aura =========================================
+
+    function _addAuraLeafs(ManageLeaf[] memory leafs, address auraDeposit) internal {
+        ERC4626 auraVault = ERC4626(auraDeposit);
+        ERC20 bpt = auraVault.asset();
+
+        // Approve vault to spend BPT.
+        if (!tokenToSpenderToApprovalInTree[address(bpt)][auraDeposit]) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(bpt),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve ", auraVault.symbol(), " to spend ", bpt.symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = auraDeposit;
+            tokenToSpenderToApprovalInTree[address(bpt)][auraDeposit] = true;
+        }
+
+        // Deposit BPT into Aura vault.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            auraDeposit,
+            false,
+            "deposit(uint256,address)",
+            new address[](1),
+            string.concat("Deposit ", bpt.symbol(), " into ", auraVault.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+        // Withdraw BPT from Aura vault.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            auraDeposit,
+            false,
+            "withdraw(uint256,address,address)",
+            new address[](2),
+            string.concat("Withdraw ", bpt.symbol(), " from ", auraVault.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+
+        // Call getReward.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            auraDeposit,
+            false,
+            "getReward(address,bool)",
+            new address[](1),
+            string.concat("Get rewards from ", auraVault.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
     }
 
     // ========================================= JSON FUNCTIONS =========================================
