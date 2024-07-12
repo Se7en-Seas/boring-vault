@@ -13,10 +13,9 @@ import {ArbitrumAddresses} from "test/resources/ArbitrumAddresses.sol";
  */
 contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
     using FixedPointMathLib for uint256;
-    // TODO need to deploy another decoder and sanitizer that has multichain functions.
 
     address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
-    address public rawDataDecoderAndSanitizer = 0x0C8B49b06544fA8B5c85755267498E407433edBB;
+    address public rawDataDecoderAndSanitizer = 0x568a4E08909aab6995979dB24B3cdaE00244CeB4;
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
     address public pancakeSwapDataDecoderAndSanitizer = 0x4dE66AA174b99481dAAe12F2Cdd5D76Dc14Eb3BC;
