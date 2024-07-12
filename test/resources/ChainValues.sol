@@ -260,6 +260,7 @@ contract ChainValues {
         values[mainnet]["cbethRateProvider"] = 0x7311E4BB8a72e7B300c5B8BDE4de6CdaA822a5b1.toBytes32();
         values[mainnet]["rethRateProvider"] = 0x1a8F81c256aee9C640e14bB0453ce247ea0DFE6F.toBytes32();
         values[mainnet]["sDaiRateProvider"] = 0xc7177B6E18c1Abd725F5b75792e5F7A3bA5DBC2c.toBytes32();
+        values[mainnet]["rsETHRateProvider"] = 0x746df66bc1Bb361b9E8E2a794C299c3427976e6C.toBytes32();
 
         // Compound V2
         // Cvalues[mainnet]["cDAI"] = C0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643.toBytes32();
