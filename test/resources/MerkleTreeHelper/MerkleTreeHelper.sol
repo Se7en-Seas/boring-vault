@@ -1382,7 +1382,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
     }
 
     // ========================================= Pendle Router =========================================
-
+    // TODO need to add in the arbitrum special case
     function _addPendleMarketLeafs(ManageLeaf[] memory leafs, address marketAddress) internal {
         PendleMarket market = PendleMarket(marketAddress);
         (address sy, address pt, address yt) = market.readTokens();
@@ -2028,6 +2028,104 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[3] = marketParams.irm;
         leafs[leafIndex].argumentAddresses[4] = getAddress(sourceChain, "boringVault");
         leafs[leafIndex].argumentAddresses[5] = getAddress(sourceChain, "boringVault");
+    }
+
+    // ========================================= ERC4626 =========================================
+
+    function _addERC4626Leafs(ManageLeaf[] memory leafs, ERC4626 vault) internal {
+        ERC20 asset = vault.asset();
+        // Approvals
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(asset),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve ", vault.symbol(), " to spend ", asset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(vault);
+        // Depositing
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(vault),
+            false,
+            "deposit(uint256,address)",
+            new address[](1),
+            string.concat("Deposit ", asset.symbol(), " for ", vault.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        // Withdrawing
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(vault),
+            false,
+            "withdraw(uint256,address,address)",
+            new address[](2),
+            string.concat("Withdraw ", asset.symbol(), " from ", vault.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+    }
+
+    // ========================================= Gearbox =========================================
+
+    function _addGearboxLeafs(ManageLeaf[] memory leafs, ERC4626 dieselVault, address dieselStaking) internal {
+        _addERC4626Leafs(leafs, dieselVault);
+        string memory dieselVaultSymbol = dieselVault.symbol();
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(dieselVault),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve s", dieselVaultSymbol, " to spend ", dieselVaultSymbol),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = dieselStaking;
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            dieselStaking,
+            false,
+            "deposit(uint256)",
+            new address[](0),
+            string.concat("Deposit ", dieselVaultSymbol, " for s", dieselVaultSymbol),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            dieselStaking,
+            false,
+            "withdraw(uint256)",
+            new address[](0),
+            string.concat("Withdraw ", dieselVaultSymbol, " from s", dieselVaultSymbol),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            dieselStaking,
+            false,
+            "claim()",
+            new address[](0),
+            string.concat("Claim rewards from s", dieselVaultSymbol),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
     }
 
     // ========================================= JSON FUNCTIONS =========================================
