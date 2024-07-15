@@ -8,11 +8,13 @@ import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVerification.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
+import "forge-std/Script.sol";
 
 /**
  *  source .env && forge script script/CreateKarakVaultMerkleRoot.s.sol:CreateKarakVaultMerkleRootScript --rpc-url $MAINNET_RPC_URL
  */
-contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
+contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0x7223442cad8e9cA474fC40109ab981608F8c4273;
@@ -43,40 +45,84 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
     }
 
     function generateKarakVaultStrategistMerkleRoot() public {
-        updateAddresses(boringVault, itbDecoderAndSanitizer, managerAddress, accountantAddress);
+        setSourceChainName(mainnet);
+        setAddress(false, mainnet, "boringVault", boringVault);
+        setAddress(false, mainnet, "managerAddress", managerAddress);
+        setAddress(false, mainnet, "accountantAddress", accountantAddress);
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", itbDecoderAndSanitizer);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](1024);
 
         // ========================== ITB Karak Position Managers ==========================
         _addLeafsForITBKarakPositionManager(
-            leafs, itbDecoderAndSanitizer, itbKmETHPositionManager, kmETH, vaultSupervisor
+            leafs,
+            itbDecoderAndSanitizer,
+            itbKmETHPositionManager,
+            getAddress(sourceChain, "kmETH"),
+            getAddress(sourceChain, "vaultSupervisor")
         );
         _addLeafsForITBKarakPositionManager(
-            leafs, itbDecoderAndSanitizer, itbKweETHPositionManager, kweETH, vaultSupervisor
+            leafs,
+            itbDecoderAndSanitizer,
+            itbKweETHPositionManager,
+            getAddress(sourceChain, "kweETH"),
+            getAddress(sourceChain, "vaultSupervisor")
         );
         _addLeafsForITBKarakPositionManager(
-            leafs, itbDecoderAndSanitizer, itbKwstETHPositionManager, kwstETH, vaultSupervisor
+            leafs,
+            itbDecoderAndSanitizer,
+            itbKwstETHPositionManager,
+            getAddress(sourceChain, "kwstETH"),
+            getAddress(sourceChain, "vaultSupervisor")
         );
         _addLeafsForITBKarakPositionManager(
-            leafs, itbDecoderAndSanitizer, itbKrETHPositionManager, krETH, vaultSupervisor
+            leafs,
+            itbDecoderAndSanitizer,
+            itbKrETHPositionManager,
+            getAddress(sourceChain, "krETH"),
+            getAddress(sourceChain, "vaultSupervisor")
         );
         _addLeafsForITBKarakPositionManager(
-            leafs, itbDecoderAndSanitizer, itbKcbETHPositionManager, kcbETH, vaultSupervisor
+            leafs,
+            itbDecoderAndSanitizer,
+            itbKcbETHPositionManager,
+            getAddress(sourceChain, "kcbETH"),
+            getAddress(sourceChain, "vaultSupervisor")
         );
         _addLeafsForITBKarakPositionManager(
-            leafs, itbDecoderAndSanitizer, itbKwBETHPositionManager, kwBETH, vaultSupervisor
+            leafs,
+            itbDecoderAndSanitizer,
+            itbKwBETHPositionManager,
+            getAddress(sourceChain, "kwBETH"),
+            getAddress(sourceChain, "vaultSupervisor")
         );
         _addLeafsForITBKarakPositionManager(
-            leafs, itbDecoderAndSanitizer, itbKswETHPositionManager, kswETH, vaultSupervisor
+            leafs,
+            itbDecoderAndSanitizer,
+            itbKswETHPositionManager,
+            getAddress(sourceChain, "kswETH"),
+            getAddress(sourceChain, "vaultSupervisor")
         );
         _addLeafsForITBKarakPositionManager(
-            leafs, itbDecoderAndSanitizer, itbKETHxPositionManager, kETHx, vaultSupervisor
+            leafs,
+            itbDecoderAndSanitizer,
+            itbKETHxPositionManager,
+            getAddress(sourceChain, "kETHx"),
+            getAddress(sourceChain, "vaultSupervisor")
         );
         _addLeafsForITBKarakPositionManager(
-            leafs, itbDecoderAndSanitizer, itbKsfrxETHPositionManager, ksfrxETH, vaultSupervisor
+            leafs,
+            itbDecoderAndSanitizer,
+            itbKsfrxETHPositionManager,
+            getAddress(sourceChain, "ksfrxETH"),
+            getAddress(sourceChain, "vaultSupervisor")
         );
         _addLeafsForITBKarakPositionManager(
-            leafs, itbDecoderAndSanitizer, itbKrswETHPositionManager, krswETH, vaultSupervisor
+            leafs,
+            itbDecoderAndSanitizer,
+            itbKrswETHPositionManager,
+            getAddress(sourceChain, "krswETH"),
+            getAddress(sourceChain, "vaultSupervisor")
         );
 
         // ========================== Lido ==========================
@@ -90,154 +136,154 @@ contract CreateKarakVaultMerkleRootScript is BaseMerkleRootGenerator {
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](55);
-        token0[0] = address(WETH);
-        token0[1] = address(WETH);
-        token0[2] = address(WETH);
-        token0[3] = address(WETH);
-        token0[4] = address(WETH);
-        token0[5] = address(WETH);
-        token0[6] = address(WETH);
-        token0[7] = address(WETH);
-        token0[8] = address(WETH);
-        token0[9] = address(WETH);
-        token0[10] = address(WEETH);
-        token0[11] = address(WEETH);
-        token0[12] = address(WEETH);
-        token0[13] = address(WEETH);
-        token0[14] = address(WEETH);
-        token0[15] = address(WEETH);
-        token0[16] = address(WEETH);
-        token0[17] = address(WEETH);
-        token0[18] = address(WEETH);
-        token0[19] = address(WSTETH);
-        token0[20] = address(WSTETH);
-        token0[21] = address(WSTETH);
-        token0[22] = address(WSTETH);
-        token0[23] = address(WSTETH);
-        token0[24] = address(WSTETH);
-        token0[25] = address(WSTETH);
-        token0[26] = address(WSTETH);
-        token0[27] = address(RETH);
-        token0[28] = address(RETH);
-        token0[29] = address(RETH);
-        token0[30] = address(RETH);
-        token0[31] = address(RETH);
-        token0[32] = address(RETH);
-        token0[33] = address(RETH);
-        token0[34] = address(cbETH);
-        token0[35] = address(cbETH);
-        token0[36] = address(cbETH);
-        token0[37] = address(cbETH);
-        token0[38] = address(cbETH);
-        token0[39] = address(cbETH);
-        token0[40] = address(WBETH);
-        token0[41] = address(WBETH);
-        token0[42] = address(WBETH);
-        token0[43] = address(WBETH);
-        token0[44] = address(WBETH);
-        token0[45] = address(METH);
-        token0[46] = address(METH);
-        token0[47] = address(METH);
-        token0[48] = address(METH);
-        token0[49] = address(SWETH);
-        token0[50] = address(SWETH);
-        token0[51] = address(SWETH);
-        token0[52] = address(ETHX);
-        token0[53] = address(ETHX);
-        token0[54] = address(RSWETH);
+        token0[0] = getAddress(sourceChain, "WETH");
+        token0[1] = getAddress(sourceChain, "WETH");
+        token0[2] = getAddress(sourceChain, "WETH");
+        token0[3] = getAddress(sourceChain, "WETH");
+        token0[4] = getAddress(sourceChain, "WETH");
+        token0[5] = getAddress(sourceChain, "WETH");
+        token0[6] = getAddress(sourceChain, "WETH");
+        token0[7] = getAddress(sourceChain, "WETH");
+        token0[8] = getAddress(sourceChain, "WETH");
+        token0[9] = getAddress(sourceChain, "WETH");
+        token0[10] = getAddress(sourceChain, "WEETH");
+        token0[11] = getAddress(sourceChain, "WEETH");
+        token0[12] = getAddress(sourceChain, "WEETH");
+        token0[13] = getAddress(sourceChain, "WEETH");
+        token0[14] = getAddress(sourceChain, "WEETH");
+        token0[15] = getAddress(sourceChain, "WEETH");
+        token0[16] = getAddress(sourceChain, "WEETH");
+        token0[17] = getAddress(sourceChain, "WEETH");
+        token0[18] = getAddress(sourceChain, "WEETH");
+        token0[19] = getAddress(sourceChain, "WSTETH");
+        token0[20] = getAddress(sourceChain, "WSTETH");
+        token0[21] = getAddress(sourceChain, "WSTETH");
+        token0[22] = getAddress(sourceChain, "WSTETH");
+        token0[23] = getAddress(sourceChain, "WSTETH");
+        token0[24] = getAddress(sourceChain, "WSTETH");
+        token0[25] = getAddress(sourceChain, "WSTETH");
+        token0[26] = getAddress(sourceChain, "WSTETH");
+        token0[27] = getAddress(sourceChain, "RETH");
+        token0[28] = getAddress(sourceChain, "RETH");
+        token0[29] = getAddress(sourceChain, "RETH");
+        token0[30] = getAddress(sourceChain, "RETH");
+        token0[31] = getAddress(sourceChain, "RETH");
+        token0[32] = getAddress(sourceChain, "RETH");
+        token0[33] = getAddress(sourceChain, "RETH");
+        token0[34] = getAddress(sourceChain, "cbETH");
+        token0[35] = getAddress(sourceChain, "cbETH");
+        token0[36] = getAddress(sourceChain, "cbETH");
+        token0[37] = getAddress(sourceChain, "cbETH");
+        token0[38] = getAddress(sourceChain, "cbETH");
+        token0[39] = getAddress(sourceChain, "cbETH");
+        token0[40] = getAddress(sourceChain, "WBETH");
+        token0[41] = getAddress(sourceChain, "WBETH");
+        token0[42] = getAddress(sourceChain, "WBETH");
+        token0[43] = getAddress(sourceChain, "WBETH");
+        token0[44] = getAddress(sourceChain, "WBETH");
+        token0[45] = getAddress(sourceChain, "METH");
+        token0[46] = getAddress(sourceChain, "METH");
+        token0[47] = getAddress(sourceChain, "METH");
+        token0[48] = getAddress(sourceChain, "METH");
+        token0[49] = getAddress(sourceChain, "SWETH");
+        token0[50] = getAddress(sourceChain, "SWETH");
+        token0[51] = getAddress(sourceChain, "SWETH");
+        token0[52] = getAddress(sourceChain, "ETHX");
+        token0[53] = getAddress(sourceChain, "ETHX");
+        token0[54] = getAddress(sourceChain, "RSWETH");
 
         address[] memory token1 = new address[](55);
-        token1[0] = address(WEETH);
-        token1[1] = address(WSTETH);
-        token1[2] = address(RETH);
-        token1[3] = address(cbETH);
-        token1[4] = address(WBETH);
-        token1[5] = address(METH);
-        token1[6] = address(SWETH);
-        token1[7] = address(ETHX);
-        token1[8] = address(RSWETH);
-        token1[9] = address(SFRXETH);
-        token1[10] = address(WSTETH);
-        token1[11] = address(RETH);
-        token1[12] = address(cbETH);
-        token1[13] = address(WBETH);
-        token1[14] = address(METH);
-        token1[15] = address(SWETH);
-        token1[16] = address(ETHX);
-        token1[17] = address(RSWETH);
-        token1[18] = address(SFRXETH);
-        token1[19] = address(RETH);
-        token1[20] = address(cbETH);
-        token1[21] = address(WBETH);
-        token1[22] = address(METH);
-        token1[23] = address(SWETH);
-        token1[24] = address(ETHX);
-        token1[25] = address(RSWETH);
-        token1[26] = address(SFRXETH);
-        token1[27] = address(cbETH);
-        token1[28] = address(WBETH);
-        token1[29] = address(METH);
-        token1[30] = address(SWETH);
-        token1[31] = address(ETHX);
-        token1[32] = address(RSWETH);
-        token1[33] = address(SFRXETH);
-        token1[34] = address(WBETH);
-        token1[35] = address(METH);
-        token1[36] = address(SWETH);
-        token1[37] = address(ETHX);
-        token1[38] = address(RSWETH);
-        token1[39] = address(SFRXETH);
-        token1[40] = address(METH);
-        token1[41] = address(SWETH);
-        token1[42] = address(ETHX);
-        token1[43] = address(RSWETH);
-        token1[44] = address(SFRXETH);
-        token1[45] = address(SWETH);
-        token1[46] = address(ETHX);
-        token1[47] = address(RSWETH);
-        token1[48] = address(SFRXETH);
-        token1[49] = address(ETHX);
-        token1[50] = address(RSWETH);
-        token1[51] = address(SFRXETH);
-        token1[52] = address(RSWETH);
-        token1[53] = address(SFRXETH);
-        token1[54] = address(SFRXETH);
+        token1[0] = getAddress(sourceChain, "WEETH");
+        token1[1] = getAddress(sourceChain, "WSTETH");
+        token1[2] = getAddress(sourceChain, "RETH");
+        token1[3] = getAddress(sourceChain, "cbETH");
+        token1[4] = getAddress(sourceChain, "WBETH");
+        token1[5] = getAddress(sourceChain, "METH");
+        token1[6] = getAddress(sourceChain, "SWETH");
+        token1[7] = getAddress(sourceChain, "ETHX");
+        token1[8] = getAddress(sourceChain, "RSWETH");
+        token1[9] = getAddress(sourceChain, "SFRXETH");
+        token1[10] = getAddress(sourceChain, "WSTETH");
+        token1[11] = getAddress(sourceChain, "RETH");
+        token1[12] = getAddress(sourceChain, "cbETH");
+        token1[13] = getAddress(sourceChain, "WBETH");
+        token1[14] = getAddress(sourceChain, "METH");
+        token1[15] = getAddress(sourceChain, "SWETH");
+        token1[16] = getAddress(sourceChain, "ETHX");
+        token1[17] = getAddress(sourceChain, "RSWETH");
+        token1[18] = getAddress(sourceChain, "SFRXETH");
+        token1[19] = getAddress(sourceChain, "RETH");
+        token1[20] = getAddress(sourceChain, "cbETH");
+        token1[21] = getAddress(sourceChain, "WBETH");
+        token1[22] = getAddress(sourceChain, "METH");
+        token1[23] = getAddress(sourceChain, "SWETH");
+        token1[24] = getAddress(sourceChain, "ETHX");
+        token1[25] = getAddress(sourceChain, "RSWETH");
+        token1[26] = getAddress(sourceChain, "SFRXETH");
+        token1[27] = getAddress(sourceChain, "cbETH");
+        token1[28] = getAddress(sourceChain, "WBETH");
+        token1[29] = getAddress(sourceChain, "METH");
+        token1[30] = getAddress(sourceChain, "SWETH");
+        token1[31] = getAddress(sourceChain, "ETHX");
+        token1[32] = getAddress(sourceChain, "RSWETH");
+        token1[33] = getAddress(sourceChain, "SFRXETH");
+        token1[34] = getAddress(sourceChain, "WBETH");
+        token1[35] = getAddress(sourceChain, "METH");
+        token1[36] = getAddress(sourceChain, "SWETH");
+        token1[37] = getAddress(sourceChain, "ETHX");
+        token1[38] = getAddress(sourceChain, "RSWETH");
+        token1[39] = getAddress(sourceChain, "SFRXETH");
+        token1[40] = getAddress(sourceChain, "METH");
+        token1[41] = getAddress(sourceChain, "SWETH");
+        token1[42] = getAddress(sourceChain, "ETHX");
+        token1[43] = getAddress(sourceChain, "RSWETH");
+        token1[44] = getAddress(sourceChain, "SFRXETH");
+        token1[45] = getAddress(sourceChain, "SWETH");
+        token1[46] = getAddress(sourceChain, "ETHX");
+        token1[47] = getAddress(sourceChain, "RSWETH");
+        token1[48] = getAddress(sourceChain, "SFRXETH");
+        token1[49] = getAddress(sourceChain, "ETHX");
+        token1[50] = getAddress(sourceChain, "RSWETH");
+        token1[51] = getAddress(sourceChain, "SFRXETH");
+        token1[52] = getAddress(sourceChain, "RSWETH");
+        token1[53] = getAddress(sourceChain, "SFRXETH");
+        token1[54] = getAddress(sourceChain, "SFRXETH");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
         // ========================== 1inch ==========================
         address[] memory assets = new address[](12);
         SwapKind[] memory kind = new SwapKind[](12);
-        assets[0] = address(WETH);
+        assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
-        assets[1] = address(WEETH);
+        assets[1] = getAddress(sourceChain, "WEETH");
         kind[1] = SwapKind.BuyAndSell;
-        assets[2] = address(WSTETH);
+        assets[2] = getAddress(sourceChain, "WSTETH");
         kind[2] = SwapKind.BuyAndSell;
-        assets[3] = address(RETH);
+        assets[3] = getAddress(sourceChain, "RETH");
         kind[3] = SwapKind.BuyAndSell;
-        assets[4] = address(cbETH);
+        assets[4] = getAddress(sourceChain, "cbETH");
         kind[4] = SwapKind.BuyAndSell;
-        assets[5] = address(WBETH);
+        assets[5] = getAddress(sourceChain, "WBETH");
         kind[5] = SwapKind.BuyAndSell;
-        assets[6] = address(METH);
+        assets[6] = getAddress(sourceChain, "METH");
         kind[6] = SwapKind.BuyAndSell;
-        assets[7] = address(SWETH);
+        assets[7] = getAddress(sourceChain, "SWETH");
         kind[7] = SwapKind.BuyAndSell;
-        assets[8] = address(ETHX);
+        assets[8] = getAddress(sourceChain, "ETHX");
         kind[8] = SwapKind.BuyAndSell;
-        assets[9] = address(RSWETH);
+        assets[9] = getAddress(sourceChain, "RSWETH");
         kind[9] = SwapKind.BuyAndSell;
-        assets[10] = address(SFRXETH);
+        assets[10] = getAddress(sourceChain, "SFRXETH");
         kind[10] = SwapKind.BuyAndSell;
-        assets[11] = address(INST);
+        assets[11] = getAddress(sourceChain, "INST");
         kind[11] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         /**
          * deposit, withdraw
          */
-        _addERC4626Leafs(leafs, ERC4626(address(SFRXETH)));
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "SFRXETH")));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
