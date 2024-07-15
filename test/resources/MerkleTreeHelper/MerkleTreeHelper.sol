@@ -2332,6 +2332,142 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Fluid FToken =========================================
+
+    function _addFluidFTokenLeafs(ManageLeaf[] memory leafs, address fToken) internal {
+        ERC20 asset = ERC4626(fToken).asset();
+        // Approval.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(asset),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Fluid ", ERC20(fToken).symbol(), " to spend ", asset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = fToken;
+
+        // Depositing
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            fToken,
+            false,
+            "deposit(uint256,address,uint256)",
+            new address[](1),
+            string.concat("Deposit ", asset.symbol(), " for ", ERC20(fToken).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        // Withdrawing
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            fToken,
+            false,
+            "withdraw(uint256,address,address,uint256)",
+            new address[](2),
+            string.concat("Withdraw ", asset.symbol(), " from ", ERC20(fToken).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+
+        // Minting
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            fToken,
+            false,
+            "mint(uint256,address,uint256)",
+            new address[](1),
+            string.concat("Mint ", ERC20(fToken).symbol(), " using ", asset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+        // Redeeming
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            fToken,
+            false,
+            "redeem(uint256,address,address,uint256)",
+            new address[](2),
+            string.concat("Redeem ", ERC20(fToken).symbol(), " for ", asset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+    }
+
+    // ========================================= Symbiotic =========================================
+
+    function _addSymbioticApproveAndDepositLeaf(ManageLeaf[] memory leafs, address defaultCollateral) internal {
+        ERC4626 dc = ERC4626(defaultCollateral);
+        ERC20 depositAsset = dc.asset();
+        // Approve
+        if (!tokenToSpenderToApprovalInTree[address(depositAsset)][defaultCollateral]) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(depositAsset),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Symbiotic ", dc.name(), " to spend ", depositAsset.symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = defaultCollateral;
+            tokenToSpenderToApprovalInTree[address(depositAsset)][defaultCollateral] = true;
+        }
+        // Deposit
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            defaultCollateral,
+            false,
+            "deposit(address,uint256)",
+            new address[](1),
+            string.concat("Deposit ", depositAsset.symbol(), " into Symbiotic ", ERC20(defaultCollateral).name()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+    }
+
+    function _addSymbioticLeafs(ManageLeaf[] memory leafs, address[] memory defaultCollaterals) internal {
+        for (uint256 i; i < defaultCollaterals.length; i++) {
+            _addSymbioticApproveAndDepositLeaf(leafs, defaultCollaterals[i]);
+            // Withdraw
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                defaultCollaterals[i],
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                string.concat(
+                    "Withdraw ",
+                    ERC20(defaultCollaterals[i]).symbol(),
+                    " from Symbiotic ",
+                    ERC20(defaultCollaterals[i]).name()
+                ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        }
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
     function _generateTestLeafs(ManageLeaf[] memory leafs, bytes32[][] memory manageTree) internal {
         string memory filePath = "./leafs/TemporaryLeafs.json";

@@ -8,15 +8,18 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
-import {EtherFiLiquidUsdDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
+import {SymbioticLRTDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/SymbioticLRTDecoderAndSanitizer.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
+import {
+    PointFarmingDecoderAndSanitizer,
+    EigenLayerLSTStakingDecoderAndSanitizer
+} from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract EthenaWithdrawIntegrationTest is Test, MerkleTreeHelper {
+contract SymbioticIntegrationTest is Test, MerkleTreeHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -37,7 +40,7 @@ contract EthenaWithdrawIntegrationTest is Test, MerkleTreeHelper {
         setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 19826676;
+        uint256 blockNumber = 20072076;
 
         _startFork(rpcKey, blockNumber);
 
@@ -47,7 +50,7 @@ contract EthenaWithdrawIntegrationTest is Test, MerkleTreeHelper {
             new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
 
         rawDataDecoderAndSanitizer = address(
-            new EtherFiLiquidUsdDecoderAndSanitizer(
+            new SymbioticLRTDecoderAndSanitizer(
                 address(boringVault), getAddress(sourceChain, "uniswapV3NonFungiblePositionManager")
             )
         );
@@ -105,73 +108,68 @@ contract EthenaWithdrawIntegrationTest is Test, MerkleTreeHelper {
         rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
         rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
         rolesAuthority.setUserRole(getAddress(sourceChain, "vault"), BALANCER_VAULT_ROLE, true);
+
+        // Allow the boring vault to receive ETH.
+        rolesAuthority.setPublicCapability(address(boringVault), bytes4(0), true);
     }
 
-    function testEthenaWithdrawIntegration() external {
-        // Give BoringVault some sUSDE.
-        uint256 assets = 100_000e18;
-        deal(getAddress(sourceChain, "SUSDE"), address(boringVault), assets);
+    function testSymbioticIntegration() external {
+        deal(getAddress(sourceChain, "METH"), address(boringVault), 100e18);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](4);
-        _addEthenaSUSDeWithdrawLeafs(leafs);
+        address[] memory defaultCollaterals = new address[](1);
+        defaultCollaterals[0] = getAddress(sourceChain, "mETHDefaultCollateral");
+        _addSymbioticLeafs(leafs, defaultCollaterals);
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "mETHDefaultCollateral"),
+            false,
+            "issueDebt(address,uint256)",
+            new address[](1),
+            "Issue Debt",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(boringVault);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](4);
+
         manageLeafs[0] = leafs[0];
         manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
 
-        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+        (bytes32[][] memory manageProofs) = _getProofsUsingTree(manageLeafs, manageTree);
 
-        address[] memory targets = new address[](2);
-        targets[0] = getAddress(sourceChain, "SUSDE");
-        targets[1] = getAddress(sourceChain, "SUSDE");
+        address[] memory targets = new address[](4);
+        targets[0] = getAddress(sourceChain, "METH");
+        targets[1] = getAddress(sourceChain, "mETHDefaultCollateral");
+        targets[2] = getAddress(sourceChain, "mETHDefaultCollateral");
+        targets[3] = getAddress(sourceChain, "mETHDefaultCollateral");
 
-        bytes[] memory targetData = new bytes[](2);
-        targetData[0] = abi.encodeWithSignature("cooldownAssets(uint256)", assets / 2);
-        uint256 shares = ERC4626(getAddress(sourceChain, "SUSDE")).previewWithdraw(assets / 2);
-        targetData[1] = abi.encodeWithSignature("cooldownShares(uint256)", shares);
+        bytes[] memory targetData = new bytes[](4);
+        targetData[0] =
+            abi.encodeWithSelector(ERC20.approve.selector, getAddress(sourceChain, "mETHDefaultCollateral"), 100e18);
+        targetData[1] = abi.encodeWithSignature("deposit(address,uint256)", boringVault, 100e18);
+        targetData[2] = abi.encodeWithSignature("withdraw(address,uint256)", boringVault, 50e18);
+        targetData[3] = abi.encodeWithSignature("issueDebt(address,uint256)", boringVault, 50e18);
 
-        address[] memory decodersAndSanitizers = new address[](2);
+        uint256[] memory values = new uint256[](4);
+
+        address[] memory decodersAndSanitizers = new address[](4);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
-
-        uint256[] memory values = new uint256[](2);
-
-        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-
-        EthenaSusde susde = EthenaSusde(getAddress(sourceChain, "SUSDE"));
-        (uint104 end, uint152 amount) = susde.cooldowns(address(boringVault));
-        assertGt(end, block.timestamp, "Cooldown end should have been set.");
-        assertEq(amount, assets, "Cooldown amount should equal assets.");
-
-        // Wait the cooldown duration.
-        skip(susde.cooldownDuration());
-
-        manageLeafs = new ManageLeaf[](1);
-        manageLeafs[0] = leafs[2];
-
-        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
-
-        targets = new address[](1);
-        targets[0] = getAddress(sourceChain, "SUSDE");
-
-        targetData = new bytes[](1);
-        targetData[0] = abi.encodeWithSignature("unstake(address)", address(boringVault));
-
-        decodersAndSanitizers = new address[](1);
-        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-
-        values = new uint256[](1);
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
 
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
+        // We withdrew 50, and issued 50 mETH of debt to the BoringVault.
         assertEq(
-            getERC20(sourceChain, "USDE").balanceOf(address(boringVault)),
-            amount,
-            "BoringVault should have received unstaked USDe."
+            getERC20(sourceChain, "METH").balanceOf(address(boringVault)), 100e18, "BoringVault should have 100 mETH."
         );
     }
 
@@ -181,9 +179,4 @@ contract EthenaWithdrawIntegrationTest is Test, MerkleTreeHelper {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
     }
-}
-
-interface EthenaSusde {
-    function cooldownDuration() external view returns (uint24);
-    function cooldowns(address) external view returns (uint104 cooldownEnd, uint152 underlyingAmount);
 }

@@ -16,7 +16,7 @@ import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract EthenaWithdrawIntegrationTest is Test, MerkleTreeHelper {
+contract FluidFTokenIntegrationTest is Test, MerkleTreeHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -107,71 +107,73 @@ contract EthenaWithdrawIntegrationTest is Test, MerkleTreeHelper {
         rolesAuthority.setUserRole(getAddress(sourceChain, "vault"), BALANCER_VAULT_ROLE, true);
     }
 
-    function testEthenaWithdrawIntegration() external {
-        // Give BoringVault some sUSDE.
-        uint256 assets = 100_000e18;
-        deal(getAddress(sourceChain, "SUSDE"), address(boringVault), assets);
+    function testFluidFTokenIntegration() external {
+        // Give BoringVault some USDC.
+        uint256 assets = 100_000e6;
+        deal(getAddress(sourceChain, "USDT"), address(boringVault), assets);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](4);
-        _addEthenaSUSDeWithdrawLeafs(leafs);
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fUSDT"));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](5);
         manageLeafs[0] = leafs[0];
         manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[3];
+        manageLeafs[3] = leafs[2];
+        manageLeafs[4] = leafs[4];
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
-        address[] memory targets = new address[](2);
-        targets[0] = getAddress(sourceChain, "SUSDE");
-        targets[1] = getAddress(sourceChain, "SUSDE");
+        address[] memory targets = new address[](5);
+        targets[0] = getAddress(sourceChain, "USDT");
+        targets[1] = getAddress(sourceChain, "fUSDT");
+        targets[2] = getAddress(sourceChain, "fUSDT");
+        targets[3] = getAddress(sourceChain, "fUSDT");
+        targets[4] = getAddress(sourceChain, "fUSDT");
 
-        bytes[] memory targetData = new bytes[](2);
-        targetData[0] = abi.encodeWithSignature("cooldownAssets(uint256)", assets / 2);
-        uint256 shares = ERC4626(getAddress(sourceChain, "SUSDE")).previewWithdraw(assets / 2);
-        targetData[1] = abi.encodeWithSignature("cooldownShares(uint256)", shares);
+        bytes[] memory targetData = new bytes[](5);
+        targetData[0] =
+            abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "fUSDT"), type(uint256).max);
+        targetData[1] = abi.encodeWithSignature("deposit(uint256,address,uint256)", assets / 2, address(boringVault), 0);
+        targetData[2] = abi.encodeWithSignature(
+            "mint(uint256,address,uint256)", type(uint256).max, address(boringVault), type(uint256).max
+        ); // Use first type uint256 max to specify to use full USDT balanace.
+        targetData[3] = abi.encodeWithSignature(
+            "withdraw(uint256,address,address,uint256)",
+            assets / 2,
+            address(boringVault),
+            address(boringVault),
+            type(uint256).max
+        );
+        targetData[4] = abi.encodeWithSignature(
+            "redeem(uint256,address,address,uint256)", type(uint256).max, address(boringVault), address(boringVault), 0
+        );
 
-        address[] memory decodersAndSanitizers = new address[](2);
+        address[] memory decodersAndSanitizers = new address[](5);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
 
-        uint256[] memory values = new uint256[](2);
-
-        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-
-        EthenaSusde susde = EthenaSusde(getAddress(sourceChain, "SUSDE"));
-        (uint104 end, uint152 amount) = susde.cooldowns(address(boringVault));
-        assertGt(end, block.timestamp, "Cooldown end should have been set.");
-        assertEq(amount, assets, "Cooldown amount should equal assets.");
-
-        // Wait the cooldown duration.
-        skip(susde.cooldownDuration());
-
-        manageLeafs = new ManageLeaf[](1);
-        manageLeafs[0] = leafs[2];
-
-        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
-
-        targets = new address[](1);
-        targets[0] = getAddress(sourceChain, "SUSDE");
-
-        targetData = new bytes[](1);
-        targetData[0] = abi.encodeWithSignature("unstake(address)", address(boringVault));
-
-        decodersAndSanitizers = new address[](1);
-        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-
-        values = new uint256[](1);
+        uint256[] memory values = new uint256[](5);
 
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
+        assertApproxEqAbs(
+            getERC20(sourceChain, "USDT").balanceOf(address(boringVault)),
+            assets,
+            2,
+            "BoringVault should have received all USDT back."
+        );
         assertEq(
-            getERC20(sourceChain, "USDE").balanceOf(address(boringVault)),
-            amount,
-            "BoringVault should have received unstaked USDe."
+            getERC20(sourceChain, "fUSDT").balanceOf(address(boringVault)),
+            0,
+            "BoringVault should have withdrawn all fUSDT."
         );
     }
 
