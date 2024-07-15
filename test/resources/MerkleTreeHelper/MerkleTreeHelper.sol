@@ -2198,6 +2198,57 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[4] = lst;
     }
 
+    // ========================================= Swell Simple Staking =========================================
+
+    function _addSwellSimpleStakingLeafs(ManageLeaf[] memory leafs, address asset, address _swellSimpleStaking)
+        internal
+    {
+        // Approval
+        if (!tokenToSpenderToApprovalInTree[asset][_swellSimpleStaking]) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                asset,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Swell Simple Staking to spend ", ERC20(asset).symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = _swellSimpleStaking;
+            tokenToSpenderToApprovalInTree[asset][_swellSimpleStaking] = true;
+        }
+        // deposit
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            _swellSimpleStaking,
+            false,
+            "deposit(address,uint256,address)",
+            new address[](2),
+            string.concat("Deposit ", ERC20(asset).symbol(), " into Swell Simple Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = asset;
+        leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+        // withdraw
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            _swellSimpleStaking,
+            false,
+            "withdraw(address,uint256,address)",
+            new address[](2),
+            string.concat("Withdraw ", ERC20(asset).symbol(), " from Swell Simple Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = asset;
+        leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
     function _generateTestLeafs(ManageLeaf[] memory leafs, bytes32[][] memory manageTree) internal {
         string memory filePath = "./leafs/TemporaryLeafs.json";
