@@ -129,7 +129,6 @@ contract AaveV3IntegrationTest is Test, MerkleTreeHelper {
         _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-        _generateTestLeafs(leafs, manageTree);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 

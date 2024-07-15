@@ -127,7 +127,6 @@ contract MorphoBlueIntegrationTest is Test, MerkleTreeHelper {
         _addMorphoBlueCollateralLeafs(leafs, getBytes32(sourceChain, "weETH_wETH_86_market"));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-        _generateTestLeafs(leafs, manageTree);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
@@ -238,7 +237,6 @@ contract MorphoBlueIntegrationTest is Test, MerkleTreeHelper {
         _addMorphoBlueCollateralLeafs(leafs, getBytes32(sourceChain, "weETH_wETH_86_market"));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-        _generateTestLeafs(leafs, manageTree);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 

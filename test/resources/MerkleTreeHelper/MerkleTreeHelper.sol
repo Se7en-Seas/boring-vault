@@ -2249,6 +2249,54 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Zircuit Staking =========================================
+
+    function _addZircuitLeafs(ManageLeaf[] memory leafs, address asset, address _zircuitSimpleStaking) internal {
+        // Approval
+        if (!tokenToSpenderToApprovalInTree[asset][_zircuitSimpleStaking]) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                asset,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Zircuit simple staking to spend ", ERC20(asset).symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = _zircuitSimpleStaking;
+            tokenToSpenderToApprovalInTree[asset][_zircuitSimpleStaking] = true;
+        }
+        // deposit
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            _zircuitSimpleStaking,
+            false,
+            "depositFor(address,address,uint256)",
+            new address[](2),
+            string.concat("Deposit ", ERC20(asset).symbol(), " into Zircuit simple staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = asset;
+        leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+        // withdraw
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            _zircuitSimpleStaking,
+            false,
+            "withdraw(address,uint256)",
+            new address[](1),
+            string.concat("Withdraw ", ERC20(asset).symbol(), " from Zircuit simple staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = asset;
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
     function _generateTestLeafs(ManageLeaf[] memory leafs, bytes32[][] memory manageTree) internal {
         string memory filePath = "./leafs/TemporaryLeafs.json";
