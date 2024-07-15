@@ -10,10 +10,6 @@ import "forge-std/Base.sol";
 
 contract MerkleTreeHelper is CommonBase, ChainValues {
     string public sourceChain;
-    address public _boringVault;
-    address public _rawDataDecoderAndSanitizer;
-    address public _managerAddress;
-    address public _accountantAddress;
     uint256 leafIndex = type(uint256).max;
 
     mapping(address => mapping(address => bool)) public tokenToSpenderToApprovalInTree;
@@ -2297,6 +2293,45 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[0] = asset;
     }
 
+    // ========================================= Ethena Withdraws =========================================
+
+    function _addEthenaSUSDeWithdrawLeafs(ManageLeaf[] memory leafs) internal {
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "SUSDE"),
+            false,
+            "cooldownAssets(uint256)",
+            new address[](0),
+            "Withdraw from sUSDe specifying asset amount.",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "SUSDE"),
+            false,
+            "cooldownShares(uint256)",
+            new address[](0),
+            "Withdraw from sUSDe specifying share amount.",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "SUSDE"),
+            false,
+            "unstake(address)",
+            new address[](1),
+            "Complete withdraw from sUSDe.",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
     function _generateTestLeafs(ManageLeaf[] memory leafs, bytes32[][] memory manageTree) internal {
         string memory filePath = "./leafs/TemporaryLeafs.json";
@@ -2309,11 +2344,6 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         bytes32 manageRoot,
         bytes32[][] memory manageTree
     ) internal {
-        _boringVault = getAddress(sourceChain, "boringVault");
-        _rawDataDecoderAndSanitizer = getAddress(sourceChain, "rawDataDecoderAndSanitizer");
-        _managerAddress = getAddress(sourceChain, "managerAddress");
-        _accountantAddress = getAddress(sourceChain, "accountantAddress");
-
         if (vm.exists(filePath)) {
             // Need to delete it
             vm.removeFile(filePath);
@@ -2338,10 +2368,12 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
         vm.serializeUint(metadata, "TreeCapacity", leafs.length);
         vm.serializeString(metadata, "DigestComposition", composition);
-        vm.serializeAddress(metadata, "BoringVaultAddress", _boringVault);
-        vm.serializeAddress(metadata, "DecoderAndSanitizerAddress", _rawDataDecoderAndSanitizer);
-        vm.serializeAddress(metadata, "ManagerAddress", _managerAddress);
-        vm.serializeAddress(metadata, "AccountantAddress", _accountantAddress);
+        vm.serializeAddress(metadata, "BoringVaultAddress", getAddress(sourceChain, "boringVault"));
+        vm.serializeAddress(
+            metadata, "DecoderAndSanitizerAddress", getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        vm.serializeAddress(metadata, "ManagerAddress", getAddress(sourceChain, "managerAddress"));
+        vm.serializeAddress(metadata, "AccountantAddress", getAddress(sourceChain, "accountantAddress"));
         string memory finalMetadata = vm.serializeBytes32(metadata, "ManageRoot", manageRoot);
 
         vm.writeLine(filePath, finalMetadata);
