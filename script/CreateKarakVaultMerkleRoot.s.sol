@@ -52,6 +52,8 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", itbDecoderAndSanitizer);
 
+        leafIndex = 0;
+
         ManageLeaf[] memory leafs = new ManageLeaf[](1024);
 
         // ========================== ITB Karak Position Managers ==========================
