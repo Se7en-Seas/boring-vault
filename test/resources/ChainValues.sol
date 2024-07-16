@@ -741,5 +741,14 @@ contract ChainValues {
         values[arbitrum]["wETH_weETH_30"] = 0xA169d1aB5c948555954D38700a6cDAA7A4E0c3A0.toBytes32();
         values[arbitrum]["wETH_weETH_05"] = 0xd90660A0b8Ad757e7C1d660CE633776a0862b087.toBytes32();
         values[arbitrum]["wETH_weETH_01"] = 0x14353445c8329Df76e6f15e9EAD18fA2D45A8BB6.toBytes32();
+
+        // Chainlink feeds
+        values[arbitrum]["weETH_ETH_ExchangeRate"] = 0x20bAe7e1De9c596f5F7615aeaa1342Ba99294e12.toBytes32();
+
+        // Fluid fTokens
+        values[arbitrum]["fUSDC"] = 0x1A996cb54bb95462040408C06122D45D6Cdb6096.toBytes32();
+        values[arbitrum]["fUSDT"] = 0x4A03F37e7d3fC243e3f99341d36f4b829BEe5E03.toBytes32();
+        values[arbitrum]["fWETH"] = 0x45Df0656F8aDf017590009d2f1898eeca4F0a205.toBytes32();
+        values[arbitrum]["fWSTETH"] = 0x66C25Cd75EBdAA7E04816F643d8E46cecd3183c9.toBytes32();
     }
 }

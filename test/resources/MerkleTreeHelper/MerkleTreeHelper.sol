@@ -5,10 +5,13 @@ import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {ChainValues} from "test/resources/ChainValues.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 import "forge-std/Base.sol";
 
 contract MerkleTreeHelper is CommonBase, ChainValues {
+    using Address for address;
+
     string public sourceChain;
     uint256 leafIndex = type(uint256).max;
 
@@ -1728,14 +1731,24 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
     }
 
     // ========================================= Pendle Router =========================================
-    // TODO need to add in the arbitrum special case
     function _addPendleMarketLeafs(ManageLeaf[] memory leafs, address marketAddress) internal {
         PendleMarket market = PendleMarket(marketAddress);
         (address sy, address pt, address yt) = market.readTokens();
         PendleSy SY = PendleSy(sy);
         address[] memory possibleTokensIn = SY.getTokensIn();
         address[] memory possibleTokensOut = SY.getTokensOut();
-        (, ERC20 underlyingAsset,) = SY.assetInfo();
+        string memory underlyingAssetDescriptor;
+        {
+            // Some pendle markets report underlying assets that are not actually on the source chain, so handle that edge case.
+            (, ERC20 underlyingAsset,) = SY.assetInfo();
+            if (keccak256(bytes(sourceChain)) == keccak256(bytes(mainnet))) {
+                // Underlying asset is a contract on sourceChain.
+                underlyingAssetDescriptor = underlyingAsset.symbol();
+            } else {
+                // Underlying asset is not a contract on targetChain.
+                underlyingAssetDescriptor = ERC20(sy).symbol();
+            }
+        }
         // Approve router to spend all tokens in, skipping zero addresses.
         for (uint256 i; i < possibleTokensIn.length; ++i) {
             if (
@@ -1767,7 +1780,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             false,
             "approve(address,uint256)",
             new address[](1),
-            string.concat("Approve Pendle router to spend LP-", underlyingAsset.symbol()),
+            string.concat("Approve Pendle router to spend LP-", underlyingAssetDescriptor),
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pendleRouter");
@@ -1880,7 +1893,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             "addLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
             new address[](2),
             string.concat(
-                "Mint LP-", underlyingAsset.symbol(), " using ", ERC20(sy).symbol(), " and ", ERC20(pt).symbol()
+                "Mint LP-", underlyingAssetDescriptor, " using ", ERC20(sy).symbol(), " and ", ERC20(pt).symbol()
             ),
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
@@ -1895,7 +1908,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             "removeLiquidityDualSyAndPt(address,address,uint256,uint256,uint256)",
             new address[](2),
             string.concat(
-                "Burn LP-", underlyingAsset.symbol(), " for ", ERC20(sy).symbol(), " and ", ERC20(pt).symbol()
+                "Burn LP-", underlyingAssetDescriptor, " for ", ERC20(sy).symbol(), " and ", ERC20(pt).symbol()
             ),
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
@@ -1946,7 +1959,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             false,
             "redeemDueInterestAndRewards(address,address[],address[],address[])",
             new address[](4),
-            string.concat("Redeem due interest and rewards for ", underlyingAsset.symbol(), " Pendle"),
+            string.concat("Redeem due interest and rewards for ", underlyingAssetDescriptor, " Pendle"),
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");

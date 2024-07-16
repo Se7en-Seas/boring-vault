@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.21;
 
-import {
-    BaseMerkleRootGenerator, MainnetAddresses
-} from "script/MerkleRootCreation/Arbitrum/BaseMerkleRootGenerator.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
+import "forge-std/Script.sol";
 
 /**
  *  source .env && forge script script/MerkleRootCreation/Arbitrum/CreateMultiChainLiquidEthMerkleRoot.s.sol:CreateMultiChainLiquidEthMerkleRootScript --rpc-url $ARBITRUM_RPC_URL
  */
-contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
+contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
@@ -22,8 +21,6 @@ contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
 
     address public itbDecoderAndSanitizer = 0xEEb53299Cb894968109dfa420D69f0C97c835211;
     address public itbGearboxProtocolPositionManager = 0xad5dB17b44506785931dbc49c8857482c3b4F622;
-
-    MainnetAddresses public mainnetAddresses;
 
     function setUp() external {}
 
@@ -35,22 +32,27 @@ contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
     }
 
     function generateMultiChainLiquidEthStrategistMerkleRoot() public {
-        mainnetAddresses = new MainnetAddresses();
-        updateAddresses(boringVault, rawDataDecoderAndSanitizer, managerAddress, accountantAddress);
+        setSourceChainName(arbitrum);
+        setAddress(false, arbitrum, "boringVault", boringVault);
+        setAddress(false, arbitrum, "managerAddress", managerAddress);
+        setAddress(false, arbitrum, "accountantAddress", accountantAddress);
+        setAddress(false, arbitrum, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+
+        leafIndex = 0;
 
         ManageLeaf[] memory leafs = new ManageLeaf[](256);
 
         // ========================== Aave V3 ==========================
         ERC20[] memory supplyAssets = new ERC20[](4);
-        supplyAssets[0] = WETH;
-        supplyAssets[1] = WEETH;
-        supplyAssets[2] = WSTETH;
-        supplyAssets[3] = RETH;
+        supplyAssets[0] = getERC20(sourceChain, "WETH");
+        supplyAssets[1] = getERC20(sourceChain, "WEETH");
+        supplyAssets[2] = getERC20(sourceChain, "WSTETH");
+        supplyAssets[3] = getERC20(sourceChain, "RETH");
         ERC20[] memory borrowAssets = new ERC20[](4);
-        borrowAssets[0] = WETH;
-        borrowAssets[1] = WEETH;
-        borrowAssets[2] = WSTETH;
-        borrowAssets[3] = RETH;
+        borrowAssets[0] = getERC20(sourceChain, "WETH");
+        borrowAssets[1] = getERC20(sourceChain, "WEETH");
+        borrowAssets[2] = getERC20(sourceChain, "WSTETH");
+        borrowAssets[3] = getERC20(sourceChain, "RETH");
         _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
 
         // ========================== Native ==========================
@@ -60,29 +62,29 @@ contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         _addNativeLeafs(leafs);
 
         // ========================== Gearbox ==========================
-        _addGearboxLeafs(leafs, ERC4626(dWETHV3), sdWETHV3);
+        _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWETHV3")), getAddress(sourceChain, "sdWETHV3"));
 
         // ========================== Pendle ==========================
-        _addPendleMarketLeafs(leafs, pendleWeETHMarketSeptember);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketSeptember"));
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](7);
-        token0[0] = address(WETH);
-        token0[1] = address(WETH);
-        token0[2] = address(WETH);
-        token0[3] = address(WEETH);
-        token0[4] = address(WEETH);
-        token0[5] = address(WSTETH);
-        token0[6] = address(WETH);
+        token0[0] = getAddress(sourceChain, "WETH");
+        token0[1] = getAddress(sourceChain, "WETH");
+        token0[2] = getAddress(sourceChain, "WETH");
+        token0[3] = getAddress(sourceChain, "WEETH");
+        token0[4] = getAddress(sourceChain, "WEETH");
+        token0[5] = getAddress(sourceChain, "WSTETH");
+        token0[6] = getAddress(sourceChain, "WETH");
 
         address[] memory token1 = new address[](7);
-        token1[0] = address(WEETH);
-        token1[1] = address(WSTETH);
-        token1[2] = address(RETH);
-        token1[3] = address(WSTETH);
-        token1[4] = address(RETH);
-        token1[5] = address(RETH);
-        token1[6] = address(SFRXETH);
+        token1[0] = getAddress(sourceChain, "WEETH");
+        token1[1] = getAddress(sourceChain, "WSTETH");
+        token1[2] = getAddress(sourceChain, "RETH");
+        token1[3] = getAddress(sourceChain, "WSTETH");
+        token1[4] = getAddress(sourceChain, "RETH");
+        token1[5] = getAddress(sourceChain, "RETH");
+        token1[6] = getAddress(sourceChain, "SFRXETH");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
@@ -91,72 +93,77 @@ contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
          * Claim fees in USDC, DAI, USDT and USDE
          */
         ERC20[] memory feeAssets = new ERC20[](2);
-        feeAssets[0] = WETH;
-        feeAssets[1] = WEETH;
+        feeAssets[0] = getERC20(sourceChain, "WETH");
+        feeAssets[1] = getERC20(sourceChain, "WEETH");
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
         address[] memory assets = new address[](12);
         SwapKind[] memory kind = new SwapKind[](12);
-        assets[0] = address(WETH);
+        assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
-        assets[1] = address(WEETH);
+        assets[1] = getAddress(sourceChain, "WEETH");
         kind[1] = SwapKind.BuyAndSell;
-        assets[2] = address(WSTETH);
+        assets[2] = getAddress(sourceChain, "WSTETH");
         kind[2] = SwapKind.BuyAndSell;
-        assets[3] = address(RETH);
+        assets[3] = getAddress(sourceChain, "RETH");
         kind[3] = SwapKind.BuyAndSell;
-        assets[4] = address(ARB);
+        assets[4] = getAddress(sourceChain, "ARB");
         kind[4] = SwapKind.Sell;
-        assets[5] = address(CRV);
+        assets[5] = getAddress(sourceChain, "CRV");
         kind[5] = SwapKind.Sell;
-        assets[6] = address(AURA);
+        assets[6] = getAddress(sourceChain, "AURA");
         kind[6] = SwapKind.Sell;
-        assets[7] = address(BAL);
+        assets[7] = getAddress(sourceChain, "BAL");
         kind[7] = SwapKind.Sell;
-        assets[8] = address(PENDLE);
+        assets[8] = getAddress(sourceChain, "PENDLE");
         kind[8] = SwapKind.Sell;
-        assets[9] = address(SFRXETH);
+        assets[9] = getAddress(sourceChain, "SFRXETH");
         kind[9] = SwapKind.BuyAndSell;
-        assets[10] = address(RSR);
+        assets[10] = getAddress(sourceChain, "RSR");
         kind[10] = SwapKind.Sell;
-        assets[11] = address(LINK);
+        assets[11] = getAddress(sourceChain, "LINK");
         kind[11] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
-        _addLeafsFor1InchUniswapV3Swapping(leafs, wstETH_wETH_01);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, wstETH_wETH_05);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, PENDLE_wETH_30);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, wETH_weETH_30);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, wETH_weETH_05);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, wETH_weETH_01);
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "wstETH_wETH_01"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "wstETH_wETH_05"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "PENDLE_wETH_30"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "wETH_weETH_30"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "wETH_weETH_05"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "wETH_weETH_01"));
 
         // ========================== Flashloans ==========================
-        _addBalancerFlashloanLeafs(leafs, address(WETH));
-        _addBalancerFlashloanLeafs(leafs, address(WEETH));
+        _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WETH"));
+        _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WEETH"));
 
         // ========================== Native Bridge Leafs ==========================
         ERC20[] memory bridgeAssets = new ERC20[](3);
-        bridgeAssets[0] = mainnetAddresses.WETH();
-        bridgeAssets[1] = mainnetAddresses.WEETH();
-        bridgeAssets[2] = mainnetAddresses.WSTETH();
+        bridgeAssets[0] = getERC20(mainnet, "WETH");
+        bridgeAssets[1] = getERC20(mainnet, "WEETH");
+        bridgeAssets[2] = getERC20(mainnet, "WSTETH");
         _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
 
         // ========================== CCIP Bridge Leafs ==========================
         ERC20[] memory ccipBridgeAssets = new ERC20[](1);
-        ccipBridgeAssets[0] = WETH;
+        ccipBridgeAssets[0] = getERC20(sourceChain, "WETH");
         ERC20[] memory ccipBridgeFeeAssets = new ERC20[](2);
-        ccipBridgeFeeAssets[0] = WETH;
-        ccipBridgeFeeAssets[1] = LINK;
-        _addCcipBridgeLeafs(leafs, mainnetChainSelector, ccipBridgeAssets, ccipBridgeFeeAssets);
+        ccipBridgeFeeAssets[0] = getERC20(sourceChain, "WETH");
+        ccipBridgeFeeAssets[1] = getERC20(sourceChain, "LINK");
+        _addCcipBridgeLeafs(leafs, ccipMainnetChainSelector, ccipBridgeAssets, ccipBridgeFeeAssets);
 
         // ========================== Fluid fToken ==========================
-        _addFluidFTokenLeafs(leafs, fWETH);
-        _addFluidFTokenLeafs(leafs, fWSTETH);
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fWETH"));
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fWSTETH"));
 
         // iTb
         _addLeafsForItbGearbox(
-            leafs, itbGearboxProtocolPositionManager, WETH, ERC20(dWETHV3), sdWETHV3, "ITB wETH Gearbox"
+            leafs,
+            itbGearboxProtocolPositionManager,
+            getERC20(sourceChain, "WETH"),
+            getERC20(sourceChain, "dWETHV3"),
+            getAddress(sourceChain, "sdWETHV3"),
+            "ITB wETH Gearbox"
         );
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
