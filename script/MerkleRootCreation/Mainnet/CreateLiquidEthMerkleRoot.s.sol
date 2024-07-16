@@ -7,18 +7,19 @@ import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 import "forge-std/Script.sol";
-
 /**
- *  source .env && forge script script/CreateMultiChainLiquidEthMerkleRoot.s.sol:CreateMultiChainLiquidEthMerkleRootScript --rpc-url $MAINNET_RPC_URL
+ *  source .env && forge script script/MerkleRootCreation/Mainnet/CreateLiquidEthMerkleRoot.s.sol --rpc-url $MAINNET_RPC_URL
  */
-contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
+
+contract CreateLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
-    address public rawDataDecoderAndSanitizer = 0x568a4E08909aab6995979dB24B3cdaE00244CeB4;
+    address public rawDataDecoderAndSanitizer = 0x0C8B49b06544fA8B5c85755267498E407433edBB;
+    address public pancakeSwapDataDecoderAndSanitizer = 0x4dE66AA174b99481dAAe12F2Cdd5D76Dc14Eb3BC;
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
-    address public pancakeSwapDataDecoderAndSanitizer = 0x4dE66AA174b99481dAAe12F2Cdd5D76Dc14Eb3BC;
+
     address public itbDecoderAndSanitizer = 0xEEb53299Cb894968109dfa420D69f0C97c835211;
     address public itbReserveProtocolPositionManager = 0x778aC5d0EE062502fADaa2d300a51dE0869f7995;
 
@@ -96,8 +97,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketSeptember"));
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketDecember"));
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleKarakWeETHMarketSeptember"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleZircuitWeETHMarketAugust"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketJuly"));
+        // _addPendleMarketLeafs(leafs, pendleZircuitWeETHMarketAugust);
+        // _addPendleMarketLeafs(leafs, pendleWeETHMarketJuly);
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](7);
@@ -241,24 +242,11 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
             leafs, itbReserveProtocolPositionManager, tokensUsed, "ETHPlus ITB Reserve Protocol Position Manager"
         );
 
-        // ========================== Native Bridge Leafs ==========================
-        ERC20[] memory bridgeAssets = new ERC20[](3);
-        bridgeAssets[0] = getERC20(sourceChain, "WETH");
-        bridgeAssets[1] = getERC20(sourceChain, "WEETH");
-        bridgeAssets[2] = getERC20(sourceChain, "WSTETH");
-        _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
-
-        // ========================== CCIP Bridge Leafs ==========================
-        ERC20[] memory ccipBridgeAssets = new ERC20[](1);
-        ccipBridgeAssets[0] = getERC20(sourceChain, "WETH");
-        ERC20[] memory ccipBridgeFeeAssets = new ERC20[](2);
-        ccipBridgeFeeAssets[0] = getERC20(sourceChain, "WETH");
-        ccipBridgeFeeAssets[1] = getERC20(sourceChain, "LINK");
-        _addCcipBridgeLeafs(leafs, ccipArbitrumChainSelector, ccipBridgeAssets, ccipBridgeFeeAssets);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleZircuitWeETHMarketAugust"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketJuly"));
 
         // ========================== PancakeSwapV3 ==========================
         setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", pancakeSwapDataDecoderAndSanitizer);
-
         token0 = new address[](7);
         token0[0] = getAddress(sourceChain, "WETH");
         token0[1] = getAddress(sourceChain, "WETH");
@@ -281,7 +269,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        string memory filePath = "./leafs/MainnetMultiChainLiquidEthStrategistLeafs.json";
+        string memory filePath = "./leafs/LiquidEthStrategistLeafs.json";
 
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }

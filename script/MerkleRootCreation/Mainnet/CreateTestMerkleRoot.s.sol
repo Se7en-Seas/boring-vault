@@ -11,7 +11,7 @@ import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper
 import "forge-std/Script.sol";
 
 /**
- *  source .env && forge script script/CreateTestMerkleRoot.s.sol:CreateTestMerkleRootScript --rpc-url $MAINNET_RPC_URL --sender 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1
+ *  source .env && forge script script/MerkleRootCreation/Mainnet/CreateTestMerkleRoot.s.sol --rpc-url $MAINNET_RPC_URL --sender 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1
  */
 contract CreateTestMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;

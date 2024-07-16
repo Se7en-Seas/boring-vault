@@ -10,7 +10,7 @@ import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper
 import "forge-std/Script.sol";
 
 /**
- *  source .env && forge script script/CreateBridgingTestMerkleRoot.s.sol:CreateBridgingTestMerkleRootScript --rpc-url $MAINNET_RPC_URL
+ *  source .env && forge script script/MerkleRootCreation/Mainnet/CreateBridgingTestMerkleRoot.s.sol --rpc-url $MAINNET_RPC_URL
  */
 contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
