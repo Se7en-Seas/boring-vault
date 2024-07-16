@@ -34,6 +34,7 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
     address public itbKETHxPositionManager = 0x6fCbdFF6CaBef0cDf1492Dc95FDb34702009358b;
     address public itbKsfrxETHPositionManager = 0x2166064650f7E0E9B6cade910Fa135FC26FED40D;
     address public itbKrswETHPositionManager = 0x94181838802D67C2e71EF3710b03819deD6E7734;
+    address public itbKrsETHPositionManager = 0xCeba81baFc7958ea51731869942326ffddB3554C;
 
     function setUp() external {}
 
@@ -124,6 +125,13 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
             getAddress(sourceChain, "krswETH"),
             getAddress(sourceChain, "vaultSupervisor")
         );
+        _addLeafsForITBKarakPositionManager(
+            leafs,
+            itbDecoderAndSanitizer,
+            itbKrsETHPositionManager,
+            getAddress(sourceChain, "krsETH"),
+            getAddress(sourceChain, "vaultSupervisor")
+        );
 
         // ========================== Lido ==========================
         _addLidoLeafs(leafs);
@@ -135,7 +143,7 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
         _addNativeLeafs(leafs);
 
         // ========================== UniswapV3 ==========================
-        address[] memory token0 = new address[](55);
+        address[] memory token0 = new address[](56);
         token0[0] = getAddress(sourceChain, "WETH");
         token0[1] = getAddress(sourceChain, "WETH");
         token0[2] = getAddress(sourceChain, "WETH");
@@ -191,8 +199,9 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
         token0[52] = getAddress(sourceChain, "ETHX");
         token0[53] = getAddress(sourceChain, "ETHX");
         token0[54] = getAddress(sourceChain, "RSWETH");
+        token0[55] = getAddress(sourceChain, "WETH");
 
-        address[] memory token1 = new address[](55);
+        address[] memory token1 = new address[](56);
         token1[0] = getAddress(sourceChain, "WEETH");
         token1[1] = getAddress(sourceChain, "WSTETH");
         token1[2] = getAddress(sourceChain, "RETH");
@@ -248,12 +257,13 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
         token1[52] = getAddress(sourceChain, "RSWETH");
         token1[53] = getAddress(sourceChain, "SFRXETH");
         token1[54] = getAddress(sourceChain, "SFRXETH");
+        token1[55] = getAddress(sourceChain, "RSETH");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](12);
-        SwapKind[] memory kind = new SwapKind[](12);
+        address[] memory assets = new address[](13);
+        SwapKind[] memory kind = new SwapKind[](13);
         assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "WEETH");
@@ -278,6 +288,8 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
         kind[10] = SwapKind.BuyAndSell;
         assets[11] = getAddress(sourceChain, "INST");
         kind[11] = SwapKind.Sell;
+        assets[12] = getAddress(sourceChain, "RSETH");
+        kind[12] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         /**

@@ -15,13 +15,13 @@ import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
     using FixedPointMathLib for uint256;
 
-    address public boringVault = 0xaA6D4Fb1FF961f8E52334f433974d40484e8be8F;
-    address public rawDataDecoderAndSanitizer = 0xD5678900d413591513216E386332Db21c1bEc131;
-    address public managerAddress = 0x744d1f71a6d064204b4c59Cf2BDCF9De9C6c3430;
-    address public accountantAddress = 0x99c836937305693A5518819ED457B0d3dfE99785;
+    address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
+    address public rawDataDecoderAndSanitizer = 0x0C8B49b06544fA8B5c85755267498E407433edBB;
+    address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
+    address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
 
-    // address public itbDecoderAndSanitizer = 0xEEb53299Cb894968109dfa420D69f0C97c835211;
-    // address public itbReserveProtocolPositionManager = 0x778aC5d0EE062502fADaa2d300a51dE0869f7995;
+    address public itbDecoderAndSanitizer = 0xEEb53299Cb894968109dfa420D69f0C97c835211;
+    address public itbGearboxProtocolPositionManager = 0xad5dB17b44506785931dbc49c8857482c3b4F622;
 
     MainnetAddresses public mainnetAddresses;
 
@@ -150,6 +150,15 @@ contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         ccipBridgeFeeAssets[1] = LINK;
         _addCcipBridgeLeafs(leafs, mainnetChainSelector, ccipBridgeAssets, ccipBridgeFeeAssets);
 
+        // ========================== Fluid fToken ==========================
+        _addFluidFTokenLeafs(leafs, fWETH);
+        _addFluidFTokenLeafs(leafs, fWSTETH);
+
+        // iTb
+        _addLeafsForItbGearbox(
+            leafs, itbGearboxProtocolPositionManager, WETH, ERC20(dWETHV3), sdWETHV3, "ITB wETH Gearbox"
+        );
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/ArbitrumMultiChainLiquidEthStrategistLeafs.json";
@@ -157,134 +166,138 @@ contract CreateMultiChainLiquidEthMerkleRootScript is BaseMerkleRootGenerator {
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 
-    // function _addLeafsForITBPositionManager(
-    //     ManageLeaf[] memory leafs,
-    //     address itbPositionManager,
-    //     ERC20[] memory tokensUsed,
-    //     string memory itbContractName
-    // ) internal {
-    //     // acceptOwnership
-    //     leafIndex++;
-    //     leafs[leafIndex] = ManageLeaf(
-    //         itbPositionManager,
-    //         false,
-    //         "acceptOwnership()",
-    //         new address[](0),
-    //         string.concat("Accept ownership of the ", itbContractName, " contract"),
-    //         itbDecoderAndSanitizer
-    //     );
-    //     for (uint256 i; i < tokensUsed.length; ++i) {
-    //         // Transfer
-    //         leafIndex++;
-    //         leafs[leafIndex] = ManageLeaf(
-    //             address(tokensUsed[i]),
-    //             false,
-    //             "transfer(address,uint256)",
-    //             new address[](1),
-    //             string.concat("Transfer ", tokensUsed[i].symbol(), " to the ", itbContractName, " contract"),
-    //             itbDecoderAndSanitizer
-    //         );
-    //         leafs[leafIndex].argumentAddresses[0] = itbPositionManager;
-    //         // Withdraw
-    //         leafIndex++;
-    //         leafs[leafIndex] = ManageLeaf(
-    //             itbPositionManager,
-    //             false,
-    //             "withdraw(address,uint256)",
-    //             new address[](1),
-    //             string.concat("Withdraw ", tokensUsed[i].symbol(), " from the ", itbContractName, " contract"),
-    //             itbDecoderAndSanitizer
-    //         );
-    //         leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
-    //         // WithdrawAll
-    //         leafIndex++;
-    //         leafs[leafIndex] = ManageLeaf(
-    //             itbPositionManager,
-    //             false,
-    //             "withdrawAll(address)",
-    //             new address[](1),
-    //             string.concat("Withdraw all ", tokensUsed[i].symbol(), " from the ", itbContractName, " contract"),
-    //             itbDecoderAndSanitizer
-    //         );
-    //         leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
-    //     }
-    // }
+    function _addLeafsForITBPositionManager(
+        ManageLeaf[] memory leafs,
+        address itbPositionManager,
+        ERC20[] memory tokensUsed,
+        string memory itbContractName
+    ) internal {
+        // acceptOwnership
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "acceptOwnership()",
+            new address[](0),
+            string.concat("Accept ownership of the ", itbContractName, " contract"),
+            itbDecoderAndSanitizer
+        );
+        for (uint256 i; i < tokensUsed.length; ++i) {
+            // Transfer
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(tokensUsed[i]),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                string.concat("Transfer ", tokensUsed[i].symbol(), " to the ", itbContractName, " contract"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = itbPositionManager;
+            // Withdraw
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbPositionManager,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                string.concat("Withdraw ", tokensUsed[i].symbol(), " from the ", itbContractName, " contract"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
+            // WithdrawAll
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbPositionManager,
+                false,
+                "withdrawAll(address)",
+                new address[](1),
+                string.concat("Withdraw all ", tokensUsed[i].symbol(), " from the ", itbContractName, " contract"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
+        }
+    }
 
-    // function _addLeafsForItbReserve(
-    //     ManageLeaf[] memory leafs,
-    //     address itbPositionManager,
-    //     ERC20[] memory tokensUsed,
-    //     string memory itbContractName
-    // ) internal {
-    //     _addLeafsForITBPositionManager(leafs, itbPositionManager, tokensUsed, itbContractName);
+    function _addLeafsForItbGearbox(
+        ManageLeaf[] memory leafs,
+        address itbPositionManager,
+        ERC20 underlying,
+        ERC20 diesal,
+        address diesalStaking,
+        string memory itbContractName
+    ) internal {
+        ERC20[] memory tokensUsed = new ERC20[](2);
+        tokensUsed[0] = underlying;
+        tokensUsed[1] = diesal;
+        _addLeafsForITBPositionManager(leafs, itbPositionManager, tokensUsed, itbContractName);
 
-    //     // mint
-    //     leafIndex++;
-    //     leafs[leafIndex] = ManageLeaf(
-    //         itbPositionManager,
-    //         false,
-    //         "mint(uint256)",
-    //         new address[](0),
-    //         string.concat("Mint ", itbContractName),
-    //         itbDecoderAndSanitizer
-    //     );
+        // Approvals
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbGearboxProtocolPositionManager,
+            false,
+            "approveToken(address,address,uint256)",
+            new address[](2),
+            string.concat("Approve Gearbox ", diesal.symbol(), " to spend ", underlying.symbol()),
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(underlying);
+        leafs[leafIndex].argumentAddresses[1] = address(diesal);
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbGearboxProtocolPositionManager,
+            false,
+            "approveToken(address,address,uint256)",
+            new address[](2),
+            string.concat("Approve Gearbox s", diesal.symbol(), " to spend ", diesal.symbol()),
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(diesal);
+        leafs[leafIndex].argumentAddresses[1] = address(diesalStaking);
 
-    //     // redeem
-    //     leafIndex++;
-    //     leafs[leafIndex] = ManageLeaf(
-    //         itbPositionManager,
-    //         false,
-    //         "redeem(uint256,uint256[])",
-    //         new address[](0),
-    //         string.concat("Redeem ", itbContractName),
-    //         itbDecoderAndSanitizer
-    //     );
+        // Deposit
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbGearboxProtocolPositionManager,
+            false,
+            "deposit(uint256,uint256)",
+            new address[](0),
+            string.concat("Deposit ", underlying.symbol(), " into Gearbox ", diesal.symbol(), " contract"),
+            itbDecoderAndSanitizer
+        );
 
-    //     // redeemCustom
-    //     leafIndex++;
-    //     leafs[leafIndex] = ManageLeaf(
-    //         itbPositionManager,
-    //         false,
-    //         "redeemCustom(uint256,uint48[],uint192[],address[],uint256[])",
-    //         new address[](tokensUsed.length),
-    //         string.concat("Redeem custom ", itbContractName),
-    //         itbDecoderAndSanitizer
-    //     );
-    //     for (uint256 i; i < tokensUsed.length; ++i) {
-    //         leafs[leafIndex].argumentAddresses[i] = address(tokensUsed[i]);
-    //     }
+        // Withdraw
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbGearboxProtocolPositionManager,
+            false,
+            "withdrawSupply(uint256,uint256)",
+            new address[](0),
+            string.concat("Withdraw ", underlying.symbol(), " from Gearbox ", diesal.symbol(), " contract"),
+            itbDecoderAndSanitizer
+        );
 
-    //     // assemble
-    //     leafIndex++;
-    //     leafs[leafIndex] = ManageLeaf(
-    //         itbPositionManager,
-    //         false,
-    //         "assemble(uint256,uint256)",
-    //         new address[](0),
-    //         string.concat("Assemble ", itbContractName),
-    //         itbDecoderAndSanitizer
-    //     );
+        // Stake
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbGearboxProtocolPositionManager,
+            false,
+            "stake(uint256)",
+            new address[](0),
+            string.concat("Stake ", diesal.symbol(), " into Gearbox s", diesal.symbol(), " contract"),
+            itbDecoderAndSanitizer
+        );
 
-    //     // disassemble
-    //     leafIndex++;
-    //     leafs[leafIndex] = ManageLeaf(
-    //         itbPositionManager,
-    //         false,
-    //         "disassemble(uint256,uint256[])",
-    //         new address[](0),
-    //         string.concat("Disassemble ", itbContractName),
-    //         itbDecoderAndSanitizer
-    //     );
-
-    //     // fullDisassemble
-    //     leafIndex++;
-    //     leafs[leafIndex] = ManageLeaf(
-    //         itbPositionManager,
-    //         false,
-    //         "fullDisassemble(uint256[])",
-    //         new address[](0),
-    //         string.concat("Full disassemble ", itbContractName),
-    //         itbDecoderAndSanitizer
-    //     );
-    // }
+        // Unstake
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbGearboxProtocolPositionManager,
+            false,
+            "unstake(uint256)",
+            new address[](0),
+            string.concat("Unstake ", diesal.symbol(), " from Gearbox s", diesal.symbol(), " contract"),
+            itbDecoderAndSanitizer
+        );
+    }
 }

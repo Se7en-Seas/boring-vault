@@ -1090,6 +1090,7 @@ contract BaseMerkleRootGenerator is Script, MainnetAddresses {
         leafs[leafIndex].argumentAddresses[0] = _boringVault;
 
         // Unstaking
+        leafIndex++;
         leafs[leafIndex] = ManageLeaf(
             pancakeSwapV3MasterChefV3,
             false,
