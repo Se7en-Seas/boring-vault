@@ -19,6 +19,7 @@ contract ChainValues {
     // Bridging constants.
     uint64 public constant ccipArbitrumChainSelector = 4949039107694359620;
     uint64 public constant ccipMainnetChainSelector = 5009297550715157269;
+    uint32 public constant layerZeroBaseEndpointId = 30184;
 
     error ChainValues__ZeroAddress(string chainName, string valueName);
     error ChainValues__ZeroBytes32(string chainName, string valueName);
@@ -642,6 +643,9 @@ contract ChainValues {
         values[mainnet]["baseStandardBridge"] = 0x3154Cf16ccdb4C6d922629664174b904d80F2C35.toBytes32();
         values[mainnet]["basePortal"] = 0x49048044D57e1C92A77f79988d21Fa8fAF74E97e.toBytes32();
         values[mainnet]["baseResolvedDelegate"] = 0x866E82a600A1414e583f7F13623F1aC5d58b0Afa.toBytes32();
+
+        // Layer Zero.
+        values[mainnet]["EtherFiOFTAdapter"] = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D.toBytes32();
     }
 
     function _addBaseValues() private {

@@ -260,6 +260,7 @@ contract DecoderCustomTypes {
     struct MessagingFee {
         uint256 nativeFee;
         uint256 lzTokenFee;
+    }
     // ========================================= L1StandardBridge =========================================
 
     struct WithdrawalTransaction {
