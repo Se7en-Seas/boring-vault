@@ -82,7 +82,7 @@ contract CreateLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addNativeLeafs(leafs);
 
         // ========================== Gearbox ==========================
-        _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWETHV3")), getAddres(sourceChain, "sdWETHV3"));
+        _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWETHV3")), getAddress(sourceChain, "sdWETHV3"));
 
         // ========================== MorphoBlue ==========================
         /**
@@ -174,17 +174,25 @@ contract CreateLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addLeafsForCurveSwapping(leafs, getAddress(sourceChain, "weETH_wETH_NG_Pool"));
 
         // ========================== Swell ==========================
-        _addSwellLeafs(leafs, getAddress(sourceChain, "WEETH"), getAddress(sourceChain, "swellSimpleStaking"));
-        _addSwellLeafs(leafs, getAddress(sourceChain, "WSTETH"), getAddress(sourceChain, "swellSimpleStaking"));
-        _addSwellLeafs(leafs, getAddress(sourceChain, "SFRXETH"), getAddress(sourceChain, "swellSimpleStaking"));
-        _addSwellLeafs(leafs, getAddress(sourceChain, "pendleEethPt"), getAddress(sourceChain, "swellSimpleStaking"));
-        _addSwellLeafs(
+        _addSwellSimpleStakingLeafs(
+            leafs, getAddress(sourceChain, "WEETH"), getAddress(sourceChain, "swellSimpleStaking")
+        );
+        _addSwellSimpleStakingLeafs(
+            leafs, getAddress(sourceChain, "WSTETH"), getAddress(sourceChain, "swellSimpleStaking")
+        );
+        _addSwellSimpleStakingLeafs(
+            leafs, getAddress(sourceChain, "SFRXETH"), getAddress(sourceChain, "swellSimpleStaking")
+        );
+        _addSwellSimpleStakingLeafs(
+            leafs, getAddress(sourceChain, "pendleEethPt"), getAddress(sourceChain, "swellSimpleStaking")
+        );
+        _addSwellSimpleStakingLeafs(
             leafs, getAddress(sourceChain, "pendleEethPtDecember"), getAddress(sourceChain, "swellSimpleStaking")
         );
-        _addSwellLeafs(
+        _addSwellSimpleStakingLeafs(
             leafs, getAddress(sourceChain, "pendleEethPtSeptember"), getAddress(sourceChain, "swellSimpleStaking")
         );
-        _addSwellLeafs(
+        _addSwellSimpleStakingLeafs(
             leafs, getAddress(sourceChain, "pendleZircuitEethPt"), getAddress(sourceChain, "swellSimpleStaking")
         );
 
@@ -193,8 +201,8 @@ contract CreateLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addZircuitLeafs(leafs, getAddress(sourceChain, "WSTETH"), getAddress(sourceChain, "zircuitSimpleStaking"));
 
         // ========================== Balancer ==========================
-        _addBalancerLeafs(leafs, getAddress(sourceChain, "rETH_weETH_id"), getAddress(sourceChain, "rETH_weETH_gauge"));
-        _addBalancerLeafs(leafs, getAddress(sourceChain, "rETH_wETH_id"), getAddress(sourceChain, "rETH_wETH_gauge"));
+        _addBalancerLeafs(leafs, getBytes32(sourceChain, "rETH_weETH_id"), getAddress(sourceChain, "rETH_weETH_gauge"));
+        _addBalancerLeafs(leafs, getBytes32(sourceChain, "rETH_wETH_id"), getAddress(sourceChain, "rETH_wETH_gauge"));
 
         // ========================== Aura ==========================
         _addAuraLeafs(leafs, getAddress(sourceChain, "aura_reth_weeth"));

@@ -171,7 +171,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
     }
 
     // ========================================= Curve/Convex =========================================
-    // TODO
+    // TODO need to use this in the test suite.
     function _addCurveLeafs(ManageLeaf[] memory leafs, address poolAddress, uint256 coinCount, address gauge)
         internal
     {
@@ -183,14 +183,16 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             coins[i] = ERC20(pool.coins(i));
             // Approvals.
             if (!tokenToSpenderToApprovalInTree[address(coins[i])][poolAddress]) {
-                leafIndex++;
+                unchecked {
+                    leafIndex++;
+                }
                 leafs[leafIndex] = ManageLeaf(
                     address(coins[i]),
                     false,
                     "approve(address,uint256)",
                     new address[](1),
                     string.concat("Approve Curve pool to spend ", coins[i].symbol()),
-                    _rawDataDecoderAndSanitizer
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
                 );
                 leafs[leafIndex].argumentAddresses[0] = poolAddress;
                 tokenToSpenderToApprovalInTree[address(coins[i])][poolAddress] = true;
@@ -198,112 +200,173 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
 
         // Add liquidity.
-        leafIndex++;
+        unchecked {
+            leafIndex++;
+        }
         leafs[leafIndex] = ManageLeaf(
             poolAddress,
             false,
             "add_liquidity(uint256[],uint256)",
             new address[](0),
             string.concat("Add liquidity to Curve pool"),
-            _rawDataDecoderAndSanitizer
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
 
         // Remove liquidity.
-        leafIndex++;
+        unchecked {
+            leafIndex++;
+        }
         leafs[leafIndex] = ManageLeaf(
             poolAddress,
             false,
             "remove_liquidity(uint256,uint256[])",
             new address[](0),
             string.concat("Remove liquidity from Curve pool"),
-            _rawDataDecoderAndSanitizer
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
 
         // Deposit into gauge.
-        leafIndex++;
+        unchecked {
+            leafIndex++;
+        }
         leafs[leafIndex] = ManageLeaf(
             gauge,
             false,
             "deposit(uint256,address)",
             new address[](1),
             string.concat("Deposit into Curve gauge"),
-            _rawDataDecoderAndSanitizer
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
-        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
 
         // Withdraw from gauge.
-        leafIndex++;
+        unchecked {
+            leafIndex++;
+        }
         leafs[leafIndex] = ManageLeaf(
             gauge,
             false,
             "withdraw(uint256)",
             new address[](0),
             string.concat("Withdraw from Curve gauge"),
-            _rawDataDecoderAndSanitizer
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
 
         // Claim rewards.
-        leafIndex++;
+        unchecked {
+            leafIndex++;
+        }
         leafs[leafIndex] = ManageLeaf(
             gauge,
             false,
             "claim_rewards(address)",
             new address[](1),
             string.concat("Claim rewards from Curve gauge"),
-            _rawDataDecoderAndSanitizer
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
-        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
     }
 
     function _addConvexLeafs(ManageLeaf[] memory leafs, ERC20 token, address rewardsContract) internal {
         // Approve convexCurveMainnetBooster to spend lp tokens.
-        if (!tokenToSpenderToApprovalInTree[address(token)][convexCurveMainnetBooster]) {
-            leafIndex++;
+        if (!tokenToSpenderToApprovalInTree[address(token)][getAddress(sourceChain, "convexCurveMainnetBooster")]) {
+            unchecked {
+                leafIndex++;
+            }
             leafs[leafIndex] = ManageLeaf(
                 address(token),
                 false,
                 "approve(address,uint256)",
                 new address[](1),
                 string.concat("Approve Convex Curve Mainnet Booster to spend ", token.symbol()),
-                _rawDataDecoderAndSanitizer
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
-            leafs[leafIndex].argumentAddresses[0] = convexCurveMainnetBooster;
-            tokenToSpenderToApprovalInTree[address(token)][convexCurveMainnetBooster] = true;
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "convexCurveMainnetBooster");
+            tokenToSpenderToApprovalInTree[address(token)][getAddress(sourceChain, "convexCurveMainnetBooster")] = true;
         }
 
         // Deposit into convexCurveMainnetBooster.
-        leafIndex++;
+        unchecked {
+            leafIndex++;
+        }
         leafs[leafIndex] = ManageLeaf(
-            convexCurveMainnetBooster,
+            getAddress(sourceChain, "convexCurveMainnetBooster"),
             false,
             "deposit(uint256,uint256,bool)",
             new address[](0),
             "Deposit into Convex Curve Mainnet Booster",
-            _rawDataDecoderAndSanitizer
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
 
         // Withdraw from rewardsContract.
-        leafIndex++;
+        unchecked {
+            leafIndex++;
+        }
         leafs[leafIndex] = ManageLeaf(
             rewardsContract,
             false,
             "withdrawAndUnwrap(uint256,bool)",
             new address[](0),
             "Withdraw and unwrap from Convex Curve Rewards Contract",
-            _rawDataDecoderAndSanitizer
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
 
         // Get rewards from rewardsContract.
-        leafIndex++;
+        unchecked {
+            leafIndex++;
+        }
         leafs[leafIndex] = ManageLeaf(
             rewardsContract,
             false,
             "getReward(address,bool)",
             new address[](1),
             "Get rewards from Convex Curve Rewards Contract",
-            _rawDataDecoderAndSanitizer
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
-        leafs[leafIndex].argumentAddresses[0] = _boringVault;
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+    }
+
+    function _addLeafsForCurveSwapping(ManageLeaf[] memory leafs, address curvePool) internal {
+        CurvePool pool = CurvePool(curvePool);
+        ERC20 coins0 = ERC20(pool.coins(0));
+        ERC20 coins1 = ERC20(pool.coins(1));
+        // Approvals.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(coins0),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Curve ", coins0.symbol(), "/", coins1.symbol(), " pool to spend ", coins0.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = curvePool;
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(coins1),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Curve ", coins0.symbol(), "/", coins1.symbol(), " pool to spend ", coins1.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = curvePool;
+        // Swapping.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            curvePool,
+            false,
+            "exchange(int128,int128,uint256,uint256)",
+            new address[](0),
+            string.concat("Swap using Curve ", coins0.symbol(), "/", coins1.symbol(), " pool"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
     }
 
     // ========================================= StandardBridge =========================================
@@ -2959,12 +3022,56 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
     }
 
+    // ========================================= Fee Claiming =========================================
+
+    function _addLeafsForFeeClaiming(ManageLeaf[] memory leafs, ERC20[] memory feeAssets) internal {
+        // Approvals.
+        for (uint256 i; i < feeAssets.length; ++i) {
+            if (!tokenToSpenderToApprovalInTree[address(feeAssets[i])][getAddress(sourceChain, "accountantAddress")]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    address(feeAssets[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Accountant to spend ", feeAssets[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "accountantAddress");
+                tokenToSpenderToApprovalInTree[address(feeAssets[i])][getAddress(sourceChain, "accountantAddress")] =
+                    true;
+            }
+        }
+        // Claiming fees.
+        for (uint256 i; i < feeAssets.length; ++i) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "accountantAddress"),
+                false,
+                "claimFees(address)",
+                new address[](1),
+                string.concat("Claim fees in ", feeAssets[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(feeAssets[i]);
+        }
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
     // TODO this should pass in a bool or something to generate leafs indicating that we want leaf indexes printed.
+    bool addLeafIndex = false;
+
     function _generateTestLeafs(ManageLeaf[] memory leafs, bytes32[][] memory manageTree) internal {
         string memory filePath = "./leafs/TemporaryLeafs.json";
+        addLeafIndex = true;
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
+        addLeafIndex = false;
     }
+    // TODO look at how deployment json is made, and refactor this to work that way, so files dont need to be formatted.
 
     function _generateLeafs(
         string memory filePath,
@@ -3010,7 +3117,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
 
         for (uint256 i; i < leafs.length; ++i) {
             string memory leaf = "leaf";
-            vm.serializeUint(leaf, "LeafIndex", i);
+            if (addLeafIndex) vm.serializeUint(leaf, "LeafIndex", i);
             vm.serializeAddress(leaf, "TargetAddress", leafs[i].target);
             vm.serializeAddress(leaf, "DecoderAndSanitizerAddress", leafs[i].decoderAndSanitizer);
             vm.serializeBool(leaf, "CanSendValue", leafs[i].canSendValue);
