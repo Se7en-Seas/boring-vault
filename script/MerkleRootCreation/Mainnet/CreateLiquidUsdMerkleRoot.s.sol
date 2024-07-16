@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.21;
 
-import {BaseMerkleRootGenerator} from "resources/BaseMerkleRootGenerator.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
+import "forge-std/Script.sol";
 
 /**
- *  source .env && forge script script/CreateLiquidUsdMerkleRoot.s.sol:CreateLiquidUsdMerkleRootScript --rpc-url $MAINNET_RPC_URL
+ *  source .env && forge script script/MerkleRootCreation/Mainnet/CreateLiquidUsdMerkleRoot.s.sol --rpc-url $MAINNET_RPC_URL
  */
-contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
+contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C;
@@ -42,31 +43,27 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
     }
 
     function generateMiniLiquidUsdStrategistMerkleRoot() public {
-        updateAddresses(boringVault, rawDataDecoderAndSanitizer, managerAddress, accountantAddress);
+        setSourceChainName(mainnet);
+        setAddress(false, mainnet, "boringVault", boringVault);
+        setAddress(false, mainnet, "managerAddress", managerAddress);
+        setAddress(false, mainnet, "accountantAddress", accountantAddress);
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+
+        leafIndex = 0;
 
         ManageLeaf[] memory leafs = new ManageLeaf[](32);
 
-        // burn
-        leafs[leafIndex] = ManageLeaf(
-            uniswapV3NonFungiblePositionManager,
-            false,
-            "burn(uint256)",
-            new address[](0),
-            "Burn UniswapV3 position",
-            _rawDataDecoderAndSanitizer
-        );
-
         // ========================== Fee Claiming ==========================
         ERC20[] memory feeAssets = new ERC20[](4);
-        feeAssets[0] = USDC;
-        feeAssets[1] = DAI;
-        feeAssets[2] = USDT;
-        feeAssets[3] = USDE;
+        feeAssets[0] = getERC20(sourceChain, "USDC");
+        feeAssets[1] = getERC20(sourceChain, "DAI");
+        feeAssets[2] = getERC20(sourceChain, "USDT");
+        feeAssets[3] = getERC20(sourceChain, "USDE");
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== Fluid fToken ==========================
-        _addFluidFTokenLeafs(leafs, fUSDC);
-        _addFluidFTokenLeafs(leafs, fUSDT);
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fUSDC"));
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fUSDT"));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -76,50 +73,56 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
     }
 
     function generateLiquidUsdStrategistMerkleRoot() public {
-        updateAddresses(boringVault, rawDataDecoderAndSanitizer, managerAddress, accountantAddress);
+        setSourceChainName(mainnet);
+        setAddress(false, mainnet, "boringVault", boringVault);
+        setAddress(false, mainnet, "managerAddress", managerAddress);
+        setAddress(false, mainnet, "accountantAddress", accountantAddress);
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+
+        leafIndex = 0;
 
         ManageLeaf[] memory leafs = new ManageLeaf[](1024);
 
         // ========================== Aave V3 ==========================
         ERC20[] memory supplyAssets = new ERC20[](6);
-        supplyAssets[0] = USDC;
-        supplyAssets[1] = USDT;
-        supplyAssets[2] = DAI;
-        supplyAssets[3] = ERC20(sDAI);
-        supplyAssets[4] = USDE;
-        supplyAssets[5] = SUSDE;
+        supplyAssets[0] = getERC20(sourceChain, "USDC");
+        supplyAssets[1] = getERC20(sourceChain, "USDT");
+        supplyAssets[2] = getERC20(sourceChain, "DAI");
+        supplyAssets[3] = getERC20(sourceChain, "sDAI");
+        supplyAssets[4] = getERC20(sourceChain, "USDE");
+        supplyAssets[5] = getERC20(sourceChain, "SUSDE");
         ERC20[] memory borrowAssets = new ERC20[](4);
-        borrowAssets[0] = USDC;
-        borrowAssets[1] = USDT;
-        borrowAssets[2] = DAI;
-        borrowAssets[3] = USDE;
+        borrowAssets[0] = getERC20(sourceChain, "USDC");
+        borrowAssets[1] = getERC20(sourceChain, "USDT");
+        borrowAssets[2] = getERC20(sourceChain, "DAI");
+        borrowAssets[3] = getERC20(sourceChain, "USDE");
         _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
 
         // ========================== SparkLend ==========================
         supplyAssets = new ERC20[](4);
-        supplyAssets[0] = USDC;
-        supplyAssets[1] = USDT;
-        supplyAssets[2] = DAI;
-        supplyAssets[3] = ERC20(sDAI);
+        supplyAssets[0] = getERC20(sourceChain, "USDC");
+        supplyAssets[1] = getERC20(sourceChain, "USDT");
+        supplyAssets[2] = getERC20(sourceChain, "DAI");
+        supplyAssets[3] = getERC20(sourceChain, "sDAI");
         borrowAssets = new ERC20[](3);
-        borrowAssets[0] = USDC;
-        borrowAssets[1] = USDT;
-        borrowAssets[2] = DAI;
+        borrowAssets[0] = getERC20(sourceChain, "USDC");
+        borrowAssets[1] = getERC20(sourceChain, "USDT");
+        borrowAssets[2] = getERC20(sourceChain, "DAI");
         _addSparkLendLeafs(leafs, supplyAssets, borrowAssets);
 
         // ========================== MakerDAO ==========================
         /**
          * deposit, withdraw
          */
-        _addERC4626Leafs(leafs, ERC4626(sDAI));
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "sDAI")));
 
         // ========================== Gearbox ==========================
         /**
          * USDC, DAI, USDT deposit, withdraw,  dUSDCV3, dDAIV3 dUSDTV3 deposit, withdraw, claim
          */
-        _addGearboxLeafs(leafs, ERC4626(dUSDCV3), sdUSDCV3);
-        _addGearboxLeafs(leafs, ERC4626(dDAIV3), sdDAIV3);
-        _addGearboxLeafs(leafs, ERC4626(dUSDTV3), sdUSDTV3);
+        _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dUSDCV3")), getAddress(sourceChain, "sdUSDCV3"));
+        _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dDAIV3")), getAddress(sourceChain, "sdDAIV3"));
+        _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dUSDTV3")), getAddress(sourceChain, "sdUSDTV3"));
 
         // ========================== MorphoBlue ==========================
         /**
@@ -153,47 +156,47 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         _addMorphoBlueSupplyLeafs(leafs, 0xb323495f7e4148be5643a4ea4a8221eef163e4bccfdedc2a6f4696baacbc86cc);
 
         // ========================== Pendle ==========================
-        _addPendleMarketLeafs(leafs, pendleUSDeMarket);
-        _addPendleMarketLeafs(leafs, pendleZircuitUSDeMarket);
-        _addPendleMarketLeafs(leafs, pendleSUSDeMarketSeptember);
-        _addPendleMarketLeafs(leafs, pendleSUSDeMarketJuly);
-        _addPendleMarketLeafs(leafs, pendleKarakUSDeMarket);
-        _addPendleMarketLeafs(leafs, pendleKarakSUSDeMarket);
-        _addPendleMarketLeafs(leafs, pendleUSDeZircuitMarketAugust);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleUSDeMarket"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleZircuitUSDeMarket"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleSUSDeMarketSeptember"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleSUSDeMarketJuly"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleKarakUSDeMarket"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleKarakSUSDeMarket"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleUSDeZircuitMarketAugust"));
 
         // ========================== Ethena ==========================
         /**
          * deposit, withdraw
          */
-        _addERC4626Leafs(leafs, ERC4626(address(SUSDE)));
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "SUSDE")));
 
         // ========================== UniswapV3 ==========================
         /**
          * Full position management for USDC, USDT, DAI, USDe, sUSDe.
          */
         address[] memory token0 = new address[](10);
-        token0[0] = address(USDC);
-        token0[1] = address(USDC);
-        token0[2] = address(USDC);
-        token0[3] = address(USDC);
-        token0[4] = address(USDT);
-        token0[5] = address(USDT);
-        token0[6] = address(USDT);
-        token0[7] = address(DAI);
-        token0[8] = address(DAI);
-        token0[9] = address(USDE);
+        token0[0] = getAddress(sourceChain, "USDC");
+        token0[1] = getAddress(sourceChain, "USDC");
+        token0[2] = getAddress(sourceChain, "USDC");
+        token0[3] = getAddress(sourceChain, "USDC");
+        token0[4] = getAddress(sourceChain, "USDT");
+        token0[5] = getAddress(sourceChain, "USDT");
+        token0[6] = getAddress(sourceChain, "USDT");
+        token0[7] = getAddress(sourceChain, "DAI");
+        token0[8] = getAddress(sourceChain, "DAI");
+        token0[9] = getAddress(sourceChain, "USDE");
 
         address[] memory token1 = new address[](10);
-        token1[0] = address(USDT);
-        token1[1] = address(DAI);
-        token1[2] = address(USDE);
-        token1[3] = address(SUSDE);
-        token1[4] = address(DAI);
-        token1[5] = address(USDE);
-        token1[6] = address(SUSDE);
-        token1[7] = address(USDE);
-        token1[8] = address(SUSDE);
-        token1[9] = address(SUSDE);
+        token1[0] = getAddress(sourceChain, "USDT");
+        token1[1] = getAddress(sourceChain, "DAI");
+        token1[2] = getAddress(sourceChain, "USDE");
+        token1[3] = getAddress(sourceChain, "SUSDE");
+        token1[4] = getAddress(sourceChain, "DAI");
+        token1[5] = getAddress(sourceChain, "USDE");
+        token1[6] = getAddress(sourceChain, "SUSDE");
+        token1[7] = getAddress(sourceChain, "USDE");
+        token1[8] = getAddress(sourceChain, "SUSDE");
+        token1[9] = getAddress(sourceChain, "SUSDE");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
@@ -202,15 +205,15 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
          * Claim fees in USDC, DAI, USDT and USDE
          */
         ERC20[] memory feeAssets = new ERC20[](4);
-        feeAssets[0] = USDC;
-        feeAssets[1] = DAI;
-        feeAssets[2] = USDT;
-        feeAssets[3] = USDE;
+        feeAssets[0] = getERC20(sourceChain, "USDC");
+        feeAssets[1] = getERC20(sourceChain, "DAI");
+        feeAssets[2] = getERC20(sourceChain, "USDT");
+        feeAssets[3] = getERC20(sourceChain, "USDE");
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== Fluid fToken ==========================
-        _addFluidFTokenLeafs(leafs, fUSDC);
-        _addFluidFTokenLeafs(leafs, fUSDT);
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fUSDC"));
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fUSDT"));
 
         // ========================== 1inch ==========================
         /**
@@ -233,57 +236,57 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
          */
         address[] memory assets = new address[](16);
         SwapKind[] memory kind = new SwapKind[](16);
-        assets[0] = address(USDC);
+        assets[0] = getAddress(sourceChain, "USDC");
         kind[0] = SwapKind.BuyAndSell;
-        assets[1] = address(USDT);
+        assets[1] = getAddress(sourceChain, "USDT");
         kind[1] = SwapKind.BuyAndSell;
-        assets[2] = address(DAI);
+        assets[2] = getAddress(sourceChain, "DAI");
         kind[2] = SwapKind.BuyAndSell;
-        assets[3] = address(GHO);
+        assets[3] = getAddress(sourceChain, "GHO");
         kind[3] = SwapKind.BuyAndSell;
-        assets[4] = address(USDE);
+        assets[4] = getAddress(sourceChain, "USDE");
         kind[4] = SwapKind.BuyAndSell;
-        assets[5] = address(CRVUSD);
+        assets[5] = getAddress(sourceChain, "CRVUSD");
         kind[5] = SwapKind.BuyAndSell;
-        assets[6] = address(FRAX);
+        assets[6] = getAddress(sourceChain, "FRAX");
         kind[6] = SwapKind.BuyAndSell;
-        assets[7] = address(PYUSD);
+        assets[7] = getAddress(sourceChain, "PYUSD");
         kind[7] = SwapKind.BuyAndSell;
-        assets[8] = address(GEAR);
+        assets[8] = getAddress(sourceChain, "GEAR");
         kind[8] = SwapKind.Sell;
-        assets[9] = address(CRV);
+        assets[9] = getAddress(sourceChain, "CRV");
         kind[9] = SwapKind.Sell;
-        assets[10] = address(CVX);
+        assets[10] = getAddress(sourceChain, "CVX");
         kind[10] = SwapKind.Sell;
-        assets[11] = address(AURA);
+        assets[11] = getAddress(sourceChain, "AURA");
         kind[11] = SwapKind.Sell;
-        assets[12] = address(BAL);
+        assets[12] = getAddress(sourceChain, "BAL");
         kind[12] = SwapKind.Sell;
-        assets[13] = address(INST);
+        assets[13] = getAddress(sourceChain, "INST");
         kind[13] = SwapKind.Sell;
-        assets[14] = address(RSR);
+        assets[14] = getAddress(sourceChain, "RSR");
         kind[14] = SwapKind.Sell;
-        assets[15] = address(PENDLE);
+        assets[15] = getAddress(sourceChain, "PENDLE");
         kind[15] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
-        _addLeafsFor1InchUniswapV3Swapping(leafs, PENDLE_wETH_30);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, USDe_USDT_01);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, USDe_USDC_01);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, USDe_DAI_01);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, sUSDe_USDT_05);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, GEAR_wETH_100);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, GEAR_USDT_30);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, DAI_USDC_01);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, DAI_USDC_05);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, USDC_USDT_01);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, USDC_USDT_05);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, USDC_wETH_05);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, FRAX_USDC_05);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, FRAX_USDC_01);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, FRAX_USDT_05);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, DAI_FRAX_05);
-        _addLeafsFor1InchUniswapV3Swapping(leafs, PYUSD_USDC_01);
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "PENDLE_wETH_30"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDe_USDT_01"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDe_USDC_01"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDe_DAI_01"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "sUSDe_USDT_05"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "GEAR_wETH_100"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "GEAR_USDT_30"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "DAI_USDC_01"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "DAI_USDC_05"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDC_USDT_01"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDC_USDT_05"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDC_wETH_05"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "FRAX_USDC_05"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "FRAX_USDC_01"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "FRAX_USDT_05"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "DAI_FRAX_05"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "PYUSD_USDC_01"));
 
         // ========================== Curve Swapping ==========================
         /**
@@ -291,9 +294,9 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
          * USDe <-> DAI,
          * sDAI <-> sUSDe,
          */
-        _addLeafsForCurveSwapping(leafs, USDe_USDC_Curve_Pool);
-        _addLeafsForCurveSwapping(leafs, USDe_DAI_Curve_Pool);
-        _addLeafsForCurveSwapping(leafs, sDAI_sUSDe_Curve_Pool);
+        _addLeafsForCurveSwapping(leafs, getAddress(sourceChain, "USDe_USDC_Curve_Pool"));
+        _addLeafsForCurveSwapping(leafs, getAddress(sourceChain, "USDe_DAI_Curve_Pool"));
+        _addLeafsForCurveSwapping(leafs, getAddress(sourceChain, "sDAI_sUSDe_Curve_Pool"));
 
         // ========================== Ethena Withdraws ==========================
         _addEthenaSUSDeWithdrawLeafs(leafs);
@@ -308,7 +311,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
          * withdraw USDC supply from itbAaveV3Usdc
          */
         supplyAssets = new ERC20[](1);
-        supplyAssets[0] = USDC;
+        supplyAssets[0] = getERC20(sourceChain, "USDC");
         _addLeafsForItbAaveV3(leafs, itbAaveV3Usdc, supplyAssets, "ITB Aave V3 USDC");
         // // ========================== ITB Aave V3 DAI ==========================
         // /**
@@ -332,7 +335,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
          * withdraw USDT supply from itbAaveV3Usdt
          */
         supplyAssets = new ERC20[](1);
-        supplyAssets[0] = USDT;
+        supplyAssets[0] = getERC20(sourceChain, "USDT");
         _addLeafsForItbAaveV3(leafs, itbAaveV3Usdt, supplyAssets, "ITB Aave V3 USDT");
 
         // ========================== ITB Gearbox USDC ==========================
@@ -346,7 +349,14 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
          * stake dUSDCV3 into sdUSDCV3
          * unstake dUSDCV3 from sdUSDCV3
          */
-        _addLeafsForItbGearbox(leafs, itbGearboxUsdc, USDC, ERC20(dUSDCV3), sdUSDCV3, "ITB Gearbox USDC");
+        _addLeafsForItbGearbox(
+            leafs,
+            itbGearboxUsdc,
+            getERC20(sourceChain, "USDC"),
+            getERC20(sourceChain, "dUSDCV3"),
+            getAddress(sourceChain, "sdUSDCV3"),
+            "ITB Gearbox USDC"
+        );
 
         // ========================== ITB Gearbox DAI ==========================
         /**
@@ -397,7 +407,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
             // Transfer both tokens to the pool
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
-                address(PYUSD),
+                getAddress(sourceChain, "PYUSD"),
                 false,
                 "transfer(address,uint256)",
                 new address[](1),
@@ -407,7 +417,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
             leafs[leafIndex].argumentAddresses[0] = itbCurveConvex_PyUsdUsdc;
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
-                address(USDC),
+                getAddress(sourceChain, "USDC"),
                 false,
                 "transfer(address,uint256)",
                 new address[](1),
@@ -425,8 +435,8 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
                 "Approve Curve pool to spend PYUSD",
                 itbDecoderAndSanitizer
             );
-            leafs[leafIndex].argumentAddresses[0] = address(PYUSD);
-            leafs[leafIndex].argumentAddresses[1] = pyUsd_Usdc_Curve_Pool;
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "PYUSD");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "pyUsd_Usdc_Curve_Pool");
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
                 itbCurveConvex_PyUsdUsdc,
@@ -436,8 +446,8 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
                 "Approve Curve pool to spend USDC",
                 itbDecoderAndSanitizer
             );
-            leafs[leafIndex].argumentAddresses[0] = address(USDC);
-            leafs[leafIndex].argumentAddresses[1] = pyUsd_Usdc_Curve_Pool;
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "USDC");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "pyUsd_Usdc_Curve_Pool");
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
                 itbCurveConvex_PyUsdUsdc,
@@ -447,8 +457,8 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
                 "Approve Convex to spend Curve LP",
                 itbDecoderAndSanitizer
             );
-            leafs[leafIndex].argumentAddresses[0] = pyUsd_Usdc_Curve_Pool;
-            leafs[leafIndex].argumentAddresses[1] = convexCurveMainnetBooster;
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pyUsd_Usdc_Curve_Pool");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "convexCurveMainnetBooster");
             // Withdraw both tokens
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -459,7 +469,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
                 "Withdraw PYUSD from the ITB Curve/Convex PYUSD/USDC contract",
                 itbDecoderAndSanitizer
             );
-            leafs[leafIndex].argumentAddresses[0] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "PYUSD");
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
                 itbCurveConvex_PyUsdUsdc,
@@ -469,7 +479,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
                 "Withdraw USDC from the ITB Curve/Convex PYUSD/USDC contract",
                 itbDecoderAndSanitizer
             );
-            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "USDC");
             // WithdrawAll both tokens
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -480,7 +490,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
                 "Withdraw all PYUSD from the ITB Curve/Convex PYUSD/USDC contract",
                 itbDecoderAndSanitizer
             );
-            leafs[leafIndex].argumentAddresses[0] = address(PYUSD);
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "PYUSD");
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
                 itbCurveConvex_PyUsdUsdc,
@@ -490,7 +500,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
                 "Withdraw all USDC from the ITB Curve/Convex PYUSD/USDC contract",
                 itbDecoderAndSanitizer
             );
-            leafs[leafIndex].argumentAddresses[0] = address(USDC);
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "USDC");
             // Add liquidity and stake
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -501,8 +511,8 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
                 "Add liquidity to the ITB Curve/Convex PYUSD/USDC contract and stake the convex tokens",
                 itbDecoderAndSanitizer
             );
-            leafs[leafIndex].argumentAddresses[0] = pyUsd_Usdc_Curve_Pool;
-            leafs[leafIndex].argumentAddresses[1] = pyUsd_Usdc_Convex_Id;
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pyUsd_Usdc_Curve_Pool");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "pyUsd_Usdc_Convex_Id");
             // Unstake and remove liquidity
             leafIndex++;
             leafs[leafIndex] = ManageLeaf(
@@ -513,8 +523,8 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
                 "Unstake the convex tokens and remove liquidity from the ITB Curve/Convex PYUSD/USDC contract",
                 itbDecoderAndSanitizer
             );
-            leafs[leafIndex].argumentAddresses[0] = pyUsd_Usdc_Curve_Pool;
-            leafs[leafIndex].argumentAddresses[1] = pyUsd_Usdc_Convex_Id;
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pyUsd_Usdc_Curve_Pool");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "pyUsd_Usdc_Convex_Id");
         }
 
         // ========================== ITB Curve/Convex FRAX/USDC ==========================
@@ -550,7 +560,7 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
         //     leafs[leafIndex].argumentAddresses[0] = itbCurveConvex_FraxUsdc;
         //     leafIndex++;
         //     leafs[leafIndex] = ManageLeaf(
-        //         address(USDC),
+        //         getAddress(sourceChain, "USDC"),
         //         false,
         //         "transfer(address,uint256)",
         //         new address[](1),
@@ -947,37 +957,38 @@ contract CreateLiquidUsdMerkleRootScript is BaseMerkleRootGenerator {
 
         // ========================== SYMBIOTIC ==========================
         address[] memory defaultCollaterals = new address[](1);
-        defaultCollaterals[0] = sUSDeDefaultCollateral;
+        defaultCollaterals[0] = getAddress(sourceChain, "sUSDeDefaultCollateral");
         _addSymbioticLeafs(leafs, defaultCollaterals);
 
         // ========================== PancakeSwapV3 ==========================
-        updateAddresses(boringVault, pancakeSwapDataDecoderAndSanitizer, managerAddress, accountantAddress);
+        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", pancakeSwapDataDecoderAndSanitizer);
+
         /**
          * Full position management for USDC, USDT, DAI, USDe, sUSDe.
          */
         token0 = new address[](10);
-        token0[0] = address(USDC);
-        token0[1] = address(USDC);
-        token0[2] = address(USDC);
-        token0[3] = address(USDC);
-        token0[4] = address(USDT);
-        token0[5] = address(USDT);
-        token0[6] = address(USDT);
-        token0[7] = address(DAI);
-        token0[8] = address(DAI);
-        token0[9] = address(USDE);
+        token0[0] = getAddress(sourceChain, "USDC");
+        token0[1] = getAddress(sourceChain, "USDC");
+        token0[2] = getAddress(sourceChain, "USDC");
+        token0[3] = getAddress(sourceChain, "USDC");
+        token0[4] = getAddress(sourceChain, "USDT");
+        token0[5] = getAddress(sourceChain, "USDT");
+        token0[6] = getAddress(sourceChain, "USDT");
+        token0[7] = getAddress(sourceChain, "DAI");
+        token0[8] = getAddress(sourceChain, "DAI");
+        token0[9] = getAddress(sourceChain, "USDE");
 
         token1 = new address[](10);
-        token1[0] = address(USDT);
-        token1[1] = address(DAI);
-        token1[2] = address(USDE);
-        token1[3] = address(SUSDE);
-        token1[4] = address(DAI);
-        token1[5] = address(USDE);
-        token1[6] = address(SUSDE);
-        token1[7] = address(USDE);
-        token1[8] = address(SUSDE);
-        token1[9] = address(SUSDE);
+        token1[0] = getAddress(sourceChain, "USDT");
+        token1[1] = getAddress(sourceChain, "DAI");
+        token1[2] = getAddress(sourceChain, "USDE");
+        token1[3] = getAddress(sourceChain, "SUSDE");
+        token1[4] = getAddress(sourceChain, "DAI");
+        token1[5] = getAddress(sourceChain, "USDE");
+        token1[6] = getAddress(sourceChain, "SUSDE");
+        token1[7] = getAddress(sourceChain, "USDE");
+        token1[8] = getAddress(sourceChain, "SUSDE");
+        token1[9] = getAddress(sourceChain, "SUSDE");
 
         _addPancakeSwapV3Leafs(leafs, token0, token1);
 

@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.21;
 
-import {BaseMerkleRootGenerator} from "resources/BaseMerkleRootGenerator.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
+import "forge-std/Script.sol";
 
 /**
- *  source .env && forge script script/CreateLombardMerkleRoot.s.sol:CreateLombardMerkleRootScript --rpc-url $MAINNET_RPC_URL
+ *  source .env && forge script script/MerkleRootCreation/Mainnet/CreateLombardMerkleRoot.s.sol --rpc-url $MAINNET_RPC_URL
  */
-contract CreateLombardMerkleRootScript is BaseMerkleRootGenerator {
+contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0x5401b8620E5FB570064CA9114fd1e135fd77D57c;
@@ -28,15 +29,21 @@ contract CreateLombardMerkleRootScript is BaseMerkleRootGenerator {
     }
 
     function generateLombardStrategistMerkleRoot() public {
-        updateAddresses(boringVault, rawDataDecoderAndSanitizer, managerAddress, accountantAddress);
+        setSourceChainName(mainnet);
+        setAddress(false, mainnet, "boringVault", boringVault);
+        setAddress(false, mainnet, "managerAddress", managerAddress);
+        setAddress(false, mainnet, "accountantAddress", accountantAddress);
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+
+        leafIndex = 0;
 
         ManageLeaf[] memory leafs = new ManageLeaf[](128);
 
         // ========================== Aave V3 ==========================
         ERC20[] memory supplyAssets = new ERC20[](1);
-        supplyAssets[0] = WBTC;
+        supplyAssets[0] = getERC20(sourceChain, "WBTC");
         ERC20[] memory borrowAssets = new ERC20[](1);
-        borrowAssets[0] = WBTC;
+        borrowAssets[0] = getERC20(sourceChain, "WBTC");
         _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
 
         // ========================== SparkLend ==========================
@@ -45,18 +52,18 @@ contract CreateLombardMerkleRootScript is BaseMerkleRootGenerator {
          * borrow wETH, wstETH
          */
         borrowAssets = new ERC20[](1);
-        borrowAssets[0] = WBTC;
+        borrowAssets[0] = getERC20(sourceChain, "WBTC");
         _addSparkLendLeafs(leafs, supplyAssets, borrowAssets);
 
         // ========================== Gearbox ==========================
-        _addGearboxLeafs(leafs, ERC4626(dWBTCV3), sdWBTCV3);
+        _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWBTCV3")), getAddress(sourceChain, "sdWBTCV3"));
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](1);
-        token0[0] = address(WBTC);
+        token0[0] = getAddress(sourceChain, "WBTC");
 
         address[] memory token1 = new address[](1);
-        token1[0] = address(LBTC);
+        token1[0] = getAddress(sourceChain, "LBTC");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
@@ -65,37 +72,37 @@ contract CreateLombardMerkleRootScript is BaseMerkleRootGenerator {
          * Claim fees in USDC, DAI, USDT and USDE
          */
         ERC20[] memory feeAssets = new ERC20[](2);
-        feeAssets[0] = WBTC;
-        feeAssets[1] = LBTC;
+        feeAssets[0] = getERC20(sourceChain, "WBTC");
+        feeAssets[1] = getERC20(sourceChain, "LBTC");
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
         address[] memory assets = new address[](10);
         SwapKind[] memory kind = new SwapKind[](10);
-        assets[0] = address(WBTC);
+        assets[0] = getAddress(sourceChain, "WBTC");
         kind[0] = SwapKind.BuyAndSell;
-        assets[1] = address(LBTC);
+        assets[1] = getAddress(sourceChain, "LBTC");
         kind[1] = SwapKind.BuyAndSell;
-        assets[2] = address(GEAR);
+        assets[2] = getAddress(sourceChain, "GEAR");
         kind[2] = SwapKind.Sell;
-        assets[3] = address(CRV);
+        assets[3] = getAddress(sourceChain, "CRV");
         kind[3] = SwapKind.Sell;
-        assets[4] = address(CVX);
+        assets[4] = getAddress(sourceChain, "CVX");
         kind[4] = SwapKind.Sell;
-        assets[5] = address(AURA);
+        assets[5] = getAddress(sourceChain, "AURA");
         kind[5] = SwapKind.Sell;
-        assets[6] = address(BAL);
+        assets[6] = getAddress(sourceChain, "BAL");
         kind[6] = SwapKind.Sell;
-        assets[7] = address(PENDLE);
+        assets[7] = getAddress(sourceChain, "PENDLE");
         kind[7] = SwapKind.Sell;
-        assets[8] = address(INST);
+        assets[8] = getAddress(sourceChain, "INST");
         kind[8] = SwapKind.Sell;
-        assets[9] = address(RSR);
+        assets[9] = getAddress(sourceChain, "RSR");
         kind[9] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         // ========================== Flashloans ==========================
-        _addBalancerFlashloanLeafs(leafs, address(WBTC));
+        _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WBTC"));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 

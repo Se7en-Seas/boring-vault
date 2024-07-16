@@ -3,7 +3,7 @@ pragma solidity 0.8.21;
 
 import {DeployArcticArchitecture, ERC20, Deployer} from "script/ArchitectureDeployments/DeployArcticArchitecture.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
-import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
+import {ChainValues} from "test/resources/ChainValues.sol";
 
 // Import Decoder and Sanitizer to deploy.
 import {EtherFiLiquidEthDecoderAndSanitizer} from
@@ -13,7 +13,7 @@ import {EtherFiLiquidEthDecoderAndSanitizer} from
  *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
+contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
@@ -22,7 +22,8 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
     string public boringVaultName = "Ether.Fi Liquid ETH Vault";
     string public boringVaultSymbol = "liquidETH";
     uint8 public boringVaultDecimals = 18;
-    address public owner = dev1Address;
+    string internal sourceChain = mainnet;
+    address public owner = getAddress(sourceChain, "dev1Address");
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
@@ -38,9 +39,9 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         configureDeployment.finishSetup = false;
         configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
-        configureDeployment.deployerAddress = deployerAddress;
-        configureDeployment.balancerVault = balancerVault;
-        configureDeployment.WETH = address(WETH);
+        configureDeployment.deployerAddress = getAddress(sourceChain, "deployerAddress");
+        configureDeployment.balancerVault = getAddress(sourceChain, "balancerVault");
+        configureDeployment.WETH = getAddress(sourceChain, "WETH");
 
         // Save deployer.
         deployer = Deployer(configureDeployment.deployerAddress);
@@ -56,8 +57,8 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         names.delayedWithdrawer = EtherFiLiquidEthDelayedWithdrawer;
 
         // Define Accountant Parameters.
-        accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = WETH;
+        accountantParameters.payoutAddress = getAddress(sourceChain, "liquidPayoutAddress");
+        accountantParameters.base = getERC20(sourceChain, "WETH");
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
@@ -70,13 +71,14 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
 
         // Define Decoder and Sanitizer deployment details.
         bytes memory creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode;
-        bytes memory constructorArgs =
-            abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
+        bytes memory constructorArgs = abi.encode(
+            deployer.getAddress(names.boringVault), getAddress(sourceChain, "uniswapV3NonFungiblePositionManager")
+        );
 
         // Setup extra deposit assets.
         depositAssets.push(
             DepositAsset({
-                asset: EETH,
+                asset: getERC20(sourceChain, "EETH"),
                 isPeggedToBase: true,
                 rateProvider: address(0),
                 genericRateProviderName: "",
@@ -87,9 +89,9 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         );
         depositAssets.push(
             DepositAsset({
-                asset: WEETH,
+                asset: getERC20(sourceChain, "WEETH"),
                 isPeggedToBase: false,
-                rateProvider: address(WEETH),
+                rateProvider: getAddress(sourceChain, "WEETH"),
                 genericRateProviderName: "",
                 target: address(0),
                 selector: bytes4(0),
@@ -113,7 +115,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: WETH,
+                asset: getERC20(sourceChain, "WETH"),
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -123,7 +125,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
 
         withdrawAssets.push(
             WithdrawAsset({
-                asset: EETH,
+                asset: getERC20(sourceChain, "EETH"),
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -133,7 +135,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
 
         withdrawAssets.push(
             WithdrawAsset({
-                asset: WEETH,
+                asset: getERC20(sourceChain, "WEETH"),
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -144,7 +146,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
         bool allowPublicDeposits = false;
         bool allowPublicWithdraws = false;
         uint64 shareLockPeriod = 1 days;
-        address delayedWithdrawFeeAddress = liquidPayoutAddress;
+        address delayedWithdrawFeeAddress = getAddress(sourceChain, "liquidPayoutAddress");
 
         vm.startBroadcast(privateKey);
 
@@ -160,7 +162,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, MainnetAddresses {
             allowPublicDeposits,
             allowPublicWithdraws,
             shareLockPeriod,
-            dev1Address
+            getAddress(sourceChain, "dev1Address")
         );
 
         vm.stopBroadcast();

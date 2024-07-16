@@ -11,54 +11,15 @@ import {NativeWrapperDecoderAndSanitizer} from
 import {OneInchDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/OneInchDecoderAndSanitizer.sol";
 import {LidoDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/LidoDecoderAndSanitizer.sol";
 import {ERC4626DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/ERC4626DecoderAndSanitizer.sol";
+import {GearboxDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/ITB/gearbox/GearboxDecoderAndSanitizer.sol";
 
-contract ITBPositionDecoderAndSanitizer is
-    BaseDecoderAndSanitizer,
-    KarakDecoderAndSanitizer,
-    UniswapV3DecoderAndSanitizer,
-    EtherFiDecoderAndSanitizer,
-    NativeWrapperDecoderAndSanitizer,
-    OneInchDecoderAndSanitizer,
-    LidoDecoderAndSanitizer,
-    ERC4626DecoderAndSanitizer
-{
-    constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
-        BaseDecoderAndSanitizer(_boringVault)
-        UniswapV3DecoderAndSanitizer(_uniswapV3NonFungiblePositionManager)
-    {}
+contract ITBPositionDecoderAndSanitizer is BaseDecoderAndSanitizer, GearboxDecoderAndSanitizer {
+    constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
 
     function transfer(address _to, uint256) external pure returns (bytes memory addressesFound) {
         addressesFound = abi.encodePacked(_to);
     }
 
     //============================== HANDLE FUNCTION COLLISIONS ===============================
-    function wrap(uint256)
-        external
-        pure
-        override(EtherFiDecoderAndSanitizer, LidoDecoderAndSanitizer)
-        returns (bytes memory addressesFound)
-    {
-        // Nothing to sanitize or return
-        return addressesFound;
-    }
-
-    function unwrap(uint256)
-        external
-        pure
-        override(EtherFiDecoderAndSanitizer, LidoDecoderAndSanitizer)
-        returns (bytes memory addressesFound)
-    {
-        // Nothing to sanitize or return
-        return addressesFound;
-    }
-
-    function deposit()
-        external
-        pure
-        override(EtherFiDecoderAndSanitizer, NativeWrapperDecoderAndSanitizer)
-        returns (bytes memory addressesFound)
-    {
-        // Nothing to sanitize or return
-        return addressesFound;
-    }
 }

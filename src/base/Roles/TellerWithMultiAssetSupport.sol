@@ -409,6 +409,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         nonReentrant
         returns (uint256 shares)
     {
+        if (isPaused) revert TellerWithMultiAssetSupport__Paused();
         if (!isSupported[depositAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
 
         shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, to);
@@ -424,6 +425,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         requiresAuth
         returns (uint256 assetsOut)
     {
+        if (isPaused) revert TellerWithMultiAssetSupport__Paused();
         if (!isSupported[withdrawAsset]) revert TellerWithMultiAssetSupport__AssetNotSupported();
 
         if (shareAmount == 0) revert TellerWithMultiAssetSupport__ZeroShares();

@@ -13,10 +13,11 @@ import {PancakeSwapV3FullDecoderAndSanitizer} from
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {UniswapV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/UniswapV3DecoderAndSanitizer.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract PancakeSwapV3IntegrationTest is Test, MainnetAddresses {
+contract PancakeSwapV3IntegrationTest is Test, MerkleTreeHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -37,6 +38,7 @@ contract PancakeSwapV3IntegrationTest is Test, MainnetAddresses {
     address public weEthIrm = 0x870aC11D48B15DB9a138Cf899d20F13F79Ba00BC;
 
     function setUp() external {
+        setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         uint256 blockNumber = 20213659;
@@ -45,13 +47,21 @@ contract PancakeSwapV3IntegrationTest is Test, MainnetAddresses {
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
-        manager = new ManagerWithMerkleVerification(address(this), address(boringVault), vault);
+        manager =
+            new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
 
         rawDataDecoderAndSanitizer = address(
             new PancakeSwapV3FullDecoderAndSanitizer(
-                address(boringVault), pancakeSwapV3NonFungiblePositionManager, pancakeSwapV3MasterChefV3
+                address(boringVault),
+                getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager"),
+                getAddress(sourceChain, "pancakeSwapV3MasterChefV3")
             )
         );
+
+        setAddress(false, sourceChain, "boringVault", address(boringVault));
+        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+        setAddress(false, sourceChain, "managerAddress", address(manager));
+        setAddress(false, sourceChain, "accountantAddress", address(1));
 
         rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
         boringVault.setAuthority(rolesAuthority);
@@ -99,106 +109,79 @@ contract PancakeSwapV3IntegrationTest is Test, MainnetAddresses {
         rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
         rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
         rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
-        rolesAuthority.setUserRole(vault, BALANCER_VAULT_ROLE, true);
+        rolesAuthority.setUserRole(getAddress(sourceChain, "vault"), BALANCER_VAULT_ROLE, true);
 
         // Allow the boring vault to receive ETH.
         rolesAuthority.setPublicCapability(address(boringVault), bytes4(0), true);
     }
 
     function testPancakeSwapV3IntegrationNoStaking() external {
-        deal(address(WETH), address(boringVault), 200e18);
+        deal(getAddress(sourceChain, "WETH"), address(boringVault), 200e18);
         // Make sure the vault can
         // swap wETH -> rETH
-        // create a new position rETH/weETH
-        // add to an existing position rETH/weETH
-        // pull from an existing position rETH/weETH
-        // collect from a position rETH/weETH
-        ManageLeaf[] memory leafs = new ManageLeaf[](16);
-        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
-        leafs[0].argumentAddresses[0] = pancakeSwapV3Router;
-        leafs[1] =
-            ManageLeaf(pancakeSwapV3Router, false, "exactInput((bytes,address,uint256,uint256))", new address[](3));
-        leafs[1].argumentAddresses[0] = address(WETH);
-        leafs[1].argumentAddresses[1] = address(RETH);
-        leafs[1].argumentAddresses[2] = address(boringVault);
-        leafs[2] = ManageLeaf(address(RETH), false, "approve(address,uint256)", new address[](1));
-        leafs[2].argumentAddresses[0] = pancakeSwapV3NonFungiblePositionManager;
-        leafs[3] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
-        leafs[3].argumentAddresses[0] = pancakeSwapV3NonFungiblePositionManager;
-        leafs[4] = ManageLeaf(
-            pancakeSwapV3NonFungiblePositionManager,
-            false,
-            "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
-            new address[](3)
-        );
-        leafs[4].argumentAddresses[0] = address(RETH);
-        leafs[4].argumentAddresses[1] = address(WETH);
-        leafs[4].argumentAddresses[2] = address(boringVault);
-        leafs[5] = ManageLeaf(
-            pancakeSwapV3NonFungiblePositionManager,
-            false,
-            "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
-            new address[](3)
-        );
-        leafs[5].argumentAddresses[0] = address(0);
-        leafs[5].argumentAddresses[1] = address(RETH);
-        leafs[5].argumentAddresses[2] = address(WETH);
-        leafs[6] = ManageLeaf(
-            pancakeSwapV3NonFungiblePositionManager,
-            false,
-            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
-            new address[](0)
-        );
-        leafs[7] = ManageLeaf(
-            pancakeSwapV3NonFungiblePositionManager,
-            false,
-            "collect((uint256,address,uint128,uint128))",
-            new address[](1)
-        );
-        leafs[7].argumentAddresses[0] = address(boringVault);
-        leafs[8] = ManageLeaf(pancakeSwapV3NonFungiblePositionManager, false, "burn(uint256)", new address[](0));
+        // create a new position rETH/wETH
+        // add to an existing position rETH/wETH
+        // pull from an existing position rETH/wETH
+        // collect from a position rETH/wETH
+        ManageLeaf[] memory leafs = new ManageLeaf[](32);
+        address[] memory tokens0 = new address[](1);
+        tokens0[0] = getAddress(sourceChain, "WETH");
+        address[] memory tokens1 = new address[](1);
+        tokens1[0] = getAddress(sourceChain, "RETH");
+        _addPancakeSwapV3Leafs(leafs, tokens0, tokens1);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](9);
-        manageLeafs[0] = leafs[0];
-        manageLeafs[1] = leafs[1];
-        manageLeafs[2] = leafs[2];
-        manageLeafs[3] = leafs[3];
-        manageLeafs[4] = leafs[4];
-        manageLeafs[5] = leafs[5];
-        manageLeafs[6] = leafs[6];
-        manageLeafs[7] = leafs[7];
-        manageLeafs[8] = leafs[8];
+        manageLeafs[0] = leafs[5];
+        manageLeafs[1] = leafs[10];
+        manageLeafs[2] = leafs[0];
+        manageLeafs[3] = leafs[1];
+        manageLeafs[4] = leafs[6];
+        manageLeafs[5] = leafs[7];
+        manageLeafs[6] = leafs[11];
+        manageLeafs[7] = leafs[13];
+        manageLeafs[8] = leafs[15];
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](9);
-        targets[0] = address(WETH);
-        targets[1] = pancakeSwapV3Router;
-        targets[2] = address(RETH);
-        targets[3] = address(WETH);
-        targets[4] = pancakeSwapV3NonFungiblePositionManager;
-        targets[5] = pancakeSwapV3NonFungiblePositionManager;
-        targets[6] = pancakeSwapV3NonFungiblePositionManager;
-        targets[7] = pancakeSwapV3NonFungiblePositionManager;
-        targets[8] = pancakeSwapV3NonFungiblePositionManager;
+        targets[0] = getAddress(sourceChain, "WETH");
+        targets[1] = getAddress(sourceChain, "pancakeSwapV3Router");
+        targets[2] = getAddress(sourceChain, "RETH");
+        targets[3] = getAddress(sourceChain, "WETH");
+        targets[4] = getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
+        targets[5] = getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
+        targets[6] = getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
+        targets[7] = getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
+        targets[8] = getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
         bytes[] memory targetData = new bytes[](9);
-        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", pancakeSwapV3Router, type(uint256).max);
+        targetData[0] = abi.encodeWithSignature(
+            "approve(address,uint256)", getAddress(sourceChain, "pancakeSwapV3Router"), type(uint256).max
+        );
         DecoderCustomTypes.PancakeSwapExactInputParams memory exactInputParams = DecoderCustomTypes
-            .PancakeSwapExactInputParams(abi.encodePacked(WETH, uint24(500), RETH), address(boringVault), 100e18, 0);
+            .PancakeSwapExactInputParams(
+            abi.encodePacked(getAddress(sourceChain, "WETH"), uint24(500), getAddress(sourceChain, "RETH")),
+            address(boringVault),
+            100e18,
+            0
+        );
         targetData[1] = abi.encodeWithSignature("exactInput((bytes,address,uint256,uint256))", exactInputParams);
         targetData[2] = abi.encodeWithSignature(
-            "approve(address,uint256)", pancakeSwapV3NonFungiblePositionManager, type(uint256).max
+            "approve(address,uint256)",
+            getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager"),
+            type(uint256).max
         );
         targetData[3] = abi.encodeWithSignature(
-            "approve(address,uint256)", pancakeSwapV3NonFungiblePositionManager, type(uint256).max
+            "approve(address,uint256)",
+            getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager"),
+            type(uint256).max
         );
 
         DecoderCustomTypes.MintParams memory mintParams = DecoderCustomTypes.MintParams(
-            address(RETH),
-            address(WETH),
+            getAddress(sourceChain, "RETH"),
+            getAddress(sourceChain, "WETH"),
             uint24(500),
             int24(600), // lower tick
             int24(700), // upper tick
@@ -247,127 +230,93 @@ contract PancakeSwapV3IntegrationTest is Test, MainnetAddresses {
     }
 
     function testPancakeSwapV3IntegrationWithStaking() external {
-        deal(address(WETH), address(boringVault), 200e18);
+        deal(getAddress(sourceChain, "WETH"), address(boringVault), 200e18);
+
         // Make sure the vault can
         // swap wETH -> rETH
         // create a new position rETH/weETH
         // add to an existing position rETH/weETH
         // pull from an existing position rETH/weETH
         // collect from a position rETH/weETH
-        ManageLeaf[] memory leafs = new ManageLeaf[](16);
-        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
-        leafs[0].argumentAddresses[0] = pancakeSwapV3Router;
-        leafs[1] =
-            ManageLeaf(pancakeSwapV3Router, false, "exactInput((bytes,address,uint256,uint256))", new address[](3));
-        leafs[1].argumentAddresses[0] = address(WETH);
-        leafs[1].argumentAddresses[1] = address(RETH);
-        leafs[1].argumentAddresses[2] = address(boringVault);
-        leafs[2] = ManageLeaf(address(RETH), false, "approve(address,uint256)", new address[](1));
-        leafs[2].argumentAddresses[0] = pancakeSwapV3NonFungiblePositionManager;
-        leafs[3] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
-        leafs[3].argumentAddresses[0] = pancakeSwapV3NonFungiblePositionManager;
-        leafs[4] = ManageLeaf(address(RETH), false, "approve(address,uint256)", new address[](1));
-        leafs[4].argumentAddresses[0] = pancakeSwapV3MasterChefV3;
-        leafs[5] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
-        leafs[5].argumentAddresses[0] = pancakeSwapV3MasterChefV3;
-        leafs[6] = ManageLeaf(
-            pancakeSwapV3NonFungiblePositionManager,
-            false,
-            "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
-            new address[](3)
-        );
-        leafs[6].argumentAddresses[0] = address(RETH);
-        leafs[6].argumentAddresses[1] = address(WETH);
-        leafs[6].argumentAddresses[2] = address(boringVault);
-        leafs[7] = ManageLeaf(
-            pancakeSwapV3NonFungiblePositionManager,
-            false,
-            "safeTransferFrom(address,address,uint256)",
-            new address[](2)
-        );
-        leafs[7].argumentAddresses[0] = address(boringVault);
-        leafs[7].argumentAddresses[1] = pancakeSwapV3MasterChefV3;
-        leafs[8] = ManageLeaf(
-            pancakeSwapV3MasterChefV3,
-            false,
-            "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
-            new address[](3)
-        );
-        leafs[8].argumentAddresses[0] = address(0);
-        leafs[8].argumentAddresses[1] = address(RETH);
-        leafs[8].argumentAddresses[2] = address(WETH);
-        leafs[9] = ManageLeaf(pancakeSwapV3MasterChefV3, false, "harvest(uint256,address)", new address[](1));
-        leafs[9].argumentAddresses[0] = address(boringVault);
-        leafs[10] = ManageLeaf(
-            pancakeSwapV3MasterChefV3,
-            false,
-            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
-            new address[](0)
-        );
-        leafs[11] =
-            ManageLeaf(pancakeSwapV3MasterChefV3, false, "collect((uint256,address,uint128,uint128))", new address[](1));
-        leafs[11].argumentAddresses[0] = address(boringVault);
-        leafs[12] = ManageLeaf(pancakeSwapV3MasterChefV3, false, "withdraw(uint256,address)", new address[](1));
-        leafs[12].argumentAddresses[0] = address(boringVault);
-        leafs[13] = ManageLeaf(pancakeSwapV3NonFungiblePositionManager, false, "burn(uint256)", new address[](0));
+        ManageLeaf[] memory leafs = new ManageLeaf[](32);
+        address[] memory tokens0 = new address[](1);
+        tokens0[0] = getAddress(sourceChain, "WETH");
+        address[] memory tokens1 = new address[](1);
+        tokens1[0] = getAddress(sourceChain, "RETH");
+        _addPancakeSwapV3Leafs(leafs, tokens0, tokens1);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        // ;
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](14);
-        manageLeafs[0] = leafs[0];
-        manageLeafs[1] = leafs[1];
-        manageLeafs[2] = leafs[2];
-        manageLeafs[3] = leafs[3];
-        manageLeafs[4] = leafs[4];
-        manageLeafs[5] = leafs[5];
+        manageLeafs[0] = leafs[5];
+        manageLeafs[1] = leafs[10];
+        manageLeafs[2] = leafs[0];
+        manageLeafs[3] = leafs[1];
+        manageLeafs[4] = leafs[2];
+        manageLeafs[5] = leafs[3];
         manageLeafs[6] = leafs[6];
-        manageLeafs[7] = leafs[7];
+        manageLeafs[7] = leafs[16];
         manageLeafs[8] = leafs[8];
-        manageLeafs[9] = leafs[9];
-        manageLeafs[10] = leafs[10];
-        manageLeafs[11] = leafs[11];
-        manageLeafs[12] = leafs[12];
-        manageLeafs[13] = leafs[13];
+        manageLeafs[9] = leafs[17];
+        manageLeafs[10] = leafs[12];
+        manageLeafs[11] = leafs[14];
+        manageLeafs[12] = leafs[18];
+        manageLeafs[13] = leafs[15];
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](14);
-        targets[0] = address(WETH);
-        targets[1] = pancakeSwapV3Router;
-        targets[2] = address(RETH);
-        targets[3] = address(WETH);
-        targets[4] = address(RETH);
-        targets[5] = address(WETH);
-        targets[6] = pancakeSwapV3NonFungiblePositionManager;
-        targets[7] = pancakeSwapV3NonFungiblePositionManager;
-        targets[8] = pancakeSwapV3MasterChefV3;
-        targets[9] = pancakeSwapV3MasterChefV3;
-        targets[10] = pancakeSwapV3MasterChefV3;
-        targets[11] = pancakeSwapV3MasterChefV3;
-        targets[12] = pancakeSwapV3MasterChefV3;
-        targets[13] = pancakeSwapV3NonFungiblePositionManager;
+        targets[0] = getAddress(sourceChain, "WETH");
+        targets[1] = getAddress(sourceChain, "pancakeSwapV3Router");
+        targets[2] = getAddress(sourceChain, "RETH");
+        targets[3] = getAddress(sourceChain, "WETH");
+        targets[4] = getAddress(sourceChain, "RETH");
+        targets[5] = getAddress(sourceChain, "WETH");
+        targets[6] = getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
+        targets[7] = getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
+        targets[8] = getAddress(sourceChain, "pancakeSwapV3MasterChefV3");
+        targets[9] = getAddress(sourceChain, "pancakeSwapV3MasterChefV3");
+        targets[10] = getAddress(sourceChain, "pancakeSwapV3MasterChefV3");
+        targets[11] = getAddress(sourceChain, "pancakeSwapV3MasterChefV3");
+        targets[12] = getAddress(sourceChain, "pancakeSwapV3MasterChefV3");
+        targets[13] = getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
 
         bytes[] memory targetData = new bytes[](14);
-        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", pancakeSwapV3Router, type(uint256).max);
+        targetData[0] = abi.encodeWithSignature(
+            "approve(address,uint256)", getAddress(sourceChain, "pancakeSwapV3Router"), type(uint256).max
+        );
         DecoderCustomTypes.PancakeSwapExactInputParams memory exactInputParams = DecoderCustomTypes
-            .PancakeSwapExactInputParams(abi.encodePacked(WETH, uint24(500), RETH), address(boringVault), 100e18, 0);
+            .PancakeSwapExactInputParams(
+            abi.encodePacked(getAddress(sourceChain, "WETH"), uint24(500), getAddress(sourceChain, "RETH")),
+            address(boringVault),
+            100e18,
+            0
+        );
         targetData[1] = abi.encodeWithSignature("exactInput((bytes,address,uint256,uint256))", exactInputParams);
         targetData[2] = abi.encodeWithSignature(
-            "approve(address,uint256)", pancakeSwapV3NonFungiblePositionManager, type(uint256).max
+            "approve(address,uint256)",
+            getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager"),
+            type(uint256).max
         );
         targetData[3] = abi.encodeWithSignature(
-            "approve(address,uint256)", pancakeSwapV3NonFungiblePositionManager, type(uint256).max
+            "approve(address,uint256)",
+            getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager"),
+            type(uint256).max
         );
-        targetData[4] =
-            abi.encodeWithSignature("approve(address,uint256)", pancakeSwapV3MasterChefV3, type(uint256).max);
-        targetData[5] =
-            abi.encodeWithSignature("approve(address,uint256)", pancakeSwapV3MasterChefV3, type(uint256).max);
+        targetData[4] = abi.encodeWithSignature(
+            "approve(address,uint256)", getAddress(sourceChain, "pancakeSwapV3MasterChefV3"), type(uint256).max
+        );
+        targetData[5] = abi.encodeWithSignature(
+            "approve(address,uint256)", getAddress(sourceChain, "pancakeSwapV3MasterChefV3"), type(uint256).max
+        );
 
         DecoderCustomTypes.MintParams memory mintParams = DecoderCustomTypes.MintParams(
-            address(RETH),
-            address(WETH),
+            getAddress(sourceChain, "RETH"),
+            getAddress(sourceChain, "WETH"),
             uint24(500),
             int24(600), // lower tick
             int24(700), // upper tick
@@ -385,7 +334,7 @@ contract PancakeSwapV3IntegrationTest is Test, MainnetAddresses {
         targetData[7] = abi.encodeWithSignature(
             "safeTransferFrom(address,address,uint256)",
             address(boringVault),
-            pancakeSwapV3MasterChefV3,
+            getAddress(sourceChain, "pancakeSwapV3MasterChefV3"),
             expectedTokenId
         );
         DecoderCustomTypes.IncreaseLiquidityParams memory increaseLiquidityParams =
@@ -428,97 +377,71 @@ contract PancakeSwapV3IntegrationTest is Test, MainnetAddresses {
         );
     }
 
-    function testUniswapV3IntegrationReverts() external {
-        deal(address(WETH), address(boringVault), 200e18);
+    function testPancakeSwapV3IntegrationReverts() external {
+        deal(getAddress(sourceChain, "WETH"), address(boringVault), 200e18);
         // Make sure the vault can
         // swap wETH -> rETH
         // create a new position rETH/weETH
         // add to an existing position rETH/weETH
         // pull from an existing position rETH/weETH
         // collect from a position rETH/weETH
-        ManageLeaf[] memory leafs = new ManageLeaf[](8);
-        leafs[0] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
-        leafs[0].argumentAddresses[0] = pancakeSwapV3Router;
-        leafs[1] =
-            ManageLeaf(pancakeSwapV3Router, false, "exactInput((bytes,address,uint256,uint256))", new address[](3));
-        leafs[1].argumentAddresses[0] = address(WETH);
-        leafs[1].argumentAddresses[1] = address(RETH);
-        leafs[1].argumentAddresses[2] = address(boringVault);
-        leafs[2] = ManageLeaf(address(RETH), false, "approve(address,uint256)", new address[](1));
-        leafs[2].argumentAddresses[0] = pancakeSwapV3NonFungiblePositionManager;
-        leafs[3] = ManageLeaf(address(WETH), false, "approve(address,uint256)", new address[](1));
-        leafs[3].argumentAddresses[0] = pancakeSwapV3NonFungiblePositionManager;
-        leafs[4] = ManageLeaf(
-            pancakeSwapV3NonFungiblePositionManager,
-            false,
-            "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
-            new address[](3)
-        );
-        leafs[4].argumentAddresses[0] = address(RETH);
-        leafs[4].argumentAddresses[1] = address(WETH);
-        leafs[4].argumentAddresses[2] = address(boringVault);
-        leafs[5] = ManageLeaf(
-            pancakeSwapV3NonFungiblePositionManager,
-            false,
-            "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
-            new address[](3)
-        );
-        leafs[5].argumentAddresses[0] = address(0);
-        leafs[5].argumentAddresses[1] = address(RETH);
-        leafs[5].argumentAddresses[2] = address(WETH);
-        leafs[6] = ManageLeaf(
-            pancakeSwapV3NonFungiblePositionManager,
-            false,
-            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
-            new address[](0)
-        );
-        leafs[7] = ManageLeaf(
-            pancakeSwapV3NonFungiblePositionManager,
-            false,
-            "collect((uint256,address,uint128,uint128))",
-            new address[](1)
-        );
-        leafs[7].argumentAddresses[0] = address(boringVault);
+        ManageLeaf[] memory leafs = new ManageLeaf[](32);
+        address[] memory tokens0 = new address[](1);
+        tokens0[0] = getAddress(sourceChain, "WETH");
+        address[] memory tokens1 = new address[](1);
+        tokens1[0] = getAddress(sourceChain, "RETH");
+        _addPancakeSwapV3Leafs(leafs, tokens0, tokens1);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](8);
-        manageLeafs[0] = leafs[0];
-        manageLeafs[1] = leafs[1];
-        manageLeafs[2] = leafs[2];
-        manageLeafs[3] = leafs[3];
-        manageLeafs[4] = leafs[4];
-        manageLeafs[5] = leafs[5];
-        manageLeafs[6] = leafs[6];
-        manageLeafs[7] = leafs[7];
+        manageLeafs[0] = leafs[5];
+        manageLeafs[1] = leafs[10];
+        manageLeafs[2] = leafs[0];
+        manageLeafs[3] = leafs[1];
+        manageLeafs[4] = leafs[6];
+        manageLeafs[5] = leafs[7];
+        manageLeafs[6] = leafs[11];
+        manageLeafs[7] = leafs[13];
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](8);
-        targets[0] = address(WETH);
-        targets[1] = pancakeSwapV3Router;
-        targets[2] = address(RETH);
-        targets[3] = address(WETH);
-        targets[4] = pancakeSwapV3NonFungiblePositionManager;
-        targets[5] = pancakeSwapV3NonFungiblePositionManager;
-        targets[6] = pancakeSwapV3NonFungiblePositionManager;
-        targets[7] = pancakeSwapV3NonFungiblePositionManager;
+        targets[0] = getAddress(sourceChain, "WETH");
+        targets[1] = getAddress(sourceChain, "pancakeSwapV3Router");
+        targets[2] = getAddress(sourceChain, "RETH");
+        targets[3] = getAddress(sourceChain, "WETH");
+        targets[4] = getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
+        targets[5] = getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
+        targets[6] = getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
+        targets[7] = getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager");
         bytes[] memory targetData = new bytes[](8);
-        targetData[0] = abi.encodeWithSignature("approve(address,uint256)", pancakeSwapV3Router, type(uint256).max);
+        targetData[0] = abi.encodeWithSignature(
+            "approve(address,uint256)", getAddress(sourceChain, "pancakeSwapV3Router"), type(uint256).max
+        );
         DecoderCustomTypes.PancakeSwapExactInputParams memory exactInputParams = DecoderCustomTypes
-            .PancakeSwapExactInputParams(abi.encodePacked(WETH, uint24(500), RETH), address(boringVault), 100e18, 0);
+            .PancakeSwapExactInputParams(
+            abi.encodePacked(getAddress(sourceChain, "WETH"), uint24(500), getAddress(sourceChain, "RETH")),
+            address(boringVault),
+            100e18,
+            0
+        );
         targetData[1] = abi.encodeWithSignature("exactInput((bytes,address,uint256,uint256))", exactInputParams);
         targetData[2] = abi.encodeWithSignature(
-            "approve(address,uint256)", pancakeSwapV3NonFungiblePositionManager, type(uint256).max
+            "approve(address,uint256)",
+            getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager"),
+            type(uint256).max
         );
         targetData[3] = abi.encodeWithSignature(
-            "approve(address,uint256)", pancakeSwapV3NonFungiblePositionManager, type(uint256).max
+            "approve(address,uint256)",
+            getAddress(sourceChain, "pancakeSwapV3NonFungiblePositionManager"),
+            type(uint256).max
         );
 
         DecoderCustomTypes.MintParams memory mintParams = DecoderCustomTypes.MintParams(
-            address(RETH),
-            address(WETH),
+            getAddress(sourceChain, "RETH"),
+            getAddress(sourceChain, "WETH"),
             uint24(500),
             int24(600), // lower tick
             int24(700), // upper tick
@@ -562,7 +485,10 @@ contract PancakeSwapV3IntegrationTest is Test, MainnetAddresses {
 
         // Make swap path data malformed.
         exactInputParams = DecoderCustomTypes.PancakeSwapExactInputParams(
-            abi.encodePacked(WETH, uint32(500), RETH), address(boringVault), 100e18, 0
+            abi.encodePacked(getAddress(sourceChain, "WETH"), uint32(500), getAddress(sourceChain, "RETH")),
+            address(boringVault),
+            100e18,
+            0
         );
         targetData[1] = abi.encodeWithSignature("exactInput((bytes,address,uint256,uint256))", exactInputParams);
 
@@ -575,7 +501,10 @@ contract PancakeSwapV3IntegrationTest is Test, MainnetAddresses {
 
         // Fix swap path data.
         exactInputParams = DecoderCustomTypes.PancakeSwapExactInputParams(
-            abi.encodePacked(WETH, uint24(500), RETH), address(boringVault), 100e18, 0
+            abi.encodePacked(getAddress(sourceChain, "WETH"), uint24(500), getAddress(sourceChain, "RETH")),
+            address(boringVault),
+            100e18,
+            0
         );
         targetData[1] = abi.encodeWithSignature("exactInput((bytes,address,uint256,uint256))", exactInputParams);
 
@@ -645,219 +574,13 @@ contract PancakeSwapV3IntegrationTest is Test, MainnetAddresses {
     }
 
     // ========================================= HELPER FUNCTIONS =========================================
-    bool doNothing = true;
-
-    function flashLoan(address, address[] calldata tokens, uint256[] calldata amounts, bytes memory userData)
-        external
-    {
-        if (doNothing) {
-            return;
-        } else {
-            // Edit userData.
-            userData = hex"DEAD01";
-            manager.receiveFlashLoan(tokens, amounts, amounts, userData);
-        }
-    }
-
-    bool iDidSomething = false;
-
-    // Call this function approve, so that we can use the standard decoder.
-    function approve(ERC20 token, uint256 amount) external {
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        token.safeTransfer(msg.sender, amount);
-        iDidSomething = true;
-    }
-
-    function _generateProof(bytes32 leaf, bytes32[][] memory tree) internal pure returns (bytes32[] memory proof) {
-        // The length of each proof is the height of the tree - 1.
-        uint256 tree_length = tree.length;
-        proof = new bytes32[](tree_length - 1);
-
-        // Build the proof
-        for (uint256 i; i < tree_length - 1; ++i) {
-            // For each layer we need to find the leaf.
-            for (uint256 j; j < tree[i].length; ++j) {
-                if (leaf == tree[i][j]) {
-                    // We have found the leaf, so now figure out if the proof needs the next leaf or the previous one.
-                    proof[i] = j % 2 == 0 ? tree[i][j + 1] : tree[i][j - 1];
-                    leaf = _hashPair(leaf, proof[i]);
-                    break;
-                }
-            }
-        }
-    }
-
-    function _getProofsUsingTree(ManageLeaf[] memory manageLeafs, bytes32[][] memory tree)
-        internal
-        view
-        returns (bytes32[][] memory proofs)
-    {
-        proofs = new bytes32[][](manageLeafs.length);
-        for (uint256 i; i < manageLeafs.length; ++i) {
-            // Generate manage proof.
-            bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(
-                rawDataDecoderAndSanitizer, manageLeafs[i].target, manageLeafs[i].canSendValue, selector
-            );
-            uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
-            for (uint256 j; j < argumentAddressesLength; ++j) {
-                rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
-            }
-            bytes32 leaf = keccak256(rawDigest);
-            proofs[i] = _generateProof(leaf, tree);
-        }
-    }
-
-    function _buildTrees(bytes32[][] memory merkleTreeIn) internal pure returns (bytes32[][] memory merkleTreeOut) {
-        // We are adding another row to the merkle tree, so make merkleTreeOut be 1 longer.
-        uint256 merkleTreeIn_length = merkleTreeIn.length;
-        merkleTreeOut = new bytes32[][](merkleTreeIn_length + 1);
-        uint256 layer_length;
-        // Iterate through merkleTreeIn to copy over data.
-        for (uint256 i; i < merkleTreeIn_length; ++i) {
-            layer_length = merkleTreeIn[i].length;
-            merkleTreeOut[i] = new bytes32[](layer_length);
-            for (uint256 j; j < layer_length; ++j) {
-                merkleTreeOut[i][j] = merkleTreeIn[i][j];
-            }
-        }
-
-        uint256 next_layer_length;
-        if (layer_length % 2 != 0) {
-            next_layer_length = (layer_length + 1) / 2;
-        } else {
-            next_layer_length = layer_length / 2;
-        }
-        merkleTreeOut[merkleTreeIn_length] = new bytes32[](next_layer_length);
-        uint256 count;
-        for (uint256 i; i < layer_length; i += 2) {
-            merkleTreeOut[merkleTreeIn_length][count] =
-                _hashPair(merkleTreeIn[merkleTreeIn_length - 1][i], merkleTreeIn[merkleTreeIn_length - 1][i + 1]);
-            count++;
-        }
-
-        if (next_layer_length > 1) {
-            // We need to process the next layer of leaves.
-            merkleTreeOut = _buildTrees(merkleTreeOut);
-        }
-    }
-
-    struct ManageLeaf {
-        address target;
-        bool canSendValue;
-        string signature;
-        address[] argumentAddresses;
-    }
-
-    function _generateMerkleTree(ManageLeaf[] memory manageLeafs) internal view returns (bytes32[][] memory tree) {
-        uint256 leafsLength = manageLeafs.length;
-        bytes32[][] memory leafs = new bytes32[][](1);
-        leafs[0] = new bytes32[](leafsLength);
-        for (uint256 i; i < leafsLength; ++i) {
-            bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(
-                rawDataDecoderAndSanitizer, manageLeafs[i].target, manageLeafs[i].canSendValue, selector
-            );
-            uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
-            for (uint256 j; j < argumentAddressesLength; ++j) {
-                rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
-            }
-            leafs[0][i] = keccak256(rawDigest);
-        }
-        tree = _buildTrees(leafs);
-    }
-
-    function _hashPair(bytes32 a, bytes32 b) private pure returns (bytes32) {
-        return a < b ? _efficientHash(a, b) : _efficientHash(b, a);
-    }
-
-    function _efficientHash(bytes32 a, bytes32 b) private pure returns (bytes32 value) {
-        /// @solidity memory-safe-assembly
-        assembly {
-            mstore(0x00, a)
-            mstore(0x20, b)
-            value := keccak256(0x00, 0x40)
-        }
-    }
 
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
     }
 
-    function _finalizeRequest(uint256 requestId, uint256 amount) internal {
-        // Spoof unstEth contract into finalizing our request.
-        IWithdrawRequestNft w = IWithdrawRequestNft(withdrawalRequestNft);
-        address owner = w.owner();
-        vm.startPrank(owner);
-        w.updateAdmin(address(this), true);
-        vm.stopPrank();
-
-        ILiquidityPool lp = ILiquidityPool(EETH_LIQUIDITY_POOL);
-
-        deal(address(this), amount);
-        lp.deposit{value: amount}();
-        address admin = lp.etherFiAdminContract();
-
-        vm.startPrank(admin);
-        lp.addEthAmountLockedForWithdrawal(uint128(amount));
-        vm.stopPrank();
-
-        w.finalizeRequests(requestId);
-    }
-
     function withdraw(uint256 amount) external {
         boringVault.enter(address(0), ERC20(address(0)), 0, address(this), amount);
     }
-}
-
-interface IWithdrawRequestNft {
-    struct WithdrawRequest {
-        uint96 amountOfEEth;
-        uint96 shareOfEEth;
-        bool isValid;
-        uint32 feeGwei;
-    }
-
-    function claimWithdraw(uint256 tokenId) external;
-
-    function getRequest(uint256 requestId) external view returns (WithdrawRequest memory);
-
-    function finalizeRequests(uint256 requestId) external;
-
-    function owner() external view returns (address);
-
-    function updateAdmin(address admin, bool isAdmin) external;
-}
-
-interface ILiquidityPool {
-    function deposit() external payable returns (uint256);
-
-    function requestWithdraw(address recipient, uint256 amount) external returns (uint256);
-
-    function amountForShare(uint256 shares) external view returns (uint256);
-
-    function etherFiAdminContract() external view returns (address);
-
-    function addEthAmountLockedForWithdrawal(uint128 _amount) external;
-}
-
-interface IUNSTETH {
-    function finalize(uint256 _lastRequestIdToBeFinalized, uint256 _maxShareRate) external payable;
-
-    function getRoleMember(bytes32 role, uint256 index) external view returns (address);
-
-    function FINALIZE_ROLE() external view returns (bytes32);
-
-    function findCheckpointHints(uint256[] memory requestIds, uint256 firstIndex, uint256 lastIndex)
-        external
-        view
-        returns (uint256[] memory);
-
-    function getLastCheckpointIndex() external view returns (uint256);
-}
-
-interface EthenaSusde {
-    function cooldownDuration() external view returns (uint24);
-    function cooldowns(address) external view returns (uint104 cooldownEnd, uint152 underlyingAmount);
 }
