@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.21;
 
-import {BaseMerkleRootGenerator} from "resources/BaseMerkleRootGenerator.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVerification.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
+import "forge-std/Script.sol";
 
 /**
  *  source .env && forge script script/CreateSuperSymbioticLRTMerkleRoot.s.sol:CreateSuperSymbioticLRTMerkleRootScript --rpc-url $MAINNET_RPC_URL
  */
-contract CreateSuperSymbioticLRTMerkleRootScript is BaseMerkleRootGenerator {
+contract CreateSuperSymbioticLRTMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88;
@@ -31,18 +32,22 @@ contract CreateSuperSymbioticLRTMerkleRootScript is BaseMerkleRootGenerator {
     }
 
     function generateSniperMerkleRoot() public {
-        updateAddresses(boringVault, rawDataDecoderAndSanitizer, managerAddress, accountantAddress);
+        setSourceChainName(mainnet);
+        setAddress(false, mainnet, "boringVault", boringVault);
+        setAddress(false, mainnet, "managerAddress", managerAddress);
+        setAddress(false, mainnet, "accountantAddress", accountantAddress);
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
         leafIndex = type(uint256).max;
-        _addSymbioticApproveAndDepositLeaf(leafs, wstETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, cbETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, wBETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, rETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, mETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, swETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, sfrxETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, ETHxDefaultCollateral);
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "wstETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "cbETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "wBETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "rETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "mETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "swETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "sfrxETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "ETHxDefaultCollateral"));
         // _addSymbioticApproveAndDepositLeaf(leafs, uniETHDefaultCollateral);
 
         string memory filePath = "./leafs/SuperSymbioticSniperLeafs.json";
@@ -53,36 +58,42 @@ contract CreateSuperSymbioticLRTMerkleRootScript is BaseMerkleRootGenerator {
     }
 
     function generateAdminStrategistMerkleRoot() public {
-        updateAddresses(boringVault, rawDataDecoderAndSanitizer, managerAddress, accountantAddress);
+        setSourceChainName(mainnet);
+        setAddress(false, mainnet, "boringVault", boringVault);
+        setAddress(false, mainnet, "managerAddress", managerAddress);
+        setAddress(false, mainnet, "accountantAddress", accountantAddress);
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+
+        leafIndex = 0;
 
         ManageLeaf[] memory leafs = new ManageLeaf[](512);
 
         // ========================== Symbiotic ==========================
         address[] memory defaultCollaterals = new address[](8);
-        defaultCollaterals[0] = wstETHDefaultCollateral;
-        defaultCollaterals[1] = cbETHDefaultCollateral;
-        defaultCollaterals[2] = wBETHDefaultCollateral;
-        defaultCollaterals[3] = rETHDefaultCollateral;
-        defaultCollaterals[4] = mETHDefaultCollateral;
-        defaultCollaterals[5] = swETHDefaultCollateral;
-        defaultCollaterals[6] = sfrxETHDefaultCollateral;
-        defaultCollaterals[7] = ETHxDefaultCollateral;
+        defaultCollaterals[0] = getAddress(sourceChain, "wstETHDefaultCollateral");
+        defaultCollaterals[1] = getAddress(sourceChain, "cbETHDefaultCollateral");
+        defaultCollaterals[2] = getAddress(sourceChain, "wBETHDefaultCollateral");
+        defaultCollaterals[3] = getAddress(sourceChain, "rETHDefaultCollateral");
+        defaultCollaterals[4] = getAddress(sourceChain, "mETHDefaultCollateral");
+        defaultCollaterals[5] = getAddress(sourceChain, "swETHDefaultCollateral");
+        defaultCollaterals[6] = getAddress(sourceChain, "sfrxETHDefaultCollateral");
+        defaultCollaterals[7] = getAddress(sourceChain, "ETHxDefaultCollateral");
         // defaultCollaterals[8] = uniETHDefaultCollateral;
         _addSymbioticLeafs(leafs, defaultCollaterals);
 
         // ========================== Aave V3 ==========================
         ERC20[] memory supplyAssets = new ERC20[](5);
-        supplyAssets[0] = WETH;
-        supplyAssets[1] = WEETH;
-        supplyAssets[2] = WSTETH;
-        supplyAssets[3] = RETH;
-        supplyAssets[4] = cbETH;
+        supplyAssets[0] = getERC20(sourceChain, "WETH");
+        supplyAssets[1] = getERC20(sourceChain, "WEETH");
+        supplyAssets[2] = getERC20(sourceChain, "WSTETH");
+        supplyAssets[3] = getERC20(sourceChain, "RETH");
+        supplyAssets[4] = getERC20(sourceChain, "cbETH");
         ERC20[] memory borrowAssets = new ERC20[](5);
-        borrowAssets[0] = WETH;
-        borrowAssets[1] = WEETH;
-        borrowAssets[2] = WSTETH;
-        borrowAssets[3] = RETH;
-        borrowAssets[4] = cbETH;
+        borrowAssets[0] = getERC20(sourceChain, "WETH");
+        borrowAssets[1] = getERC20(sourceChain, "WEETH");
+        borrowAssets[2] = getERC20(sourceChain, "WSTETH");
+        borrowAssets[3] = getERC20(sourceChain, "RETH");
+        borrowAssets[4] = getERC20(sourceChain, "cbETH");
         _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
 
         // ========================== Lido ==========================
@@ -96,147 +107,147 @@ contract CreateSuperSymbioticLRTMerkleRootScript is BaseMerkleRootGenerator {
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](55);
-        token0[0] = address(WETH);
-        token0[1] = address(WETH);
-        token0[2] = address(WETH);
-        token0[3] = address(WETH);
-        token0[4] = address(WETH);
-        token0[5] = address(WETH);
-        token0[6] = address(WETH);
-        token0[7] = address(WETH);
-        token0[8] = address(WETH);
-        token0[9] = address(WETH);
-        token0[10] = address(WEETH);
-        token0[11] = address(WEETH);
-        token0[12] = address(WEETH);
-        token0[13] = address(WEETH);
-        token0[14] = address(WEETH);
-        token0[15] = address(WEETH);
-        token0[16] = address(WEETH);
-        token0[17] = address(WEETH);
-        token0[18] = address(WEETH);
-        token0[19] = address(WSTETH);
-        token0[20] = address(WSTETH);
-        token0[21] = address(WSTETH);
-        token0[22] = address(WSTETH);
-        token0[23] = address(WSTETH);
-        token0[24] = address(WSTETH);
-        token0[25] = address(WSTETH);
-        token0[26] = address(WSTETH);
-        token0[27] = address(RETH);
-        token0[28] = address(RETH);
-        token0[29] = address(RETH);
-        token0[30] = address(RETH);
-        token0[31] = address(RETH);
-        token0[32] = address(RETH);
-        token0[33] = address(RETH);
-        token0[34] = address(cbETH);
-        token0[35] = address(cbETH);
-        token0[36] = address(cbETH);
-        token0[37] = address(cbETH);
-        token0[38] = address(cbETH);
-        token0[39] = address(cbETH);
-        token0[40] = address(WBETH);
-        token0[41] = address(WBETH);
-        token0[42] = address(WBETH);
-        token0[43] = address(WBETH);
-        token0[44] = address(WBETH);
-        token0[45] = address(METH);
-        token0[46] = address(METH);
-        token0[47] = address(METH);
-        token0[48] = address(METH);
-        token0[49] = address(SWETH);
-        token0[50] = address(SWETH);
-        token0[51] = address(SWETH);
-        token0[52] = address(ETHX);
-        token0[53] = address(ETHX);
-        token0[54] = address(UNIETH);
+        token0[0] = getAddress(sourceChain, "WETH");
+        token0[1] = getAddress(sourceChain, "WETH");
+        token0[2] = getAddress(sourceChain, "WETH");
+        token0[3] = getAddress(sourceChain, "WETH");
+        token0[4] = getAddress(sourceChain, "WETH");
+        token0[5] = getAddress(sourceChain, "WETH");
+        token0[6] = getAddress(sourceChain, "WETH");
+        token0[7] = getAddress(sourceChain, "WETH");
+        token0[8] = getAddress(sourceChain, "WETH");
+        token0[9] = getAddress(sourceChain, "WETH");
+        token0[10] = getAddress(sourceChain, "WEETH");
+        token0[11] = getAddress(sourceChain, "WEETH");
+        token0[12] = getAddress(sourceChain, "WEETH");
+        token0[13] = getAddress(sourceChain, "WEETH");
+        token0[14] = getAddress(sourceChain, "WEETH");
+        token0[15] = getAddress(sourceChain, "WEETH");
+        token0[16] = getAddress(sourceChain, "WEETH");
+        token0[17] = getAddress(sourceChain, "WEETH");
+        token0[18] = getAddress(sourceChain, "WEETH");
+        token0[19] = getAddress(sourceChain, "WSTETH");
+        token0[20] = getAddress(sourceChain, "WSTETH");
+        token0[21] = getAddress(sourceChain, "WSTETH");
+        token0[22] = getAddress(sourceChain, "WSTETH");
+        token0[23] = getAddress(sourceChain, "WSTETH");
+        token0[24] = getAddress(sourceChain, "WSTETH");
+        token0[25] = getAddress(sourceChain, "WSTETH");
+        token0[26] = getAddress(sourceChain, "WSTETH");
+        token0[27] = getAddress(sourceChain, "RETH");
+        token0[28] = getAddress(sourceChain, "RETH");
+        token0[29] = getAddress(sourceChain, "RETH");
+        token0[30] = getAddress(sourceChain, "RETH");
+        token0[31] = getAddress(sourceChain, "RETH");
+        token0[32] = getAddress(sourceChain, "RETH");
+        token0[33] = getAddress(sourceChain, "RETH");
+        token0[34] = getAddress(sourceChain, "cbETH");
+        token0[35] = getAddress(sourceChain, "cbETH");
+        token0[36] = getAddress(sourceChain, "cbETH");
+        token0[37] = getAddress(sourceChain, "cbETH");
+        token0[38] = getAddress(sourceChain, "cbETH");
+        token0[39] = getAddress(sourceChain, "cbETH");
+        token0[40] = getAddress(sourceChain, "WBETH");
+        token0[41] = getAddress(sourceChain, "WBETH");
+        token0[42] = getAddress(sourceChain, "WBETH");
+        token0[43] = getAddress(sourceChain, "WBETH");
+        token0[44] = getAddress(sourceChain, "WBETH");
+        token0[45] = getAddress(sourceChain, "METH");
+        token0[46] = getAddress(sourceChain, "METH");
+        token0[47] = getAddress(sourceChain, "METH");
+        token0[48] = getAddress(sourceChain, "METH");
+        token0[49] = getAddress(sourceChain, "SWETH");
+        token0[50] = getAddress(sourceChain, "SWETH");
+        token0[51] = getAddress(sourceChain, "SWETH");
+        token0[52] = getAddress(sourceChain, "ETHX");
+        token0[53] = getAddress(sourceChain, "ETHX");
+        token0[54] = getAddress(sourceChain, "UNIETH");
 
         address[] memory token1 = new address[](55);
-        token1[0] = address(WEETH);
-        token1[1] = address(WSTETH);
-        token1[2] = address(RETH);
-        token1[3] = address(cbETH);
-        token1[4] = address(WBETH);
-        token1[5] = address(METH);
-        token1[6] = address(SWETH);
-        token1[7] = address(ETHX);
-        token1[8] = address(UNIETH);
-        token1[9] = address(SFRXETH);
-        token1[10] = address(WSTETH);
-        token1[11] = address(RETH);
-        token1[12] = address(cbETH);
-        token1[13] = address(WBETH);
-        token1[14] = address(METH);
-        token1[15] = address(SWETH);
-        token1[16] = address(ETHX);
-        token1[17] = address(UNIETH);
-        token1[18] = address(SFRXETH);
-        token1[19] = address(RETH);
-        token1[20] = address(cbETH);
-        token1[21] = address(WBETH);
-        token1[22] = address(METH);
-        token1[23] = address(SWETH);
-        token1[24] = address(ETHX);
-        token1[25] = address(UNIETH);
-        token1[26] = address(SFRXETH);
-        token1[27] = address(cbETH);
-        token1[28] = address(WBETH);
-        token1[29] = address(METH);
-        token1[30] = address(SWETH);
-        token1[31] = address(ETHX);
-        token1[32] = address(UNIETH);
-        token1[33] = address(SFRXETH);
-        token1[34] = address(WBETH);
-        token1[35] = address(METH);
-        token1[36] = address(SWETH);
-        token1[37] = address(ETHX);
-        token1[38] = address(UNIETH);
-        token1[39] = address(SFRXETH);
-        token1[40] = address(METH);
-        token1[41] = address(SWETH);
-        token1[42] = address(ETHX);
-        token1[43] = address(UNIETH);
-        token1[44] = address(SFRXETH);
-        token1[45] = address(SWETH);
-        token1[46] = address(ETHX);
-        token1[47] = address(UNIETH);
-        token1[48] = address(SFRXETH);
-        token1[49] = address(ETHX);
-        token1[50] = address(UNIETH);
-        token1[51] = address(SFRXETH);
-        token1[52] = address(UNIETH);
-        token1[53] = address(SFRXETH);
-        token1[54] = address(SFRXETH);
+        token1[0] = getAddress(sourceChain, "WEETH");
+        token1[1] = getAddress(sourceChain, "WSTETH");
+        token1[2] = getAddress(sourceChain, "RETH");
+        token1[3] = getAddress(sourceChain, "cbETH");
+        token1[4] = getAddress(sourceChain, "WBETH");
+        token1[5] = getAddress(sourceChain, "METH");
+        token1[6] = getAddress(sourceChain, "SWETH");
+        token1[7] = getAddress(sourceChain, "ETHX");
+        token1[8] = getAddress(sourceChain, "UNIETH");
+        token1[9] = getAddress(sourceChain, "SFRXETH");
+        token1[10] = getAddress(sourceChain, "WSTETH");
+        token1[11] = getAddress(sourceChain, "RETH");
+        token1[12] = getAddress(sourceChain, "cbETH");
+        token1[13] = getAddress(sourceChain, "WBETH");
+        token1[14] = getAddress(sourceChain, "METH");
+        token1[15] = getAddress(sourceChain, "SWETH");
+        token1[16] = getAddress(sourceChain, "ETHX");
+        token1[17] = getAddress(sourceChain, "UNIETH");
+        token1[18] = getAddress(sourceChain, "SFRXETH");
+        token1[19] = getAddress(sourceChain, "RETH");
+        token1[20] = getAddress(sourceChain, "cbETH");
+        token1[21] = getAddress(sourceChain, "WBETH");
+        token1[22] = getAddress(sourceChain, "METH");
+        token1[23] = getAddress(sourceChain, "SWETH");
+        token1[24] = getAddress(sourceChain, "ETHX");
+        token1[25] = getAddress(sourceChain, "UNIETH");
+        token1[26] = getAddress(sourceChain, "SFRXETH");
+        token1[27] = getAddress(sourceChain, "cbETH");
+        token1[28] = getAddress(sourceChain, "WBETH");
+        token1[29] = getAddress(sourceChain, "METH");
+        token1[30] = getAddress(sourceChain, "SWETH");
+        token1[31] = getAddress(sourceChain, "ETHX");
+        token1[32] = getAddress(sourceChain, "UNIETH");
+        token1[33] = getAddress(sourceChain, "SFRXETH");
+        token1[34] = getAddress(sourceChain, "WBETH");
+        token1[35] = getAddress(sourceChain, "METH");
+        token1[36] = getAddress(sourceChain, "SWETH");
+        token1[37] = getAddress(sourceChain, "ETHX");
+        token1[38] = getAddress(sourceChain, "UNIETH");
+        token1[39] = getAddress(sourceChain, "SFRXETH");
+        token1[40] = getAddress(sourceChain, "METH");
+        token1[41] = getAddress(sourceChain, "SWETH");
+        token1[42] = getAddress(sourceChain, "ETHX");
+        token1[43] = getAddress(sourceChain, "UNIETH");
+        token1[44] = getAddress(sourceChain, "SFRXETH");
+        token1[45] = getAddress(sourceChain, "SWETH");
+        token1[46] = getAddress(sourceChain, "ETHX");
+        token1[47] = getAddress(sourceChain, "UNIETH");
+        token1[48] = getAddress(sourceChain, "SFRXETH");
+        token1[49] = getAddress(sourceChain, "ETHX");
+        token1[50] = getAddress(sourceChain, "UNIETH");
+        token1[51] = getAddress(sourceChain, "SFRXETH");
+        token1[52] = getAddress(sourceChain, "UNIETH");
+        token1[53] = getAddress(sourceChain, "SFRXETH");
+        token1[54] = getAddress(sourceChain, "SFRXETH");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
         // ========================== 1inch ==========================
         address[] memory assets = new address[](12);
         SwapKind[] memory kind = new SwapKind[](12);
-        assets[0] = address(WETH);
+        assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
-        assets[1] = address(WEETH);
+        assets[1] = getAddress(sourceChain, "WEETH");
         kind[1] = SwapKind.BuyAndSell;
-        assets[2] = address(WSTETH);
+        assets[2] = getAddress(sourceChain, "WSTETH");
         kind[2] = SwapKind.BuyAndSell;
-        assets[3] = address(RETH);
+        assets[3] = getAddress(sourceChain, "RETH");
         kind[3] = SwapKind.BuyAndSell;
-        assets[4] = address(cbETH);
+        assets[4] = getAddress(sourceChain, "cbETH");
         kind[4] = SwapKind.BuyAndSell;
-        assets[5] = address(WBETH);
+        assets[5] = getAddress(sourceChain, "WBETH");
         kind[5] = SwapKind.BuyAndSell;
-        assets[6] = address(METH);
+        assets[6] = getAddress(sourceChain, "METH");
         kind[6] = SwapKind.BuyAndSell;
-        assets[7] = address(SWETH);
+        assets[7] = getAddress(sourceChain, "SWETH");
         kind[7] = SwapKind.BuyAndSell;
-        assets[8] = address(ETHX);
+        assets[8] = getAddress(sourceChain, "ETHX");
         kind[8] = SwapKind.BuyAndSell;
-        assets[9] = address(UNIETH);
+        assets[9] = getAddress(sourceChain, "UNIETH");
         kind[9] = SwapKind.BuyAndSell;
-        assets[10] = address(SFRXETH);
+        assets[10] = getAddress(sourceChain, "SFRXETH");
         kind[10] = SwapKind.BuyAndSell;
-        assets[11] = address(INST);
+        assets[11] = getAddress(sourceChain, "INST");
         kind[11] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
@@ -249,26 +260,34 @@ contract CreateSuperSymbioticLRTMerkleRootScript is BaseMerkleRootGenerator {
         // _addLeafsFor1InchUniswapV3Swapping(leafs, GEAR_wETH_100);
 
         // ========================== Swell ==========================
-        _addSwellLeafs(leafs, address(WEETH), swellSimpleStaking);
-        _addSwellLeafs(leafs, address(WSTETH), swellSimpleStaking);
-        _addSwellLeafs(leafs, address(SFRXETH), swellSimpleStaking);
-        _addSwellLeafs(leafs, address(SWETH), swellSimpleStaking);
+        _addSwellSimpleStakingLeafs(
+            leafs, getAddress(sourceChain, "WEETH"), getAddress(sourceChain, "swellSimpleStaking")
+        );
+        _addSwellSimpleStakingLeafs(
+            leafs, getAddress(sourceChain, "WSTETH"), getAddress(sourceChain, "swellSimpleStaking")
+        );
+        _addSwellSimpleStakingLeafs(
+            leafs, getAddress(sourceChain, "SFRXETH"), getAddress(sourceChain, "swellSimpleStaking")
+        );
+        _addSwellSimpleStakingLeafs(
+            leafs, getAddress(sourceChain, "SWETH"), getAddress(sourceChain, "swellSimpleStaking")
+        );
 
         // ========================== Zircuit ==========================
-        _addZircuitLeafs(leafs, address(WEETH), zircuitSimpleStaking);
-        _addZircuitLeafs(leafs, address(WSTETH), zircuitSimpleStaking);
-        _addZircuitLeafs(leafs, address(SWETH), zircuitSimpleStaking);
-        _addZircuitLeafs(leafs, address(METH), zircuitSimpleStaking);
+        _addZircuitLeafs(leafs, getAddress(sourceChain, "WEETH"), getAddress(sourceChain, "zircuitSimpleStaking"));
+        _addZircuitLeafs(leafs, getAddress(sourceChain, "WSTETH"), getAddress(sourceChain, "zircuitSimpleStaking"));
+        _addZircuitLeafs(leafs, getAddress(sourceChain, "SWETH"), getAddress(sourceChain, "zircuitSimpleStaking"));
+        _addZircuitLeafs(leafs, getAddress(sourceChain, "METH"), getAddress(sourceChain, "zircuitSimpleStaking"));
 
         // ========================== Fluid fToken ==========================
-        _addFluidFTokenLeafs(leafs, fWETH);
-        _addFluidFTokenLeafs(leafs, fWSTETH);
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fWETH"));
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fWSTETH"));
 
         // ========================== FrxEth ==========================
         /**
          * deposit, withdraw
          */
-        _addERC4626Leafs(leafs, ERC4626(address(SFRXETH)));
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "SFRXETH")));
 
         string memory filePath = "./leafs/SuperSymbioticStrategistLeafs.json";
 
