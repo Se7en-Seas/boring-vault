@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.21;
 
-import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 import {BoringVault} from "src/base/BoringVault.sol";
 import {ChainlinkCCIPTeller} from "src/base/Roles/CrossChain/Bridges/CCIP/ChainlinkCCIPTeller.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
@@ -13,10 +12,11 @@ import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthorit
 import {MockCCIPRouter} from "src/helper/MockCCIPRouter.sol";
 import {Client} from "@ccip/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract ChainlinkCCIPTellerTest is Test, MainnetAddresses {
+contract ChainlinkCCIPTellerTest is Test, MerkleTreeHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -44,11 +44,32 @@ contract ChainlinkCCIPTellerTest is Test, MainnetAddresses {
 
     address public solver = vm.addr(54);
 
+    ERC20 internal WETH;
+    ERC20 internal EETH;
+    ERC20 internal WEETH;
+    ERC20 internal LINK;
+    address internal liquidV1PriceRouter;
+    address internal pendleEethPt;
+    ERC20 internal METH;
+    address internal mantleLspStaking;
+    address internal WEETH_RATE_PROVIDER;
+
     function setUp() external {
+        setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         uint256 blockNumber = 19363419;
         _startFork(rpcKey, blockNumber);
+
+        WETH = getERC20(sourceChain, "WETH");
+        EETH = getERC20(sourceChain, "EETH");
+        WEETH = getERC20(sourceChain, "WEETH");
+        LINK = getERC20(sourceChain, "LINK");
+        liquidV1PriceRouter = getAddress(sourceChain, "liquidV1PriceRouter");
+        pendleEethPt = getAddress(sourceChain, "pendleEethPt");
+        METH = getERC20(sourceChain, "METH");
+        mantleLspStaking = getAddress(sourceChain, "mantleLspStaking");
+        WEETH_RATE_PROVIDER = getAddress(sourceChain, "WEETH_RATE_PROVIDER");
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 

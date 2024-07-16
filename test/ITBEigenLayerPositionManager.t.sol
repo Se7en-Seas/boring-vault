@@ -1,24 +1,29 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.21;
 
-import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 import {BoringVault} from "src/base/BoringVault.sol";
 import {PositionManager as EigenLayerPositionManager} from "src/interfaces/EigenLayerPositionManager.sol";
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
 
-contract ITBEigenLayerPositionManagerTest is Test, MainnetAddresses {
+contract ITBEigenLayerPositionManagerTest is Test, MerkleTreeHelper {
     using stdStorage for StdStorage;
 
     BoringVault public boringVault = BoringVault(payable(0x7985F7dAdb0Cd22e9Cc24A5f5e284f3FA939D88f));
     EigenLayerPositionManager public eigenLayerPositionManager =
         EigenLayerPositionManager(payable(0xc31BDE60f00bf1172a59B8EB699c417548Bce0C2));
+    ERC20 internal METH;
 
     function setUp() external {
+        setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         uint256 blockNumber = 19986186;
 
         _startFork(rpcKey, blockNumber);
+
+        METH = getERC20(sourceChain, "METH");
     }
 
     function testPositionManager() external {
@@ -27,7 +32,7 @@ contract ITBEigenLayerPositionManagerTest is Test, MainnetAddresses {
 
         vm.startPrank(address(boringVault));
 
-        eigenLayerPositionManager.approveToken(address(METH), strategyManager, 1_000e18);
+        eigenLayerPositionManager.approveToken(address(METH), getAddress(sourceChain, "strategyManager"), 1_000e18);
         eigenLayerPositionManager.deposit(1_000e18, 0);
 
         // We have successfully deposited 1_000e18 mETH into the mETH strategy.
@@ -64,7 +69,7 @@ contract ITBEigenLayerPositionManagerTest is Test, MainnetAddresses {
         // ITB position manager needs to have an undelegate function.
         vm.startPrank(address(eigenLayerPositionManager));
         // Undelegate.
-        DelegationManager(delegationManager).undelegate(address(eigenLayerPositionManager));
+        DelegationManager(getAddress(sourceChain, "delegationManager")).undelegate(address(eigenLayerPositionManager));
 
         vm.stopPrank();
 

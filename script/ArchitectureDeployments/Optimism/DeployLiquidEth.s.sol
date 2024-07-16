@@ -10,11 +10,14 @@ import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Optimism/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
     using AddressToBytes32Lib for address;
+
+    // Define deployment chain.
+    string internal sourceChain = optimism;
 
     uint256 public privateKey;
 
@@ -22,22 +25,22 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
     string public boringVaultName = "Ether.Fi Liquid ETH Vault";
     string public boringVaultSymbol = "liquidETH";
     uint8 public boringVaultDecimals = 18;
-    string internal sourceChain = mainnet;
-    address public owner = getAddress(sourceChain, "dev1Address");
+    address public owner;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("mainnet");
+        vm.createSelectFork(sourceChain);
     }
 
     function run() external {
+        owner = getAddress(sourceChain, "dev0Address");
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
-        configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = false;
-        configureDeployment.setupTestUser = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = true;
+        configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = getAddress(sourceChain, "deployerAddress");
         configureDeployment.balancerVault = getAddress(sourceChain, "balancerVault");
@@ -78,17 +81,6 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
         // Setup extra deposit assets.
         depositAssets.push(
             DepositAsset({
-                asset: getERC20(sourceChain, "EETH"),
-                isPeggedToBase: true,
-                rateProvider: address(0),
-                genericRateProviderName: "",
-                target: address(0),
-                selector: bytes4(0),
-                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
-            })
-        );
-        depositAssets.push(
-            DepositAsset({
                 asset: getERC20(sourceChain, "WEETH"),
                 isPeggedToBase: false,
                 rateProvider: getAddress(sourceChain, "WEETH"),
@@ -125,16 +117,6 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
 
         withdrawAssets.push(
             WithdrawAsset({
-                asset: getERC20(sourceChain, "EETH"),
-                withdrawDelay: 3 days,
-                completionWindow: 7 days,
-                withdrawFee: 0,
-                maxLoss: 0.01e4
-            })
-        );
-
-        withdrawAssets.push(
-            WithdrawAsset({
                 asset: getERC20(sourceChain, "WEETH"),
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
@@ -151,7 +133,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "LiquidEthDeployment.json",
+            "Optimism/LiquidEthDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,

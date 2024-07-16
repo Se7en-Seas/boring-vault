@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.21;
 
-import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 import {BoringVault} from "src/base/BoringVault.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
@@ -9,10 +8,11 @@ import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract AccountantWithRateProvidersUsingDifferentDecimalTest is Test, MainnetAddresses {
+contract AccountantWithRateProvidersUsingDifferentDecimalTest is Test, MerkleTreeHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -29,11 +29,24 @@ contract AccountantWithRateProvidersUsingDifferentDecimalTest is Test, MainnetAd
     uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 3;
     uint8 public constant BORING_VAULT_ROLE = 4;
 
+    ERC20 internal USDC;
+    ERC20 internal USDT;
+    ERC20 internal DAI;
+    ERC20 internal SDAI;
+    address internal sDaiRateProvider;
+
     function setUp() external {
+        setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         uint256 blockNumber = 19618964;
         _startFork(rpcKey, blockNumber);
+
+        USDC = getERC20(sourceChain, "USDC");
+        USDT = getERC20(sourceChain, "USDT");
+        DAI = getERC20(sourceChain, "DAI");
+        SDAI = getERC20(sourceChain, "SDAI");
+        sDaiRateProvider = getAddress(sourceChain, "sDaiRateProvider");
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 6);
 
