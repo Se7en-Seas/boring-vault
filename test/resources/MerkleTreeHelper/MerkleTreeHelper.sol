@@ -2960,6 +2960,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
     }
 
     // ========================================= JSON FUNCTIONS =========================================
+    // TODO this should pass in a bool or something to generate leafs indicating that we want leaf indexes printed.
     function _generateTestLeafs(ManageLeaf[] memory leafs, bytes32[][] memory manageTree) internal {
         string memory filePath = "./leafs/TemporaryLeafs.json";
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
