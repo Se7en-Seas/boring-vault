@@ -67,7 +67,7 @@ contract ContractNames {
     string public constant BridgingTestVaultEthTellerName =
         "Bridging Test ETH Vault Teller With Multi Asset Support V1.0";
     string public constant BridgingTestVaultEthDecoderAndSanitizerName =
-        "Bridging Test ETH Vault Decoder and Sanitizer V1.2";
+        "Bridging Test ETH Vault Decoder and Sanitizer V1.3";
     string public constant BridgingTestVaultEthDelayedWithdrawer = "Bridging Test ETH Vault Delayed Withdrawer V1.0";
 
     string public constant CanaryBtcRolesAuthorityName = "Lombard BTC RolesAuthority Version 0.0";
