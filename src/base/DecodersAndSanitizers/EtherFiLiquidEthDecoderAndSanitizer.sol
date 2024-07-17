@@ -31,6 +31,7 @@ import {ArbitrumNativeBridgeDecoderAndSanitizer} from
 import {OFTDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/OFTDecoderAndSanitizer.sol";
 import {StandardBridgeDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/StandardBridgeDecoderAndSanitizer.sol";
+import {CompoundV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/CompoundV3DecoderAndSanitizer.sol";
 
 contract EtherFiLiquidEthDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
@@ -53,7 +54,8 @@ contract EtherFiLiquidEthDecoderAndSanitizer is
     CCIPDecoderAndSanitizer,
     ArbitrumNativeBridgeDecoderAndSanitizer,
     OFTDecoderAndSanitizer,
-    StandardBridgeDecoderAndSanitizer
+    StandardBridgeDecoderAndSanitizer,
+    CompoundV3DecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
@@ -104,6 +106,19 @@ contract EtherFiLiquidEthDecoderAndSanitizer is
     {
         // Nothing to sanitize or return
         return addressesFound;
+    }
+
+    /**
+     * @notice ZircuitSimpleStaking, CompoundV3 both specify a `withdraw(address,uint256)`,
+     *         all cases are handled the same way.
+     */
+    function withdraw(address a, uint256)
+        external
+        pure
+        override(ZircuitSimpleStakingDecoderAndSanitizer, CompoundV3DecoderAndSanitizer)
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(a);
     }
 
     /**
