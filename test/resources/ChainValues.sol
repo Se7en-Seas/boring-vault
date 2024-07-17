@@ -626,6 +626,7 @@ contract ChainValues {
         values[mainnet]["ksfrxETH"] = 0x1751e1e4d2c9Fa99479C0c5574136F0dbD8f3EB8.toBytes32();
         values[mainnet]["krswETH"] = 0x1B4d88f5f38988BEA334C79f48aa69BEEeFE2e1e.toBytes32();
         values[mainnet]["krsETH"] = 0x9a23e79a8E6D77F940F2C30eb3d9282Af2E4036c.toBytes32();
+        values[mainnet]["kETHFI"] = 0xB26bD8D1FD5415eED4C99f9fB6A278A42E7d1BA8.toBytes32();
 
         // CCIP token transfers.
         values[mainnet]["ccipRouter"] = 0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D.toBytes32();
