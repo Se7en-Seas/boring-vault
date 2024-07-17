@@ -20,6 +20,9 @@ contract ChainValues {
     uint64 public constant ccipArbitrumChainSelector = 4949039107694359620;
     uint64 public constant ccipMainnetChainSelector = 5009297550715157269;
     uint32 public constant layerZeroBaseEndpointId = 30184;
+    uint32 public constant layerZeroMainnetEndpointId = 30101;
+    uint32 public constant layerZeroOptimismEndpointId = 30111;
+    uint32 public constant layerZeroArbitrumEndpointId = 30110;
 
     error ChainValues__ZeroAddress(string chainName, string valueName);
     error ChainValues__ZeroBytes32(string chainName, string valueName);
@@ -644,6 +647,11 @@ contract ChainValues {
         values[mainnet]["basePortal"] = 0x49048044D57e1C92A77f79988d21Fa8fAF74E97e.toBytes32();
         values[mainnet]["baseResolvedDelegate"] = 0x866E82a600A1414e583f7F13623F1aC5d58b0Afa.toBytes32();
 
+        // Optimism Standard Bridge.
+        values[mainnet]["optimismStandardBridge"] = 0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1.toBytes32();
+        values[mainnet]["optimismPortal"] = 0xbEb5Fc579115071764c7423A4f12eDde41f106Ed.toBytes32();
+        values[mainnet]["optimismResolvedDelegate"] = 0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1.toBytes32();
+
         // Layer Zero.
         values[mainnet]["EtherFiOFTAdapter"] = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D.toBytes32();
     }
@@ -662,6 +670,7 @@ contract ChainValues {
         values[base]["USDC"] = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913.toBytes32();
         values[base]["WETH"] = 0x4200000000000000000000000000000000000006.toBytes32();
         values[base]["WEETH"] = 0x04C0599Ae5A44757c0af6F9eC3b93da8976c150A.toBytes32();
+        values[base]["WSTETH"] = 0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452.toBytes32();
 
         // Balancer vault
         values[base]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
@@ -672,6 +681,9 @@ contract ChainValues {
         values[base]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
 
         values[base]["weETH_ETH_ExchangeRate"] = 0x35e9D7001819Ea3B39Da906aE6b06A62cfe2c181.toBytes32();
+
+        // Aave V3
+        values[base]["v3Pool"] = 0xA238Dd80C259a72e81d7e4664a9801593F98d1c5.toBytes32();
     }
 
     function _addArbitrumValues() private {
@@ -769,6 +781,9 @@ contract ChainValues {
 
         values[optimism]["WETH"] = 0x4200000000000000000000000000000000000006.toBytes32();
         values[optimism]["WEETH"] = 0x346e03F8Cce9fE01dCB3d0Da3e9D00dC2c0E08f0.toBytes32();
+        values[optimism]["WSTETH"] = 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb.toBytes32();
+        values[optimism]["RETH"] = 0x9Bcef72be871e61ED4fBbc7630889beE758eb81D.toBytes32();
+        values[optimism]["WEETH_OFT"] = 0x5A7fACB970D094B6C7FF1df0eA68D99E6e73CBFF.toBytes32();
 
         values[optimism]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
         values[optimism]["balancerVault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
@@ -776,5 +791,16 @@ contract ChainValues {
         values[optimism]["uniswapV3NonFungiblePositionManager"] = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88.toBytes32();
         values[optimism]["ccipRouter"] = 0x3206695CaE29952f4b0c22a169725a865bc8Ce0f.toBytes32();
         values[optimism]["weETH_ETH_ExchangeRate"] = 0x72EC6bF88effEd88290C66DCF1bE2321d80502f5.toBytes32();
+
+        // Gearbox
+        values[optimism]["dWETHV3"] = 0x42dB77B3103c71059F4b997d6441cFB299FD0d94.toBytes32();
+        values[optimism]["sdWETHV3"] = 0x704c4C9F0d29257E5b0E526b20b48EfFC8f758b2.toBytes32();
+
+        // Standard Bridge
+        values[optimism]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
+        values[optimism]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
+
+        // Aave V3
+        values[optimism]["v3Pool"] = 0x794a61358D6845594F94dc1DB02A252b5b4814aD.toBytes32();
     }
 }
