@@ -657,6 +657,7 @@ contract ChainValues {
 
         // DeFi Ecosystem
         values[base]["ETH"] = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE.toBytes32();
+        values[base]["uniswapV3NonFungiblePositionManager"] = 0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1.toBytes32();
 
         values[base]["USDC"] = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913.toBytes32();
         values[base]["WETH"] = 0x4200000000000000000000000000000000000006.toBytes32();
@@ -664,10 +665,13 @@ contract ChainValues {
 
         // Balancer vault
         values[base]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
+        values[base]["balancerVault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
 
         // Standard Bridge.
         values[base]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
         values[base]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
+
+        values[base]["weETH_ETH_ExchangeRate"] = 0x35e9D7001819Ea3B39Da906aE6b06A62cfe2c181.toBytes32();
     }
 
     function _addArbitrumValues() private {
@@ -771,5 +775,6 @@ contract ChainValues {
 
         values[optimism]["uniswapV3NonFungiblePositionManager"] = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88.toBytes32();
         values[optimism]["ccipRouter"] = 0x3206695CaE29952f4b0c22a169725a865bc8Ce0f.toBytes32();
+        values[optimism]["weETH_ETH_ExchangeRate"] = 0x72EC6bF88effEd88290C66DCF1bE2321d80502f5.toBytes32();
     }
 }

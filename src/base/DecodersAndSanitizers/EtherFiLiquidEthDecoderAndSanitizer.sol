@@ -28,6 +28,9 @@ import {FluidFTokenDecoderAndSanitizer} from
 import {CCIPDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/CCIPDecoderAndSanitizer.sol";
 import {ArbitrumNativeBridgeDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/ArbitrumNativeBridgeDecoderAndSanitizer.sol";
+import {OFTDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/OFTDecoderAndSanitizer.sol";
+import {StandardBridgeDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/StandardBridgeDecoderAndSanitizer.sol";
 
 contract EtherFiLiquidEthDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
@@ -48,7 +51,9 @@ contract EtherFiLiquidEthDecoderAndSanitizer is
     ZircuitSimpleStakingDecoderAndSanitizer,
     FluidFTokenDecoderAndSanitizer,
     CCIPDecoderAndSanitizer,
-    ArbitrumNativeBridgeDecoderAndSanitizer
+    ArbitrumNativeBridgeDecoderAndSanitizer,
+    OFTDecoderAndSanitizer,
+    StandardBridgeDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)

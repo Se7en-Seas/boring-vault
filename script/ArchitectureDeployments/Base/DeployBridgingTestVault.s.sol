@@ -10,7 +10,7 @@ import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Optimism/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 70000000 --evm-version london --broadcast --etherscan-api-key $OPTIMISMSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Base/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 7000000 --evm-version london --broadcast --etherscan-api-key $BASESCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployBridgingTestVaultScript is DeployArcticArchitecture, ChainValues {
@@ -22,7 +22,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, ChainValues 
     string public boringVaultName = "Bridging Test Vault";
     string public boringVaultSymbol = "BTEV";
     uint8 public boringVaultDecimals = 18;
-    string internal sourceChain = optimism;
+    string internal sourceChain = base;
     address public owner;
 
     function setUp() external {
@@ -118,7 +118,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, ChainValues 
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "OptimismBridgingTestVaultDeployment.json",
+            "BaseBridgingTestVaultDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
