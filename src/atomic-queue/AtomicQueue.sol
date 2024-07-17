@@ -61,6 +61,26 @@ contract AtomicQueue is ReentrancyGuard {
         uint256 assetsForWant;
     }
 
+    /**
+     * @notice Used in `viewVerboseSolveMetaData` helper function to return data in a clean struct.
+     * @param user the address of the user
+     * @param deadlineExceeded indicates if the user has passed their deadline
+     * @param zeroOfferAmount indicates if the user has a zero offer amount
+     * @param insufficientOfferBalance indicates if the user has insufficient offer balance
+     * @param insufficientOfferAllowance indicates if the user has insufficient offer allowance
+     * @param assetsToOffer the amount of offer asset to solve
+     * @param assetsForWant the amount of assets users want for their offer assets
+     */
+    struct VerboseSolveMetaData {
+        address user;
+        bool deadlineExceeded;
+        bool zeroOfferAmount;
+        bool insufficientOfferBalance;
+        bool insufficientOfferAllowance;
+        uint256 assetsToOffer;
+        uint256 assetsForWant;
+    }
+
     // ========================================= GLOBAL STATE =========================================
 
     /**
@@ -74,6 +94,11 @@ contract AtomicQueue is ReentrancyGuard {
     error AtomicQueue__RequestDeadlineExceeded(address user);
     error AtomicQueue__UserNotInSolve(address user);
     error AtomicQueue__ZeroOfferAmount(address user);
+    error AtomicQueue__SafeRequestOfferAmountGreaterThanOfferBalance(uint256 offerAmount, uint256 offerBalance);
+    error AtomicQueue__SafeRequestDeadlineExceeded(uint256 deadline);
+    error AtomicQueue__SafeRequestInsufficientOfferAllowance(uint256 offerAmount, uint256 offerAllowance);
+    error AtomicQueue__SafeRequestOfferAmountZero();
+    error AtomicQueue__SafeRequestAtomicPriceZero();
 
     //============================== EVENTS ===============================
 
@@ -81,9 +106,9 @@ contract AtomicQueue is ReentrancyGuard {
      * @notice Emitted when `updateAtomicRequest` is called.
      */
     event AtomicRequestUpdated(
-        address user,
-        address offerToken,
-        address wantToken,
+        address indexed user,
+        address indexed offerToken,
+        address indexed wantToken,
         uint256 amount,
         uint256 deadline,
         uint256 minPrice,
@@ -94,9 +119,9 @@ contract AtomicQueue is ReentrancyGuard {
      * @notice Emitted when `solve` exchanges a users offer asset for their want asset.
      */
     event AtomicRequestFulfilled(
-        address user,
-        address offerToken,
-        address wantToken,
+        address indexed user,
+        address indexed offerToken,
+        address indexed wantToken,
         uint256 offerAmountSpent,
         uint256 wantAmountReceived,
         uint256 timestamp
@@ -154,7 +179,7 @@ contract AtomicQueue is ReentrancyGuard {
      * @param want the ERC20 token the user wants in exchange for offer
      * @param userRequest the users request
      */
-    function updateAtomicRequest(ERC20 offer, ERC20 want, AtomicRequest calldata userRequest) external nonReentrant {
+    function updateAtomicRequest(ERC20 offer, ERC20 want, AtomicRequest calldata userRequest) public nonReentrant {
         AtomicRequest storage request = userAtomicRequest[msg.sender][offer][want];
 
         request.deadline = userRequest.deadline;
@@ -171,6 +196,31 @@ contract AtomicQueue is ReentrancyGuard {
             userRequest.atomicPrice,
             block.timestamp
         );
+    }
+
+    /**
+     * @notice Identical to `updateAtomicRequest` but with additional checks to ensure the request is safe.
+     */
+    function safeUpdateAtomicRequest(ERC20 offer, ERC20 want, AtomicRequest calldata userRequest) external {
+        // Validate amount.
+        uint256 offerBalance = offer.balanceOf(msg.sender);
+        if (userRequest.offerAmount > offerBalance) {
+            revert AtomicQueue__SafeRequestOfferAmountGreaterThanOfferBalance(userRequest.offerAmount, offerBalance);
+        }
+        // Validate deadline.
+        if (block.timestamp > userRequest.deadline) {
+            revert AtomicQueue__SafeRequestDeadlineExceeded(userRequest.deadline);
+        }
+        // Validate approval.
+        uint256 offerAllowance = offer.allowance(msg.sender, address(this));
+        if (offerAllowance < userRequest.offerAmount) {
+            revert AtomicQueue__SafeRequestInsufficientOfferAllowance(userRequest.offerAmount, offerAllowance);
+        }
+        // Validate offerAmount is nonzero.
+        if (userRequest.offerAmount == 0) revert AtomicQueue__SafeRequestOfferAmountZero();
+        // Validate atomicPrice is nonzero.
+        if (userRequest.atomicPrice == 0) revert AtomicQueue__SafeRequestAtomicPriceZero();
+        updateAtomicRequest(offer, want, userRequest);
     }
 
     //============================== SOLVER FUNCTIONS ===============================
@@ -287,6 +337,63 @@ contract AtomicQueue is ReentrancyGuard {
 
             // If flags is zero, no errors occurred.
             if (metaData[i].flags == 0) {
+                totalAssetsForWant += userAssets;
+                totalAssetsToOffer += request.offerAmount;
+            }
+        }
+    }
+
+    /**
+     * @notice Helper function solvers can use to determine if users are solvable, and the required amounts to do so.
+     * @notice Repeated users are not accounted for in this setup, so if solvers have repeat users in their `users`
+     *         array the results can be wrong.
+     * @dev Since a user can have multiple requests with the same offer asset but different want asset, it is
+     *      possible for `viewSolveMetaData` to report no errors, but for a solve to fail, if any solves were done
+     *      between the time `viewSolveMetaData` and before `solve` is called.
+     * @param offer the ERC20 offer token to check for solvability
+     * @param want the ERC20 want token to check for solvability
+     * @param users an array of user addresses to check for solvability
+     */
+    function viewVerboseSolveMetaData(ERC20 offer, ERC20 want, address[] calldata users)
+        external
+        view
+        returns (VerboseSolveMetaData[] memory metaData, uint256 totalAssetsForWant, uint256 totalAssetsToOffer)
+    {
+        // Save offer asset decimals.
+        uint8 offerDecimals = offer.decimals();
+
+        // Setup meta data.
+        metaData = new VerboseSolveMetaData[](users.length);
+
+        for (uint256 i; i < users.length; ++i) {
+            AtomicRequest memory request = userAtomicRequest[users[i]][offer][want];
+
+            metaData[i].user = users[i];
+
+            if (block.timestamp > request.deadline) {
+                metaData[i].deadlineExceeded = true;
+            }
+            if (request.offerAmount == 0) {
+                metaData[i].zeroOfferAmount = true;
+            }
+            if (offer.balanceOf(users[i]) < request.offerAmount) {
+                metaData[i].insufficientOfferBalance = true;
+            }
+            if (offer.allowance(users[i], address(this)) < request.offerAmount) {
+                metaData[i].insufficientOfferAllowance = true;
+            }
+
+            metaData[i].assetsToOffer = request.offerAmount;
+
+            // User gets whatever their execution share price is.
+            uint256 userAssets = _calculateAssetAmount(request.offerAmount, request.atomicPrice, offerDecimals);
+            metaData[i].assetsForWant = userAssets;
+
+            // If flags is zero, no errors occurred.
+            if (
+                !metaData[i].deadlineExceeded && !metaData[i].zeroOfferAmount && !metaData[i].insufficientOfferBalance
+                    && !metaData[i].insufficientOfferAllowance
+            ) {
                 totalAssetsForWant += userAssets;
                 totalAssetsToOffer += request.offerAmount;
             }
