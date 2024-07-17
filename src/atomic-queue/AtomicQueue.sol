@@ -6,7 +6,6 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
 import {IAtomicSolver} from "./IAtomicSolver.sol";
-import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 
 /**
  * @title AtomicQueue
@@ -21,7 +20,7 @@ import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
  *         `offer` asset to cover the aggregate total request of `offerAmount`.
  * @author crispymangoes
  */
-contract AtomicQueue is ReentrancyGuard, Multicall {
+contract AtomicQueue is ReentrancyGuard {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
