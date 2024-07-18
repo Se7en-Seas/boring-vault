@@ -6,6 +6,9 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
 import {IAtomicSolver} from "./IAtomicSolver.sol";
+import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
+import {IPausable} from "src/interfaces/IPausable.sol";
+import {Auth, Authority} from "@solmate/auth/Auth.sol";
 
 /**
  * @title AtomicQueue
@@ -20,7 +23,7 @@ import {IAtomicSolver} from "./IAtomicSolver.sol";
  *         `offer` asset to cover the aggregate total request of `offerAmount`.
  * @author crispymangoes
  */
-contract AtomicQueue is ReentrancyGuard {
+contract AtomicQueue is Auth, ReentrancyGuard, IPausable {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
@@ -81,12 +84,24 @@ contract AtomicQueue is ReentrancyGuard {
         uint256 assetsForWant;
     }
 
+    // ========================================= CONSTANTS =========================================
+
+    /**
+     * @notice When using safeUpdateAtomicRequest, this is the max discount that can be applied.
+     */
+    uint256 public constant MAX_DISCOUNT = 0.01e6;
+
     // ========================================= GLOBAL STATE =========================================
 
     /**
      * @notice Maps user address to offer asset to want asset to a AtomicRequest struct.
      */
     mapping(address => mapping(ERC20 => mapping(ERC20 => AtomicRequest))) public userAtomicRequest;
+
+    /**
+     * @notice Used to pause calls to `updateAtomicRequest` and `solve`.
+     */
+    bool public isPaused;
 
     //============================== ERRORS ===============================
 
@@ -98,7 +113,10 @@ contract AtomicQueue is ReentrancyGuard {
     error AtomicQueue__SafeRequestDeadlineExceeded(uint256 deadline);
     error AtomicQueue__SafeRequestInsufficientOfferAllowance(uint256 offerAmount, uint256 offerAllowance);
     error AtomicQueue__SafeRequestOfferAmountZero();
-    error AtomicQueue__SafeRequestAtomicPriceZero();
+    error AtomicQueue__SafeRequestDiscountTooLarge();
+    error AtomicQueue__SafeRequestAccountantOfferMismatch();
+    error AtomicQueue__SafeRequestCannotCastToUint88();
+    error AtomicQueue__Paused();
 
     //============================== EVENTS ===============================
 
@@ -126,6 +144,42 @@ contract AtomicQueue is ReentrancyGuard {
         uint256 wantAmountReceived,
         uint256 timestamp
     );
+
+    /**
+     * @notice Emitted when the contract is paused.
+     */
+    event Paused();
+
+    /**
+     * @notice Emitted when the contract is unpaused.
+     */
+    event Unpaused();
+
+    //============================== IMMUTABLES ===============================
+
+    constructor(address _owner, Authority _auth) Auth(_owner, _auth) {}
+
+    // ========================================= ADMIN FUNCTIONS =========================================
+
+    /**
+     * @notice Pause this contract, which prevents future calls to `updateExchangeRate`, and any safe rate
+     *         calls will revert.
+     * @dev Callable by MULTISIG_ROLE.
+     */
+    function pause() external requiresAuth {
+        isPaused = true;
+        emit Paused();
+    }
+
+    /**
+     * @notice Unpause this contract, which allows future calls to `updateExchangeRate`, and any safe rate
+     *         calls will stop reverting.
+     * @dev Callable by MULTISIG_ROLE.
+     */
+    function unpause() external requiresAuth {
+        isPaused = false;
+        emit Unpaused();
+    }
 
     //============================== USER FUNCTIONS ===============================
 
@@ -179,7 +233,8 @@ contract AtomicQueue is ReentrancyGuard {
      * @param want the ERC20 token the user wants in exchange for offer
      * @param userRequest the users request
      */
-    function updateAtomicRequest(ERC20 offer, ERC20 want, AtomicRequest calldata userRequest) public nonReentrant {
+    function updateAtomicRequest(ERC20 offer, ERC20 want, AtomicRequest memory userRequest) public nonReentrant {
+        if (isPaused) revert AtomicQueue__Paused();
         AtomicRequest storage request = userAtomicRequest[msg.sender][offer][want];
 
         request.deadline = userRequest.deadline;
@@ -199,9 +254,20 @@ contract AtomicQueue is ReentrancyGuard {
     }
 
     /**
-     * @notice Identical to `updateAtomicRequest` but with additional checks to ensure the request is safe.
+     * @notice Mostly identical to `updateAtomicRequest` but with additional checks to ensure the request is safe.
+     * @notice Adds in accountant and discount to calculate a safe atomicPrice.
+     * @dev This function will completely ignore the provided atomic price and calculate a new one based off the
+     *      the accountant rate in quote and the discount provided.
+     * @param accountant the accountant to use to get the rate in quote
+     * @param discount the discount to apply to the rate in quote
      */
-    function safeUpdateAtomicRequest(ERC20 offer, ERC20 want, AtomicRequest calldata userRequest) external {
+    function safeUpdateAtomicRequest(
+        ERC20 offer,
+        ERC20 want,
+        AtomicRequest memory userRequest,
+        AccountantWithRateProviders accountant,
+        uint256 discount
+    ) external {
         // Validate amount.
         uint256 offerBalance = offer.balanceOf(msg.sender);
         if (userRequest.offerAmount > offerBalance) {
@@ -218,8 +284,13 @@ contract AtomicQueue is ReentrancyGuard {
         }
         // Validate offerAmount is nonzero.
         if (userRequest.offerAmount == 0) revert AtomicQueue__SafeRequestOfferAmountZero();
-        // Validate atomicPrice is nonzero.
-        if (userRequest.atomicPrice == 0) revert AtomicQueue__SafeRequestAtomicPriceZero();
+        // Calculate atomic price.
+        if (discount > MAX_DISCOUNT) revert AtomicQueue__SafeRequestDiscountTooLarge();
+        if (address(offer) != address(accountant.vault())) revert AtomicQueue__SafeRequestAccountantOfferMismatch();
+        uint256 safeRate = accountant.getRateInQuoteSafe(want);
+        uint256 safeAtomicPrice = safeRate.mulDivDown(1e6 - discount, 1e6);
+        if (safeAtomicPrice > type(uint88).max) revert AtomicQueue__SafeRequestCannotCastToUint88();
+        userRequest.atomicPrice = uint88(safeAtomicPrice);
         updateAtomicRequest(offer, want, userRequest);
     }
 
@@ -241,6 +312,8 @@ contract AtomicQueue is ReentrancyGuard {
         external
         nonReentrant
     {
+        if (isPaused) revert AtomicQueue__Paused();
+
         // Save offer asset decimals.
         uint8 offerDecimals = offer.decimals();
 

@@ -71,7 +71,7 @@ contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
 
         rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
 
-        atomicQueue = new AtomicQueue();
+        atomicQueue = new AtomicQueue(address(this), Authority(address(0)));
         atomicSolverV3 = new AtomicSolverV3(address(this), rolesAuthority);
 
         boringVault.setAuthority(rolesAuthority);
