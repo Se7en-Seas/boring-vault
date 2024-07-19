@@ -32,6 +32,7 @@ import {OFTDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/O
 import {StandardBridgeDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/StandardBridgeDecoderAndSanitizer.sol";
 import {CompoundV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/CompoundV3DecoderAndSanitizer.sol";
+import {MerklDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/MerklDecoderAndSanitizer.sol";
 
 contract EtherFiLiquidEthDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
@@ -55,7 +56,8 @@ contract EtherFiLiquidEthDecoderAndSanitizer is
     ArbitrumNativeBridgeDecoderAndSanitizer,
     OFTDecoderAndSanitizer,
     StandardBridgeDecoderAndSanitizer,
-    CompoundV3DecoderAndSanitizer
+    CompoundV3DecoderAndSanitizer,
+    MerklDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
