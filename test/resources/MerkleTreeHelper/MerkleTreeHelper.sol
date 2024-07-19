@@ -3121,18 +3121,6 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex] = ManageLeaf(
             merklDistributor,
             false,
-            "toggleOnlyOperatorCanClaim(address)",
-            new address[](1),
-            "Toggle whitelisting for merkl claiming",
-            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-        );
-        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
-        unchecked {
-            leafIndex++;
-        }
-        leafs[leafIndex] = ManageLeaf(
-            merklDistributor,
-            false,
             "toggleOperator(address,address)",
             new address[](2),
             string.concat("Allow ", vm.toString(operator), " to claim merkl rewards"),

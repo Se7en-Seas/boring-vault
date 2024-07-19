@@ -104,42 +104,9 @@ contract MerklIntegrationTest is Test, MerkleTreeHelper {
 
         // Allow the boring vault to receive ETH.
         rolesAuthority.setPublicCapability(address(boringVault), bytes4(0), true);
-    }
 
-    function testToggleWhitelistedClaiming() external {
-        ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        address operator = address(4444);
-        _addMerklLeafs(leafs, getAddress(sourceChain, "merklDistributor"), operator, new ERC20[](0));
-
-        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-
-        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
-
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
-        manageLeafs[0] = leafs[0];
-
-        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
-
-        address[] memory targets = new address[](1);
-        targets[0] = getAddress(sourceChain, "merklDistributor");
-
-        bytes[] memory targetData = new bytes[](1);
-        targetData[0] = abi.encodeWithSignature("toggleOnlyOperatorCanClaim(address)", boringVault);
-        uint256[] memory values = new uint256[](1);
-        address[] memory decodersAndSanitizers = new address[](1);
-        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-
-        MerklDistributor distributor = MerklDistributor(getAddress(sourceChain, "merklDistributor"));
-
-        assertEq(
-            distributor.onlyOperatorCanClaim(address(boringVault)), 0, "Only operator can claim should be set to false"
-        );
-
-        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-
-        assertEq(
-            distributor.onlyOperatorCanClaim(address(boringVault)), 1, "Only operator can claim should be set to true"
-        );
+        // Make the leaf index zero so that the tests do not need to be refactored.
+        leafIndex = 0;
     }
 
     function testToggleOperatorClaiming() external {

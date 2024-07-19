@@ -8,11 +8,6 @@ abstract contract MerklDecoderAndSanitizer is BaseDecoderAndSanitizer {
 
     error MerklDecoderAndSanitizer__InputLengthMismatch();
 
-    // Distributor contracts can be found here https://app.merkl.xyz/status
-    function toggleOnlyOperatorCanClaim(address user) external pure virtual returns (bytes memory sensitiveArguments) {
-        sensitiveArguments = abi.encodePacked(user);
-    }
-
     function toggleOperator(address user, address operator)
         external
         pure
