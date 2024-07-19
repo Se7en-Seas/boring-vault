@@ -655,6 +655,9 @@ contract ChainValues {
 
         // Layer Zero.
         values[mainnet]["EtherFiOFTAdapter"] = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D.toBytes32();
+
+        // Merkl
+        values[mainnet]["merklDistributor"] = 0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae.toBytes32();
     }
 
     function _addBaseValues() private {
@@ -685,6 +688,9 @@ contract ChainValues {
 
         // Aave V3
         values[base]["v3Pool"] = 0xA238Dd80C259a72e81d7e4664a9801593F98d1c5.toBytes32();
+
+        // Merkl
+        values[base]["merklDistributor"] = 0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae.toBytes32();
     }
 
     function _addArbitrumValues() private {
@@ -772,6 +778,9 @@ contract ChainValues {
         values[arbitrum]["fUSDT"] = 0x4A03F37e7d3fC243e3f99341d36f4b829BEe5E03.toBytes32();
         values[arbitrum]["fWETH"] = 0x45Df0656F8aDf017590009d2f1898eeca4F0a205.toBytes32();
         values[arbitrum]["fWSTETH"] = 0x66C25Cd75EBdAA7E04816F643d8E46cecd3183c9.toBytes32();
+
+        // Merkl
+        values[arbitrum]["merklDistributor"] = 0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae.toBytes32();
     }
 
     function _addOptimismValues() private {
@@ -803,5 +812,8 @@ contract ChainValues {
 
         // Aave V3
         values[optimism]["v3Pool"] = 0x794a61358D6845594F94dc1DB02A252b5b4814aD.toBytes32();
+
+        // Merkl
+        values[optimism]["merklDistributor"] = 0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae.toBytes32();
     }
 }

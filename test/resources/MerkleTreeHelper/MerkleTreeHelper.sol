@@ -3107,6 +3107,44 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Merkl =========================================
+
+    function _addMerklLeafs(
+        ManageLeaf[] memory leafs,
+        address merklDistributor,
+        address operator,
+        ERC20[] memory tokensToClaim
+    ) internal {
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            merklDistributor,
+            false,
+            "toggleOperator(address,address)",
+            new address[](2),
+            string.concat("Allow ", vm.toString(operator), " to claim merkl rewards"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = operator;
+        for (uint256 i; i < tokensToClaim.length; ++i) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                merklDistributor,
+                false,
+                "claim(address[],address[],uint256[],bytes32[][])",
+                new address[](2),
+                string.concat("Claim merkl", tokensToClaim[i].symbol(), " rewards"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = address(tokensToClaim[i]);
+        }
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
     // TODO this should pass in a bool or something to generate leafs indicating that we want leaf indexes printed.
     bool addLeafIndex = false;
