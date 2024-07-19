@@ -233,24 +233,12 @@ contract AtomicQueue is Auth, ReentrancyGuard, IPausable {
      * @param want the ERC20 token the user wants in exchange for offer
      * @param userRequest the users request
      */
-    function updateAtomicRequest(ERC20 offer, ERC20 want, AtomicRequest memory userRequest) public nonReentrant {
-        if (isPaused) revert AtomicQueue__Paused();
-        AtomicRequest storage request = userAtomicRequest[msg.sender][offer][want];
-
-        request.deadline = userRequest.deadline;
-        request.atomicPrice = userRequest.atomicPrice;
-        request.offerAmount = userRequest.offerAmount;
-
-        // Emit full amount user has.
-        emit AtomicRequestUpdated(
-            msg.sender,
-            address(offer),
-            address(want),
-            userRequest.offerAmount,
-            userRequest.deadline,
-            userRequest.atomicPrice,
-            block.timestamp
-        );
+    function updateAtomicRequest(ERC20 offer, ERC20 want, AtomicRequest memory userRequest)
+        external
+        nonReentrant
+        requiresAuth
+    {
+        _updateAtomicRequest(offer, want, userRequest);
     }
 
     /**
@@ -267,7 +255,7 @@ contract AtomicQueue is Auth, ReentrancyGuard, IPausable {
         AtomicRequest memory userRequest,
         AccountantWithRateProviders accountant,
         uint256 discount
-    ) external {
+    ) external nonReentrant requiresAuth {
         // Validate amount.
         uint256 offerBalance = offer.balanceOf(msg.sender);
         if (userRequest.offerAmount > offerBalance) {
@@ -291,7 +279,7 @@ contract AtomicQueue is Auth, ReentrancyGuard, IPausable {
         uint256 safeAtomicPrice = safeRate.mulDivDown(1e6 - discount, 1e6);
         if (safeAtomicPrice > type(uint88).max) revert AtomicQueue__SafeRequestCannotCastToUint88();
         userRequest.atomicPrice = uint88(safeAtomicPrice);
-        updateAtomicRequest(offer, want, userRequest);
+        _updateAtomicRequest(offer, want, userRequest);
     }
 
     //============================== SOLVER FUNCTIONS ===============================
@@ -311,6 +299,7 @@ contract AtomicQueue is Auth, ReentrancyGuard, IPausable {
     function solve(ERC20 offer, ERC20 want, address[] calldata users, bytes calldata runData, address solver)
         external
         nonReentrant
+        requiresAuth
     {
         if (isPaused) revert AtomicQueue__Paused();
 
@@ -474,6 +463,36 @@ contract AtomicQueue is Auth, ReentrancyGuard, IPausable {
     }
 
     //============================== INTERNAL FUNCTIONS ===============================
+
+    /**
+     * @notice Allows user to add/update their withdraw request.
+     * @notice It is possible for a withdraw request with a zero atomicPrice to be made, and solved.
+     *         If this happens, users will be selling their shares for no assets in return.
+     *         To determine a safe atomicPrice, share.previewRedeem should be used to get
+     *         a good share price, then the user can lower it from there to make their request fill faster.
+     * @param offer the ERC20 token the user is offering in exchange for the want
+     * @param want the ERC20 token the user wants in exchange for offer
+     * @param userRequest the users request
+     */
+    function _updateAtomicRequest(ERC20 offer, ERC20 want, AtomicRequest memory userRequest) internal {
+        if (isPaused) revert AtomicQueue__Paused();
+        AtomicRequest storage request = userAtomicRequest[msg.sender][offer][want];
+
+        request.deadline = userRequest.deadline;
+        request.atomicPrice = userRequest.atomicPrice;
+        request.offerAmount = userRequest.offerAmount;
+
+        // Emit full amount user has.
+        emit AtomicRequestUpdated(
+            msg.sender,
+            address(offer),
+            address(want),
+            userRequest.offerAmount,
+            userRequest.deadline,
+            userRequest.atomicPrice,
+            block.timestamp
+        );
+    }
 
     /**
      * @notice Helper function to calculate the amount of want assets a users wants in exchange for

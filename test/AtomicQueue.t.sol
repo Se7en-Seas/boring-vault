@@ -1,114 +1,256 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.21;
 
-import {Auth, Authority} from "@solmate/auth/Auth.sol";
-import {MockPausable} from "test/mocks/MockPausable.sol";
-import {Pauser, IPausable} from "src/base/Roles/Pauser.sol";
+import {BoringVault} from "src/base/BoringVault.sol";
+import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
+import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {IRateProvider} from "src/interfaces/IRateProvider.sol";
+import {ILiquidityPool} from "src/interfaces/IStaking.sol";
+import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
+import {AtomicSolverV3, AtomicQueue} from "src/atomic-queue/AtomicSolverV3.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
+import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
+import {AtomicSolverV3, AtomicQueue} from "src/atomic-queue/AtomicSolverV3.sol";
+
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract AtomicQueueTest is Test {
-    IPausable[] public pausables;
-    Pauser public pauser;
+contract AtomicQueueTest is Test, MerkleTreeHelper {
+    using SafeTransferLib for ERC20;
+    using FixedPointMathLib for uint256;
+    using stdStorage for StdStorage;
+
+    BoringVault public boringVault;
+
+    uint8 public constant MINTER_ROLE = 1;
+    uint8 public constant BURNER_ROLE = 2;
+    uint8 public constant SOLVER_ROLE = 3;
+    uint8 public constant QUEUE_ROLE = 4;
+
+    TellerWithMultiAssetSupport public teller;
+    AccountantWithRateProviders public accountant;
+    AtomicQueue public atomicQueue;
+    AtomicSolverV3 public atomicSolverV3;
+    address public payoutAddress = vm.addr(7777777);
+    address internal constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    ERC20 internal constant NATIVE_ERC20 = ERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+    RolesAuthority public rolesAuthority;
+    ERC20 internal WETH;
+    ERC20 internal EETH;
+    ERC20 internal WEETH;
+    ERC20 internal USDC;
+    address internal WEETH_RATE_PROVIDER;
+
+    address internal user = vm.addr(1);
 
     function setUp() external {
+        setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 20083900;
-
+        uint256 blockNumber = 20341522;
         _startFork(rpcKey, blockNumber);
 
-        // Setup pausables.
-        pausables.push(new MockPausable());
-        pausables.push(new MockPausable());
-        pausables.push(new MockPausable());
+        WETH = getERC20(sourceChain, "WETH");
+        EETH = getERC20(sourceChain, "EETH");
+        WEETH = getERC20(sourceChain, "WEETH");
+        USDC = getERC20(sourceChain, "USDC");
+        WEETH_RATE_PROVIDER = getAddress(sourceChain, "WEETH_RATE_PROVIDER");
 
-        // Setup pauser.
-        pauser = new Pauser(address(this), Authority(address(0)), pausables);
+        boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
+
+        accountant = new AccountantWithRateProviders(
+            address(this), address(boringVault), payoutAddress, 1e18, address(WETH), 1.1e4, 0.9e4, 1, 0, 0
+        );
+
+        teller =
+            new TellerWithMultiAssetSupport(address(this), address(boringVault), address(accountant), address(WETH));
+
+        rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
+
+        atomicQueue = new AtomicQueue(address(this), rolesAuthority);
+        atomicSolverV3 = new AtomicSolverV3(address(this), rolesAuthority);
+
+        boringVault.setAuthority(rolesAuthority);
+        accountant.setAuthority(rolesAuthority);
+        teller.setAuthority(rolesAuthority);
+
+        rolesAuthority.setRoleCapability(MINTER_ROLE, address(boringVault), BoringVault.enter.selector, true);
+        rolesAuthority.setRoleCapability(BURNER_ROLE, address(boringVault), BoringVault.exit.selector, true);
+        rolesAuthority.setRoleCapability(
+            SOLVER_ROLE, address(teller), TellerWithMultiAssetSupport.bulkDeposit.selector, true
+        );
+        rolesAuthority.setRoleCapability(
+            SOLVER_ROLE, address(teller), TellerWithMultiAssetSupport.bulkWithdraw.selector, true
+        );
+        rolesAuthority.setRoleCapability(QUEUE_ROLE, address(atomicSolverV3), AtomicSolverV3.finishSolve.selector, true);
+        rolesAuthority.setPublicCapability(address(teller), TellerWithMultiAssetSupport.deposit.selector, true);
+        rolesAuthority.setPublicCapability(address(atomicQueue), AtomicQueue.updateAtomicRequest.selector, true);
+        rolesAuthority.setPublicCapability(address(atomicQueue), AtomicQueue.safeUpdateAtomicRequest.selector, true);
+        rolesAuthority.setPublicCapability(address(atomicQueue), AtomicQueue.solve.selector, true);
+
+        rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);
+        rolesAuthority.setUserRole(address(teller), BURNER_ROLE, true);
+        rolesAuthority.setUserRole(address(atomicSolverV3), SOLVER_ROLE, true);
+        rolesAuthority.setUserRole(address(atomicQueue), QUEUE_ROLE, true);
+
+        accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
+
+        teller.addAsset(WETH);
+        teller.addAsset(WEETH);
+
+        // User buys some BoringVault shares.
+        deal(address(WETH), address(user), 1_000e18);
+        deal(address(WEETH), address(user), 1_001e18);
+
+        vm.startPrank(user);
+        WETH.approve(address(boringVault), type(uint256).max);
+        WEETH.approve(address(boringVault), type(uint256).max);
+        WEETH.approve(address(atomicQueue), type(uint256).max);
+        boringVault.approve(address(atomicQueue), type(uint256).max);
+        teller.deposit(WETH, 1_000e18, 0);
+        teller.deposit(WEETH, 1_000e18, 0);
+        vm.stopPrank();
     }
 
-    function testPauseAll() external {
-        pauser.pauseAll();
+    function testPausing() public {
+        atomicQueue.pause();
+        assertEq(atomicQueue.isPaused(), true, "Queue should be paused");
+        atomicQueue.unpause();
+        assertEq(atomicQueue.isPaused(), false, "Queue should be unpaused");
 
-        for (uint256 i = 0; i < pausables.length; ++i) {
-            assertEq(MockPausable(address(pausables[i])).isPaused(), true, "MockPausable should be paused");
-        }
+        // When the Queue is paused new atomic requests should revert.
+        atomicQueue.pause();
+        vm.startPrank(user);
+        AtomicQueue.AtomicRequest memory req = AtomicQueue.AtomicRequest({
+            deadline: uint64(block.timestamp + 1),
+            atomicPrice: uint88(1e18),
+            offerAmount: uint96(1e18),
+            inSolve: false
+        });
+        vm.expectRevert(bytes(abi.encodeWithSelector(AtomicQueue.AtomicQueue__Paused.selector)));
+        atomicQueue.updateAtomicRequest(boringVault, WETH, req);
 
-        pauser.unpauseAll();
+        vm.expectRevert(bytes(abi.encodeWithSelector(AtomicQueue.AtomicQueue__Paused.selector)));
+        atomicQueue.safeUpdateAtomicRequest(boringVault, WETH, req, accountant, 0.0001e6);
+        vm.stopPrank();
 
-        for (uint256 i = 0; i < pausables.length; ++i) {
-            assertEq(MockPausable(address(pausables[i])).isPaused(), false, "MockPausable should be unpaused");
-        }
+        vm.expectRevert(bytes(abi.encodeWithSelector(AtomicQueue.AtomicQueue__Paused.selector)));
+        atomicQueue.solve(boringVault, WETH, new address[](0), hex"", address(0));
     }
 
-    function testSenderPause() external {
-        pauser.updateSenderToPausable(address(this), pausables[0]);
+    function testSafeUpadteAtomicRequest() external {
+        // User makes a safe atomic request
+        AtomicQueue.AtomicRequest memory req = AtomicQueue.AtomicRequest({
+            deadline: uint64(block.timestamp + 1),
+            atomicPrice: uint88(0),
+            offerAmount: uint96(1e18),
+            inSolve: false
+        });
+        vm.prank(user);
+        atomicQueue.safeUpdateAtomicRequest(boringVault, WEETH, req, accountant, 0.0001e6);
 
-        pauser.senderPause();
+        // Zero out users weETH balance.
+        deal(address(WEETH), user, 0);
 
-        assertEq(MockPausable(address(pausables[0])).isPaused(), true, "MockPausable should be paused");
+        // Solver solves it.
+        deal(address(WEETH), address(this), 1_000e18);
+        WEETH.approve(address(atomicSolverV3), type(uint256).max);
+        address[] memory users = new address[](1);
+        users[0] = user;
+        atomicSolverV3.p2pSolve(atomicQueue, boringVault, WEETH, users, 0, type(uint256).max);
 
-        pauser.senderUnpause();
-
-        assertEq(MockPausable(address(pausables[0])).isPaused(), false, "MockPausable should be unpaused");
+        uint256 expectedWeethForUser = accountant.getRateInQuoteSafe(WEETH).mulDivDown(0.9999e4, 1e4);
+        assertApproxEqAbs(WEETH.balanceOf(user), expectedWeethForUser, 2, "User should receive WEETH");
     }
 
-    function testPauseSingle() external {
-        pauser.pauseSingle(pausables[0]);
+    function testSafeUpdateAtomicRequestReverts() external {
+        vm.startPrank(user);
+        AtomicQueue.AtomicRequest memory unsafeRequest = AtomicQueue.AtomicRequest({
+            deadline: uint64(block.timestamp + 1),
+            atomicPrice: uint88(1e18),
+            offerAmount: type(uint96).max,
+            inSolve: false
+        });
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    AtomicQueue.AtomicQueue__SafeRequestOfferAmountGreaterThanOfferBalance.selector,
+                    unsafeRequest.offerAmount,
+                    boringVault.balanceOf(user)
+                )
+            )
+        );
+        atomicQueue.safeUpdateAtomicRequest(boringVault, WETH, unsafeRequest, accountant, 0.0001e6);
 
-        assertEq(MockPausable(address(pausables[0])).isPaused(), true, "MockPausable should be paused");
+        unsafeRequest = AtomicQueue.AtomicRequest({
+            deadline: uint64(block.timestamp - 1),
+            atomicPrice: uint88(1e18),
+            offerAmount: uint96(1e18),
+            inSolve: false
+        });
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    AtomicQueue.AtomicQueue__SafeRequestDeadlineExceeded.selector, unsafeRequest.deadline
+                )
+            )
+        );
+        atomicQueue.safeUpdateAtomicRequest(boringVault, WETH, unsafeRequest, accountant, 0.0001e6);
 
-        pauser.unpauseSingle(pausables[0]);
+        unsafeRequest = AtomicQueue.AtomicRequest({
+            deadline: uint64(block.timestamp + 1),
+            atomicPrice: uint88(1e18),
+            offerAmount: uint96(1e18),
+            inSolve: false
+        });
 
-        assertEq(MockPausable(address(pausables[0])).isPaused(), false, "MockPausable should be unpaused");
-    }
+        boringVault.approve(address(atomicQueue), 0);
 
-    function testPauseMultiple() external {
-        pauser.pauseMultiple(pausables);
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    AtomicQueue.AtomicQueue__SafeRequestInsufficientOfferAllowance.selector,
+                    unsafeRequest.offerAmount,
+                    0
+                )
+            )
+        );
+        atomicQueue.safeUpdateAtomicRequest(boringVault, WETH, unsafeRequest, accountant, 0.0001e6);
 
-        for (uint256 i = 0; i < pausables.length; ++i) {
-            assertEq(MockPausable(address(pausables[i])).isPaused(), true, "MockPausable should be paused");
-        }
+        boringVault.approve(address(atomicQueue), type(uint256).max);
 
-        pauser.unpauseMultiple(pausables);
+        unsafeRequest = AtomicQueue.AtomicRequest({
+            deadline: uint64(block.timestamp + 1),
+            atomicPrice: uint88(1e18),
+            offerAmount: uint96(0),
+            inSolve: false
+        });
+        vm.expectRevert(bytes(abi.encodeWithSelector(AtomicQueue.AtomicQueue__SafeRequestOfferAmountZero.selector)));
+        atomicQueue.safeUpdateAtomicRequest(boringVault, WETH, unsafeRequest, accountant, 0.0001e6);
 
-        for (uint256 i = 0; i < pausables.length; ++i) {
-            assertEq(MockPausable(address(pausables[i])).isPaused(), false, "MockPausable should be unpaused");
-        }
-    }
+        unsafeRequest = AtomicQueue.AtomicRequest({
+            deadline: uint64(block.timestamp + 1),
+            atomicPrice: uint88(1e18),
+            offerAmount: uint96(1e18),
+            inSolve: false
+        });
+        vm.expectRevert(bytes(abi.encodeWithSelector(AtomicQueue.AtomicQueue__SafeRequestDiscountTooLarge.selector)));
+        atomicQueue.safeUpdateAtomicRequest(boringVault, WETH, unsafeRequest, accountant, 0.010001e6);
 
-    function testGetPausables() external {
-        IPausable[] memory _pausables = pauser.getPausables();
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(AtomicQueue.AtomicQueue__SafeRequestAccountantOfferMismatch.selector))
+        );
+        atomicQueue.safeUpdateAtomicRequest(WEETH, WETH, unsafeRequest, accountant, 0.0001e6);
 
-        for (uint256 i = 0; i < pausables.length; ++i) {
-            assertEq(address(_pausables[i]), address(pausables[i]), "Pausables should be equal");
-        }
-    }
+        vm.stopPrank();
+        accountant.updateExchangeRate(type(uint96).max);
+        accountant.unpause();
 
-    function testUpdateSenderToPausable() external {
-        pauser.updateSenderToPausable(address(this), pausables[0]);
-
-        IPausable pausable = pauser.senderToPausable(address(this));
-
-        assertEq(address(pausable), address(pausables[0]), "Pausables should be equal");
-    }
-
-    function testUpdatePausables() external {
-        MockPausable newPausable = new MockPausable();
-
-        pauser.addPausable(newPausable);
-
-        pauser.removePausable(0);
-        pauser.removePausable(1);
-        pauser.removePausable(1);
-
-        IPausable[] memory _pausables = pauser.getPausables();
-
-        assertEq(_pausables.length, 1, "Pausables length should be 1");
-        assertEq(address(_pausables[0]), address(newPausable), "Pausables should be equal");
-
-        // Try removing an out of bounds index.
-        vm.expectRevert(bytes(abi.encodeWithSelector(Pauser.Pauser__IndexOutOfBounds.selector)));
-        pauser.removePausable(1);
+        vm.startPrank(user);
+        vm.expectRevert(bytes(abi.encodeWithSelector(AtomicQueue.AtomicQueue__SafeRequestCannotCastToUint88.selector)));
+        atomicQueue.safeUpdateAtomicRequest(boringVault, WETH, unsafeRequest, accountant, 0.0001e6);
+        vm.stopPrank();
     }
 
     // ========================================= HELPER FUNCTIONS =========================================
