@@ -71,12 +71,13 @@ contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
 
         rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
 
-        atomicQueue = new AtomicQueue();
+        atomicQueue = new AtomicQueue(address(this), Authority(address(0)));
         atomicSolverV3 = new AtomicSolverV3(address(this), rolesAuthority);
 
         boringVault.setAuthority(rolesAuthority);
         accountant.setAuthority(rolesAuthority);
         teller.setAuthority(rolesAuthority);
+        atomicQueue.setAuthority(rolesAuthority);
 
         rolesAuthority.setRoleCapability(MINTER_ROLE, address(boringVault), BoringVault.enter.selector, true);
         rolesAuthority.setRoleCapability(BURNER_ROLE, address(boringVault), BoringVault.exit.selector, true);
@@ -106,6 +107,8 @@ contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
         rolesAuthority.setPublicCapability(
             address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
         );
+        rolesAuthority.setPublicCapability(address(atomicQueue), AtomicQueue.updateAtomicRequest.selector, true);
+        rolesAuthority.setPublicCapability(address(atomicQueue), AtomicQueue.solve.selector, true);
 
         rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);

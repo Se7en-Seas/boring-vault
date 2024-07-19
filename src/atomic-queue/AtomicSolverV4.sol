@@ -8,12 +8,13 @@ import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 import {IWEETH} from "src/interfaces/IStaking.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
+import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 
 /**
  * @title AtomicSolverV4
  * @author crispymangoes
  */
-contract AtomicSolverV4 is IAtomicSolver, Auth {
+contract AtomicSolverV4 is IAtomicSolver, Auth, Multicall {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     // ========================================= CONSTANTS =========================================
