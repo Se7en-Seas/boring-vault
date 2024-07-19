@@ -6,7 +6,7 @@ import {ChainValues} from "test/resources/ChainValues.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-
+import {IComet} from "src/interfaces/IComet.sol";
 import "forge-std/Base.sol";
 
 contract MerkleTreeHelper is CommonBase, ChainValues {
@@ -3105,6 +3105,116 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[0] = address(uint160(endpoint));
         leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
         leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+    }
+
+    // ========================================= Compound V3 =========================================
+
+    function _addCompoundV3Leafs(
+        ManageLeaf[] memory leafs,
+        ERC20[] memory collateralAssets,
+        address cometAddress,
+        address cometRewards
+    ) internal {
+        IComet comet = IComet(cometAddress);
+        ERC20 baseToken = ERC20(comet.baseToken());
+        // Handle base token
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(baseToken),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Comet to spend ", baseToken.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = cometAddress;
+
+        // Supply base token
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            cometAddress,
+            false,
+            "supply(address,uint256)",
+            new address[](1),
+            string.concat("Supply ", baseToken.symbol(), " to Comet"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(baseToken);
+
+        // Withdraw base token
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            cometAddress,
+            false,
+            "withdraw(address,uint256)",
+            new address[](1),
+            string.concat("Withdraw ", baseToken.symbol(), " from Comet"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(baseToken);
+
+        // Handle collateral assets
+        for (uint256 i; i < collateralAssets.length; ++i) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(collateralAssets[i]),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Comet to spend ", collateralAssets[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = cometAddress;
+
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                cometAddress,
+                false,
+                "supply(address,uint256)",
+                new address[](1),
+                string.concat("Supply ", collateralAssets[i].symbol(), " to Comet"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(collateralAssets[i]);
+
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                cometAddress,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                string.concat("Withdraw ", collateralAssets[i].symbol(), " from Comet"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(collateralAssets[i]);
+        }
+
+        // Claim rewards.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            cometRewards,
+            false,
+            "claim(address,address,bool)",
+            new address[](2),
+            "Claim rewards from Comet",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = cometAddress;
+        leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
     }
 
     // ========================================= Merkl =========================================
