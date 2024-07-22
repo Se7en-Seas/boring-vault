@@ -691,6 +691,10 @@ contract ChainValues {
 
         // Merkl
         values[base]["merklDistributor"] = 0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae.toBytes32();
+
+        // Aerodrome
+        values[base]["aerodromeRouter"] = 0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43.toBytes32();
+        values[base]["aerodromeNonFungiblePositionManager"] = 0x827922686190790b37229fd06084350E74485b72.toBytes32();
     }
 
     function _addArbitrumValues() private {
