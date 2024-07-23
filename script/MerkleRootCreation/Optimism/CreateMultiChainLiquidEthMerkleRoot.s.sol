@@ -9,7 +9,7 @@ import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper
 import "forge-std/Script.sol";
 
 /**
- *  source .env && forge script script/MerkleRootCreation/Base/CreateMultiChainLiquidEthMerkleRoot.s.sol:CreateMultiChainLiquidEthMerkleRootScript --rpc-url $BASE_RPC_URL
+ *  source .env && forge script script/MerkleRootCreation/Optimism/CreateMultiChainLiquidEthMerkleRoot.s.sol:CreateMultiChainLiquidEthMerkleRootScript --rpc-url $OPTIMISM_RPC_URL
  */
 contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
@@ -32,25 +32,23 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
     }
 
     function generateMultiChainLiquidEthStrategistMerkleRoot() public {
-        setSourceChainName(base);
-        setAddress(false, base, "boringVault", boringVault);
-        setAddress(false, base, "managerAddress", managerAddress);
-        setAddress(false, base, "accountantAddress", accountantAddress);
-        setAddress(false, base, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+        setSourceChainName(optimism);
+        setAddress(false, optimism, "boringVault", boringVault);
+        setAddress(false, optimism, "managerAddress", managerAddress);
+        setAddress(false, optimism, "accountantAddress", accountantAddress);
+        setAddress(false, optimism, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](256);
 
         // ========================== Aave V3 ==========================
-        ERC20[] memory supplyAssets = new ERC20[](4);
+        ERC20[] memory supplyAssets = new ERC20[](3);
         supplyAssets[0] = getERC20(sourceChain, "WETH");
-        supplyAssets[1] = getERC20(sourceChain, "WEETH");
+        supplyAssets[1] = getERC20(sourceChain, "RETH");
         supplyAssets[2] = getERC20(sourceChain, "WSTETH");
-        supplyAssets[3] = getERC20(sourceChain, "CBETH");
-        ERC20[] memory borrowAssets = new ERC20[](4);
+        ERC20[] memory borrowAssets = new ERC20[](3);
         borrowAssets[0] = getERC20(sourceChain, "WETH");
-        borrowAssets[1] = getERC20(sourceChain, "WEETH");
+        borrowAssets[1] = getERC20(sourceChain, "RETH");
         borrowAssets[2] = getERC20(sourceChain, "WSTETH");
-        borrowAssets[3] = getERC20(sourceChain, "CBETH");
         _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
 
         // ========================== Native ==========================
@@ -59,19 +57,29 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
          */
         _addNativeLeafs(leafs);
 
-        // ========================== MorphoBlue ==========================
-        _addMorphoBlueSupplyLeafs(leafs, getBytes32(sourceChain, "weETH_wETH_915"));
+        // ========================== Gearbox ==========================
+        _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWETHV3")), getAddress(sourceChain, "sdWETHV3"));
+
+        // ========================== Balancer ==========================
+        _addBalancerLeafs(leafs, getBytes32(sourceChain, "wstETH_weETH_Id"), getAddress(sourceChain, "wstETH_weETH_Gauge"));
+
+        // ========================== Aura ==========================
+        _addAuraLeafs(leafs, getAddress(sourceChain, "aura_wstETH_weETH"));
 
         // ========================== UniswapV3 ==========================
-        address[] memory token0 = new address[](3);
+        address[] memory token0 = new address[](5);
         token0[0] = getAddress(sourceChain, "WETH");
         token0[1] = getAddress(sourceChain, "WETH");
         token0[2] = getAddress(sourceChain, "WETH");
+        token0[3] = getAddress(sourceChain, "WETH");
+        token0[4] = getAddress(sourceChain, "WEETH");
 
-        address[] memory token1 = new address[](3);
+        address[] memory token1 = new address[](5);
         token1[0] = getAddress(sourceChain, "WEETH");
         token1[1] = getAddress(sourceChain, "WSTETH");
-        token1[2] = getAddress(sourceChain, "CBETH");
+        token1[2] = getAddress(sourceChain, "RETH");
+        token1[3] = getAddress(sourceChain, "WEETH_OFT");
+        token1[4] = getAddress(sourceChain, "WEETH_OFT");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
@@ -79,21 +87,22 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         /**
          * Claim fees in USDC, DAI, USDT and USDE
          */
-        ERC20[] memory feeAssets = new ERC20[](2);
+        ERC20[] memory feeAssets = new ERC20[](3);
         feeAssets[0] = getERC20(sourceChain, "WETH");
         feeAssets[1] = getERC20(sourceChain, "WEETH");
+        feeAssets[2] = getERC20(sourceChain, "WEETH_OFT");
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](7);
-        SwapKind[] memory kind = new SwapKind[](7);
+        address[] memory assets = new address[](10);
+        SwapKind[] memory kind = new SwapKind[](10);
         assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "WEETH");
         kind[1] = SwapKind.BuyAndSell;
         assets[2] = getAddress(sourceChain, "WSTETH");
         kind[2] = SwapKind.BuyAndSell;
-        assets[3] = getAddress(sourceChain, "CBETH");
+        assets[3] = getAddress(sourceChain, "WEETH_OFT");
         kind[3] = SwapKind.BuyAndSell;
         assets[4] = getAddress(sourceChain, "CRV");
         kind[4] = SwapKind.Sell;
@@ -101,21 +110,28 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         kind[5] = SwapKind.Sell;
         assets[6] = getAddress(sourceChain, "BAL");
         kind[6] = SwapKind.Sell;
+        assets[7] = getAddress(sourceChain, "RETH");
+        kind[7] = SwapKind.BuyAndSell;
+        assets[8] = getAddress(sourceChain, "OP");
+        kind[8] = SwapKind.Sell;
+        assets[9] = getAddress(sourceChain, "UNI");
+        kind[9] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         // ========================== Flashloans ==========================
         _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WETH"));
-        _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WEETH"));
 
         // ========================== Standard Bridge ==========================
-        ERC20[] memory localTokens = new ERC20[](3);
+        ERC20[] memory localTokens = new ERC20[](4);
         localTokens[0] = getERC20(sourceChain, "WETH");
         localTokens[1] = getERC20(sourceChain, "WSTETH");
-        localTokens[2] = getERC20(sourceChain, "CBETH");
-        ERC20[] memory remoteTokens = new ERC20[](3);
+        localTokens[2] = getERC20(sourceChain, "WEETH");
+        localTokens[3] = getERC20(sourceChain, "RETH");
+        ERC20[] memory remoteTokens = new ERC20[](4);
         remoteTokens[0] = getERC20(mainnet, "WETH");
         remoteTokens[1] = getERC20(mainnet, "WSTETH");
-        remoteTokens[2] = getERC20(mainnet, "CBETH");
+        remoteTokens[2] = getERC20(mainnet, "WEETH");
+        remoteTokens[3] = getERC20(mainnet, "RETH");
         _addStandardBridgeLeafs(
             leafs,
             mainnet,
@@ -128,15 +144,16 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         );
 
         // ========================== Merkl ==========================
-        ERC20[] memory tokensToClaim = new ERC20[](1);
+        ERC20[] memory tokensToClaim = new ERC20[](2);
         tokensToClaim[0] = getERC20(sourceChain, "UNI");
+        tokensToClaim[1] = getERC20(sourceChain, "OP");
         _addMerklLeafs(leafs, getAddress(sourceChain, "merklDistributor"), getAddress(sourceChain, "dev1Address"), tokensToClaim);
 
-        // TODO add aerodrome once audited
+        // TODO add velodrome once audited
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        string memory filePath = "./leafs/BaseMultiChainLiquidEthStrategistLeafs.json";
+        string memory filePath = "./leafs/OptimismMultiChainLiquidEthStrategistLeafs.json";
 
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }

@@ -810,15 +810,24 @@ contract ChainValues {
         values[optimism]["dev0Address"] = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b.toBytes32();
         values[optimism]["dev1Address"] = 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1.toBytes32();
         values[optimism]["liquidPayoutAddress"] = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A.toBytes32();
+        values[optimism]["uniV3Router"] = 0xE592427A0AEce92De3Edee1F18E0157C05861564.toBytes32();
+        values[optimism]["aggregationRouterV5"] = 0x1111111254EEB25477B68fb85Ed929f73A960582.toBytes32();
+        values[optimism]["oneInchExecutor"] = 0xE37e799D5077682FA0a244D46E5649F71457BD09.toBytes32();
 
         values[optimism]["WETH"] = 0x4200000000000000000000000000000000000006.toBytes32();
         values[optimism]["WEETH"] = 0x346e03F8Cce9fE01dCB3d0Da3e9D00dC2c0E08f0.toBytes32();
         values[optimism]["WSTETH"] = 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb.toBytes32();
         values[optimism]["RETH"] = 0x9Bcef72be871e61ED4fBbc7630889beE758eb81D.toBytes32();
         values[optimism]["WEETH_OFT"] = 0x5A7fACB970D094B6C7FF1df0eA68D99E6e73CBFF.toBytes32();
+        values[optimism]["OP"] = 0x4200000000000000000000000000000000000042.toBytes32();
+        values[optimism]["CRV"] = 0x0994206dfE8De6Ec6920FF4D779B0d950605Fb53.toBytes32();
+        values[optimism]["AURA"] = 0x1509706a6c66CA549ff0cB464de88231DDBe213B.toBytes32();
+        values[optimism]["BAL"] = 0xFE8B128bA8C78aabC59d4c64cEE7fF28e9379921.toBytes32();
+        values[optimism]["UNI"] = 0x6fd9d7AD17242c41f7131d257212c54A0e816691.toBytes32();
 
         values[optimism]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
         values[optimism]["balancerVault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
+        values[optimism]["minter"] = 0x239e55F427D44C3cc793f49bFB507ebe76638a2b.toBytes32();
 
         values[optimism]["uniswapV3NonFungiblePositionManager"] = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88.toBytes32();
         values[optimism]["ccipRouter"] = 0x3206695CaE29952f4b0c22a169725a865bc8Ce0f.toBytes32();
@@ -837,5 +846,11 @@ contract ChainValues {
 
         // Merkl
         values[optimism]["merklDistributor"] = 0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae.toBytes32();
+
+        // Beethoven
+        values[optimism]["wstETH_weETH_BPT"] = 0x2Bb4712247D5F451063b5E4f6948abDfb925d93D.toBytes32();
+        values[optimism]["wstETH_weETH_Id"] = 0x2bb4712247d5f451063b5e4f6948abdfb925d93d000000000000000000000136;
+        values[optimism]["wstETH_weETH_Gauge"] = 0xF3B314B1D2bd7d9afa8eC637716A9Bb81dBc79e5.toBytes32();
+        values[optimism]["aura_wstETH_weETH"] = 0xe351a69EB84a22E113E92A4C683391C95448d7d4.toBytes32();
     }
 }
