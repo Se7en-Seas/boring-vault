@@ -4,7 +4,7 @@ pragma solidity 0.8.21;
 contract ContractNames {
     string public constant SevenSeasRolesAuthorityName = "Seven Seas RolesAuthority Version 0.0";
     string public constant ArcticArchitectureLensName = "Arctic Architecture Lens V0.0";
-    string public constant AtomicQueueName = "Atomic Queue V0.0";
+    string public constant AtomicQueueName = "Atomic Queue V0.1";
     string public constant AtomicSolverName = "Atomic Solver V4.0";
 
     // Migration

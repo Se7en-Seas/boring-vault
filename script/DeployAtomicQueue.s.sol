@@ -39,13 +39,13 @@ contract DeployAtomicQueueScript is Script, ContractNames, MainnetAddresses {
 
         rolesAuthority = RolesAuthority(deployer.getAddress(SevenSeasRolesAuthorityName));
 
-        // creationCode = type(AtomicQueue).creationCode;
-        // constructorArgs = hex"";
-        // atomicQueue = AtomicQueue(deployer.deployContract(AtomicQueueName, creationCode, constructorArgs, 0));
-
-        creationCode = type(AtomicSolverV4).creationCode;
+        creationCode = type(AtomicQueue).creationCode;
         constructorArgs = abi.encode(owner, rolesAuthority);
-        atomicSolver = AtomicSolverV4(deployer.deployContract(AtomicSolverName, creationCode, constructorArgs, 0));
+        atomicQueue = AtomicQueue(deployer.deployContract(AtomicQueueName, creationCode, constructorArgs, 0));
+
+        // creationCode = type(AtomicSolverV4).creationCode;
+        // constructorArgs = abi.encode(owner, rolesAuthority);
+        // atomicSolver = AtomicSolverV4(deployer.deployContract(AtomicSolverName, creationCode, constructorArgs, 0));
 
         vm.stopBroadcast();
     }
