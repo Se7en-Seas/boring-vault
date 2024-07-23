@@ -8,6 +8,7 @@ abstract contract VelodromeDecoderAndSanitizer is BaseDecoderAndSanitizer {
     //============================== ERRORS ===============================
 
     error VelodromeDecoderAndSanitizer__BadTokenId();
+    error VelodromeDecoderAndSanitizer__PoolCreationNotAllowed();
 
     //============================== IMMUTABLES ===============================
 
@@ -31,7 +32,9 @@ abstract contract VelodromeDecoderAndSanitizer is BaseDecoderAndSanitizer {
         virtual
         returns (bytes memory addressesFound)
     {
-        // Nothing to sanitize
+        if(params.sqrtPriceX96 != 0) {
+            revert VelodromeDecoderAndSanitizer__PoolCreationNotAllowed();
+        }
         // Return addresses found
         addressesFound = abi.encodePacked(params.token0, params.token1, params.recipient);
     }

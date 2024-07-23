@@ -462,6 +462,53 @@ contract AerodromeIntegrationTest is Test, MerkleTreeHelper {
         targetData[3] = abi.encodeWithSignature(
             "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))", increaseLiquidityParams
         );
+        mintParams = DecoderCustomTypes.VelodromeMintParams(
+            getAddress(sourceChain, "WETH"),
+            getAddress(sourceChain, "WSTETH"),
+            int24(1),
+            int24(-1590), // lower tick
+            int24(-1588), // upper tick
+            500e18,
+            500e18,
+            0,
+            0,
+            address(boringVault),
+            block.timestamp,
+            1
+        );
+        targetData[2] = abi.encodeWithSignature(
+            "mint((address,address,int24,int24,int24,uint256,uint256,uint256,uint256,address,uint256,uint160))",
+            mintParams
+        );
+
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(VelodromeDecoderAndSanitizer.VelodromeDecoderAndSanitizer__PoolCreationNotAllowed.selector)
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](6)
+        );
+
+        mintParams = DecoderCustomTypes.VelodromeMintParams(
+            getAddress(sourceChain, "WETH"),
+            getAddress(sourceChain, "WSTETH"),
+            int24(1),
+            int24(-1590), // lower tick
+            int24(-1588), // upper tick
+            500e18,
+            500e18,
+            0,
+            0,
+            address(boringVault),
+            block.timestamp,
+            0
+        );
+        targetData[2] = abi.encodeWithSignature(
+            "mint((address,address,int24,int24,int24,uint256,uint256,uint256,uint256,address,uint256,uint160))",
+            mintParams
+        );
 
         manager.manageVaultWithMerkleVerification(
             manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](6)
