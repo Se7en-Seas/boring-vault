@@ -145,4 +145,5 @@ contract ContractNames {
     string public constant METHRateProviderName = "METH Generic Rate Provider V0.0";
     string public constant SWETHRateProviderName = "SWETH Generic Rate Provider V0.0";
     string public constant SFRXETHRateProviderName = "SFRXETH Generic Rate Provider V0.0";
+    string public constant WEETHRateProviderName = "weETH Generic Rate Provider V0.0";
 }
