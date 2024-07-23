@@ -133,6 +133,7 @@ contract ChainValues {
         values[mainnet]["SFRXETH"] = 0xac3E018457B222d93114458476f3E3416Abbe38F.toBytes32();
         values[mainnet]["WBETH"] = 0xa2E3356610840701BDf5611a53974510Ae27E2e1.toBytes32();
         values[mainnet]["UNIETH"] = 0xF1376bceF0f78459C0Ed0ba5ddce976F1ddF51F4.toBytes32();
+        values[mainnet]["CBETH"] = 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704.toBytes32();
 
         // Rate providers
         values[mainnet]["WEETH_RATE_PROVIDER"] = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee.toBytes32();
@@ -675,6 +676,12 @@ contract ChainValues {
         values[base]["WETH"] = 0x4200000000000000000000000000000000000006.toBytes32();
         values[base]["WEETH"] = 0x04C0599Ae5A44757c0af6F9eC3b93da8976c150A.toBytes32();
         values[base]["WSTETH"] = 0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452.toBytes32();
+        values[base]["CBETH"] = 0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22.toBytes32();
+        values[base]["AURA"] = 0x1509706a6c66CA549ff0cB464de88231DDBe213B.toBytes32();
+        values[base]["BAL"] = 0x4158734D47Fc9692176B5085E0F52ee0Da5d47F1.toBytes32();
+        values[base]["CRV"] = 0x8Ee73c484A26e0A5df2Ee2a4960B789967dd0415.toBytes32();
+        values[base]["LINK"] = 0x88Fb150BDc53A65fe94Dea0c9BA0a6dAf8C6e196.toBytes32();
+        values[base]["UNI"] = 0xc3De830EA07524a0761646a6a4e4be0e114a3C83.toBytes32();
 
         // Balancer vault
         values[base]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
@@ -691,6 +698,15 @@ contract ChainValues {
 
         // Merkl
         values[base]["merklDistributor"] = 0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae.toBytes32();
+
+        // MorphoBlue
+        values[base]["morphoBlue"] = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb.toBytes32();
+        values[base]["weETH_wETH_915"] = 0x78d11c03944e0dc298398f0545dc8195ad201a18b0388cb8058b1bcb89440971;
+
+        values[base]["uniV3Router"] = 0x2626664c2603336E57B271c5C0b26F421741e481.toBytes32();
+
+        values[base]["aggregationRouterV5"] = 0x1111111254EEB25477B68fb85Ed929f73A960582.toBytes32();
+        values[base]["oneInchExecutor"] = 0xE37e799D5077682FA0a244D46E5649F71457BD09.toBytes32();
     }
 
     function _addArbitrumValues() private {
