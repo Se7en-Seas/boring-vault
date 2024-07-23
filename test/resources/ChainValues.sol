@@ -262,6 +262,11 @@ contract ChainValues {
         values[mainnet]["aura_rETH_wETH_BPT"] = 0xDd1fE5AD401D4777cE89959b7fa587e569Bf125D.toBytes32();
         values[mainnet]["GHO_bb_a_USD_BPT"] = 0xc2B021133D1b0cF07dba696fd5DD89338428225B.toBytes32();
 
+        values[mainnet]["wstETH_wETH_BPT"] = 0x93d199263632a4EF4Bb438F1feB99e57b4b5f0BD.toBytes32();
+        values[mainnet]["wstETH_wETH_Id"] = 0x93d199263632a4ef4bb438f1feb99e57b4b5f0bd0000000000000000000005c2;
+        values[mainnet]["wstETH_wETH_Gauge"] = 0x5C0F23A5c1be65Fa710d385814a7Fd1Bda480b1C.toBytes32();
+        values[mainnet]["aura_wstETH_wETH"] = 0x2a14dB8D09dB0542f6A371c0cB308A768227D67D.toBytes32();
+
         // Rate Providers
         values[mainnet]["cbethRateProvider"] = 0x7311E4BB8a72e7B300c5B8BDE4de6CdaA822a5b1.toBytes32();
         values[mainnet]["rethRateProvider"] = 0x1a8F81c256aee9C640e14bB0453ce247ea0DFE6F.toBytes32();
@@ -682,6 +687,7 @@ contract ChainValues {
         values[base]["CRV"] = 0x8Ee73c484A26e0A5df2Ee2a4960B789967dd0415.toBytes32();
         values[base]["LINK"] = 0x88Fb150BDc53A65fe94Dea0c9BA0a6dAf8C6e196.toBytes32();
         values[base]["UNI"] = 0xc3De830EA07524a0761646a6a4e4be0e114a3C83.toBytes32();
+        values[base]["RETH"] = 0xB6fe221Fe9EeF5aBa221c348bA20A1Bf5e73624c.toBytes32();
 
         // Balancer vault
         values[base]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();

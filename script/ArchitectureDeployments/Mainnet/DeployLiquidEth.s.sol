@@ -23,7 +23,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
     string public boringVaultSymbol = "liquidETH";
     uint8 public boringVaultDecimals = 18;
     string internal sourceChain = mainnet;
-    address public owner = getAddress(sourceChain, "dev1Address");
+    address public owner;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
@@ -31,6 +31,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
     }
 
     function run() external {
+        owner = getAddress(sourceChain, "dev0Address");
         // Configure the deployment.
         configureDeployment.deployContracts = true;
         configureDeployment.setupRoles = false;
