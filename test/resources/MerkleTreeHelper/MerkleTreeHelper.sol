@@ -2298,19 +2298,34 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
 
-        // Mint rewards.
-        unchecked {
-            leafIndex++;
+        if (keccak256(abi.encode(sourceChain)) == keccak256(abi.encode(mainnet))) {
+            // Mint rewards.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "minter"),
+                false,
+                "mint(address)",
+                new address[](1),
+                string.concat("Mint rewards from Balancer gauge"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = gauge;
+        } else {
+            // Call claim_rewards(address) on gauge.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                gauge,
+                false,
+                "claim_rewards(address)",
+                new address[](1),
+                string.concat("Claim rewards from Balancer gauge"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
         }
-        leafs[leafIndex] = ManageLeaf(
-            getAddress(sourceChain, "minter"),
-            false,
-            "mint(address)",
-            new address[](1),
-            string.concat("Mint rewards from Balancer gauge"),
-            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-        );
-        leafs[leafIndex].argumentAddresses[0] = gauge;
     }
 
     // ========================================= Aura =========================================
