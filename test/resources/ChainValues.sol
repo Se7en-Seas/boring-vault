@@ -811,11 +811,14 @@ contract ChainValues {
         // Merkl
         values[arbitrum]["merklDistributor"] = 0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae.toBytes32();
 
+        // Vault Craft
+        values[arbitrum]["compoundV3Weth"] = 0xC4bBbbAF12B1bE472E6E7B1A76d2756d5C763F95.toBytes32();
+        values[arbitrum]["compoundV3WethGauge"] = 0x5E6A9859Dc1b393a82a5874F9cBA22E92d9fbBd2.toBytes32();
+
         // Camelot
         values[arbitrum]["camelotRouterV2"] = 0xc873fEcbd354f5A56E00E710B90EF4201db2448d.toBytes32();
         values[arbitrum]["camelotRouterV3"] = 0x1F721E2E82F6676FCE4eA07A5958cF098D339e18.toBytes32();
         values[arbitrum]["camelotNonFungiblePositionManager"] = 0x00c7f3082833e796A5b3e4Bd59f6642FF44DCD15.toBytes32();
-
     }
 
     function _addOptimismValues() private {
