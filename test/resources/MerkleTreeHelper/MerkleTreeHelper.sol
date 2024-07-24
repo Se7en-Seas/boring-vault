@@ -1712,6 +1712,191 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
     }
 
+    // ========================================= Camelot V3 =========================================
+
+    function _addCamelotV3Leafs(ManageLeaf[] memory leafs, address[] memory token0, address[] memory token1) internal {
+        require(token0.length == token1.length, "Token arrays must be of equal length");
+        for (uint256 i; i < token0.length; ++i) {
+            (token0[i], token1[i]) = token0[i] < token1[i] ? (token0[i], token1[i]) : (token1[i], token0[i]);
+            // Approvals
+            if (
+                !tokenToSpenderToApprovalInTree[token0[i]][getAddress(sourceChain, "camelotNonFungiblePositionManager")]
+            ) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token0[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve CamelotV3 NonFungible Position Manager to spend ", ERC20(token0[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "camelotNonFungiblePositionManager");
+                tokenToSpenderToApprovalInTree[token0[i]][getAddress(sourceChain, "camelotNonFungiblePositionManager")]
+                = true;
+            }
+            if (
+                !tokenToSpenderToApprovalInTree[token1[i]][getAddress(sourceChain, "camelotNonFungiblePositionManager")]
+            ) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token1[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve CamelotV3 NonFungible Position Manager to spend ", ERC20(token1[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "camelotNonFungiblePositionManager");
+                tokenToSpenderToApprovalInTree[token1[i]][getAddress(sourceChain, "camelotNonFungiblePositionManager")]
+                = true;
+            }
+
+            if (!tokenToSpenderToApprovalInTree[token0[i]][getAddress(sourceChain, "camelotRouterV3")]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token0[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve CamelotV3 Router to spend ", ERC20(token0[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "camelotRouterV3");
+                tokenToSpenderToApprovalInTree[token0[i]][getAddress(sourceChain, "camelotRouterV3")] = true;
+            }
+            if (!tokenToSpenderToApprovalInTree[token1[i]][getAddress(sourceChain, "camelotRouterV3")]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token1[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve CamelotV3 Router to spend ", ERC20(token1[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "camelotRouterV3");
+                tokenToSpenderToApprovalInTree[token1[i]][getAddress(sourceChain, "camelotRouterV3")] = true;
+            }
+
+            // Minting
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "camelotNonFungiblePositionManager"),
+                false,
+                "mint((address,address,int24,int24,uint256,uint256,uint256,uint256,address,uint256))",
+                new address[](3),
+                string.concat("Mint CamelotV3 ", ERC20(token0[i]).symbol(), " ", ERC20(token1[i]).symbol(), " position"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = token0[i];
+            leafs[leafIndex].argumentAddresses[1] = token1[i];
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+            // Increase liquidity
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "camelotNonFungiblePositionManager"),
+                false,
+                "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+                new address[](3),
+                string.concat(
+                    "Add liquidity to CamelotV3 ",
+                    ERC20(token0[i]).symbol(),
+                    " ",
+                    ERC20(token1[i]).symbol(),
+                    " position"
+                ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(0);
+            leafs[leafIndex].argumentAddresses[1] = token0[i];
+            leafs[leafIndex].argumentAddresses[2] = token1[i];
+
+            // Swapping to move tick in pool.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "camelotRouterV3"),
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                string.concat(
+                    "Swap ", ERC20(token0[i]).symbol(), " for ", ERC20(token1[i]).symbol(), " using CamelotV3 router"
+                ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = token0[i];
+            leafs[leafIndex].argumentAddresses[1] = token1[i];
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "camelotRouterV3"),
+                false,
+                "exactInput((bytes,address,uint256,uint256,uint256))",
+                new address[](3),
+                string.concat(
+                    "Swap ", ERC20(token1[i]).symbol(), " for ", ERC20(token0[i]).symbol(), " using CamelotV3 router"
+                ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = token1[i];
+            leafs[leafIndex].argumentAddresses[1] = token0[i];
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+        }
+        // Decrease liquidity
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "camelotNonFungiblePositionManager"),
+            false,
+            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
+            new address[](0),
+            "Remove liquidity from CamelotV3 position",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "camelotNonFungiblePositionManager"),
+            false,
+            "collect((uint256,address,uint128,uint128))",
+            new address[](1),
+            "Collect fees from CamelotV3 position",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+        // burn
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "camelotNonFungiblePositionManager"),
+            false,
+            "burn(uint256)",
+            new address[](0),
+            "Burn CamelotV3 position",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+    }
+
     // ========================================= Balancer V2 Flashloans =========================================
 
     function _addBalancerFlashloanLeafs(ManageLeaf[] memory leafs, address tokenToFlashloan) internal {
