@@ -781,6 +781,10 @@ contract ChainValues {
 
         // Merkl
         values[arbitrum]["merklDistributor"] = 0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae.toBytes32();
+
+        // Vault Craft
+        values[arbitrum]["compoundV3Weth"] = 0xC4bBbbAF12B1bE472E6E7B1A76d2756d5C763F95.toBytes32();
+        values[arbitrum]["compoundV3WethGauge"] = 0x5E6A9859Dc1b393a82a5874F9cBA22E92d9fbBd2.toBytes32();
     }
 
     function _addOptimismValues() private {

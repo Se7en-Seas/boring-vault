@@ -2435,6 +2435,68 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Vault Craft =========================================
+
+    function _addVaultCraftLeafs(ManageLeaf[] memory leafs, ERC4626 vault, address gauge) internal {
+        _addERC4626Leafs(leafs, vault);
+
+        // Add leafs for gauge.
+        // Approve gauge to spend vault share.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(vault),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve ", vault.symbol(), " gauge to spend", vault.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = gauge;
+
+        // Deposit vault share into gauge.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            gauge,
+            false,
+            "deposit(uint256,address)",
+            new address[](1),
+            string.concat("Deposit ", vault.symbol(), " share into gauge"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+        // Withdraw vault share from gauge.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            gauge,
+            false,
+            "withdraw(uint256)",
+            new address[](0),
+            string.concat("Withdraw ", vault.symbol(), " share from gauge"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Claim rewards from gauge.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            gauge,
+            false,
+            "claim_rewards(address)",
+            new address[](1),
+            string.concat("Claim rewards from gauge"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+    }
+
     // ========================================= Gearbox =========================================
 
     function _addGearboxLeafs(ManageLeaf[] memory leafs, ERC4626 dieselVault, address dieselStaking) internal {
