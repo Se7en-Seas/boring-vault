@@ -681,6 +681,7 @@ contract ChainValues {
         values[base]["WETH"] = 0x4200000000000000000000000000000000000006.toBytes32();
         values[base]["WEETH"] = 0x04C0599Ae5A44757c0af6F9eC3b93da8976c150A.toBytes32();
         values[base]["WSTETH"] = 0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452.toBytes32();
+        values[base]["AERO"] = 0x940181a94A35A4569E4529A3CDfB74e38FD98631.toBytes32();
         values[base]["CBETH"] = 0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22.toBytes32();
         values[base]["AURA"] = 0x1509706a6c66CA549ff0cB464de88231DDBe213B.toBytes32();
         values[base]["BAL"] = 0x4158734D47Fc9692176B5085E0F52ee0Da5d47F1.toBytes32();
@@ -704,6 +705,12 @@ contract ChainValues {
 
         // Merkl
         values[base]["merklDistributor"] = 0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae.toBytes32();
+
+        // Aerodrome
+        values[base]["aerodromeRouter"] = 0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43.toBytes32();
+        values[base]["aerodromeNonFungiblePositionManager"] = 0x827922686190790b37229fd06084350E74485b72.toBytes32();
+        values[base]["aerodrome_Weth_Wsteth_v3_1_gauge"] = 0x2A1f7bf46bd975b5004b61c6040597E1B6117040.toBytes32();
+        values[base]["aerodrome_Weth_Wsteth_v2_30_gauge"] = 0xDf7c8F17Ab7D47702A4a4b6D951d2A4c90F99bf4.toBytes32();
 
         // MorphoBlue
         values[base]["morphoBlue"] = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb.toBytes32();
