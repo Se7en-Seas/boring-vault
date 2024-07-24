@@ -17,10 +17,10 @@ abstract contract CamelotDecoderAndSanitizer is BaseDecoderAndSanitizer {
      * @notice Arbitrum 0x00c7f3082833e796A5b3e4Bd59f6642FF44DCD15
      * @notice
      */
-    CamelotNonFungiblePositionManager internal immutable velodromeNonFungiblePositionManager;
+    CamelotNonFungiblePositionManager internal immutable camelotNonFungiblePositionManager;
 
-    constructor(address _velodromeNonFungiblePositionManager) {
-        velodromeNonFungiblePositionManager = CamelotNonFungiblePositionManager(_velodromeNonFungiblePositionManager);
+    constructor(address _camelotNonFungiblePositionManager) {
+        camelotNonFungiblePositionManager = CamelotNonFungiblePositionManager(_camelotNonFungiblePositionManager);
     }
 
     //============================== CAMELOT V3 ===============================
@@ -34,10 +34,10 @@ abstract contract CamelotDecoderAndSanitizer is BaseDecoderAndSanitizer {
         // Nothing to sanitize
         // Return addresses found
         // Determine how many addresses are in params.path.
-        uint256 chunkSize = 23; // 3 bytes for uint24 fee, and 20 bytes for address token
+        uint256 chunkSize = 20; // 20 bytes for address token
         uint256 pathLength = params.path.length;
-        if (pathLength % chunkSize != 20) revert CamelotDecoderAndSanitizer__BadPathFormat();
-        uint256 pathAddressLength = 1 + (pathLength / chunkSize);
+        if (pathLength % chunkSize != 0) revert CamelotDecoderAndSanitizer__BadPathFormat();
+        uint256 pathAddressLength = pathLength / chunkSize;
         uint256 pathIndex;
         for (uint256 i; i < pathAddressLength; ++i) {
             addressesFound = abi.encodePacked(addressesFound, params.path[pathIndex:pathIndex + 20]);
@@ -64,12 +64,12 @@ abstract contract CamelotDecoderAndSanitizer is BaseDecoderAndSanitizer {
         returns (bytes memory addressesFound)
     {
         // Sanitize raw data
-        if (velodromeNonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
+        if (camelotNonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
             revert CamelotDecoderAndSanitizer__BadTokenId();
         }
-        // Extract addresses from VelodromeNonFungiblePositionManager.positions(params.tokenId).
+        // Extract addresses from camelotNonFungiblePositionManager.positions(params.tokenId).
         (, address operator, address token0, address token1,,,,,,,) =
-            velodromeNonFungiblePositionManager.positions(params.tokenId);
+            camelotNonFungiblePositionManager.positions(params.tokenId);
         addressesFound = abi.encodePacked(operator, token0, token1);
     }
 
@@ -82,7 +82,7 @@ abstract contract CamelotDecoderAndSanitizer is BaseDecoderAndSanitizer {
         // Sanitize raw data
         // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
         // just for completeness.
-        if (velodromeNonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
+        if (camelotNonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
             revert CamelotDecoderAndSanitizer__BadTokenId();
         }
 
@@ -99,7 +99,7 @@ abstract contract CamelotDecoderAndSanitizer is BaseDecoderAndSanitizer {
         // Sanitize raw data
         // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
         // just for completeness.
-        if (velodromeNonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
+        if (camelotNonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
             revert CamelotDecoderAndSanitizer__BadTokenId();
         }
 
