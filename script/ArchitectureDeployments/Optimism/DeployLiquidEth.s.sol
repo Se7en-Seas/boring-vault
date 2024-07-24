@@ -3,37 +3,33 @@ pragma solidity 0.8.21;
 
 import {DeployArcticArchitecture, ERC20, Deployer} from "script/ArchitectureDeployments/DeployArcticArchitecture.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
-import {ChainValues} from "test/resources/ChainValues.sol";
+import {OptimismAddresses} from "test/resources/OptimismAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
 import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Optimism/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Optimism/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 70000000 --evm-version london --broadcast --etherscan-api-key $OPTIMISMSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
+contract DeployLiquidEthScript is DeployArcticArchitecture, OptimismAddresses {
     using AddressToBytes32Lib for address;
-
-    // Define deployment chain.
-    string internal sourceChain = optimism;
 
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Ether.Fi Liquid ETH Vault";
+    string public boringVaultName = "Ether.Fi Liquid ETH";
     string public boringVaultSymbol = "liquidETH";
     uint8 public boringVaultDecimals = 18;
-    address public owner;
+    address public owner = dev0Address;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork(sourceChain);
+        vm.createSelectFork("optimism");
     }
 
     function run() external {
-        owner = getAddress(sourceChain, "dev0Address");
         // Configure the deployment.
         configureDeployment.deployContracts = true;
         configureDeployment.setupRoles = true;
@@ -42,9 +38,9 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
         configureDeployment.finishSetup = true;
         configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
-        configureDeployment.deployerAddress = getAddress(sourceChain, "deployerAddress");
-        configureDeployment.balancerVault = getAddress(sourceChain, "balancerVault");
-        configureDeployment.WETH = getAddress(sourceChain, "WETH");
+        configureDeployment.deployerAddress = deployerAddress;
+        configureDeployment.balancerVault = balancerVault;
+        configureDeployment.WETH = address(WETH);
 
         // Save deployer.
         deployer = Deployer(configureDeployment.deployerAddress);
@@ -60,10 +56,10 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
         names.delayedWithdrawer = EtherFiLiquidEthDelayedWithdrawer;
 
         // Define Accountant Parameters.
-        accountantParameters.payoutAddress = getAddress(sourceChain, "liquidPayoutAddress");
-        accountantParameters.base = getERC20(sourceChain, "WETH");
+        accountantParameters.payoutAddress = liquidPayoutAddress;
+        accountantParameters.base = WETH;
         // Decimals are in terms of `base`.
-        accountantParameters.startingExchangeRate = 1e18;
+        accountantParameters.startingExchangeRate = 1028735518391250446;
         //  4 decimals
         accountantParameters.managementFee = 0.02e4;
         accountantParameters.performanceFee = 0;
@@ -74,40 +70,26 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
 
         // Define Decoder and Sanitizer deployment details.
         bytes memory creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode;
-        bytes memory constructorArgs = abi.encode(
-            deployer.getAddress(names.boringVault), getAddress(sourceChain, "uniswapV3NonFungiblePositionManager")
-        );
+        bytes memory constructorArgs =
+            abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
         // Setup extra deposit assets.
         depositAssets.push(
             DepositAsset({
-                asset: getERC20(sourceChain, "WEETH"),
+                asset: WEETH_OFT,
                 isPeggedToBase: false,
-                rateProvider: getAddress(sourceChain, "WEETH"),
-                genericRateProviderName: "",
-                target: address(0),
-                selector: bytes4(0),
+                rateProvider: address(0),
+                genericRateProviderName: WEETHRateProviderName,
+                target: weETH_ETH_ExchangeRate,
+                selector: bytes4(keccak256(abi.encodePacked("latestAnswer()"))),
                 params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
             })
         );
-        // bytes4 selector = bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)")));
-        // uint256 amount = 1e18;
-        // depositAssets.push(
-        //     DepositAsset({
-        //         asset: WSTETH,
-        //         isPeggedToBase: false,
-        //         rateProvider: address(0),
-        //         genericRateProviderName: WstETHRateProviderName,
-        //         target: liquidV1PriceRouter,
-        //         selector: selector,
-        //         params: [address(WSTETH).toBytes32(), bytes32(amount), address(WETH).toBytes32(), 0, 0, 0, 0, 0]
-        //     })
-        // );
 
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: getERC20(sourceChain, "WETH"),
+                asset: WETH,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -117,7 +99,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
 
         withdrawAssets.push(
             WithdrawAsset({
-                asset: getERC20(sourceChain, "WEETH"),
+                asset: WEETH_OFT,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -128,7 +110,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
         bool allowPublicDeposits = false;
         bool allowPublicWithdraws = false;
         uint64 shareLockPeriod = 1 days;
-        address delayedWithdrawFeeAddress = getAddress(sourceChain, "liquidPayoutAddress");
+        address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
         vm.startBroadcast(privateKey);
 
@@ -144,7 +126,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
             allowPublicDeposits,
             allowPublicWithdraws,
             shareLockPeriod,
-            getAddress(sourceChain, "dev1Address")
+            dev1Address
         );
 
         vm.stopBroadcast();

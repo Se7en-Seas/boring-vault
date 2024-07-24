@@ -33,7 +33,7 @@ import {StandardBridgeDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/StandardBridgeDecoderAndSanitizer.sol";
 import {CompoundV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/CompoundV3DecoderAndSanitizer.sol";
 import {MerklDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/MerklDecoderAndSanitizer.sol";
-
+import {LidoDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/LidoDecoderAndSanitizer.sol";
 contract EtherFiLiquidEthDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
     BalancerV2DecoderAndSanitizer,
@@ -57,7 +57,8 @@ contract EtherFiLiquidEthDecoderAndSanitizer is
     OFTDecoderAndSanitizer,
     StandardBridgeDecoderAndSanitizer,
     CompoundV3DecoderAndSanitizer,
-    MerklDecoderAndSanitizer
+    MerklDecoderAndSanitizer,
+    LidoDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
@@ -148,4 +149,25 @@ contract EtherFiLiquidEthDecoderAndSanitizer is
     {
         addressesFound = abi.encodePacked(_token, _receiver);
     }
+
+    function wrap(uint256)
+        external
+        pure
+        override(EtherFiDecoderAndSanitizer, LidoDecoderAndSanitizer)
+        returns (bytes memory addressesFound)
+    {
+        // Nothing to sanitize or return
+        return addressesFound;
+    }
+
+    function unwrap(uint256)
+        external
+        pure
+        override(EtherFiDecoderAndSanitizer, LidoDecoderAndSanitizer)
+        returns (bytes memory addressesFound)
+    {
+        // Nothing to sanitize or return
+        return addressesFound;
+    }
+
 }

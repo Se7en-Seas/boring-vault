@@ -14,7 +14,7 @@ import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 
 /**
- *  source .env && forge script script/DeployAtomicQueue.s.sol:DeployAtomicQueueScript --with-gas-price 8000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/DeployAtomicQueue.s.sol:DeployAtomicQueueScript --with-gas-price 70000000 --evm-version london --broadcast --etherscan-api-key $OPTIMISMSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployAtomicQueueScript is Script, ContractNames, MainnetAddresses {
@@ -29,7 +29,7 @@ contract DeployAtomicQueueScript is Script, ContractNames, MainnetAddresses {
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("mainnet");
+        vm.createSelectFork("optimism");
     }
 
     function run() external {
@@ -37,7 +37,15 @@ contract DeployAtomicQueueScript is Script, ContractNames, MainnetAddresses {
         bytes memory constructorArgs;
         vm.startBroadcast(privateKey);
 
-        rolesAuthority = RolesAuthority(deployer.getAddress(SevenSeasRolesAuthorityName));
+        address deployedAddress = _getAddressIfDeployed(SevenSeasRolesAuthorityName);
+        if (deployedAddress == address(0)) {
+            creationCode = type(RolesAuthority).creationCode;
+            constructorArgs = abi.encode(owner, Authority(address(0)));
+            rolesAuthority =
+                RolesAuthority(deployer.deployContract(SevenSeasRolesAuthorityName, creationCode, constructorArgs, 0));
+        } else {
+            rolesAuthority = RolesAuthority(deployedAddress);
+        }
 
         creationCode = type(AtomicQueue).creationCode;
         constructorArgs = abi.encode(owner, rolesAuthority);
@@ -48,5 +56,14 @@ contract DeployAtomicQueueScript is Script, ContractNames, MainnetAddresses {
         // atomicSolver = AtomicSolverV4(deployer.deployContract(AtomicSolverName, creationCode, constructorArgs, 0));
 
         vm.stopBroadcast();
+    }
+
+    function _getAddressIfDeployed(string memory name) internal view returns (address) {
+        address deployedAt = deployer.getAddress(name);
+        uint256 size;
+        assembly {
+            size := extcodesize(deployedAt)
+        }
+        return size > 0 ? deployedAt : address(0);
     }
 }

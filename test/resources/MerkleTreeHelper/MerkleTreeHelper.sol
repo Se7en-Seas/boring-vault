@@ -3440,6 +3440,339 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
     }
 
+    // ========================================= VELODROME =========================================
+    function _addVelodromeV3Leafs(
+        ManageLeaf[] memory leafs,
+        address[] memory token0,
+        address[] memory token1,
+        address nonfungiblePositionManager,
+        address[] memory gauges
+    ) internal {
+        require(token0.length == token1.length && token0.length == gauges.length, "Arrays must be of equal length");
+        for (uint256 i; i < token0.length; ++i) {
+            (token0[i], token1[i]) = token0[i] < token1[i] ? (token0[i], token1[i]) : (token1[i], token0[i]);
+            // Approvals
+            if (!tokenToSpenderToApprovalInTree[token0[i]][nonfungiblePositionManager]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token0[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Velodrome NonFungible Position Manager to spend ", ERC20(token0[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = nonfungiblePositionManager;
+                tokenToSpenderToApprovalInTree[token0[i]][nonfungiblePositionManager] = true;
+            }
+            if (!tokenToSpenderToApprovalInTree[token1[i]][nonfungiblePositionManager]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token1[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Velodrome NonFungible Position Manager to spend ", ERC20(token1[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = nonfungiblePositionManager;
+                tokenToSpenderToApprovalInTree[token1[i]][nonfungiblePositionManager] = true;
+            }
+
+            // Minting
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                nonfungiblePositionManager,
+                false,
+                "mint((address,address,int24,int24,int24,uint256,uint256,uint256,uint256,address,uint256,uint160))",
+                new address[](3),
+                string.concat(
+                    "Mint VelodromeV3 ", ERC20(token0[i]).symbol(), " ", ERC20(token1[i]).symbol(), " position"
+                ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = token0[i];
+            leafs[leafIndex].argumentAddresses[1] = token1[i];
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+            // Increase liquidity
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                nonfungiblePositionManager,
+                false,
+                "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
+                new address[](3),
+                string.concat(
+                    "Add liquidity to VelodromeV3 ",
+                    ERC20(token0[i]).symbol(),
+                    " ",
+                    ERC20(token1[i]).symbol(),
+                    " position"
+                ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(0);
+            leafs[leafIndex].argumentAddresses[1] = token0[i];
+            leafs[leafIndex].argumentAddresses[2] = token1[i];
+
+            // Approve gauge to spend NFT.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                nonfungiblePositionManager,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                "Approve gauge to spend VelodromeV3 position",
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = gauges[i];
+        }
+
+        // Decrease liquidity
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            nonfungiblePositionManager,
+            false,
+            "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
+            new address[](0),
+            "Remove liquidity from VelodromeV3 position",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            nonfungiblePositionManager,
+            false,
+            "collect((uint256,address,uint128,uint128))",
+            new address[](1),
+            "Collect fees from VelodromeV3 position",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+        // burn
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            nonfungiblePositionManager,
+            false,
+            "burn(uint256)",
+            new address[](0),
+            "Burn VelodromeV3 position",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        for (uint256 i; i < gauges.length; ++i) {
+            // Deposit into Gauge
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                gauges[i],
+                false,
+                "deposit(uint256)",
+                new address[](0),
+                string.concat("Deposit into VelodromeV3 gauge ", vm.toString(gauges[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            // Withdraw from Gauge
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                gauges[i],
+                false,
+                "withdraw(uint256)",
+                new address[](0),
+                string.concat("Withdraw from VelodromeV3 gauge ", vm.toString(gauges[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            // Get reward
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                gauges[i],
+                false,
+                "getReward(uint256)",
+                new address[](0),
+                string.concat("Get reward from VelodromeV3 gauge ", vm.toString(gauges[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                gauges[i],
+                false,
+                "getReward(address)",
+                new address[](1),
+                string.concat("Get reward from VelodromeV3 gauge ", vm.toString(gauges[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        }
+    }
+
+    function _addVelodromeV2Leafs(
+        ManageLeaf[] memory leafs,
+        address[] memory token0,
+        address[] memory token1,
+        address router,
+        address[] memory gauges
+    ) internal {
+        for (uint256 i; i < token0.length; ++i) {
+            if (!tokenToSpenderToApprovalInTree[token0[i]][router]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token0[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Velodrome Router to spend ", ERC20(token0[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = router;
+                tokenToSpenderToApprovalInTree[token0[i]][router] = true;
+            }
+            if (!tokenToSpenderToApprovalInTree[token1[i]][router]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    token1[i],
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Velodrome Router to spend ", ERC20(token1[i]).symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = router;
+                tokenToSpenderToApprovalInTree[token1[i]][router] = true;
+            }
+
+            // Add liquidity
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                router,
+                false,
+                "addLiquidity(address,address,bool,uint256,uint256,uint256,uint256,address,uint256)",
+                new address[](3),
+                string.concat(
+                    "Add liquidity to VelodromeV2 ", ERC20(token0[i]).symbol(), "/", ERC20(token1[i]).symbol()
+                ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = token0[i];
+            leafs[leafIndex].argumentAddresses[1] = token1[i];
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+
+            // Remove liquidity
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                router,
+                false,
+                "removeLiquidity(address,address,bool,uint256,uint256,uint256,address,uint256)",
+                new address[](3),
+                string.concat(
+                    "Remove liquidity from VelodromeV2 ", ERC20(token0[i]).symbol(), "/", ERC20(token1[i]).symbol()
+                ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = token0[i];
+            leafs[leafIndex].argumentAddresses[1] = token1[i];
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+        }
+
+        for (uint256 i; i < gauges.length; ++i) {
+            // Approve gauge to spend staking token.
+            address stakingToken = VelodromV2Gauge(gauges[i]).stakingToken();
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                stakingToken,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve VelodromeV2 Gauge to spend ", ERC20(stakingToken).symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = gauges[i];
+
+            // Approve router to spend staking token.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                stakingToken,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Velodrome Router to spend ", ERC20(stakingToken).symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = router;
+
+            // Deposit into Gauge
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                gauges[i],
+                false,
+                "deposit(uint256)",
+                new address[](0),
+                string.concat("Deposit into VelodromeV2 gauge ", vm.toString(gauges[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            // Withdraw from Gauge
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                gauges[i],
+                false,
+                "withdraw(uint256)",
+                new address[](0),
+                string.concat("Withdraw from VelodromeV2 gauge ", vm.toString(gauges[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            // Get reward
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                gauges[i],
+                false,
+                "getReward(address)",
+                new address[](1),
+                string.concat("Get reward from VelodromeV2 gauge ", vm.toString(gauges[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        }
+    }
+
     // ========================================= JSON FUNCTIONS =========================================
     // TODO this should pass in a bool or something to generate leafs indicating that we want leaf indexes printed.
     bool addLeafIndex = false;
@@ -3708,4 +4041,8 @@ interface CurvePool {
 
 interface BalancerVault {
     function getPoolTokens(bytes32) external view returns (ERC20[] memory, uint256[] memory, uint256);
+}
+
+interface VelodromV2Gauge {
+    function stakingToken() external view returns (address);
 }
