@@ -125,8 +125,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](16);
-        SwapKind[] memory kind = new SwapKind[](16);
+        address[] memory assets = new address[](17);
+        SwapKind[] memory kind = new SwapKind[](17);
         assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "WEETH");
@@ -159,6 +159,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         kind[14] = SwapKind.BuyAndSell;
         assets[15] = getAddress(sourceChain, "RSETH");
         kind[15] = SwapKind.BuyAndSell;
+        assets[16] = getAddress(sourceChain, "OSETH");
+        kind[16] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "wstETH_wETH_01"));
@@ -246,7 +248,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         );
 
         // ========================== Native Bridge Leafs ==========================
-        ERC20[] memory bridgeAssets = new ERC20[](7);
+        ERC20[] memory bridgeAssets = new ERC20[](5);
         bridgeAssets[0] = getERC20(sourceChain, "WETH");
         bridgeAssets[1] = getERC20(sourceChain, "WEETH");
         bridgeAssets[2] = getERC20(sourceChain, "WSTETH");
@@ -262,51 +264,51 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         ccipBridgeFeeAssets[1] = getERC20(sourceChain, "LINK");
         _addCcipBridgeLeafs(leafs, ccipArbitrumChainSelector, ccipBridgeAssets, ccipBridgeFeeAssets);
 
-        // ========================== Standard Bridge ==========================
-        {
-            ERC20[] memory localTokens = new ERC20[](4);
-            localTokens[0] = getERC20(sourceChain, "WETH");
-            localTokens[1] = getERC20(sourceChain, "WSTETH");
-            localTokens[2] = getERC20(sourceChain, "RETH");
-            localTokens[3] = getERC20(sourceChain, "CBETH");
-            ERC20[] memory remoteTokens = new ERC20[](4);
-            remoteTokens[0] = getERC20(mainnet, "WETH");
-            remoteTokens[1] = getERC20(mainnet, "WSTETH");
-            remoteTokens[2] = getERC20(mainnet, "RETH");
-            remoteTokens[3] = getERC20(mainnet, "CBETH");
-            _addStandardBridgeLeafs(
-                leafs,
-                optimism,
-                getAddress(optimism, "crossDomainMessenger"),
-                getAddress(sourceChain, "optimismResolvedDelegate"),
-                getAddress(sourceChain, "optimismStandardBridge"),
-                getAddress(sourceChain, "optimismPortal"),
-                localTokens,
-                remoteTokens
-            );
+        // // ========================== Standard Bridge ==========================
+        // {
+        //     ERC20[] memory localTokens = new ERC20[](4);
+        //     localTokens[0] = getERC20(sourceChain, "WETH");
+        //     localTokens[1] = getERC20(sourceChain, "WSTETH");
+        //     localTokens[2] = getERC20(sourceChain, "RETH");
+        //     localTokens[3] = getERC20(sourceChain, "CBETH");
+        //     ERC20[] memory remoteTokens = new ERC20[](4);
+        //     remoteTokens[0] = getERC20(mainnet, "WETH");
+        //     remoteTokens[1] = getERC20(mainnet, "WSTETH");
+        //     remoteTokens[2] = getERC20(mainnet, "RETH");
+        //     remoteTokens[3] = getERC20(mainnet, "CBETH");
+        //     _addStandardBridgeLeafs(
+        //         leafs,
+        //         optimism,
+        //         getAddress(optimism, "crossDomainMessenger"),
+        //         getAddress(sourceChain, "optimismResolvedDelegate"),
+        //         getAddress(sourceChain, "optimismStandardBridge"),
+        //         getAddress(sourceChain, "optimismPortal"),
+        //         localTokens,
+        //         remoteTokens
+        //     );
 
-            _addStandardBridgeLeafs(
-                leafs,
-                base,
-                getAddress(base, "crossDomainMessenger"),
-                getAddress(sourceChain, "baseResolvedDelegate"),
-                getAddress(sourceChain, "baseStandardBridge"),
-                getAddress(sourceChain, "basePortal"),
-                localTokens,
-                remoteTokens
-            );
-        }
+        //     _addStandardBridgeLeafs(
+        //         leafs,
+        //         base,
+        //         getAddress(base, "crossDomainMessenger"),
+        //         getAddress(sourceChain, "baseResolvedDelegate"),
+        //         getAddress(sourceChain, "baseStandardBridge"),
+        //         getAddress(sourceChain, "basePortal"),
+        //         localTokens,
+        //         remoteTokens
+        //     );
+        // }
 
-        // ========================== LayerZero ==========================
-        _addLayerZeroLeafs(
-            leafs,
-            getERC20(sourceChain, "WEETH"),
-            getAddress(sourceChain, "EtherFiOFTAdapter"),
-            layerZeroOptimismEndpointId
-        );
-        _addLayerZeroLeafs(
-            leafs, getERC20(sourceChain, "WEETH"), getAddress(sourceChain, "EtherFiOFTAdapter"), layerZeroBaseEndpointId
-        );
+        // // ========================== LayerZero ==========================
+        // _addLayerZeroLeafs(
+        //     leafs,
+        //     getERC20(sourceChain, "WEETH"),
+        //     getAddress(sourceChain, "EtherFiOFTAdapter"),
+        //     layerZeroOptimismEndpointId
+        // );
+        // _addLayerZeroLeafs(
+        //     leafs, getERC20(sourceChain, "WEETH"), getAddress(sourceChain, "EtherFiOFTAdapter"), layerZeroBaseEndpointId
+        // );
 
         // ========================== Merkl ==========================
         {

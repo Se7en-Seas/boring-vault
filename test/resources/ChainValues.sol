@@ -763,6 +763,8 @@ contract ChainValues {
         values[arbitrum]["PENDLE"] = 0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8.toBytes32();
         values[arbitrum]["RSR"] = 0xCa5Ca9083702c56b481D1eec86F1776FDbd2e594.toBytes32();
         values[arbitrum]["CBETH"] = 0x1DEBd73E752bEaF79865Fd6446b0c970EaE7732f.toBytes32();
+        values[arbitrum]["OSETH"] = 0xf7d4e7273E5015C96728A6b02f31C505eE184603.toBytes32();
+        values[arbitrum]["RSETH"] = 0x4186BFC76E2E237523CBC30FD220FE055156b41F.toBytes32();
 
         // Aave V3
         values[arbitrum]["v3Pool"] = 0x794a61358D6845594F94dc1DB02A252b5b4814aD.toBytes32();
@@ -845,6 +847,9 @@ contract ChainValues {
         values[arbitrum]["weETH_wstETH_Gyro_Id"] = 0xcdcef9765d369954a4a936064535710f7235110a000200000000000000000558;
         values[arbitrum]["weETH_wstETH_Gyro_Gauge"] = 0xdB66fFFf713B1FA758E348e69E2f2e24595111cF.toBytes32();
         values[arbitrum]["aura_weETH_wstETH_Gyro"] = 0x40bF10900a55c69c9dADdc3dC52465e01AcEF4A4.toBytes32();
+        values[arbitrum]["osETH_wETH_BPT"] = 0x42f7Cfc38DD1583fFdA2E4f047F4F6FA06CEFc7c.toBytes32();
+        values[arbitrum]["osETH_wETH_Id"] = 0x42f7cfc38dd1583ffda2e4f047f4f6fa06cefc7c000000000000000000000553;
+        values[arbitrum]["osETH_wETH_Gauge"] = 0x5DA32F4724373c91Fdc657E0AD7B1836c70A4E52.toBytes32();
     }
 
     function _addOptimismValues() private {
