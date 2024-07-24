@@ -15,7 +15,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
-    address public rawDataDecoderAndSanitizer = 0x0C8B49b06544fA8B5c85755267498E407433edBB;
+    address public rawDataDecoderAndSanitizer = 0x6175ab325B51bFDd27ab306e4D6A5850AFbd7764;
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
 
@@ -38,9 +38,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, arbitrum, "accountantAddress", accountantAddress);
         setAddress(false, arbitrum, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        leafIndex = 0;
-
-        ManageLeaf[] memory leafs = new ManageLeaf[](256);
+        ManageLeaf[] memory leafs = new ManageLeaf[](512);
 
         // ========================== Aave V3 ==========================
         ERC20[] memory supplyAssets = new ERC20[](4);
@@ -68,7 +66,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketSeptember"));
 
         // ========================== UniswapV3 ==========================
-        address[] memory token0 = new address[](7);
+        address[] memory token0 = new address[](8);
         token0[0] = getAddress(sourceChain, "WETH");
         token0[1] = getAddress(sourceChain, "WETH");
         token0[2] = getAddress(sourceChain, "WETH");
@@ -76,8 +74,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         token0[4] = getAddress(sourceChain, "WEETH");
         token0[5] = getAddress(sourceChain, "WSTETH");
         token0[6] = getAddress(sourceChain, "WETH");
+        token0[7] = getAddress(sourceChain, "WETH");
 
-        address[] memory token1 = new address[](7);
+        address[] memory token1 = new address[](8);
         token1[0] = getAddress(sourceChain, "WEETH");
         token1[1] = getAddress(sourceChain, "WSTETH");
         token1[2] = getAddress(sourceChain, "RETH");
@@ -85,6 +84,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         token1[4] = getAddress(sourceChain, "RETH");
         token1[5] = getAddress(sourceChain, "RETH");
         token1[6] = getAddress(sourceChain, "SFRXETH");
+        token1[7] = getAddress(sourceChain, "CBETH");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
@@ -98,8 +98,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](12);
-        SwapKind[] memory kind = new SwapKind[](12);
+        address[] memory assets = new address[](13);
+        SwapKind[] memory kind = new SwapKind[](13);
         assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "WEETH");
@@ -124,6 +124,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         kind[10] = SwapKind.Sell;
         assets[11] = getAddress(sourceChain, "LINK");
         kind[11] = SwapKind.BuyAndSell;
+        assets[12] = getAddress(sourceChain, "CBETH");
+        kind[12] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "wstETH_wETH_01"));
@@ -138,10 +140,12 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WEETH"));
 
         // ========================== Native Bridge Leafs ==========================
-        ERC20[] memory bridgeAssets = new ERC20[](3);
-        bridgeAssets[0] = getERC20(mainnet, "WETH");
-        bridgeAssets[1] = getERC20(mainnet, "WEETH");
-        bridgeAssets[2] = getERC20(mainnet, "WSTETH");
+        ERC20[] memory bridgeAssets = new ERC20[](5);
+        bridgeAssets[0] = getERC20(sourceChain, "WETH");
+        bridgeAssets[1] = getERC20(sourceChain, "WEETH");
+        bridgeAssets[2] = getERC20(sourceChain, "WSTETH");
+        bridgeAssets[3] = getERC20(sourceChain, "RETH");
+        bridgeAssets[4] = getERC20(sourceChain, "CBETH");
         _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
 
         // ========================== CCIP Bridge Leafs ==========================
@@ -155,6 +159,51 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         // ========================== Fluid fToken ==========================
         _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fWETH"));
         _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fWSTETH"));
+
+        // ========================== Vault Craft ==========================
+        _addVaultCraftLeafs(
+            leafs, ERC4626(getAddress(sourceChain, "compoundV3Weth")), getAddress(sourceChain, "compoundV3WethGauge")
+        );
+
+        // ========================== Compound V3 ==========================
+        ERC20[] memory collateralAssets = new ERC20[](3);
+        collateralAssets[0] = getERC20(sourceChain, "WSTETH");
+        collateralAssets[1] = getERC20(sourceChain, "RETH");
+        collateralAssets[2] = getERC20(sourceChain, "WEETH");
+        _addCompoundV3Leafs(
+            leafs, collateralAssets, getAddress(sourceChain, "cWETHV3"), getAddress(sourceChain, "cometRewards")
+        );
+
+        // ========================== Merkl ==========================
+        {
+            ERC20[] memory tokensToClaim = new ERC20[](2);
+            tokensToClaim[0] = getERC20(sourceChain, "UNI");
+            tokensToClaim[1] = getERC20(sourceChain, "ARB");
+            _addMerklLeafs(
+                leafs,
+                getAddress(sourceChain, "merklDistributor"),
+                getAddress(sourceChain, "dev1Address"),
+                tokensToClaim
+            );
+        }
+
+        // ========================== Balancer ==========================
+        _addBalancerLeafs(leafs, getBytes32(sourceChain, "rsETH_wETH_Id"), getAddress(sourceChain, "rsETH_wETH_Gauge"));
+        _addBalancerLeafs(
+            leafs, getBytes32(sourceChain, "wstETH_sfrxETH_Id"), getAddress(sourceChain, "wstETH_sfrxETH_Gauge")
+        );
+        _addBalancerLeafs(
+            leafs, getBytes32(sourceChain, "wstETH_wETH_Gyro_Id"), getAddress(sourceChain, "wstETH_wETH_Gyro_Gauge")
+        );
+        _addBalancerLeafs(
+            leafs, getBytes32(sourceChain, "weETH_wstETH_Gyro_Id"), getAddress(sourceChain, "weETH_wstETH_Gyro_Gauge")
+        );
+
+        // ========================== Aura ==========================
+        _addAuraLeafs(leafs, getAddress(sourceChain, "aura_rsETH_wETH"));
+        _addAuraLeafs(leafs, getAddress(sourceChain, "aura_wstETH_sfrxETH"));
+        _addAuraLeafs(leafs, getAddress(sourceChain, "aura_wstETH_wETH_Gyro"));
+        _addAuraLeafs(leafs, getAddress(sourceChain, "aura_weETH_wstETH_Gyro"));
 
         // iTb
         _addLeafsForItbGearbox(

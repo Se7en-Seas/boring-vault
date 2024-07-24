@@ -203,8 +203,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         // ========================== Balancer ==========================
         _addBalancerLeafs(leafs, getBytes32(sourceChain, "rETH_weETH_id"), getAddress(sourceChain, "rETH_weETH_gauge"));
         _addBalancerLeafs(leafs, getBytes32(sourceChain, "rETH_wETH_id"), getAddress(sourceChain, "rETH_wETH_gauge"));
-        _addBalancerLeafs(leafs, getBytes32(sourceChain, "wstETH_wETH_Id"), getAddress(sourceChain, "wstETH_wETH_Gauge"));
-
+        _addBalancerLeafs(
+            leafs, getBytes32(sourceChain, "wstETH_wETH_Id"), getAddress(sourceChain, "wstETH_wETH_Gauge")
+        );
 
         // ========================== Aura ==========================
         _addAuraLeafs(leafs, getAddress(sourceChain, "aura_reth_weeth"));
@@ -245,15 +246,12 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         );
 
         // ========================== Native Bridge Leafs ==========================
-        ERC20[] memory bridgeAssets = new ERC20[](8);
+        ERC20[] memory bridgeAssets = new ERC20[](7);
         bridgeAssets[0] = getERC20(sourceChain, "WETH");
         bridgeAssets[1] = getERC20(sourceChain, "WEETH");
         bridgeAssets[2] = getERC20(sourceChain, "WSTETH");
         bridgeAssets[3] = getERC20(sourceChain, "RETH");
-        bridgeAssets[4] = getERC20(sourceChain, "OSETH");
-        bridgeAssets[5] = getERC20(sourceChain, "CBETH");
-        bridgeAssets[6] = getERC20(sourceChain, "SFRXETH");
-        bridgeAssets[7] = getERC20(sourceChain, "RSETH");
+        bridgeAssets[4] = getERC20(sourceChain, "CBETH");
         _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
 
         // ========================== CCIP Bridge Leafs ==========================
@@ -264,9 +262,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         ccipBridgeFeeAssets[1] = getERC20(sourceChain, "LINK");
         _addCcipBridgeLeafs(leafs, ccipArbitrumChainSelector, ccipBridgeAssets, ccipBridgeFeeAssets);
 
-
         // ========================== Standard Bridge ==========================
-        {        
+        {
             ERC20[] memory localTokens = new ERC20[](4);
             localTokens[0] = getERC20(sourceChain, "WETH");
             localTokens[1] = getERC20(sourceChain, "WSTETH");
@@ -315,7 +312,12 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         {
             ERC20[] memory tokensToClaim = new ERC20[](1);
             tokensToClaim[0] = getERC20(sourceChain, "UNI");
-            _addMerklLeafs(leafs, getAddress(sourceChain, "merklDistributor"), getAddress(sourceChain, "dev1Address"), tokensToClaim);
+            _addMerklLeafs(
+                leafs,
+                getAddress(sourceChain, "merklDistributor"),
+                getAddress(sourceChain, "dev1Address"),
+                tokensToClaim
+            );
         }
 
         // ========================== PancakeSwapV3 ==========================

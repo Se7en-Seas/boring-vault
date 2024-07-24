@@ -762,6 +762,7 @@ contract ChainValues {
         values[arbitrum]["AURA"] = 0x1509706a6c66CA549ff0cB464de88231DDBe213B.toBytes32();
         values[arbitrum]["PENDLE"] = 0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8.toBytes32();
         values[arbitrum]["RSR"] = 0xCa5Ca9083702c56b481D1eec86F1776FDbd2e594.toBytes32();
+        values[arbitrum]["CBETH"] = 0x1DEBd73E752bEaF79865Fd6446b0c970EaE7732f.toBytes32();
 
         // Aave V3
         values[arbitrum]["v3Pool"] = 0x794a61358D6845594F94dc1DB02A252b5b4814aD.toBytes32();
@@ -771,6 +772,9 @@ contract ChainValues {
         values[arbitrum]["oneInchExecutor"] = 0xE37e799D5077682FA0a244D46E5649F71457BD09.toBytes32();
 
         values[arbitrum]["balancerVault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
+        // TODO This Balancer on L2s use a different minting logic so minter is not used
+        // but the merkle tree should be refactored for L2s
+        values[arbitrum]["minter"] = address(1).toBytes32();
 
         // Arbitrum native bridging.
         values[arbitrum]["arbitrumL2GatewayRouter"] = 0x5288c571Fd7aD117beA99bF60FE0846C4E84F933.toBytes32();
@@ -819,6 +823,28 @@ contract ChainValues {
         values[arbitrum]["camelotRouterV2"] = 0xc873fEcbd354f5A56E00E710B90EF4201db2448d.toBytes32();
         values[arbitrum]["camelotRouterV3"] = 0x1F721E2E82F6676FCE4eA07A5958cF098D339e18.toBytes32();
         values[arbitrum]["camelotNonFungiblePositionManager"] = 0x00c7f3082833e796A5b3e4Bd59f6642FF44DCD15.toBytes32();
+
+        // Compound V3
+        values[arbitrum]["cWETHV3"] = 0x6f7D514bbD4aFf3BcD1140B7344b32f063dEe486.toBytes32();
+        values[arbitrum]["cometRewards"] = 0x88730d254A2f7e6AC8388c3198aFd694bA9f7fae.toBytes32();
+
+        // Balancer
+        values[arbitrum]["rsETH_wETH_BPT"] = 0x90e6CB5249f5e1572afBF8A96D8A1ca6aCFFd739.toBytes32();
+        values[arbitrum]["rsETH_wETH_Id"] = 0x90e6cb5249f5e1572afbf8a96d8a1ca6acffd73900000000000000000000055c;
+        values[arbitrum]["rsETH_wETH_Gauge"] = 0x59907f88C360D576Aa38dba84F26578367F96b6C.toBytes32();
+        values[arbitrum]["aura_rsETH_wETH"] = 0x90cedFDb5284a274720f1dB339eEe9798f4fa29d.toBytes32();
+        values[arbitrum]["wstETH_sfrxETH_BPT"] = 0xc2598280bFeA1Fe18dFcaBD21C7165c40c6859d3.toBytes32();
+        values[arbitrum]["wstETH_sfrxETH_Id"] = 0xc2598280bfea1fe18dfcabd21c7165c40c6859d30000000000000000000004f3;
+        values[arbitrum]["wstETH_sfrxETH_Gauge"] = 0x06eaf7bAabEac962301eE21296e711B3052F2c0d.toBytes32();
+        values[arbitrum]["aura_wstETH_sfrxETH"] = 0x83D37cbA332ffd53A4336Ee06f3c301B8929E684.toBytes32();
+        values[arbitrum]["wstETH_wETH_Gyro_BPT"] = 0x7967FA58B9501600D96bD843173b9334983EE6E6.toBytes32();
+        values[arbitrum]["wstETH_wETH_Gyro_Id"] = 0x7967fa58b9501600d96bd843173b9334983ee6e600020000000000000000056e;
+        values[arbitrum]["wstETH_wETH_Gyro_Gauge"] = 0x96d7C70c80518Ee189CB6ba672FbD22E4fDD9c19.toBytes32();
+        values[arbitrum]["aura_wstETH_wETH_Gyro"] = 0x93e567b423ED470562911078b4d7A902d4E0BEea.toBytes32();
+        values[arbitrum]["weETH_wstETH_Gyro_BPT"] = 0xCDCef9765D369954a4A936064535710f7235110A.toBytes32();
+        values[arbitrum]["weETH_wstETH_Gyro_Id"] = 0xcdcef9765d369954a4a936064535710f7235110a000200000000000000000558;
+        values[arbitrum]["weETH_wstETH_Gyro_Gauge"] = 0xdB66fFFf713B1FA758E348e69E2f2e24595111cF.toBytes32();
+        values[arbitrum]["aura_weETH_wstETH_Gyro"] = 0x40bF10900a55c69c9dADdc3dC52465e01AcEF4A4.toBytes32();
     }
 
     function _addOptimismValues() private {
