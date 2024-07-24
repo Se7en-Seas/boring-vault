@@ -3,46 +3,44 @@ pragma solidity 0.8.21;
 
 import {DeployArcticArchitecture, ERC20, Deployer} from "script/ArchitectureDeployments/DeployArcticArchitecture.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
-import {ChainValues} from "test/resources/ChainValues.sol";
+import {BaseAddresses} from "test/resources/BaseAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
 import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Base/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 20000000 --evm-version london --broadcast --etherscan-api-key $BASESCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
+contract DeployLiquidEthScript is DeployArcticArchitecture, BaseAddresses {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Ether.Fi Liquid ETH Vault";
+    string public boringVaultName = "Ether.Fi Liquid ETH";
     string public boringVaultSymbol = "liquidETH";
     uint8 public boringVaultDecimals = 18;
-    string internal sourceChain = mainnet;
-    address public owner;
+    address public owner = dev1Address;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("mainnet");
+        vm.createSelectFork("base");
     }
 
     function run() external {
-        owner = getAddress(sourceChain, "dev0Address");
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
-        configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = false;
-        configureDeployment.setupTestUser = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = true;
+        configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
-        configureDeployment.deployerAddress = getAddress(sourceChain, "deployerAddress");
-        configureDeployment.balancerVault = getAddress(sourceChain, "balancerVault");
-        configureDeployment.WETH = getAddress(sourceChain, "WETH");
+        configureDeployment.deployerAddress = deployerAddress;
+        configureDeployment.balancerVault = balancerVault;
+        configureDeployment.WETH = address(WETH);
 
         // Save deployer.
         deployer = Deployer(configureDeployment.deployerAddress);
@@ -58,10 +56,10 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
         names.delayedWithdrawer = EtherFiLiquidEthDelayedWithdrawer;
 
         // Define Accountant Parameters.
-        accountantParameters.payoutAddress = getAddress(sourceChain, "liquidPayoutAddress");
-        accountantParameters.base = getERC20(sourceChain, "WETH");
+        accountantParameters.payoutAddress = liquidPayoutAddress;
+        accountantParameters.base = WETH;
         // Decimals are in terms of `base`.
-        accountantParameters.startingExchangeRate = 1e18;
+        accountantParameters.startingExchangeRate = 1028735518391250446;
         //  4 decimals
         accountantParameters.managementFee = 0.02e4;
         accountantParameters.performanceFee = 0;
@@ -72,51 +70,26 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
 
         // Define Decoder and Sanitizer deployment details.
         bytes memory creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode;
-        bytes memory constructorArgs = abi.encode(
-            deployer.getAddress(names.boringVault), getAddress(sourceChain, "uniswapV3NonFungiblePositionManager")
-        );
+        bytes memory constructorArgs =
+            abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
         // Setup extra deposit assets.
         depositAssets.push(
             DepositAsset({
-                asset: getERC20(sourceChain, "EETH"),
-                isPeggedToBase: true,
+                asset: WEETH,
+                isPeggedToBase: false,
                 rateProvider: address(0),
                 genericRateProviderName: "",
-                target: address(0),
-                selector: bytes4(0),
+                target: weETH_ETH_ExchangeRate,
+                selector: bytes4(keccak256(abi.encodePacked("latestAnswer()"))),
                 params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
             })
         );
-        depositAssets.push(
-            DepositAsset({
-                asset: getERC20(sourceChain, "WEETH"),
-                isPeggedToBase: false,
-                rateProvider: getAddress(sourceChain, "WEETH"),
-                genericRateProviderName: "",
-                target: address(0),
-                selector: bytes4(0),
-                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
-            })
-        );
-        // bytes4 selector = bytes4(keccak256(abi.encodePacked("getValue(address,uint256,address)")));
-        // uint256 amount = 1e18;
-        // depositAssets.push(
-        //     DepositAsset({
-        //         asset: WSTETH,
-        //         isPeggedToBase: false,
-        //         rateProvider: address(0),
-        //         genericRateProviderName: WstETHRateProviderName,
-        //         target: liquidV1PriceRouter,
-        //         selector: selector,
-        //         params: [address(WSTETH).toBytes32(), bytes32(amount), address(WETH).toBytes32(), 0, 0, 0, 0, 0]
-        //     })
-        // );
 
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: getERC20(sourceChain, "WETH"),
+                asset: WETH,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -126,17 +99,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
 
         withdrawAssets.push(
             WithdrawAsset({
-                asset: getERC20(sourceChain, "EETH"),
-                withdrawDelay: 3 days,
-                completionWindow: 7 days,
-                withdrawFee: 0,
-                maxLoss: 0.01e4
-            })
-        );
-
-        withdrawAssets.push(
-            WithdrawAsset({
-                asset: getERC20(sourceChain, "WEETH"),
+                asset: WEETH,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -147,12 +110,12 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
         bool allowPublicDeposits = false;
         bool allowPublicWithdraws = false;
         uint64 shareLockPeriod = 1 days;
-        address delayedWithdrawFeeAddress = getAddress(sourceChain, "liquidPayoutAddress");
+        address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "LiquidEthDeployment.json",
+            "Base/LiquidEthDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
@@ -163,7 +126,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
             allowPublicDeposits,
             allowPublicWithdraws,
             shareLockPeriod,
-            getAddress(sourceChain, "dev1Address")
+            dev1Address
         );
 
         vm.stopBroadcast();

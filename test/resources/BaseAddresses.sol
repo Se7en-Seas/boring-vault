@@ -20,4 +20,10 @@ contract BaseAddresses {
 
     // Standard Bridge.
     address public standardBridge = 0x4200000000000000000000000000000000000010;
+
+    address public balancerVault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+    address public uniswapV3NonFungiblePositionManager = 0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1;
+
+        // Chainlink feeds
+    address public weETH_ETH_ExchangeRate = 0x35e9D7001819Ea3B39Da906aE6b06A62cfe2c181;
 }

@@ -4,23 +4,13 @@
       "isPeggedToBase": true,
       "rateProvider": "0x0000000000000000000000000000000000000000"
     },
-    "eETH": {
-      "isPeggedToBase": true,
-      "rateProvider": "0x0000000000000000000000000000000000000000"
-    },
     "weETH": {
       "isPeggedToBase": false,
-      "rateProvider": "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee"
+      "rateProvider": "0xb2b1c0F68B46dB66f514E653d1D1aC058D4f8b88"
     }
   },
   "WithdrawAssets": {
     "WETH": {
-      "CompletionWindow": 604800,
-      "MaxLoss": 100,
-      "WithdrawDelay": 259200,
-      "WithdrawFee": 0
-    },
-    "eETH": {
       "CompletionWindow": 604800,
       "MaxLoss": 100,
       "WithdrawDelay": 259200,
@@ -37,16 +27,16 @@
     "AllowedExchangeRateChangeLower": 9950,
     "AllowedExchangeRateChangeUpper": 10050,
     "Base": "WETH",
-    "BaseAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "BaseAddress": "0x4200000000000000000000000000000000000006",
     "ManagementFee": 200,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
-    "StartingExchangeRate": 1000000000000000000
+    "StartingExchangeRate": 1028735518391250446
   },
   "core": {
     "AccountantWithRateProviders": "0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198",
     "BoringVault": "0xf0bb20865277aBd641a307eCe5Ee04E79073416C",
-    "DecoderAndSanitizer": "0x6175ab325B51bFDd27ab306e4D6A5850AFbd7764",
+    "DecoderAndSanitizer": "0x568a4E08909aab6995979dB24B3cdaE00244CeB4",
     "DelayedWithdraw": "0xA1177Bc62E42eF2f9225a6cBF1CfE5CbC360C33A",
     "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
     "ManagerWithMerkleVerification": "0x227975088C28DBBb4b421c6d96781a53578f19a8",
