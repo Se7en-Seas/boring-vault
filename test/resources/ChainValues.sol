@@ -689,6 +689,7 @@ contract ChainValues {
         values[base]["LINK"] = 0x88Fb150BDc53A65fe94Dea0c9BA0a6dAf8C6e196.toBytes32();
         values[base]["UNI"] = 0xc3De830EA07524a0761646a6a4e4be0e114a3C83.toBytes32();
         values[base]["RETH"] = 0xB6fe221Fe9EeF5aBa221c348bA20A1Bf5e73624c.toBytes32();
+        values[base]["BSDETH"] = 0xCb327b99fF831bF8223cCEd12B1338FF3aA322Ff.toBytes32();
 
         // Balancer vault
         values[base]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
@@ -710,6 +711,8 @@ contract ChainValues {
         values[base]["aerodromeRouter"] = 0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43.toBytes32();
         values[base]["aerodromeNonFungiblePositionManager"] = 0x827922686190790b37229fd06084350E74485b72.toBytes32();
         values[base]["aerodrome_Weth_Wsteth_v3_1_gauge"] = 0x2A1f7bf46bd975b5004b61c6040597E1B6117040.toBytes32();
+        values[base]["aerodrome_Weth_Bsdeth_v3_1_gauge"] = 0x0b537aC41400433F09d97Cd370C1ea9CE78D8a74.toBytes32();
+        values[base]["aerodrome_Cbeth_Weth_v3_1_gauge"] = 0xF5550F8F0331B8CAA165046667f4E6628E9E3Aac.toBytes32();
         values[base]["aerodrome_Weth_Wsteth_v2_30_gauge"] = 0xDf7c8F17Ab7D47702A4a4b6D951d2A4c90F99bf4.toBytes32();
 
         // MorphoBlue
