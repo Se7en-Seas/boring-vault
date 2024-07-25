@@ -2325,6 +2325,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 string.concat("Claim rewards from Balancer gauge"),
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
         }
     }
 
