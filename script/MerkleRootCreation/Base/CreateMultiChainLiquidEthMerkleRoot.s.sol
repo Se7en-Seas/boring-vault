@@ -168,6 +168,17 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
             leafs, token0, token1, getAddress(sourceChain, "aerodromeNonFungiblePositionManager"), gauges
         );
 
+        token0[0] = getAddress(sourceChain, "WETH");
+        token0[1] = getAddress(sourceChain, "WEETH");
+        token0[2] = getAddress(sourceChain, "WETH");
+        token1[0] = getAddress(sourceChain, "WSTETH");
+        token1[1] = getAddress(sourceChain, "WETH");
+        token1[2] = getAddress(sourceChain, "RETH");
+        gauges[0] = getAddress(sourceChain, "aerodrome_Weth_Wsteth_v2_30_gauge");
+        gauges[1] = getAddress(sourceChain, "aerodrome_Weth_Weeth_v2_30_gauge");
+        gauges[2] = getAddress(sourceChain, "aerodrome_Weth_Reth_v2_05_gauge");
+        _addVelodromeV2Leafs(leafs, token0, token1, getAddress(sourceChain, "aerodromeRouter"), gauges);
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/BaseMultiChainLiquidEthStrategistLeafs.json";
