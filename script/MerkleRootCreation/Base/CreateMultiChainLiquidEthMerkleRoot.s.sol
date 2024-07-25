@@ -87,8 +87,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](10);
-        SwapKind[] memory kind = new SwapKind[](10);
+        address[] memory assets = new address[](11);
+        SwapKind[] memory kind = new SwapKind[](11);
         assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "WEETH");
@@ -109,6 +109,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         kind[8] = SwapKind.BuyAndSell;
         assets[9] = getAddress(sourceChain, "AERO");
         kind[9] = SwapKind.Sell;
+        assets[10] = getAddress(sourceChain, "SFRXETH");
+        kind[10] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         // ========================== Flashloans ==========================
@@ -168,15 +170,21 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
             leafs, token0, token1, getAddress(sourceChain, "aerodromeNonFungiblePositionManager"), gauges
         );
 
+        token0 = new address[](4);
         token0[0] = getAddress(sourceChain, "WETH");
         token0[1] = getAddress(sourceChain, "WEETH");
         token0[2] = getAddress(sourceChain, "WETH");
+        token0[3] = getAddress(sourceChain, "SFRXETH");
+        token1 = new address[](4);
         token1[0] = getAddress(sourceChain, "WSTETH");
         token1[1] = getAddress(sourceChain, "WETH");
         token1[2] = getAddress(sourceChain, "RETH");
+        token1[3] = getAddress(sourceChain, "WSTETH");
+        gauges = new address[](4);
         gauges[0] = getAddress(sourceChain, "aerodrome_Weth_Wsteth_v2_30_gauge");
         gauges[1] = getAddress(sourceChain, "aerodrome_Weth_Weeth_v2_30_gauge");
         gauges[2] = getAddress(sourceChain, "aerodrome_Weth_Reth_v2_05_gauge");
+        gauges[3] = getAddress(sourceChain, "aerodrome_Sfrxeth_Wsteth_v2_30_gauge");
         _addVelodromeV2Leafs(leafs, token0, token1, getAddress(sourceChain, "aerodromeRouter"), gauges);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
