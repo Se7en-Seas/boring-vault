@@ -3712,7 +3712,11 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         address router,
         address[] memory gauges
     ) internal {
+        require(token0.length == token1.length && token0.length == gauges.length, "Arrays must be of equal length");
+
         for (uint256 i; i < token0.length; ++i) {
+            (token0[i], token1[i]) = token0[i] < token1[i] ? (token0[i], token1[i]) : (token1[i], token0[i]);
+
             if (!tokenToSpenderToApprovalInTree[token0[i]][router]) {
                 unchecked {
                     leafIndex++;
