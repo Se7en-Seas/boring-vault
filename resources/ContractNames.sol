@@ -35,6 +35,8 @@ contract ContractNames {
         "EtherFi Liquid ETH PancakeSwap Decoder and Sanitizer V0.0";
     string public constant EtherFiLiquidEthCamelotDecoderAndSanitizerName =
         "EtherFi Liquid ETH Camelot Decoder and Sanitizer V0.0";
+    string public constant EtherFiLiquidEthAerodromeDecoderAndSanitizerName =
+        "EtherFi Liquid ETH Aerodrome Decoder and Sanitizer V0.0";
 
     string public constant TestVaultEthRolesAuthorityName = "Test ETH Vault RolesAuthority Version 0.0";
     string public constant TestVaultEthName = "Test ETH Vault V0.0";
