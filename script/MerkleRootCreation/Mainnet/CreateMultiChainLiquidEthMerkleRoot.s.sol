@@ -94,7 +94,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketJuly"));
 
         // ========================== UniswapV3 ==========================
-        address[] memory token0 = new address[](7);
+        address[] memory token0 = new address[](8);
         token0[0] = getAddress(sourceChain, "WETH");
         token0[1] = getAddress(sourceChain, "WETH");
         token0[2] = getAddress(sourceChain, "WETH");
@@ -102,8 +102,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         token0[4] = getAddress(sourceChain, "WEETH");
         token0[5] = getAddress(sourceChain, "WSTETH");
         token0[6] = getAddress(sourceChain, "WETH");
+        token0[7] = getAddress(sourceChain, "WETH");
 
-        address[] memory token1 = new address[](7);
+        address[] memory token1 = new address[](8);
         token1[0] = getAddress(sourceChain, "WEETH");
         token1[1] = getAddress(sourceChain, "WSTETH");
         token1[2] = getAddress(sourceChain, "RETH");
@@ -111,6 +112,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         token1[4] = getAddress(sourceChain, "RETH");
         token1[5] = getAddress(sourceChain, "RETH");
         token1[6] = getAddress(sourceChain, "SFRXETH");
+        token1[7] = getAddress(sourceChain, "CBETH");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
@@ -125,8 +127,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](17);
-        SwapKind[] memory kind = new SwapKind[](17);
+        address[] memory assets = new address[](15);
+        SwapKind[] memory kind = new SwapKind[](15);
         assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "WEETH");
@@ -153,14 +155,10 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         kind[11] = SwapKind.Sell;
         assets[12] = getAddress(sourceChain, "RSR");
         kind[12] = SwapKind.Sell;
-        assets[13] = getAddress(sourceChain, "OSETH");
+        assets[13] = getAddress(sourceChain, "CBETH");
         kind[13] = SwapKind.BuyAndSell;
-        assets[14] = getAddress(sourceChain, "CBETH");
+        assets[14] = getAddress(sourceChain, "RSETH");
         kind[14] = SwapKind.BuyAndSell;
-        assets[15] = getAddress(sourceChain, "RSETH");
-        kind[15] = SwapKind.BuyAndSell;
-        assets[16] = getAddress(sourceChain, "OSETH");
-        kind[16] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "wstETH_wETH_01"));
@@ -330,7 +328,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         // ========================== PancakeSwapV3 ==========================
         setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", pancakeSwapDataDecoderAndSanitizer);
 
-        token0 = new address[](7);
+        token0 = new address[](8);
         token0[0] = getAddress(sourceChain, "WETH");
         token0[1] = getAddress(sourceChain, "WETH");
         token0[2] = getAddress(sourceChain, "WETH");
@@ -338,8 +336,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         token0[4] = getAddress(sourceChain, "WEETH");
         token0[5] = getAddress(sourceChain, "WSTETH");
         token0[6] = getAddress(sourceChain, "WETH");
+        token0[7] = getAddress(sourceChain, "WETH");
 
-        token1 = new address[](7);
+        token1 = new address[](8);
         token1[0] = getAddress(sourceChain, "WEETH");
         token1[1] = getAddress(sourceChain, "WSTETH");
         token1[2] = getAddress(sourceChain, "RETH");
@@ -347,6 +346,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         token1[4] = getAddress(sourceChain, "RETH");
         token1[5] = getAddress(sourceChain, "RETH");
         token1[6] = getAddress(sourceChain, "SFRXETH");
+        token1[7] = getAddress(sourceChain, "CBETH");
 
         _addPancakeSwapV3Leafs(leafs, token0, token1);
 
