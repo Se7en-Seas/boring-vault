@@ -155,6 +155,14 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
             leafs, getAddress(sourceChain, "merklDistributor"), getAddress(sourceChain, "dev1Address"), tokensToClaim
         );
 
+        // ========================== LayerZero ==========================
+        _addLayerZeroLeafs(
+            leafs, getERC20(sourceChain, "WEETH_OFT"), getAddress(sourceChain, "WEETH_OFT"), layerZeroMainnetEndpointId
+        );
+        _addLayerZeroLeafs(
+            leafs, getERC20(sourceChain, "WEETH_OFT"), getAddress(sourceChain, "WEETH_OFT"), layerZeroBaseEndpointId
+        );
+
         // ========================== Velodrome ==========================
         setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", aerodromeDecoderAndSanitizer);
         token0 = new address[](1);
