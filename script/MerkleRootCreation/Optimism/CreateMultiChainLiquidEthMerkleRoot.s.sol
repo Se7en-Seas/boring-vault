@@ -19,6 +19,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
 
+    address public aerodromeDecoderAndSanitizer = 0x0cD9e50616efdc3a5598e4483e212fe127E08f3C;
+
     address public itbDecoderAndSanitizer = 0xEEb53299Cb894968109dfa420D69f0C97c835211;
     address public itbGearboxProtocolPositionManager = 0xad5dB17b44506785931dbc49c8857482c3b4F622;
 
@@ -61,7 +63,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWETHV3")), getAddress(sourceChain, "sdWETHV3"));
 
         // ========================== Balancer ==========================
-        _addBalancerLeafs(leafs, getBytes32(sourceChain, "wstETH_weETH_Id"), getAddress(sourceChain, "wstETH_weETH_Gauge"));
+        _addBalancerLeafs(
+            leafs, getBytes32(sourceChain, "wstETH_weETH_Id"), getAddress(sourceChain, "wstETH_weETH_Gauge")
+        );
 
         // ========================== Aura ==========================
         _addAuraLeafs(leafs, getAddress(sourceChain, "aura_wstETH_weETH"));
@@ -147,9 +151,21 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         ERC20[] memory tokensToClaim = new ERC20[](2);
         tokensToClaim[0] = getERC20(sourceChain, "UNI");
         tokensToClaim[1] = getERC20(sourceChain, "OP");
-        _addMerklLeafs(leafs, getAddress(sourceChain, "merklDistributor"), getAddress(sourceChain, "dev1Address"), tokensToClaim);
+        _addMerklLeafs(
+            leafs, getAddress(sourceChain, "merklDistributor"), getAddress(sourceChain, "dev1Address"), tokensToClaim
+        );
 
-        // TODO add velodrome once audited
+        // ========================== Velodrome ==========================
+        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", aerodromeDecoderAndSanitizer);
+        token0 = new address[](1);
+        token0[0] = getAddress(sourceChain, "WETH");
+        token1 = new address[](1);
+        token1[0] = getAddress(sourceChain, "WSTETH");
+        address[] memory gauges = new address[](1);
+        gauges[0] = getAddress(sourceChain, "velodrome_Weth_Wsteth_v3_1_gauge");
+        _addVelodromeV3Leafs(
+            leafs, token0, token1, getAddress(sourceChain, "velodromeNonFungiblePositionManager"), gauges
+        );
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
