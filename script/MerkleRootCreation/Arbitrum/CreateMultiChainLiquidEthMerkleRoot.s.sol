@@ -16,6 +16,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
 
     address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
     address public rawDataDecoderAndSanitizer = 0x6175ab325B51bFDd27ab306e4D6A5850AFbd7764;
+    address public camelotFullDecoderAndSanitizer = 0xe315ADA67dB9Fd97523620194ccdd727102830c7;
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
 
@@ -102,8 +103,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](15);
-        SwapKind[] memory kind = new SwapKind[](15);
+        address[] memory assets = new address[](16);
+        SwapKind[] memory kind = new SwapKind[](16);
         assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "WEETH");
@@ -134,6 +135,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         kind[13] = SwapKind.BuyAndSell;
         assets[14] = getAddress(sourceChain, "RSETH");
         kind[14] = SwapKind.BuyAndSell;
+        assets[15] = getAddress(sourceChain, "GRAIL");
+        kind[15] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "wstETH_wETH_01"));
@@ -184,9 +187,10 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== Merkl ==========================
         {
-            ERC20[] memory tokensToClaim = new ERC20[](2);
+            ERC20[] memory tokensToClaim = new ERC20[](3);
             tokensToClaim[0] = getERC20(sourceChain, "UNI");
             tokensToClaim[1] = getERC20(sourceChain, "ARB");
+            tokensToClaim[2] = getERC20(sourceChain, "GRAIL");
             _addMerklLeafs(
                 leafs,
                 getAddress(sourceChain, "merklDistributor"),
@@ -213,6 +217,18 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addAuraLeafs(leafs, getAddress(sourceChain, "aura_wstETH_sfrxETH"));
         _addAuraLeafs(leafs, getAddress(sourceChain, "aura_wstETH_wETH_Gyro"));
         _addAuraLeafs(leafs, getAddress(sourceChain, "aura_weETH_wstETH_Gyro"));
+
+        // ========================== Camelot ==========================
+        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", camelotFullDecoderAndSanitizer);
+        token0 = new address[](3);
+        token0[0] = getAddress(sourceChain, "WETH");
+        token0[1] = getAddress(sourceChain, "WETH");
+        token0[2] = getAddress(sourceChain, "WETH");
+        token1 = new address[](3);
+        token1[0] = getAddress(sourceChain, "WEETH");
+        token1[1] = getAddress(sourceChain, "WSTETH");
+        token1[2] = getAddress(sourceChain, "RSETH");
+        _addCamelotV3Leafs(leafs, token0, token1);
 
         // iTb
         _addLeafsForItbGearbox(
