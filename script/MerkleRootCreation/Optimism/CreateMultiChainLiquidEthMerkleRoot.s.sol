@@ -126,16 +126,14 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WETH"));
 
         // ========================== Standard Bridge ==========================
-        ERC20[] memory localTokens = new ERC20[](4);
-        localTokens[0] = getERC20(sourceChain, "WETH");
-        localTokens[1] = getERC20(sourceChain, "WSTETH");
+        ERC20[] memory localTokens = new ERC20[](3);
+        localTokens[0] = getERC20(sourceChain, "RETH");
+        localTokens[1] = getERC20(sourceChain, "CBETH");
         localTokens[2] = getERC20(sourceChain, "WEETH");
-        localTokens[3] = getERC20(sourceChain, "RETH");
-        ERC20[] memory remoteTokens = new ERC20[](4);
-        remoteTokens[0] = getERC20(mainnet, "WETH");
-        remoteTokens[1] = getERC20(mainnet, "WSTETH");
+        ERC20[] memory remoteTokens = new ERC20[](3);
+        remoteTokens[0] = getERC20(mainnet, "RETH");
+        remoteTokens[1] = getERC20(mainnet, "CBETH");
         remoteTokens[2] = getERC20(mainnet, "WEETH");
-        remoteTokens[3] = getERC20(mainnet, "RETH");
         _addStandardBridgeLeafs(
             leafs,
             mainnet,
