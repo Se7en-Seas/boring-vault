@@ -432,10 +432,12 @@ contract MainnetAddresses {
     address public sdDAIV3 = 0xC853E4DA38d9Bd1d01675355b8c8f3BBC1451973;
     address public dUSDTV3 = 0x05A811275fE9b4DE503B3311F51edF6A856D936e;
     address public sdUSDTV3 = 0x16adAb68bDEcE3089D4f1626Bb5AEDD0d02471aD;
+    address public dWBTCV3 = 0xda00010eDA646913F273E10E7A5d1F659242757d;
+    address public sdWBTCV3 = 0xA8cE662E45E825DAF178DA2c8d5Fae97696A788A;
 
     // Pendle
     address public pendleMarketFactory = 0x1A6fCc85557BC4fB7B534ed835a03EF056552D52;
-    address public pendleRouter = 0x00000000005BBB0EF59571E58418F9a4357b68A0;
+    address public pendleRouter = 0x888888888889758F76e7103c6CbF23ABbF58F946;
     address public pendleOracle = 0x66a1096C6366b2529274dF4f5D8247827fe4CEA8;
 
     address public pendleWeETHMarket = 0xF32e58F92e60f4b0A37A69b95d642A471365EAe8;
@@ -477,6 +479,9 @@ contract MainnetAddresses {
     address public pendleKarakWeETHMarketSeptember = 0x18bAFcaBf2d5898956AE6AC31543d9657a604165;
 
     address public pendleSwethMarket = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303;
+
+    address public pendleZircuitWeETHMarketAugust = 0x6c269DFc142259c52773430b3c78503CC994a93E;
+    address public pendleWeETHMarketJuly = 0xe1F19CBDa26b6418B0C8E1EE978a533184496066;
 
     // Aave V3
     address public v3Pool = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
@@ -546,4 +551,38 @@ contract MainnetAddresses {
     address public ETHxDefaultCollateral = 0xBdea8e677F9f7C294A4556005c640Ee505bE6925;
     address public uniETHDefaultCollateral = 0x1C57ea879dd3e8C9fefa8224fdD1fa20dd54211E;
     address public sUSDeDefaultCollateral = 0x19d0D8e6294B7a04a2733FE433444704B791939A;
+
+    // Karak
+    address public vaultSupervisor = 0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC;
+
+    address public kmETH = 0x7C22725d1E0871f0043397c9761AD99A86ffD498;
+    address public kweETH = 0x2DABcea55a12d73191AeCe59F508b191Fb68AdaC;
+    address public kwstETH = 0xa3726beDFD1a8AA696b9B4581277240028c4314b;
+    address public krETH = 0x8E475A4F7820A4b6c0FF229f74fB4762f0813C47;
+    address public kcbETH = 0xbD32b8aA6ff34BEDc447e503195Fb2524c72658f;
+    address public kwBETH = 0x04BB50329A1B7D943E7fD2368288b674c8180d5E;
+    address public kswETH = 0xc585DF3a8C9ca0c614D023A812624bE36161502B;
+    address public kETHx = 0x989Ab830C6e2BdF3f28214fF54C9B7415C349a3F;
+    address public ksfrxETH = 0x1751e1e4d2c9Fa99479C0c5574136F0dbD8f3EB8;
+    address public krswETH = 0x1B4d88f5f38988BEA334C79f48aa69BEEeFE2e1e;
+    address public krsETH = 0x9a23e79a8E6D77F940F2C30eb3d9282Af2E4036c;
+    // CCIP token transfers.
+    address public ccipRouter = 0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D;
+    uint64 public arbitrumDestinationChainId = 4949039107694359620;
+
+    // PancakeSwap V3
+    address public pancakeSwapV3NonFungiblePositionManager = 0x46A15B0b27311cedF172AB29E4f4766fbE7F4364;
+    address public pancakeSwapV3MasterChefV3 = 0x556B9306565093C855AEA9AE92A594704c2Cd59e;
+    address public pancakeSwapV3Router = 0x13f4EA83D0bd40E75C8222255bc855a974568Dd4;
+    // Arbitrum Bridge
+    address public arbitrumDelayedInbox = 0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f;
+    address public arbitrumOutbox = 0x0B9857ae2D4A3DBe74ffE1d7DF045bb7F96E4840;
+    address public arbitrumL1GatewayRouter = 0x72Ce9c846789fdB6fC1f34aC4AD25Dd9ef7031ef;
+    address public arbitrumL1ERC20Gateway = 0xa3A7B6F88361F48403514059F1F16C8E78d60EeC;
+    address public arbitrumL2Sender = 0x09e9222E96E7B4AE2a407B98d48e330053351EEe;
+    address public arbitrumWethGateway = 0xd92023E9d9911199a6711321D1277285e6d4e2db;
+
+    // LayerZero
+    address public EtherFiOFTAdapter = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D;
+    uint32 public baseEndpointId = 30184;
 }

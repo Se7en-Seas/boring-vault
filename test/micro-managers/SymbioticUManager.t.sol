@@ -6,7 +6,7 @@ import {BoringVault} from "src/base/BoringVault.sol";
 import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVerification.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {SymbioticUManager, DefaultCollateral} from "src/micro-managers/SymbioticUManager.sol";
-import {BaseMerkleRootGenerator} from "resources/BaseMerkleRootGenerator.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
@@ -14,7 +14,7 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract SymbioticUManagerTest is Test, MainnetAddresses, BaseMerkleRootGenerator {
+contract SymbioticUManagerTest is Test, MainnetAddresses, MerkleTreeHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -22,6 +22,7 @@ contract SymbioticUManagerTest is Test, MainnetAddresses, BaseMerkleRootGenerato
     BoringVault public boringVault = BoringVault(payable(0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88));
     ManagerWithMerkleVerification public manager =
         ManagerWithMerkleVerification(0xA24dD7B978Fbe36125cC4817192f7b8AA18d213c);
+    address public managerAddress = 0xA24dD7B978Fbe36125cC4817192f7b8AA18d213c;
     address public rawDataDecoderAndSanitizer = 0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781;
     address public accountantAddress = 0xbe16605B22a7faCEf247363312121670DFe5afBE;
     uint8 public constant STRATEGIST_ROLE = 7;
@@ -40,18 +41,22 @@ contract SymbioticUManagerTest is Test, MainnetAddresses, BaseMerkleRootGenerato
 
         symbioticUManager = new SymbioticUManager(address(this), rolesAuthority, address(manager), address(boringVault));
 
-        updateAddresses(address(boringVault), rawDataDecoderAndSanitizer, address(manager), accountantAddress);
+        setSourceChainName(mainnet);
+        setAddress(false, mainnet, "boringVault", address(boringVault));
+        setAddress(false, mainnet, "managerAddress", managerAddress);
+        setAddress(false, mainnet, "accountantAddress", accountantAddress);
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
         leafIndex = type(uint256).max;
-        _addSymbioticApproveAndDepositLeaf(leafs, wstETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, cbETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, wBETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, rETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, mETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, swETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, sfrxETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, ETHxDefaultCollateral);
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "wstETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "cbETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "wBETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "rETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "mETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "swETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "sfrxETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "ETHxDefaultCollateral"));
 
         bytes32[][] memory merkleTree = _generateMerkleTree(leafs);
 

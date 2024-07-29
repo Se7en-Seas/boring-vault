@@ -3,17 +3,17 @@ pragma solidity 0.8.21;
 
 import {DeployArcticArchitecture, ERC20, Deployer} from "script/ArchitectureDeployments/DeployArcticArchitecture.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
-import {OptimismAddresses} from "test/resources/OptimismAddresses.sol";
+import {ChainValues} from "test/resources/ChainValues.sol";
 
 // Import Decoder and Sanitizer to deploy.
 import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Optimism/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 70000000 --evm-version london --slow --broadcast --etherscan-api-key $OPTIMISMSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Optimism/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 70000000 --evm-version london --broadcast --etherscan-api-key $OPTIMISMSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployBridgingTestVaultScript is DeployArcticArchitecture, OptimismAddresses {
+contract DeployBridgingTestVaultScript is DeployArcticArchitecture, ChainValues {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
@@ -22,14 +22,16 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, OptimismAddr
     string public boringVaultName = "Bridging Test Vault";
     string public boringVaultSymbol = "BTEV";
     uint8 public boringVaultDecimals = 18;
-    address public owner = dev0Address;
+    string internal sourceChain = optimism;
+    address public owner;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("optimism");
+        vm.createSelectFork(sourceChain);
     }
 
     function run() external {
+        owner = getAddress(sourceChain, "dev0Address");
         // Configure the deployment.
         configureDeployment.deployContracts = true;
         configureDeployment.setupRoles = true;
@@ -38,9 +40,9 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, OptimismAddr
         configureDeployment.finishSetup = true;
         configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
-        configureDeployment.deployerAddress = deployerAddress;
-        configureDeployment.balancerVault = balancerVault;
-        configureDeployment.WETH = address(WETH);
+        configureDeployment.deployerAddress = getAddress(sourceChain, "deployerAddress");
+        configureDeployment.balancerVault = getAddress(sourceChain, "balancerVault");
+        configureDeployment.WETH = getAddress(sourceChain, "WETH");
 
         // Save deployer.
         deployer = Deployer(configureDeployment.deployerAddress);
@@ -56,8 +58,8 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, OptimismAddr
         names.delayedWithdrawer = BridgingTestVaultEthDelayedWithdrawer;
 
         // Define Accountant Parameters.
-        accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = WETH;
+        accountantParameters.payoutAddress = getAddress(sourceChain, "liquidPayoutAddress");
+        accountantParameters.base = getERC20(sourceChain, "WETH");
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
@@ -70,17 +72,38 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, OptimismAddr
 
         // Define Decoder and Sanitizer deployment details.
         bytes memory creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode;
-        bytes memory constructorArgs =
-            abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
+        bytes memory constructorArgs = abi.encode(
+            deployer.getAddress(names.boringVault), getAddress(sourceChain, "uniswapV3NonFungiblePositionManager")
+        );
 
         // Setup extra deposit assets.
-        // none
+        depositAssets.push(
+            DepositAsset({
+                asset: getERC20(sourceChain, "WEETH"),
+                isPeggedToBase: false,
+                rateProvider: address(0),
+                genericRateProviderName: "",
+                target: getAddress(sourceChain, "weETH_ETH_ExchangeRate"),
+                selector: bytes4(keccak256(abi.encodePacked("latestAnswer()"))),
+                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
 
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: WETH,
-                withdrawDelay: 3 days,
+                asset: getERC20(sourceChain, "WETH"),
+                withdrawDelay: 60,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: getERC20(sourceChain, "WEETH"),
+                withdrawDelay: 60,
                 completionWindow: 7 days,
                 withdrawFee: 0,
                 maxLoss: 0.01e4
@@ -89,8 +112,8 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, OptimismAddr
 
         bool allowPublicDeposits = true;
         bool allowPublicWithdraws = true;
-        uint64 shareLockPeriod = 1 days;
-        address delayedWithdrawFeeAddress = liquidPayoutAddress;
+        uint64 shareLockPeriod = 0;
+        address delayedWithdrawFeeAddress = getAddress(sourceChain, "liquidPayoutAddress");
 
         vm.startBroadcast(privateKey);
 
@@ -106,7 +129,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, OptimismAddr
             allowPublicDeposits,
             allowPublicWithdraws,
             shareLockPeriod,
-            dev0Address
+            getAddress(sourceChain, "dev1Address")
         );
 
         vm.stopBroadcast();

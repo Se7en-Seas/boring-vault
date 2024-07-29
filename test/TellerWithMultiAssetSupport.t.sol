@@ -12,10 +12,11 @@ import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {ILiquidityPool} from "src/interfaces/IStaking.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {AtomicSolverV3, AtomicQueue} from "src/atomic-queue/AtomicSolverV3.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
+contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -38,13 +39,26 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
     AtomicQueue public atomicQueue;
     AtomicSolverV3 public atomicSolverV3;
 
+    ERC20 internal WETH;
+    ERC20 internal EETH;
+    ERC20 internal WEETH;
+    address internal EETH_LIQUIDITY_POOL;
+    address internal WEETH_RATE_PROVIDER;
+
     address public solver = vm.addr(54);
 
     function setUp() external {
+        setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         uint256 blockNumber = 19363419;
         _startFork(rpcKey, blockNumber);
+
+        WETH = getERC20(sourceChain, "WETH");
+        EETH = getERC20(sourceChain, "EETH");
+        WEETH = getERC20(sourceChain, "WEETH");
+        EETH_LIQUIDITY_POOL = getAddress(sourceChain, "EETH_LIQUIDITY_POOL");
+        WEETH_RATE_PROVIDER = getAddress(sourceChain, "WEETH_RATE_PROVIDER");
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
@@ -57,12 +71,13 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
 
         rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
 
-        atomicQueue = new AtomicQueue();
+        atomicQueue = new AtomicQueue(address(this), Authority(address(0)));
         atomicSolverV3 = new AtomicSolverV3(address(this), rolesAuthority);
 
         boringVault.setAuthority(rolesAuthority);
         accountant.setAuthority(rolesAuthority);
         teller.setAuthority(rolesAuthority);
+        atomicQueue.setAuthority(rolesAuthority);
 
         rolesAuthority.setRoleCapability(MINTER_ROLE, address(boringVault), BoringVault.enter.selector, true);
         rolesAuthority.setRoleCapability(BURNER_ROLE, address(boringVault), BoringVault.exit.selector, true);
@@ -92,6 +107,8 @@ contract TellerWithMultiAssetSupportTest is Test, MainnetAddresses {
         rolesAuthority.setPublicCapability(
             address(teller), TellerWithMultiAssetSupport.depositWithPermit.selector, true
         );
+        rolesAuthority.setPublicCapability(address(atomicQueue), AtomicQueue.updateAtomicRequest.selector, true);
+        rolesAuthority.setPublicCapability(address(atomicQueue), AtomicQueue.solve.selector, true);
 
         rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
         rolesAuthority.setUserRole(address(teller), MINTER_ROLE, true);

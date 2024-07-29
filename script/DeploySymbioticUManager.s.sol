@@ -2,7 +2,6 @@
 pragma solidity 0.8.21;
 
 import {BoringVault} from "src/base/BoringVault.sol";
-import {BaseMerkleRootGenerator} from "resources/BaseMerkleRootGenerator.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
@@ -12,11 +11,12 @@ import {SymbioticUManager, DefaultCollateral} from "src/micro-managers/Symbiotic
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {ContractNames} from "resources/ContractNames.sol";
 import {Deployer} from "src/helper/Deployer.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
 /**
  *  source .env && forge script script/DeploySymbioticUManager.s.sol:DeploySymbioticUManagerScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  */
-contract DeploySymbioticUManagerScript is BaseMerkleRootGenerator, ContractNames {
+contract DeploySymbioticUManagerScript is MerkleTreeHelper, ContractNames {
     using FixedPointMathLib for uint256;
 
     uint256 public privateKey;
@@ -30,7 +30,7 @@ contract DeploySymbioticUManagerScript is BaseMerkleRootGenerator, ContractNames
     RolesAuthority public rolesAuthority;
     SymbioticUManager public symbioticUManager;
 
-    Deployer public deployer = Deployer(deployerAddress);
+    Deployer public deployer;
 
     uint8 public constant STRATEGIST_MULTISIG_ROLE = 10;
     uint8 public constant SNIPER_ROLE = 88;
@@ -50,18 +50,24 @@ contract DeploySymbioticUManagerScript is BaseMerkleRootGenerator, ContractNames
 
     function generateSniperMerkleRoot() public {
         rolesAuthority = RolesAuthority(deployer.getAddress(SevenSeasRolesAuthorityName));
-        updateAddresses(address(boringVault), rawDataDecoderAndSanitizer, managerAddress, accountantAddress);
+
+        setSourceChainName(mainnet);
+        setAddress(false, mainnet, "boringVault", address(boringVault));
+        setAddress(false, mainnet, "managerAddress", managerAddress);
+        setAddress(false, mainnet, "accountantAddress", accountantAddress);
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+
+        deployer = Deployer(getAddress(sourceChain, "deployerAddress"));
 
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
-        leafIndex = type(uint256).max;
-        _addSymbioticApproveAndDepositLeaf(leafs, wstETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, cbETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, wBETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, rETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, mETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, swETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, sfrxETHDefaultCollateral);
-        _addSymbioticApproveAndDepositLeaf(leafs, ETHxDefaultCollateral);
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "wstETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "cbETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "wBETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "rETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "mETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "swETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "sfrxETHDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "ETHxDefaultCollateral"));
 
         string memory filePath = "./leafs/SuperSymbioticSniperLeafs.json";
 
@@ -71,20 +77,36 @@ contract DeploySymbioticUManagerScript is BaseMerkleRootGenerator, ContractNames
 
         vm.startBroadcast(privateKey);
 
-        symbioticUManager = new SymbioticUManager(dev0Address, rolesAuthority, address(manager), address(boringVault));
+        symbioticUManager = new SymbioticUManager(
+            getAddress(sourceChain, "dev0Address"), rolesAuthority, address(manager), address(boringVault)
+        );
 
         symbioticUManager.updateMerkleTree(merkleTree, false);
 
-        symbioticUManager.setConfiguration(DefaultCollateral(wstETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
-        symbioticUManager.setConfiguration(DefaultCollateral(cbETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
-        symbioticUManager.setConfiguration(DefaultCollateral(wBETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
-        symbioticUManager.setConfiguration(DefaultCollateral(rETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
-        symbioticUManager.setConfiguration(DefaultCollateral(mETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
-        symbioticUManager.setConfiguration(DefaultCollateral(swETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
         symbioticUManager.setConfiguration(
-            DefaultCollateral(sfrxETHDefaultCollateral), 1e18, rawDataDecoderAndSanitizer
+            DefaultCollateral(getAddress(sourceChain, "wstETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
         );
-        symbioticUManager.setConfiguration(DefaultCollateral(ETHxDefaultCollateral), 1e18, rawDataDecoderAndSanitizer);
+        symbioticUManager.setConfiguration(
+            DefaultCollateral(getAddress(sourceChain, "cbETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+        );
+        symbioticUManager.setConfiguration(
+            DefaultCollateral(getAddress(sourceChain, "wBETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+        );
+        symbioticUManager.setConfiguration(
+            DefaultCollateral(getAddress(sourceChain, "rETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+        );
+        symbioticUManager.setConfiguration(
+            DefaultCollateral(getAddress(sourceChain, "mETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+        );
+        symbioticUManager.setConfiguration(
+            DefaultCollateral(getAddress(sourceChain, "swETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+        );
+        symbioticUManager.setConfiguration(
+            DefaultCollateral(getAddress(sourceChain, "sfrxETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+        );
+        symbioticUManager.setConfiguration(
+            DefaultCollateral(getAddress(sourceChain, "ETHxDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+        );
 
         rolesAuthority.setRoleCapability(
             STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.updateMerkleTree.selector, true
@@ -99,8 +121,8 @@ contract DeploySymbioticUManagerScript is BaseMerkleRootGenerator, ContractNames
             SNIPER_ROLE, address(symbioticUManager), SymbioticUManager.fullAssemble.selector, true
         );
 
-        rolesAuthority.transferOwnership(dev1Address);
-        symbioticUManager.transferOwnership(dev1Address);
+        rolesAuthority.transferOwnership(getAddress(sourceChain, "dev1Address"));
+        symbioticUManager.transferOwnership(getAddress(sourceChain, "dev1Address"));
 
         /// Note need to give strategist role to symbioticUManager
         /// Note need to set merkle root in the manager

@@ -4,7 +4,7 @@ pragma solidity 0.8.21;
 contract ContractNames {
     string public constant SevenSeasRolesAuthorityName = "Seven Seas RolesAuthority Version 0.0";
     string public constant ArcticArchitectureLensName = "Arctic Architecture Lens V0.0";
-    string public constant AtomicQueueName = "Atomic Queue V0.0";
+    string public constant AtomicQueueName = "Atomic Queue V0.1";
     string public constant AtomicSolverName = "Atomic Solver V4.0";
 
     // Migration
@@ -19,16 +19,24 @@ contract ContractNames {
     string public constant EtherFiLiquidUsdManagerName = "EtherFi Liquid USD Manager With Merkle Verification V0.0";
     string public constant EtherFiLiquidUsdAccountantName = "EtherFi Liquid USD Accountant With Rate Providers V0.0";
     string public constant EtherFiLiquidUsdTellerName = "EtherFi Liquid USD Teller With Multi Asset Support V0.0";
-    string public constant EtherFiLiquidUsdDecoderAndSanitizerName = "EtherFi Liquid USD Decoder and Sanitizer V0.2";
+    string public constant EtherFiLiquidUsdDecoderAndSanitizerName = "EtherFi Liquid USD Decoder and Sanitizer V0.3";
     string public constant EtherFiLiquidUsdDelayedWithdrawer = "EtherFi Liquid USD Delayed Withdrawer V0.0";
+    string public constant EtherFiLiquidUsdPancakeSwapDecoderAndSanitizerName =
+        "EtherFi Liquid USD PancakeSwap Decoder and Sanitizer V0.0";
 
     string public constant EtherFiLiquidEthRolesAuthorityName = "EtherFi Liquid ETH RolesAuthority Version 0.0";
     string public constant EtherFiLiquidEthName = "EtherFi Liquid ETH V0.1";
     string public constant EtherFiLiquidEthManagerName = "EtherFi Liquid ETH Manager With Merkle Verification V0.1";
     string public constant EtherFiLiquidEthAccountantName = "EtherFi Liquid ETH Accountant With Rate Providers V0.1";
     string public constant EtherFiLiquidEthTellerName = "EtherFi Liquid ETH Teller With Multi Asset Support V0.1";
-    string public constant EtherFiLiquidEthDecoderAndSanitizerName = "EtherFi Liquid ETH Decoder and Sanitizer V0.2";
+    string public constant EtherFiLiquidEthDecoderAndSanitizerName = "EtherFi Liquid ETH Decoder and Sanitizer V0.5";
     string public constant EtherFiLiquidEthDelayedWithdrawer = "EtherFi Liquid ETH Delayed Withdrawer V0.0";
+    string public constant EtherFiLiquidEthPancakeSwapDecoderAndSanitizerName =
+        "EtherFi Liquid ETH PancakeSwap Decoder and Sanitizer V0.0";
+    string public constant EtherFiLiquidEthCamelotDecoderAndSanitizerName =
+        "EtherFi Liquid ETH Camelot Decoder and Sanitizer V0.0";
+    string public constant EtherFiLiquidEthAerodromeDecoderAndSanitizerName =
+        "EtherFi Liquid ETH Aerodrome Decoder and Sanitizer V0.0";
 
     string public constant TestVaultEthRolesAuthorityName = "Test ETH Vault RolesAuthority Version 0.0";
     string public constant TestVaultEthName = "Test ETH Vault V0.0";
@@ -54,17 +62,19 @@ contract ContractNames {
     string public constant AvalancheVaultDecoderAndSanitizerName = "Avalanche Vault Decoder and Sanitizer V0.1";
     string public constant AvalancheVaultDelayedWithdrawer = "Avalanche Vault Delayed Withdrawer V0.0";
 
-    string public constant BridgingTestVaultEthRolesAuthorityName = "Bridging Test ETH Vault RolesAuthority Version 0.0";
-    string public constant BridgingTestVaultEthName = "Bridging Test ETH Vault V0.0";
+    string public constant BridgingTestVaultEthRolesAuthorityName = "Bridging Test ETH Vault RolesAuthority V1.0";
+    string public constant BridgingTestVaultEthName = "Bridging Test ETH Vault V1.0";
     string public constant BridgingTestVaultEthManagerName =
-        "Bridging Test ETH Vault Manager With Merkle Verification V0.0";
+        "Bridging Test ETH Vault Manager With Merkle Verification V1.0";
     string public constant BridgingTestVaultEthAccountantName =
-        "Bridging Test ETH Vault Accountant With Rate Providers V0.0";
+        "Bridging Test ETH Vault Accountant With Rate Providers V1.0";
     string public constant BridgingTestVaultEthTellerName =
-        "Bridging Test ETH Vault Teller With Multi Asset Support V0.0";
+        "Bridging Test ETH Vault Teller With Multi Asset Support V1.0";
     string public constant BridgingTestVaultEthDecoderAndSanitizerName =
-        "Bridging Test ETH Vault Decoder and Sanitizer V0.0";
-    string public constant BridgingTestVaultEthDelayedWithdrawer = "Bridging Test ETH Vault Delayed Withdrawer V0.0";
+        "Bridging Test ETH Vault Decoder and Sanitizer V1.3";
+    string public constant BridgingTestVaultEthDelayedWithdrawer = "Bridging Test ETH Vault Delayed Withdrawer V1.0";
+    string public constant BridgingTestVaultEthAerodromeDecoderAndSanitizerName =
+        "Bridging Test ETH Vault Aerodrome Decoder and Sanitizer V0.0";
 
     string public constant CanaryBtcRolesAuthorityName = "Lombard BTC RolesAuthority Version 0.0";
     string public constant CanaryBtcName = "Lombard BTC V0.1";
@@ -82,6 +92,14 @@ contract ContractNames {
     string public constant SymbioticLRTVaultTellerName = "Symbiotic LRT Vault Teller With Multi Asset Support V0.0";
     string public constant SymbioticLRTVaultDecoderAndSanitizerName = "Symbiotic LRT Vault Decoder and Sanitizer V0.1";
     string public constant SymbioticLRTVaultDelayedWithdrawer = "Symbiotic LRT Vault Delayed Withdrawer V0.0";
+
+    string public constant KarakVaultRolesAuthorityName = "Karak Vault RolesAuthority V0.0";
+    string public constant KarakVaultName = "Karak Vault V0.0";
+    string public constant KarakVaultManagerName = "Karak Vault Manager With Merkle Verification V0.0";
+    string public constant KarakVaultAccountantName = "Karak Vault Accountant With Rate Providers V0.0";
+    string public constant KarakVaultTellerName = "Karak Vault Teller With Multi Asset Support V0.0";
+    string public constant KarakVaultDecoderAndSanitizerName = "Karak Vault Decoder and Sanitizer V0.0";
+    string public constant KarakVaultDelayedWithdrawer = "Karak Vault Delayed Withdrawer V0.0";
 
     string public constant YakMilkAvaxVaultRolesAuthorityName = "Yak Milk Avax Vault RolesAuthority V0.0";
     string public constant YakMilkAvaxVaultName = "Yak Milk Avax Vault V0.0";
@@ -133,4 +151,5 @@ contract ContractNames {
     string public constant METHRateProviderName = "METH Generic Rate Provider V0.0";
     string public constant SWETHRateProviderName = "SWETH Generic Rate Provider V0.0";
     string public constant SFRXETHRateProviderName = "SFRXETH Generic Rate Provider V0.0";
+    string public constant WEETHRateProviderName = "weETH Generic Rate Provider V0.0";
 }

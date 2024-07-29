@@ -86,6 +86,13 @@ contract DecoderCustomTypes {
         uint256 amountOutMinimum;
     }
 
+    struct PancakeSwapExactInputParams {
+        bytes path;
+        address recipient;
+        uint256 amountIn;
+        uint256 amountOutMinimum;
+    }
+
     // ========================================= MORPHO BLUE =========================================
 
     struct MarketParams {
@@ -153,6 +160,42 @@ contract DecoderCustomTypes {
         ETH_WETH
     }
 
+    struct LimitOrderData {
+        address limitRouter;
+        uint256 epsSkipMarket; // only used for swap operations, will be ignored otherwise
+        FillOrderParams[] normalFills;
+        FillOrderParams[] flashFills;
+        bytes optData;
+    }
+
+    struct FillOrderParams {
+        Order order;
+        bytes signature;
+        uint256 makingAmount;
+    }
+
+    struct Order {
+        uint256 salt;
+        uint256 expiry;
+        uint256 nonce;
+        OrderType orderType;
+        address token;
+        address YT;
+        address maker;
+        address receiver;
+        uint256 makingAmount;
+        uint256 lnImpliedRate;
+        uint256 failSafeRate;
+        bytes permit;
+    }
+
+    enum OrderType {
+        SY_FOR_PT,
+        PT_FOR_SY,
+        SY_FOR_YT,
+        YT_FOR_SY
+    }
+
     // ========================================= EIGEN LAYER =========================================
 
     struct QueuedWithdrawalParams {
@@ -179,5 +222,91 @@ contract DecoderCustomTypes {
         address[] strategies;
         // Array containing the amount of shares in each Strategy in the `strategies` array
         uint256[] shares;
+    }
+
+    // ========================================= CCIP =========================================
+
+    // If extraArgs is empty bytes, the default is 200k gas limit.
+    struct EVM2AnyMessage {
+        bytes receiver; // abi.encode(receiver address) for dest EVM chains
+        bytes data; // Data payload
+        EVMTokenAmount[] tokenAmounts; // Token transfers
+        address feeToken; // Address of feeToken. address(0) means you will send msg.value.
+        bytes extraArgs; // Populate this with _argsToBytes(EVMExtraArgsV2)
+    }
+
+    /// @dev RMN depends on this struct, if changing, please notify the RMN maintainers.
+    struct EVMTokenAmount {
+        address token; // token address on the local chain.
+        uint256 amount; // Amount of tokens.
+    }
+
+    struct EVMExtraArgsV1 {
+        uint256 gasLimit;
+    }
+
+    // ========================================= OFT =========================================
+
+    struct SendParam {
+        uint32 dstEid; // Destination endpoint ID.
+        bytes32 to; // Recipient address.
+        uint256 amountLD; // Amount to send in local decimals.
+        uint256 minAmountLD; // Minimum amount to send in local decimals.
+        bytes extraOptions; // Additional options supplied by the caller to be used in the LayerZero message.
+        bytes composeMsg; // The composed message for the send() operation.
+        bytes oftCmd; // The OFT command to be executed, unused in default OFT implementations.
+    }
+
+    struct MessagingFee {
+        uint256 nativeFee;
+        uint256 lzTokenFee;
+    }
+    // ========================================= L1StandardBridge =========================================
+
+    struct WithdrawalTransaction {
+        uint256 nonce;
+        address sender;
+        address target;
+        uint256 value;
+        uint256 gasLimit;
+        bytes data;
+    }
+
+    struct OutputRootProof {
+        bytes32 version;
+        bytes32 stateRoot;
+        bytes32 messagePasserStorageRoot;
+        bytes32 latestBlockhash;
+    }
+
+    // ========================================= Camelot V3 =========================================
+
+    struct CamelotMintParams {
+        address token0;
+        address token1;
+        int24 tickLower;
+        int24 tickUpper;
+        uint256 amount0Desired;
+        uint256 amount1Desired;
+        uint256 amount0Min;
+        uint256 amount1Min;
+        address recipient;
+        uint256 deadline;
+    }
+    // ========================================= Velodrome V3 =========================================
+
+    struct VelodromeMintParams {
+        address token0;
+        address token1;
+        int24 tickSpacing;
+        int24 tickLower;
+        int24 tickUpper;
+        uint256 amount0Desired;
+        uint256 amount1Desired;
+        uint256 amount0Min;
+        uint256 amount1Min;
+        address recipient;
+        uint256 deadline;
+        uint160 sqrtPriceX96;
     }
 }

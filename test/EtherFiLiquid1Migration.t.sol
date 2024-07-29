@@ -15,7 +15,7 @@ import {AtomicSolver} from "src/atomic-queue/AtomicSolver.sol";
 import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {IWEETH} from "src/interfaces/IStaking.sol";
 import {ILiquidityPool} from "src/interfaces/IStaking.sol";
-import {WETH} from "@solmate/tokens/WETH.sol";
+// import {WETH} from "@solmate/tokens/WETH.sol";
 import {EtherFiLiquidDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiLiquidDecoderAndSanitizer.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {EtherFiLiquid1} from "src/interfaces/EtherFiLiquid1.sol";
@@ -29,10 +29,11 @@ import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Deployer} from "src/helper/Deployer.sol";
 import {AtomicSolverV4} from "src/atomic-queue/AtomicSolverV4.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
+contract EtherFiLiquid1MigrationTest is Test, MerkleTreeHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -95,13 +96,69 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     address user = vm.addr(3);
 
     // This is used for the `testParitySharePriceOracle` test.
-    ERC20 public asset = USDC;
+    ERC20 public asset;
+
+    ERC20 internal WETH;
+    ERC20 internal EETH;
+    ERC20 internal WEETH;
+    ERC20 internal WSTETH;
+    address internal deployerAddress;
+    ERC20 internal aV3WeETH;
+    ERC20 internal dWETHV3;
+    ERC20 internal dV3WETH;
+    address internal v3Pool;
+    address internal liquidMultisig;
+    address internal uniswapV3PositionManager;
+    ERC20 internal rETH_weETH;
+    address internal aura_reth_weeth;
+    address internal pendleEethYtDecember;
+    address internal pendleEethPtDecember;
+    address internal pendleWeETHMarketDecember;
+    address internal pendleEethYtSeptember;
+    address internal pendleEethPtSeptember;
+    address internal pendleWeETHMarketSeptember;
+    address internal pendleZircuitEethYt;
+    address internal pendleZircuitEethPt;
+    address internal pendleEethYt;
+    address internal pendleEethPt;
+    address internal pendleZircuitWeETHMarket;
+    address internal pendleWeETHMarket;
+    address internal dev1Address;
 
     function setUp() external {
+        setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
         uint256 blockNumber = 20179060;
         _startFork(rpcKey, blockNumber);
+
+        WETH = getERC20(sourceChain, "WETH");
+        EETH = getERC20(sourceChain, "EETH");
+        WEETH = getERC20(sourceChain, "WEETH");
+        deployerAddress = getAddress(sourceChain, "deployerAddress");
+        asset = getERC20(sourceChain, "USDC");
+        aV3WeETH = getERC20(sourceChain, "aV3WeETH");
+        dWETHV3 = getERC20(sourceChain, "dWETHV3");
+        dV3WETH = getERC20(sourceChain, "dV3WETH");
+        WSTETH = getERC20(sourceChain, "WSTETH");
+        v3Pool = getAddress(sourceChain, "v3Pool");
+        liquidMultisig = getAddress(sourceChain, "liquidMultisig");
+        uniswapV3PositionManager = getAddress(sourceChain, "uniswapV3PositionManager");
+        rETH_weETH = getERC20(sourceChain, "rETH_weETH");
+        aura_reth_weeth = getAddress(sourceChain, "aura_reth_weeth");
+        pendleEethYtDecember = getAddress(sourceChain, "pendleEethYtDecember");
+        pendleEethPtDecember = getAddress(sourceChain, "pendleEethPtDecember");
+        pendleWeETHMarketDecember = getAddress(sourceChain, "pendleWeETHMarketDecember");
+        pendleEethYtSeptember = getAddress(sourceChain, "pendleEethYtSeptember");
+        pendleEethPtSeptember = getAddress(sourceChain, "pendleEethPtSeptember");
+        pendleWeETHMarketSeptember = getAddress(sourceChain, "pendleWeETHMarketSeptember");
+        pendleZircuitEethYt = getAddress(sourceChain, "pendleZircuitEethYt");
+        pendleZircuitEethPt = getAddress(sourceChain, "pendleZircuitEethPt");
+        pendleEethYt = getAddress(sourceChain, "pendleEethYt");
+        pendleEethPt = getAddress(sourceChain, "pendleEethPt");
+        pendleZircuitWeETHMarket = getAddress(sourceChain, "pendleZircuitWeETHMarket");
+        pendleWeETHMarket = getAddress(sourceChain, "pendleWeETHMarket");
+        dev1Address = getAddress(sourceChain, "dev1Address");
 
         registry = Registry(etherFiLiquid1.registry());
         registryMultisig = registry.owner();
@@ -833,114 +890,6 @@ contract EtherFiLiquid1MigrationTest is Test, MainnetAddresses {
     }
 
     // ========================================= HELPER FUNCTIONS =========================================
-
-    function _generateProof(bytes32 leaf, bytes32[][] memory tree) internal pure returns (bytes32[] memory proof) {
-        // The length of each proof is the height of the tree - 1.
-        uint256 tree_length = tree.length;
-        proof = new bytes32[](tree_length - 1);
-
-        // Build the proof
-        for (uint256 i; i < tree_length - 1; ++i) {
-            // For each layer we need to find the leaf.
-            for (uint256 j; j < tree[i].length; ++j) {
-                if (leaf == tree[i][j]) {
-                    // We have found the leaf, so now figure out if the proof needs the next leaf or the previous one.
-                    proof[i] = j % 2 == 0 ? tree[i][j + 1] : tree[i][j - 1];
-                    leaf = _hashPair(leaf, proof[i]);
-                    break;
-                }
-            }
-        }
-    }
-
-    function _getProofsUsingTree(ManageLeaf[] memory manageLeafs, bytes32[][] memory tree)
-        internal
-        pure
-        returns (bytes32[][] memory proofs)
-    {
-        proofs = new bytes32[][](manageLeafs.length);
-        for (uint256 i; i < manageLeafs.length; ++i) {
-            // Generate manage proof.
-            bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, manageLeafs[i].canSendValue, selector);
-            uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
-            for (uint256 j; j < argumentAddressesLength; ++j) {
-                rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
-            }
-            bytes32 leaf = keccak256(rawDigest);
-            proofs[i] = _generateProof(leaf, tree);
-        }
-    }
-
-    function _buildTrees(bytes32[][] memory merkleTreeIn) internal pure returns (bytes32[][] memory merkleTreeOut) {
-        // We are adding another row to the merkle tree, so make merkleTreeOut be 1 longer.
-        uint256 merkleTreeIn_length = merkleTreeIn.length;
-        merkleTreeOut = new bytes32[][](merkleTreeIn_length + 1);
-        uint256 layer_length;
-        // Iterate through merkleTreeIn to copy over data.
-        for (uint256 i; i < merkleTreeIn_length; ++i) {
-            layer_length = merkleTreeIn[i].length;
-            merkleTreeOut[i] = new bytes32[](layer_length);
-            for (uint256 j; j < layer_length; ++j) {
-                merkleTreeOut[i][j] = merkleTreeIn[i][j];
-            }
-        }
-
-        uint256 next_layer_length;
-        if (layer_length % 2 != 0) {
-            next_layer_length = (layer_length + 1) / 2;
-        } else {
-            next_layer_length = layer_length / 2;
-        }
-        merkleTreeOut[merkleTreeIn_length] = new bytes32[](next_layer_length);
-        uint256 count;
-        for (uint256 i; i < layer_length; i += 2) {
-            merkleTreeOut[merkleTreeIn_length][count] =
-                _hashPair(merkleTreeIn[merkleTreeIn_length - 1][i], merkleTreeIn[merkleTreeIn_length - 1][i + 1]);
-            count++;
-        }
-
-        if (next_layer_length > 1) {
-            // We need to process the next layer of leaves.
-            merkleTreeOut = _buildTrees(merkleTreeOut);
-        }
-    }
-
-    struct ManageLeaf {
-        address target;
-        bool canSendValue;
-        string signature;
-        address[] argumentAddresses;
-    }
-
-    function _generateMerkleTree(ManageLeaf[] memory manageLeafs) internal pure returns (bytes32[][] memory tree) {
-        uint256 leafsLength = manageLeafs.length;
-        bytes32[][] memory leafs = new bytes32[][](1);
-        leafs[0] = new bytes32[](leafsLength);
-        for (uint256 i; i < leafsLength; ++i) {
-            bytes4 selector = bytes4(keccak256(abi.encodePacked(manageLeafs[i].signature)));
-            bytes memory rawDigest = abi.encodePacked(manageLeafs[i].target, manageLeafs[i].canSendValue, selector);
-            uint256 argumentAddressesLength = manageLeafs[i].argumentAddresses.length;
-            for (uint256 j; j < argumentAddressesLength; ++j) {
-                rawDigest = abi.encodePacked(rawDigest, manageLeafs[i].argumentAddresses[j]);
-            }
-            leafs[0][i] = keccak256(rawDigest);
-        }
-        tree = _buildTrees(leafs);
-    }
-
-    function _hashPair(bytes32 a, bytes32 b) private pure returns (bytes32) {
-        return a < b ? _efficientHash(a, b) : _efficientHash(b, a);
-    }
-
-    function _efficientHash(bytes32 a, bytes32 b) private pure returns (bytes32 value) {
-        /// @solidity memory-safe-assembly
-        assembly {
-            mstore(0x00, a)
-            mstore(0x20, b)
-            value := keccak256(0x00, 0x40)
-        }
-    }
 
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);

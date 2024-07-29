@@ -25,7 +25,15 @@ import {ZircuitSimpleStakingDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/ZircuitSimpleStakingDecoderAndSanitizer.sol";
 import {FluidFTokenDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/FluidFTokenDecoderAndSanitizer.sol";
-
+import {CCIPDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/CCIPDecoderAndSanitizer.sol";
+import {ArbitrumNativeBridgeDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/ArbitrumNativeBridgeDecoderAndSanitizer.sol";
+import {OFTDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/OFTDecoderAndSanitizer.sol";
+import {StandardBridgeDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/StandardBridgeDecoderAndSanitizer.sol";
+import {CompoundV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/CompoundV3DecoderAndSanitizer.sol";
+import {MerklDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/MerklDecoderAndSanitizer.sol";
+import {LidoDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/LidoDecoderAndSanitizer.sol";
 contract EtherFiLiquidEthDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
     BalancerV2DecoderAndSanitizer,
@@ -43,7 +51,14 @@ contract EtherFiLiquidEthDecoderAndSanitizer is
     EigenLayerLSTStakingDecoderAndSanitizer,
     SwellSimpleStakingDecoderAndSanitizer,
     ZircuitSimpleStakingDecoderAndSanitizer,
-    FluidFTokenDecoderAndSanitizer
+    FluidFTokenDecoderAndSanitizer,
+    CCIPDecoderAndSanitizer,
+    ArbitrumNativeBridgeDecoderAndSanitizer,
+    OFTDecoderAndSanitizer,
+    StandardBridgeDecoderAndSanitizer,
+    CompoundV3DecoderAndSanitizer,
+    MerklDecoderAndSanitizer,
+    LidoDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
@@ -97,6 +112,19 @@ contract EtherFiLiquidEthDecoderAndSanitizer is
     }
 
     /**
+     * @notice ZircuitSimpleStaking, CompoundV3 both specify a `withdraw(address,uint256)`,
+     *         all cases are handled the same way.
+     */
+    function withdraw(address a, uint256)
+        external
+        pure
+        override(ZircuitSimpleStakingDecoderAndSanitizer, CompoundV3DecoderAndSanitizer)
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(a);
+    }
+
+    /**
      * @notice Aura, and Convex all specify a `getReward(address,bool)`,
      *         all cases are handled the same way.
      */
@@ -121,4 +149,25 @@ contract EtherFiLiquidEthDecoderAndSanitizer is
     {
         addressesFound = abi.encodePacked(_token, _receiver);
     }
+
+    function wrap(uint256)
+        external
+        pure
+        override(EtherFiDecoderAndSanitizer, LidoDecoderAndSanitizer)
+        returns (bytes memory addressesFound)
+    {
+        // Nothing to sanitize or return
+        return addressesFound;
+    }
+
+    function unwrap(uint256)
+        external
+        pure
+        override(EtherFiDecoderAndSanitizer, LidoDecoderAndSanitizer)
+        returns (bytes memory addressesFound)
+    {
+        // Nothing to sanitize or return
+        return addressesFound;
+    }
+
 }

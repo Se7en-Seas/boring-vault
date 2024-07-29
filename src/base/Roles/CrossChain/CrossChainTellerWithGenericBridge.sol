@@ -10,8 +10,8 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
 
     //============================== EVENTS ===============================
 
-    event MessageSent(bytes32 messageId, uint256 shareAmount, address to);
-    event MessageReceived(bytes32 messageId, uint256 shareAmount, address to);
+    event MessageSent(bytes32 indexed messageId, uint256 shareAmount, address indexed to);
+    event MessageReceived(bytes32 indexed messageId, uint256 shareAmount, address indexed to);
 
     //============================== IMMUTABLES ===============================
 

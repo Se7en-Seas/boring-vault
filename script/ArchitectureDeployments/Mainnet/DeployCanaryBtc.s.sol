@@ -31,12 +31,12 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
 
     function run() external {
         // Configure the deployment.
-        configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = true;
+        configureDeployment.deployContracts = false;
+        configureDeployment.setupRoles = false;
         configureDeployment.setupDepositAssets = true;
-        configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = true;
-        configureDeployment.setupTestUser = true;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = false;
+        configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -74,17 +74,17 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
             abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
         // Setup extra deposit assets.
-        // depositAssets.push(
-        //     DepositAsset({
-        //         asset: WBTC,
-        //         isPeggedToBase: true,
-        //         rateProvider: address(0),
-        //         genericRateProviderName: "",
-        //         target: address(0),
-        //         selector: bytes4(0),
-        //         params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
-        //     })
-        // );
+        depositAssets.push(
+            DepositAsset({
+                asset: LBTC,
+                isPeggedToBase: true,
+                rateProvider: address(0),
+                genericRateProviderName: "",
+                target: address(0),
+                selector: bytes4(0),
+                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
@@ -96,15 +96,15 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
             })
         );
 
-        // withdrawAssets.push(
-        //     WithdrawAsset({
-        //         asset: WBTC,
-        //         withdrawDelay: 3 days,
-        //         completionWindow: 7 days,
-        //         withdrawFee: 0,
-        //         maxLoss: 0.01e4
-        //     })
-        // );
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: WBTC,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
 
         bool allowPublicDeposits = true;
         bool allowPublicWithdraws = true;
