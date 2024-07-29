@@ -33,6 +33,10 @@ contract ContractNames {
     string public constant EtherFiLiquidEthDelayedWithdrawer = "EtherFi Liquid ETH Delayed Withdrawer V0.0";
     string public constant EtherFiLiquidEthPancakeSwapDecoderAndSanitizerName =
         "EtherFi Liquid ETH PancakeSwap Decoder and Sanitizer V0.0";
+    string public constant EtherFiLiquidEthCamelotDecoderAndSanitizerName =
+        "EtherFi Liquid ETH Camelot Decoder and Sanitizer V0.0";
+    string public constant EtherFiLiquidEthAerodromeDecoderAndSanitizerName =
+        "EtherFi Liquid ETH Aerodrome Decoder and Sanitizer V0.0";
 
     string public constant TestVaultEthRolesAuthorityName = "Test ETH Vault RolesAuthority Version 0.0";
     string public constant TestVaultEthName = "Test ETH Vault V0.0";
@@ -69,6 +73,8 @@ contract ContractNames {
     string public constant BridgingTestVaultEthDecoderAndSanitizerName =
         "Bridging Test ETH Vault Decoder and Sanitizer V1.3";
     string public constant BridgingTestVaultEthDelayedWithdrawer = "Bridging Test ETH Vault Delayed Withdrawer V1.0";
+    string public constant BridgingTestVaultEthAerodromeDecoderAndSanitizerName =
+        "Bridging Test ETH Vault Aerodrome Decoder and Sanitizer V0.0";
 
     string public constant CanaryBtcRolesAuthorityName = "Lombard BTC RolesAuthority Version 0.0";
     string public constant CanaryBtcName = "Lombard BTC V0.1";

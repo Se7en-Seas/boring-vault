@@ -7,7 +7,7 @@ import {ArbitrumAddresses} from "test/resources/ArbitrumAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
 import {EtherFiLiquidEthDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
+    "src/base/DecodersAndSanitizers/Arbitrum/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
  *  source .env && forge script script/ArchitectureDeployments/Arbitrum/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 10000000 --evm-version london --broadcast --etherscan-api-key $ARBISCAN_KEY --verify
@@ -32,12 +32,12 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ArbitrumAddresses {
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = true;
-        configureDeployment.setupDepositAssets = true;
-        configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = true;
-        configureDeployment.setupTestUser = true;
-        configureDeployment.saveDeploymentDetails = true;
+        configureDeployment.setupRoles = false;
+        configureDeployment.setupDepositAssets = false;
+        configureDeployment.setupWithdrawAssets = false;
+        configureDeployment.finishSetup = false;
+        configureDeployment.setupTestUser = false;
+        configureDeployment.saveDeploymentDetails = false;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
         configureDeployment.WETH = address(WETH);

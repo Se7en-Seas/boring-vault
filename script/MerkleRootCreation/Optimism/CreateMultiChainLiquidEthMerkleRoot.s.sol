@@ -19,6 +19,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
 
+    address public aerodromeDecoderAndSanitizer = 0x0cD9e50616efdc3a5598e4483e212fe127E08f3C;
+
     address public itbDecoderAndSanitizer = 0xEEb53299Cb894968109dfa420D69f0C97c835211;
     address public itbGearboxProtocolPositionManager = 0xad5dB17b44506785931dbc49c8857482c3b4F622;
 
@@ -61,7 +63,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWETHV3")), getAddress(sourceChain, "sdWETHV3"));
 
         // ========================== Balancer ==========================
-        _addBalancerLeafs(leafs, getBytes32(sourceChain, "wstETH_weETH_Id"), getAddress(sourceChain, "wstETH_weETH_Gauge"));
+        _addBalancerLeafs(
+            leafs, getBytes32(sourceChain, "wstETH_weETH_Id"), getAddress(sourceChain, "wstETH_weETH_Gauge")
+        );
 
         // ========================== Aura ==========================
         _addAuraLeafs(leafs, getAddress(sourceChain, "aura_wstETH_weETH"));
@@ -122,16 +126,14 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WETH"));
 
         // ========================== Standard Bridge ==========================
-        ERC20[] memory localTokens = new ERC20[](4);
-        localTokens[0] = getERC20(sourceChain, "WETH");
-        localTokens[1] = getERC20(sourceChain, "WSTETH");
+        ERC20[] memory localTokens = new ERC20[](3);
+        localTokens[0] = getERC20(sourceChain, "RETH");
+        localTokens[1] = getERC20(sourceChain, "CBETH");
         localTokens[2] = getERC20(sourceChain, "WEETH");
-        localTokens[3] = getERC20(sourceChain, "RETH");
-        ERC20[] memory remoteTokens = new ERC20[](4);
-        remoteTokens[0] = getERC20(mainnet, "WETH");
-        remoteTokens[1] = getERC20(mainnet, "WSTETH");
+        ERC20[] memory remoteTokens = new ERC20[](3);
+        remoteTokens[0] = getERC20(mainnet, "RETH");
+        remoteTokens[1] = getERC20(mainnet, "CBETH");
         remoteTokens[2] = getERC20(mainnet, "WEETH");
-        remoteTokens[3] = getERC20(mainnet, "RETH");
         _addStandardBridgeLeafs(
             leafs,
             mainnet,
@@ -147,9 +149,29 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         ERC20[] memory tokensToClaim = new ERC20[](2);
         tokensToClaim[0] = getERC20(sourceChain, "UNI");
         tokensToClaim[1] = getERC20(sourceChain, "OP");
-        _addMerklLeafs(leafs, getAddress(sourceChain, "merklDistributor"), getAddress(sourceChain, "dev1Address"), tokensToClaim);
+        _addMerklLeafs(
+            leafs, getAddress(sourceChain, "merklDistributor"), getAddress(sourceChain, "dev1Address"), tokensToClaim
+        );
 
-        // TODO add velodrome once audited
+        // ========================== LayerZero ==========================
+        _addLayerZeroLeafs(
+            leafs, getERC20(sourceChain, "WEETH_OFT"), getAddress(sourceChain, "WEETH_OFT"), layerZeroMainnetEndpointId
+        );
+        _addLayerZeroLeafs(
+            leafs, getERC20(sourceChain, "WEETH_OFT"), getAddress(sourceChain, "WEETH_OFT"), layerZeroBaseEndpointId
+        );
+
+        // ========================== Velodrome ==========================
+        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", aerodromeDecoderAndSanitizer);
+        token0 = new address[](1);
+        token0[0] = getAddress(sourceChain, "WETH");
+        token1 = new address[](1);
+        token1[0] = getAddress(sourceChain, "WSTETH");
+        address[] memory gauges = new address[](1);
+        gauges[0] = getAddress(sourceChain, "velodrome_Weth_Wsteth_v3_1_gauge");
+        _addVelodromeV3Leafs(
+            leafs, token0, token1, getAddress(sourceChain, "velodromeNonFungiblePositionManager"), gauges
+        );
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 

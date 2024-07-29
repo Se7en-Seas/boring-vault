@@ -94,7 +94,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketJuly"));
 
         // ========================== UniswapV3 ==========================
-        address[] memory token0 = new address[](7);
+        address[] memory token0 = new address[](8);
         token0[0] = getAddress(sourceChain, "WETH");
         token0[1] = getAddress(sourceChain, "WETH");
         token0[2] = getAddress(sourceChain, "WETH");
@@ -102,8 +102,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         token0[4] = getAddress(sourceChain, "WEETH");
         token0[5] = getAddress(sourceChain, "WSTETH");
         token0[6] = getAddress(sourceChain, "WETH");
+        token0[7] = getAddress(sourceChain, "WETH");
 
-        address[] memory token1 = new address[](7);
+        address[] memory token1 = new address[](8);
         token1[0] = getAddress(sourceChain, "WEETH");
         token1[1] = getAddress(sourceChain, "WSTETH");
         token1[2] = getAddress(sourceChain, "RETH");
@@ -111,6 +112,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         token1[4] = getAddress(sourceChain, "RETH");
         token1[5] = getAddress(sourceChain, "RETH");
         token1[6] = getAddress(sourceChain, "SFRXETH");
+        token1[7] = getAddress(sourceChain, "CBETH");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
@@ -125,8 +127,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](16);
-        SwapKind[] memory kind = new SwapKind[](16);
+        address[] memory assets = new address[](15);
+        SwapKind[] memory kind = new SwapKind[](15);
         assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "WEETH");
@@ -153,12 +155,10 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         kind[11] = SwapKind.Sell;
         assets[12] = getAddress(sourceChain, "RSR");
         kind[12] = SwapKind.Sell;
-        assets[13] = getAddress(sourceChain, "OSETH");
+        assets[13] = getAddress(sourceChain, "CBETH");
         kind[13] = SwapKind.BuyAndSell;
-        assets[14] = getAddress(sourceChain, "CBETH");
+        assets[14] = getAddress(sourceChain, "RSETH");
         kind[14] = SwapKind.BuyAndSell;
-        assets[15] = getAddress(sourceChain, "RSETH");
-        kind[15] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "wstETH_wETH_01"));
@@ -203,8 +203,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         // ========================== Balancer ==========================
         _addBalancerLeafs(leafs, getBytes32(sourceChain, "rETH_weETH_id"), getAddress(sourceChain, "rETH_weETH_gauge"));
         _addBalancerLeafs(leafs, getBytes32(sourceChain, "rETH_wETH_id"), getAddress(sourceChain, "rETH_wETH_gauge"));
-        _addBalancerLeafs(leafs, getBytes32(sourceChain, "wstETH_wETH_Id"), getAddress(sourceChain, "wstETH_wETH_Gauge"));
-
+        _addBalancerLeafs(
+            leafs, getBytes32(sourceChain, "wstETH_wETH_Id"), getAddress(sourceChain, "wstETH_wETH_Gauge")
+        );
 
         // ========================== Aura ==========================
         _addAuraLeafs(leafs, getAddress(sourceChain, "aura_reth_weeth"));
@@ -245,15 +246,12 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         );
 
         // ========================== Native Bridge Leafs ==========================
-        ERC20[] memory bridgeAssets = new ERC20[](8);
+        ERC20[] memory bridgeAssets = new ERC20[](5);
         bridgeAssets[0] = getERC20(sourceChain, "WETH");
         bridgeAssets[1] = getERC20(sourceChain, "WEETH");
         bridgeAssets[2] = getERC20(sourceChain, "WSTETH");
         bridgeAssets[3] = getERC20(sourceChain, "RETH");
-        bridgeAssets[4] = getERC20(sourceChain, "OSETH");
-        bridgeAssets[5] = getERC20(sourceChain, "CBETH");
-        bridgeAssets[6] = getERC20(sourceChain, "SFRXETH");
-        bridgeAssets[7] = getERC20(sourceChain, "RSETH");
+        bridgeAssets[4] = getERC20(sourceChain, "CBETH");
         _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
 
         // ========================== CCIP Bridge Leafs ==========================
@@ -264,19 +262,14 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         ccipBridgeFeeAssets[1] = getERC20(sourceChain, "LINK");
         _addCcipBridgeLeafs(leafs, ccipArbitrumChainSelector, ccipBridgeAssets, ccipBridgeFeeAssets);
 
-
         // ========================== Standard Bridge ==========================
-        {        
-            ERC20[] memory localTokens = new ERC20[](4);
-            localTokens[0] = getERC20(sourceChain, "WETH");
-            localTokens[1] = getERC20(sourceChain, "WSTETH");
-            localTokens[2] = getERC20(sourceChain, "RETH");
-            localTokens[3] = getERC20(sourceChain, "CBETH");
-            ERC20[] memory remoteTokens = new ERC20[](4);
-            remoteTokens[0] = getERC20(mainnet, "WETH");
-            remoteTokens[1] = getERC20(mainnet, "WSTETH");
-            remoteTokens[2] = getERC20(mainnet, "RETH");
-            remoteTokens[3] = getERC20(mainnet, "CBETH");
+        {
+            ERC20[] memory localTokens = new ERC20[](2);
+            localTokens[0] = getERC20(sourceChain, "RETH");
+            localTokens[1] = getERC20(sourceChain, "CBETH");
+            ERC20[] memory remoteTokens = new ERC20[](2);
+            remoteTokens[0] = getERC20(optimism, "RETH");
+            remoteTokens[1] = getERC20(optimism, "CBETH");
             _addStandardBridgeLeafs(
                 leafs,
                 optimism,
@@ -287,6 +280,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
                 localTokens,
                 remoteTokens
             );
+
+            remoteTokens[0] = getERC20(base, "RETH");
+            remoteTokens[1] = getERC20(base, "CBETH");
 
             _addStandardBridgeLeafs(
                 leafs,
@@ -315,13 +311,18 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         {
             ERC20[] memory tokensToClaim = new ERC20[](1);
             tokensToClaim[0] = getERC20(sourceChain, "UNI");
-            _addMerklLeafs(leafs, getAddress(sourceChain, "merklDistributor"), getAddress(sourceChain, "dev1Address"), tokensToClaim);
+            _addMerklLeafs(
+                leafs,
+                getAddress(sourceChain, "merklDistributor"),
+                getAddress(sourceChain, "dev1Address"),
+                tokensToClaim
+            );
         }
 
         // ========================== PancakeSwapV3 ==========================
         setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", pancakeSwapDataDecoderAndSanitizer);
 
-        token0 = new address[](7);
+        token0 = new address[](8);
         token0[0] = getAddress(sourceChain, "WETH");
         token0[1] = getAddress(sourceChain, "WETH");
         token0[2] = getAddress(sourceChain, "WETH");
@@ -329,8 +330,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         token0[4] = getAddress(sourceChain, "WEETH");
         token0[5] = getAddress(sourceChain, "WSTETH");
         token0[6] = getAddress(sourceChain, "WETH");
+        token0[7] = getAddress(sourceChain, "WETH");
 
-        token1 = new address[](7);
+        token1 = new address[](8);
         token1[0] = getAddress(sourceChain, "WEETH");
         token1[1] = getAddress(sourceChain, "WSTETH");
         token1[2] = getAddress(sourceChain, "RETH");
@@ -338,6 +340,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         token1[4] = getAddress(sourceChain, "RETH");
         token1[5] = getAddress(sourceChain, "RETH");
         token1[6] = getAddress(sourceChain, "SFRXETH");
+        token1[7] = getAddress(sourceChain, "CBETH");
 
         _addPancakeSwapV3Leafs(leafs, token0, token1);
 
