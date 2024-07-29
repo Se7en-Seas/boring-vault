@@ -7,6 +7,8 @@ import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IComet} from "src/interfaces/IComet.sol";
+import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
+
 import "forge-std/Base.sol";
 
 contract MerkleTreeHelper is CommonBase, ChainValues {
@@ -446,7 +448,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             leafs[leafIndex] = ManageLeaf(
                 sourcePortal,
                 false,
-                "proveWithdrawalTransaction((uint256,address,address,uint256,uint256,bytes),uint256,(bytes32,bytes32,bytes32,bytes32),bytes[])",
+                "proveWithdrawalTransaction((uint256,address,address,uint256,uint256,bytes),uint256,(bytes32,bytes32,bytes32,bytes32),bytes[]))",
                 new address[](2),
                 string.concat("Prove withdrawal transaction from ", destination, " to ", sourceChain),
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer")
@@ -3852,6 +3854,58 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
             leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        }
+    }
+
+    // ========================================= BoringVault Teller =========================================
+
+    function _addTellerLeafs(ManageLeaf[] memory leafs, address teller, ERC20[] memory assets) internal {
+        ERC20 boringVault = TellerWithMultiAssetSupport(teller).vault();
+
+        for (uint256 i; i < assets.length; ++i) {
+            // Approve BoringVault to spend all assets.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(assets[i]),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve ", boringVault.name(), ", to spend ", assets[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(boringVault);
+
+            // BulkDeposit asset.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                teller,
+                false,
+                "bulkDeposit(address,uint256,uint256,address)",
+                new address[](2),
+                string.concat("Bulk deposit ", assets[i].symbol(), " into ", boringVault.name()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(assets[i]);
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+
+            // BulkWithdraw asset.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                teller,
+                false,
+                "bulkWithdraw(address,uint256,uint256,address)",
+                new address[](2),
+                string.concat("Bulk withdraw ", assets[i].symbol(), " from ", boringVault.name()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(assets[i]);
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
         }
     }
 

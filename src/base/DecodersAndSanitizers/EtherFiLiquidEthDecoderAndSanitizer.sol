@@ -34,6 +34,8 @@ import {StandardBridgeDecoderAndSanitizer} from
 import {CompoundV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/CompoundV3DecoderAndSanitizer.sol";
 import {MerklDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/MerklDecoderAndSanitizer.sol";
 import {LidoDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/LidoDecoderAndSanitizer.sol";
+import {TellerDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/TellerDecoderAndSanitizer.sol";
+
 contract EtherFiLiquidEthDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
     BalancerV2DecoderAndSanitizer,
@@ -58,7 +60,8 @@ contract EtherFiLiquidEthDecoderAndSanitizer is
     StandardBridgeDecoderAndSanitizer,
     CompoundV3DecoderAndSanitizer,
     MerklDecoderAndSanitizer,
-    LidoDecoderAndSanitizer
+    LidoDecoderAndSanitizer,
+    TellerDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
@@ -169,5 +172,4 @@ contract EtherFiLiquidEthDecoderAndSanitizer is
         // Nothing to sanitize or return
         return addressesFound;
     }
-
 }
