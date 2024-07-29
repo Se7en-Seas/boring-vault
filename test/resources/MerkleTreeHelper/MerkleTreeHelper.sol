@@ -448,7 +448,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             leafs[leafIndex] = ManageLeaf(
                 sourcePortal,
                 false,
-                "proveWithdrawalTransaction((uint256,address,address,uint256,uint256,bytes),uint256,(bytes32,bytes32,bytes32,bytes32),bytes[]))",
+                "proveWithdrawalTransaction((uint256,address,address,uint256,uint256,bytes),uint256,(bytes32,bytes32,bytes32,bytes32),bytes[])",
                 new address[](2),
                 string.concat("Prove withdrawal transaction from ", destination, " to ", sourceChain),
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer")
