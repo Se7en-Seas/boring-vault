@@ -7,7 +7,7 @@ import {ArbitrumAddresses} from "test/resources/ArbitrumAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
 import {EtherFiLiquidEthDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
+    "src/base/DecodersAndSanitizers/Arbitrum/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
  *  source .env && forge script script/ArchitectureDeployments/Arbitrum/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 10000000 --evm-version london --slow --broadcast --etherscan-api-key $ARBISCAN_KEY --verify

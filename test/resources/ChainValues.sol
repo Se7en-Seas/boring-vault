@@ -689,6 +689,8 @@ contract ChainValues {
         values[base]["LINK"] = 0x88Fb150BDc53A65fe94Dea0c9BA0a6dAf8C6e196.toBytes32();
         values[base]["UNI"] = 0xc3De830EA07524a0761646a6a4e4be0e114a3C83.toBytes32();
         values[base]["RETH"] = 0xB6fe221Fe9EeF5aBa221c348bA20A1Bf5e73624c.toBytes32();
+        values[base]["BSDETH"] = 0xCb327b99fF831bF8223cCEd12B1338FF3aA322Ff.toBytes32();
+        values[base]["SFRXETH"] = 0x1f55a02A049033E3419a8E2975cF3F572F4e6E9A.toBytes32();
 
         // Balancer vault
         values[base]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
@@ -710,7 +712,12 @@ contract ChainValues {
         values[base]["aerodromeRouter"] = 0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43.toBytes32();
         values[base]["aerodromeNonFungiblePositionManager"] = 0x827922686190790b37229fd06084350E74485b72.toBytes32();
         values[base]["aerodrome_Weth_Wsteth_v3_1_gauge"] = 0x2A1f7bf46bd975b5004b61c6040597E1B6117040.toBytes32();
+        values[base]["aerodrome_Weth_Bsdeth_v3_1_gauge"] = 0x0b537aC41400433F09d97Cd370C1ea9CE78D8a74.toBytes32();
+        values[base]["aerodrome_Cbeth_Weth_v3_1_gauge"] = 0xF5550F8F0331B8CAA165046667f4E6628E9E3Aac.toBytes32();
         values[base]["aerodrome_Weth_Wsteth_v2_30_gauge"] = 0xDf7c8F17Ab7D47702A4a4b6D951d2A4c90F99bf4.toBytes32();
+        values[base]["aerodrome_Weth_Weeth_v2_30_gauge"] = 0xf8d47b641eD9DF1c924C0F7A6deEEA2803b9CfeF.toBytes32();
+        values[base]["aerodrome_Weth_Reth_v2_05_gauge"] = 0xAa3D51d36BfE7C5C63299AF71bc19988BdBa0A06.toBytes32();
+        values[base]["aerodrome_Sfrxeth_Wsteth_v2_30_gauge"] = 0xCe7Cb6260fCBf17485cd2439B89FdDf8B0Eb39cC.toBytes32();
 
         // MorphoBlue
         values[base]["morphoBlue"] = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb.toBytes32();
@@ -762,6 +769,10 @@ contract ChainValues {
         values[arbitrum]["AURA"] = 0x1509706a6c66CA549ff0cB464de88231DDBe213B.toBytes32();
         values[arbitrum]["PENDLE"] = 0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8.toBytes32();
         values[arbitrum]["RSR"] = 0xCa5Ca9083702c56b481D1eec86F1776FDbd2e594.toBytes32();
+        values[arbitrum]["CBETH"] = 0x1DEBd73E752bEaF79865Fd6446b0c970EaE7732f.toBytes32();
+        values[arbitrum]["OSETH"] = 0xf7d4e7273E5015C96728A6b02f31C505eE184603.toBytes32();
+        values[arbitrum]["RSETH"] = 0x4186BFC76E2E237523CBC30FD220FE055156b41F.toBytes32();
+        values[arbitrum]["GRAIL"] = 0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8.toBytes32();
 
         // Aave V3
         values[arbitrum]["v3Pool"] = 0x794a61358D6845594F94dc1DB02A252b5b4814aD.toBytes32();
@@ -771,6 +782,9 @@ contract ChainValues {
         values[arbitrum]["oneInchExecutor"] = 0xE37e799D5077682FA0a244D46E5649F71457BD09.toBytes32();
 
         values[arbitrum]["balancerVault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
+        // TODO This Balancer on L2s use a different minting logic so minter is not used
+        // but the merkle tree should be refactored for L2s
+        values[arbitrum]["minter"] = address(1).toBytes32();
 
         // Arbitrum native bridging.
         values[arbitrum]["arbitrumL2GatewayRouter"] = 0x5288c571Fd7aD117beA99bF60FE0846C4E84F933.toBytes32();
@@ -819,6 +833,31 @@ contract ChainValues {
         values[arbitrum]["camelotRouterV2"] = 0xc873fEcbd354f5A56E00E710B90EF4201db2448d.toBytes32();
         values[arbitrum]["camelotRouterV3"] = 0x1F721E2E82F6676FCE4eA07A5958cF098D339e18.toBytes32();
         values[arbitrum]["camelotNonFungiblePositionManager"] = 0x00c7f3082833e796A5b3e4Bd59f6642FF44DCD15.toBytes32();
+
+        // Compound V3
+        values[arbitrum]["cWETHV3"] = 0x6f7D514bbD4aFf3BcD1140B7344b32f063dEe486.toBytes32();
+        values[arbitrum]["cometRewards"] = 0x88730d254A2f7e6AC8388c3198aFd694bA9f7fae.toBytes32();
+
+        // Balancer
+        values[arbitrum]["rsETH_wETH_BPT"] = 0x90e6CB5249f5e1572afBF8A96D8A1ca6aCFFd739.toBytes32();
+        values[arbitrum]["rsETH_wETH_Id"] = 0x90e6cb5249f5e1572afbf8a96d8a1ca6acffd73900000000000000000000055c;
+        values[arbitrum]["rsETH_wETH_Gauge"] = 0x59907f88C360D576Aa38dba84F26578367F96b6C.toBytes32();
+        values[arbitrum]["aura_rsETH_wETH"] = 0x90cedFDb5284a274720f1dB339eEe9798f4fa29d.toBytes32();
+        values[arbitrum]["wstETH_sfrxETH_BPT"] = 0xc2598280bFeA1Fe18dFcaBD21C7165c40c6859d3.toBytes32();
+        values[arbitrum]["wstETH_sfrxETH_Id"] = 0xc2598280bfea1fe18dfcabd21c7165c40c6859d30000000000000000000004f3;
+        values[arbitrum]["wstETH_sfrxETH_Gauge"] = 0x06eaf7bAabEac962301eE21296e711B3052F2c0d.toBytes32();
+        values[arbitrum]["aura_wstETH_sfrxETH"] = 0x83D37cbA332ffd53A4336Ee06f3c301B8929E684.toBytes32();
+        values[arbitrum]["wstETH_wETH_Gyro_BPT"] = 0x7967FA58B9501600D96bD843173b9334983EE6E6.toBytes32();
+        values[arbitrum]["wstETH_wETH_Gyro_Id"] = 0x7967fa58b9501600d96bd843173b9334983ee6e600020000000000000000056e;
+        values[arbitrum]["wstETH_wETH_Gyro_Gauge"] = 0x96d7C70c80518Ee189CB6ba672FbD22E4fDD9c19.toBytes32();
+        values[arbitrum]["aura_wstETH_wETH_Gyro"] = 0x93e567b423ED470562911078b4d7A902d4E0BEea.toBytes32();
+        values[arbitrum]["weETH_wstETH_Gyro_BPT"] = 0xCDCef9765D369954a4A936064535710f7235110A.toBytes32();
+        values[arbitrum]["weETH_wstETH_Gyro_Id"] = 0xcdcef9765d369954a4a936064535710f7235110a000200000000000000000558;
+        values[arbitrum]["weETH_wstETH_Gyro_Gauge"] = 0xdB66fFFf713B1FA758E348e69E2f2e24595111cF.toBytes32();
+        values[arbitrum]["aura_weETH_wstETH_Gyro"] = 0x40bF10900a55c69c9dADdc3dC52465e01AcEF4A4.toBytes32();
+        values[arbitrum]["osETH_wETH_BPT"] = 0x42f7Cfc38DD1583fFdA2E4f047F4F6FA06CEFc7c.toBytes32();
+        values[arbitrum]["osETH_wETH_Id"] = 0x42f7cfc38dd1583ffda2e4f047f4f6fa06cefc7c000000000000000000000553;
+        values[arbitrum]["osETH_wETH_Gauge"] = 0x5DA32F4724373c91Fdc657E0AD7B1836c70A4E52.toBytes32();
     }
 
     function _addOptimismValues() private {
@@ -840,6 +879,7 @@ contract ChainValues {
         values[optimism]["AURA"] = 0x1509706a6c66CA549ff0cB464de88231DDBe213B.toBytes32();
         values[optimism]["BAL"] = 0xFE8B128bA8C78aabC59d4c64cEE7fF28e9379921.toBytes32();
         values[optimism]["UNI"] = 0x6fd9d7AD17242c41f7131d257212c54A0e816691.toBytes32();
+        values[optimism]["CBETH"] = 0xadDb6A0412DE1BA0F936DCaeb8Aaa24578dcF3B2.toBytes32();
 
         values[optimism]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
         values[optimism]["balancerVault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
@@ -868,5 +908,10 @@ contract ChainValues {
         values[optimism]["wstETH_weETH_Id"] = 0x2bb4712247d5f451063b5e4f6948abdfb925d93d000000000000000000000136;
         values[optimism]["wstETH_weETH_Gauge"] = 0xF3B314B1D2bd7d9afa8eC637716A9Bb81dBc79e5.toBytes32();
         values[optimism]["aura_wstETH_weETH"] = 0xe351a69EB84a22E113E92A4C683391C95448d7d4.toBytes32();
+
+        // Velodrome
+        values[optimism]["velodromeRouter"] = 0xa062aE8A9c5e11aaA026fc2670B0D65cCc8B2858.toBytes32();
+        values[optimism]["velodromeNonFungiblePositionManager"] = 0x416b433906b1B72FA758e166e239c43d68dC6F29.toBytes32();
+        values[optimism]["velodrome_Weth_Wsteth_v3_1_gauge"] = 0xb2218A2cFeF38Ca30AE8C88B41f2E2BdD9347E3e.toBytes32();
     }
 }

@@ -2298,19 +2298,35 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
 
-        // Mint rewards.
-        unchecked {
-            leafIndex++;
+        if (keccak256(abi.encode(sourceChain)) == keccak256(abi.encode(mainnet))) {
+            // Mint rewards.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "minter"),
+                false,
+                "mint(address)",
+                new address[](1),
+                string.concat("Mint rewards from Balancer gauge"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = gauge;
+        } else {
+            // Call claim_rewards(address) on gauge.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                gauge,
+                false,
+                "claim_rewards(address)",
+                new address[](1),
+                string.concat("Claim rewards from Balancer gauge"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
         }
-        leafs[leafIndex] = ManageLeaf(
-            getAddress(sourceChain, "minter"),
-            false,
-            "mint(address)",
-            new address[](1),
-            string.concat("Mint rewards from Balancer gauge"),
-            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-        );
-        leafs[leafIndex].argumentAddresses[0] = gauge;
     }
 
     // ========================================= Aura =========================================
@@ -3696,7 +3712,11 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         address router,
         address[] memory gauges
     ) internal {
+        require(token0.length == token1.length && token0.length == gauges.length, "Arrays must be of equal length");
+
         for (uint256 i; i < token0.length; ++i) {
+            (token0[i], token1[i]) = token0[i] < token1[i] ? (token0[i], token1[i]) : (token1[i], token0[i]);
+
             if (!tokenToSpenderToApprovalInTree[token0[i]][router]) {
                 unchecked {
                     leafIndex++;

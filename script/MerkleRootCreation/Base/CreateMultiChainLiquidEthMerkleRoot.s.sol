@@ -19,6 +19,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
 
+    address public aerodromeDecoderAndSanitizer = 0x0cD9e50616efdc3a5598e4483e212fe127E08f3C;
+
     address public itbDecoderAndSanitizer = 0xEEb53299Cb894968109dfa420D69f0C97c835211;
     address public itbGearboxProtocolPositionManager = 0xad5dB17b44506785931dbc49c8857482c3b4F622;
 
@@ -85,8 +87,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](7);
-        SwapKind[] memory kind = new SwapKind[](7);
+        address[] memory assets = new address[](11);
+        SwapKind[] memory kind = new SwapKind[](11);
         assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "WEETH");
@@ -101,6 +103,14 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         kind[5] = SwapKind.Sell;
         assets[6] = getAddress(sourceChain, "BAL");
         kind[6] = SwapKind.Sell;
+        assets[7] = getAddress(sourceChain, "RETH");
+        kind[7] = SwapKind.BuyAndSell;
+        assets[8] = getAddress(sourceChain, "BSDETH");
+        kind[8] = SwapKind.BuyAndSell;
+        assets[9] = getAddress(sourceChain, "AERO");
+        kind[9] = SwapKind.Sell;
+        assets[10] = getAddress(sourceChain, "SFRXETH");
+        kind[10] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         // ========================== Flashloans ==========================
@@ -108,14 +118,12 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WEETH"));
 
         // ========================== Standard Bridge ==========================
-        ERC20[] memory localTokens = new ERC20[](3);
-        localTokens[0] = getERC20(sourceChain, "WETH");
-        localTokens[1] = getERC20(sourceChain, "WSTETH");
-        localTokens[2] = getERC20(sourceChain, "CBETH");
-        ERC20[] memory remoteTokens = new ERC20[](3);
-        remoteTokens[0] = getERC20(mainnet, "WETH");
-        remoteTokens[1] = getERC20(mainnet, "WSTETH");
-        remoteTokens[2] = getERC20(mainnet, "CBETH");
+        ERC20[] memory localTokens = new ERC20[](2);
+        localTokens[0] = getERC20(sourceChain, "RETH");
+        localTokens[1] = getERC20(sourceChain, "CBETH");
+        ERC20[] memory remoteTokens = new ERC20[](2);
+        remoteTokens[0] = getERC20(mainnet, "RETH");
+        remoteTokens[1] = getERC20(mainnet, "CBETH");
         _addStandardBridgeLeafs(
             leafs,
             mainnet,
@@ -130,9 +138,52 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         // ========================== Merkl ==========================
         ERC20[] memory tokensToClaim = new ERC20[](1);
         tokensToClaim[0] = getERC20(sourceChain, "UNI");
-        _addMerklLeafs(leafs, getAddress(sourceChain, "merklDistributor"), getAddress(sourceChain, "dev1Address"), tokensToClaim);
+        _addMerklLeafs(
+            leafs, getAddress(sourceChain, "merklDistributor"), getAddress(sourceChain, "dev1Address"), tokensToClaim
+        );
 
-        // TODO add aerodrome once audited
+        // ========================== LayerZero ==========================
+        _addLayerZeroLeafs(
+            leafs, getERC20(sourceChain, "WEETH"), getAddress(sourceChain, "WEETH"), layerZeroMainnetEndpointId
+        );
+        _addLayerZeroLeafs(
+            leafs, getERC20(sourceChain, "WEETH"), getAddress(sourceChain, "WEETH"), layerZeroOptimismEndpointId
+        );
+
+        // ========================== Aerodrome ==========================
+        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", aerodromeDecoderAndSanitizer);
+        token0 = new address[](3);
+        token0[0] = getAddress(sourceChain, "WETH");
+        token0[1] = getAddress(sourceChain, "WETH");
+        token0[2] = getAddress(sourceChain, "WETH");
+        token1 = new address[](3);
+        token1[0] = getAddress(sourceChain, "WSTETH");
+        token1[1] = getAddress(sourceChain, "CBETH");
+        token1[2] = getAddress(sourceChain, "BSDETH");
+        address[] memory gauges = new address[](3);
+        gauges[0] = getAddress(sourceChain, "aerodrome_Weth_Wsteth_v3_1_gauge");
+        gauges[1] = getAddress(sourceChain, "aerodrome_Cbeth_Weth_v3_1_gauge");
+        gauges[2] = getAddress(sourceChain, "aerodrome_Weth_Bsdeth_v3_1_gauge");
+        _addVelodromeV3Leafs(
+            leafs, token0, token1, getAddress(sourceChain, "aerodromeNonFungiblePositionManager"), gauges
+        );
+
+        token0 = new address[](4);
+        token0[0] = getAddress(sourceChain, "WETH");
+        token0[1] = getAddress(sourceChain, "WEETH");
+        token0[2] = getAddress(sourceChain, "WETH");
+        token0[3] = getAddress(sourceChain, "SFRXETH");
+        token1 = new address[](4);
+        token1[0] = getAddress(sourceChain, "WSTETH");
+        token1[1] = getAddress(sourceChain, "WETH");
+        token1[2] = getAddress(sourceChain, "RETH");
+        token1[3] = getAddress(sourceChain, "WSTETH");
+        gauges = new address[](4);
+        gauges[0] = getAddress(sourceChain, "aerodrome_Weth_Wsteth_v2_30_gauge");
+        gauges[1] = getAddress(sourceChain, "aerodrome_Weth_Weeth_v2_30_gauge");
+        gauges[2] = getAddress(sourceChain, "aerodrome_Weth_Reth_v2_05_gauge");
+        gauges[3] = getAddress(sourceChain, "aerodrome_Sfrxeth_Wsteth_v2_30_gauge");
+        _addVelodromeV2Leafs(leafs, token0, token1, getAddress(sourceChain, "aerodromeRouter"), gauges);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 

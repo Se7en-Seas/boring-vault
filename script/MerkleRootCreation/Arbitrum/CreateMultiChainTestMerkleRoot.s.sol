@@ -9,19 +9,15 @@ import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper
 import "forge-std/Script.sol";
 
 /**
- *  source .env && forge script script/MerkleRootCreation/Arbitrum/CreateMultiChainLiquidEthMerkleRoot.s.sol:CreateMultiChainLiquidEthMerkleRootScript --rpc-url $ARBITRUM_RPC_URL
+ *  source .env && forge script script/MerkleRootCreation/Arbitrum/CreateMultiChainTestMerkleRoot.s.sol:CreateMultiChainTestMerkleRootScript --rpc-url $ARBITRUM_RPC_URL
  */
-contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
+contract CreateMultiChainTestMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
-    address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
-    address public rawDataDecoderAndSanitizer = 0x6175ab325B51bFDd27ab306e4D6A5850AFbd7764;
-    address public camelotFullDecoderAndSanitizer = 0xe315ADA67dB9Fd97523620194ccdd727102830c7;
-    address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
-    address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
-
-    address public itbDecoderAndSanitizer = 0xEEb53299Cb894968109dfa420D69f0C97c835211;
-    address public itbGearboxProtocolPositionManager = 0xad5dB17b44506785931dbc49c8857482c3b4F622;
+    address public boringVault = 0xaA6D4Fb1FF961f8E52334f433974d40484e8be8F;
+    address public rawDataDecoderAndSanitizer = 0x28edfc0bffdF1f9C986923729b88B5F40f2B92D9;
+    address public managerAddress = 0x744d1f71a6d064204b4c59Cf2BDCF9De9C6c3430;
+    address public accountantAddress = 0x99c836937305693A5518819ED457B0d3dfE99785;
 
     function setUp() external {}
 
@@ -29,10 +25,10 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
      * @notice Uncomment which script you want to run.
      */
     function run() external {
-        generateMultiChainLiquidEthStrategistMerkleRoot();
+        generateMultiChainTestStrategistMerkleRoot();
     }
 
-    function generateMultiChainLiquidEthStrategistMerkleRoot() public {
+    function generateMultiChainTestStrategistMerkleRoot() public {
         setSourceChainName(arbitrum);
         setAddress(false, arbitrum, "boringVault", boringVault);
         setAddress(false, arbitrum, "managerAddress", managerAddress);
@@ -103,8 +99,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](16);
-        SwapKind[] memory kind = new SwapKind[](16);
+        address[] memory assets = new address[](15);
+        SwapKind[] memory kind = new SwapKind[](15);
         assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "WEETH");
@@ -135,8 +131,6 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         kind[13] = SwapKind.BuyAndSell;
         assets[14] = getAddress(sourceChain, "RSETH");
         kind[14] = SwapKind.BuyAndSell;
-        assets[15] = getAddress(sourceChain, "GRAIL");
-        kind[15] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "wstETH_wETH_01"));
@@ -187,10 +181,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== Merkl ==========================
         {
-            ERC20[] memory tokensToClaim = new ERC20[](3);
+            ERC20[] memory tokensToClaim = new ERC20[](2);
             tokensToClaim[0] = getERC20(sourceChain, "UNI");
             tokensToClaim[1] = getERC20(sourceChain, "ARB");
-            tokensToClaim[2] = getERC20(sourceChain, "GRAIL");
             _addMerklLeafs(
                 leafs,
                 getAddress(sourceChain, "merklDistributor"),
@@ -218,167 +211,10 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addAuraLeafs(leafs, getAddress(sourceChain, "aura_wstETH_wETH_Gyro"));
         _addAuraLeafs(leafs, getAddress(sourceChain, "aura_weETH_wstETH_Gyro"));
 
-        // ========================== Camelot ==========================
-        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", camelotFullDecoderAndSanitizer);
-        token0 = new address[](3);
-        token0[0] = getAddress(sourceChain, "WETH");
-        token0[1] = getAddress(sourceChain, "WETH");
-        token0[2] = getAddress(sourceChain, "WETH");
-        token1 = new address[](3);
-        token1[0] = getAddress(sourceChain, "WEETH");
-        token1[1] = getAddress(sourceChain, "WSTETH");
-        token1[2] = getAddress(sourceChain, "RSETH");
-        _addCamelotV3Leafs(leafs, token0, token1);
-
-        // iTb
-        _addLeafsForItbGearbox(
-            leafs,
-            itbGearboxProtocolPositionManager,
-            getERC20(sourceChain, "WETH"),
-            getERC20(sourceChain, "dWETHV3"),
-            getAddress(sourceChain, "sdWETHV3"),
-            "ITB wETH Gearbox"
-        );
-
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        string memory filePath = "./leafs/ArbitrumMultiChainLiquidEthStrategistLeafs.json";
+        string memory filePath = "./leafs/ArbitrumMultiChainTestStrategistLeafs.json";
 
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
-    }
-
-    function _addLeafsForITBPositionManager(
-        ManageLeaf[] memory leafs,
-        address itbPositionManager,
-        ERC20[] memory tokensUsed,
-        string memory itbContractName
-    ) internal {
-        // acceptOwnership
-        leafIndex++;
-        leafs[leafIndex] = ManageLeaf(
-            itbPositionManager,
-            false,
-            "acceptOwnership()",
-            new address[](0),
-            string.concat("Accept ownership of the ", itbContractName, " contract"),
-            itbDecoderAndSanitizer
-        );
-        for (uint256 i; i < tokensUsed.length; ++i) {
-            // Transfer
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                address(tokensUsed[i]),
-                false,
-                "transfer(address,uint256)",
-                new address[](1),
-                string.concat("Transfer ", tokensUsed[i].symbol(), " to the ", itbContractName, " contract"),
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = itbPositionManager;
-            // Withdraw
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbPositionManager,
-                false,
-                "withdraw(address,uint256)",
-                new address[](1),
-                string.concat("Withdraw ", tokensUsed[i].symbol(), " from the ", itbContractName, " contract"),
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
-            // WithdrawAll
-            leafIndex++;
-            leafs[leafIndex] = ManageLeaf(
-                itbPositionManager,
-                false,
-                "withdrawAll(address)",
-                new address[](1),
-                string.concat("Withdraw all ", tokensUsed[i].symbol(), " from the ", itbContractName, " contract"),
-                itbDecoderAndSanitizer
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
-        }
-    }
-
-    function _addLeafsForItbGearbox(
-        ManageLeaf[] memory leafs,
-        address itbPositionManager,
-        ERC20 underlying,
-        ERC20 diesal,
-        address diesalStaking,
-        string memory itbContractName
-    ) internal {
-        ERC20[] memory tokensUsed = new ERC20[](2);
-        tokensUsed[0] = underlying;
-        tokensUsed[1] = diesal;
-        _addLeafsForITBPositionManager(leafs, itbPositionManager, tokensUsed, itbContractName);
-
-        // Approvals
-        leafIndex++;
-        leafs[leafIndex] = ManageLeaf(
-            itbGearboxProtocolPositionManager,
-            false,
-            "approveToken(address,address,uint256)",
-            new address[](2),
-            string.concat("Approve Gearbox ", diesal.symbol(), " to spend ", underlying.symbol()),
-            itbDecoderAndSanitizer
-        );
-        leafs[leafIndex].argumentAddresses[0] = address(underlying);
-        leafs[leafIndex].argumentAddresses[1] = address(diesal);
-        leafIndex++;
-        leafs[leafIndex] = ManageLeaf(
-            itbGearboxProtocolPositionManager,
-            false,
-            "approveToken(address,address,uint256)",
-            new address[](2),
-            string.concat("Approve Gearbox s", diesal.symbol(), " to spend ", diesal.symbol()),
-            itbDecoderAndSanitizer
-        );
-        leafs[leafIndex].argumentAddresses[0] = address(diesal);
-        leafs[leafIndex].argumentAddresses[1] = address(diesalStaking);
-
-        // Deposit
-        leafIndex++;
-        leafs[leafIndex] = ManageLeaf(
-            itbGearboxProtocolPositionManager,
-            false,
-            "deposit(uint256,uint256)",
-            new address[](0),
-            string.concat("Deposit ", underlying.symbol(), " into Gearbox ", diesal.symbol(), " contract"),
-            itbDecoderAndSanitizer
-        );
-
-        // Withdraw
-        leafIndex++;
-        leafs[leafIndex] = ManageLeaf(
-            itbGearboxProtocolPositionManager,
-            false,
-            "withdrawSupply(uint256,uint256)",
-            new address[](0),
-            string.concat("Withdraw ", underlying.symbol(), " from Gearbox ", diesal.symbol(), " contract"),
-            itbDecoderAndSanitizer
-        );
-
-        // Stake
-        leafIndex++;
-        leafs[leafIndex] = ManageLeaf(
-            itbGearboxProtocolPositionManager,
-            false,
-            "stake(uint256)",
-            new address[](0),
-            string.concat("Stake ", diesal.symbol(), " into Gearbox s", diesal.symbol(), " contract"),
-            itbDecoderAndSanitizer
-        );
-
-        // Unstake
-        leafIndex++;
-        leafs[leafIndex] = ManageLeaf(
-            itbGearboxProtocolPositionManager,
-            false,
-            "unstake(uint256)",
-            new address[](0),
-            string.concat("Unstake ", diesal.symbol(), " from Gearbox s", diesal.symbol(), " contract"),
-            itbDecoderAndSanitizer
-        );
     }
 }
