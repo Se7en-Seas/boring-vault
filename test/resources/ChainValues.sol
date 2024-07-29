@@ -549,6 +549,11 @@ contract ChainValues {
         values[mainnet]["pendleZircuitWeETHMarketAugust"] = 0x6c269DFc142259c52773430b3c78503CC994a93E.toBytes32();
         values[mainnet]["pendleWeETHMarketJuly"] = 0xe1F19CBDa26b6418B0C8E1EE978a533184496066.toBytes32();
 
+        values[mainnet]["pendle_sUSDe_08_23_24"] = 0xbBf399db59A845066aAFce9AE55e68c505FA97B7.toBytes32();
+        values[mainnet]["pendle_sUSDe_12_25_24"] = 0xa0ab94DeBB3cC9A7eA77f3205ba4AB23276feD08.toBytes32();
+        values[mainnet]["pendle_USDe_08_23_24"] = 0x3d1E7312dE9b8fC246ddEd971EE7547B0a80592A.toBytes32();
+        values[mainnet]["pendle_USDe_12_25_24"] = 0x8a49f2AC2730ba15AB7EA832EdaC7f6BA22289f8.toBytes32();
+
         // Aave V3
         values[mainnet]["v3Pool"] = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2.toBytes32();
 

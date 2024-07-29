@@ -49,8 +49,6 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        leafIndex = 0;
-
         ManageLeaf[] memory leafs = new ManageLeaf[](32);
 
         // ========================== Fee Claiming ==========================
@@ -78,8 +76,6 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "managerAddress", managerAddress);
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
-
-        leafIndex = 0;
 
         ManageLeaf[] memory leafs = new ManageLeaf[](1024);
 
@@ -163,6 +159,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleKarakUSDeMarket"));
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleKarakSUSDeMarket"));
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleUSDeZircuitMarketAugust"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_sUSDe_08_23_24"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_sUSDe_12_25_24"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_USDe_08_23_24"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_USDe_12_25_24"));
 
         // ========================== Ethena ==========================
         /**
