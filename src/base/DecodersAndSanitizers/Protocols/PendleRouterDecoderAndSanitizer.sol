@@ -7,7 +7,7 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
     //============================== ERRORS ===============================
 
     error PendleRouterDecoderAndSanitizer__AggregatorSwapsNotPermitted();
-    error PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch();
+    error PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch(address ytFound, address ytExpected);
     error PendleRouterDecoderAndSanitizer__NoBytes();
 
     //============================== PENDLEROUTER ===============================
@@ -163,7 +163,9 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
                 savedYt = params[i].order.YT;
             } else {
                 // Make sure this orders YT matches the saved yt.
-                if (savedYt != params[i].order.YT) revert PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch();
+                if (savedYt != params[i].order.YT) {
+                    revert PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch(params[i].order.YT, savedYt);
+                }
             }
         }
 
@@ -193,7 +195,9 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
                 } else {
                     // Make sure this orders YT matches the saved yt.
                     if (savedYt != limit.normalFills[i].order.YT) {
-                        revert PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch();
+                        revert PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch(
+                            limit.normalFills[i].order.YT, savedYt
+                        );
                     }
                 }
             }
@@ -205,7 +209,9 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
                 } else {
                     // Make sure this orders YT matches the saved yt.
                     if (savedYt != limit.flashFills[i].order.YT) {
-                        revert PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch();
+                        revert PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch(
+                            limit.flashFills[i].order.YT, savedYt
+                        );
                     }
                 }
             }

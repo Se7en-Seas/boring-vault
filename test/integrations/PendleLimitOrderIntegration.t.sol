@@ -140,7 +140,7 @@ contract PendleLimitOrderIntegrationTest is Test, MerkleTreeHelper {
             nonce: 0,
             orderType: DecoderCustomTypes.OrderType.SY_FOR_YT,
             token: 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
-            YT: 0x129e6B5DBC0Ecc12F9e486C5BC9cDF1a6A80bc6A,
+            YT: getAddress(sourceChain, "pendleEethYtDecember"),
             maker: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
             receiver: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
             makingAmount: 16158236360418398872,
@@ -211,7 +211,7 @@ contract PendleLimitOrderIntegrationTest is Test, MerkleTreeHelper {
             nonce: 0,
             orderType: DecoderCustomTypes.OrderType.SY_FOR_YT,
             token: 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
-            YT: 0x129e6B5DBC0Ecc12F9e486C5BC9cDF1a6A80bc6A,
+            YT: getAddress(sourceChain, "pendleEethYtDecember"),
             maker: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
             receiver: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
             makingAmount: 16158236360418398872,
@@ -243,7 +243,279 @@ contract PendleLimitOrderIntegrationTest is Test, MerkleTreeHelper {
         assertGt(ptBalance, 100e18, "PT balance should be greater than 100.");
     }
 
-    // TODO revert tests
+    function testSwapLimitOrderReverts() external {
+        // Mint Super Symbiotic SY to Boring Vault
+        deal(getAddress(sourceChain, "pendleWeethSyDecember"), address(boringVault), 100e18);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](32);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketDecember"), true);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[3]; // Approve router to spend SY
+        manageLeafs[1] = leafs[19]; // call swapExactSyForPt
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](2);
+        targets[0] = getAddress(sourceChain, "pendleWeethSyDecember");
+        targets[1] = getAddress(sourceChain, "pendleRouter");
+
+        bytes[] memory targetData = new bytes[](2);
+        targetData[0] = abi.encodeWithSignature(
+            "approve(address,uint256)", getAddress(sourceChain, "pendleRouter"), type(uint256).max
+        );
+        DecoderCustomTypes.ApproxParams memory approxParams = DecoderCustomTypes.ApproxParams(
+            21114594311676358609, 107181111776638002478, 42229188623352717218, 30, 11629871223418
+        );
+        DecoderCustomTypes.LimitOrderData memory limitOrderData;
+        limitOrderData.limitRouter = getAddress(sourceChain, "pendleLimitOrderRouter");
+        limitOrderData.epsSkipMarket = 0;
+        limitOrderData.optData = hex"00";
+        limitOrderData.flashFills = new DecoderCustomTypes.FillOrderParams[](1);
+        limitOrderData.flashFills[0].order = DecoderCustomTypes.Order({
+            salt: 8373482081934227929253689972963323292519685394038939188831665232063109942581,
+            expiry: 1723946188,
+            nonce: 0,
+            orderType: DecoderCustomTypes.OrderType.SY_FOR_YT,
+            token: 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
+            YT: getAddress(sourceChain, "pendleEethYtDecember"),
+            maker: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            receiver: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            makingAmount: 16158236360418398872,
+            lnImpliedRate: 67658648473814805,
+            failSafeRate: 900000000000000000,
+            permit: hex""
+        });
+        limitOrderData.flashFills[0].signature =
+            hex"89c53ba1ee3f7edd13d82cf5de29bbf0fd9ff3a48de32ec3651bd89f0196bbed0fcf94c12d1853cf935cac31c6900159bf157e29ad17d3e2a04dedf1247849d91c";
+        limitOrderData.flashFills[0].makingAmount = 1687467958106575287;
+        targetData[1] = abi.encodeWithSignature(
+            "swapExactSyForPt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256),(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+            address(boringVault),
+            getAddress(sourceChain, "pendleWeETHMarketDecember"),
+            100e18,
+            0,
+            approxParams,
+            limitOrderData
+        );
+
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
+        uint256[] memory values = new uint256[](2);
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    PendleRouterDecoderAndSanitizer.PendleRouterDecoderAndSanitizer__NoBytes.selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        // Remove optData. But add another limit order with different YT.
+        limitOrderData.optData = hex"";
+        limitOrderData.flashFills = new DecoderCustomTypes.FillOrderParams[](2);
+        limitOrderData.flashFills[0].order = DecoderCustomTypes.Order({
+            salt: 8373482081934227929253689972963323292519685394038939188831665232063109942581,
+            expiry: 1723946188,
+            nonce: 0,
+            orderType: DecoderCustomTypes.OrderType.SY_FOR_YT,
+            token: 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
+            YT: getAddress(sourceChain, "pendleEethYtDecember"),
+            maker: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            receiver: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            makingAmount: 16158236360418398872,
+            lnImpliedRate: 67658648473814805,
+            failSafeRate: 900000000000000000,
+            permit: hex""
+        });
+        limitOrderData.flashFills[0].signature =
+            hex"89c53ba1ee3f7edd13d82cf5de29bbf0fd9ff3a48de32ec3651bd89f0196bbed0fcf94c12d1853cf935cac31c6900159bf157e29ad17d3e2a04dedf1247849d91c";
+        limitOrderData.flashFills[0].makingAmount = 1687467958106575287;
+        limitOrderData.flashFills[1].order = DecoderCustomTypes.Order({
+            salt: 8373482081934227929253689972963323292519685394038939188831665232063109942581,
+            expiry: 1723946188,
+            nonce: 0,
+            orderType: DecoderCustomTypes.OrderType.SY_FOR_YT,
+            token: 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
+            YT: getAddress(sourceChain, "pendle_weETHs_yt_08_28_24"),
+            maker: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            receiver: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            makingAmount: 16158236360418398872,
+            lnImpliedRate: 67658648473814805,
+            failSafeRate: 900000000000000000,
+            permit: hex""
+        });
+        limitOrderData.flashFills[1].signature =
+            hex"89c53ba1ee3f7edd13d82cf5de29bbf0fd9ff3a48de32ec3651bd89f0196bbed0fcf94c12d1853cf935cac31c6900159bf157e29ad17d3e2a04dedf1247849d91c";
+        limitOrderData.flashFills[1].makingAmount = 1687467958106575287;
+
+        targetData[1] = abi.encodeWithSignature(
+            "swapExactSyForPt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256),(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+            address(boringVault),
+            getAddress(sourceChain, "pendleWeETHMarketDecember"),
+            100e18,
+            0,
+            approxParams,
+            limitOrderData
+        );
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    PendleRouterDecoderAndSanitizer.PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch.selector,
+                    getAddress(sourceChain, "pendle_weETHs_yt_08_28_24"),
+                    getAddress(sourceChain, "pendleEethYtDecember")
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+    }
+
+    function testPendleFillLimitOrderReverts() external {
+        // Mint Super Symbiotic YT to Boring Vault
+        deal(getAddress(sourceChain, "pendleEethYtDecember"), address(boringVault), 10_000e18);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        _addPendleLimitOrderLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketDecember"));
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[3];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](2);
+        targets[0] = getAddress(sourceChain, "pendleEethYtDecember");
+        targets[1] = getAddress(sourceChain, "pendleLimitOrderRouter");
+
+        bytes[] memory targetData = new bytes[](2);
+        targetData[0] = abi.encodeWithSignature(
+            "approve(address,uint256)", getAddress(sourceChain, "pendleLimitOrderRouter"), type(uint256).max
+        );
+        DecoderCustomTypes.FillOrderParams[] memory orders = new DecoderCustomTypes.FillOrderParams[](1);
+        orders[0].order = DecoderCustomTypes.Order({
+            salt: 8373482081934227929253689972963323292519685394038939188831665232063109942581,
+            expiry: 1723946188,
+            nonce: 0,
+            orderType: DecoderCustomTypes.OrderType.SY_FOR_YT,
+            token: 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
+            YT: getAddress(sourceChain, "pendleEethYtDecember"),
+            maker: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            receiver: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            makingAmount: 16158236360418398872,
+            lnImpliedRate: 67658648473814805,
+            failSafeRate: 900000000000000000,
+            permit: hex""
+        });
+        orders[0].signature =
+            hex"89c53ba1ee3f7edd13d82cf5de29bbf0fd9ff3a48de32ec3651bd89f0196bbed0fcf94c12d1853cf935cac31c6900159bf157e29ad17d3e2a04dedf1247849d91c";
+        orders[0].makingAmount = 1687467958106575287;
+        targetData[1] = abi.encodeWithSignature(
+            "fill(((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],address,uint256,bytes,bytes)",
+            orders,
+            boringVault,
+            100e18,
+            hex"00",
+            hex""
+        );
+
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
+        uint256[] memory values = new uint256[](2);
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    PendleRouterDecoderAndSanitizer.PendleRouterDecoderAndSanitizer__NoBytes.selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        targetData[1] = abi.encodeWithSignature(
+            "fill(((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],address,uint256,bytes,bytes)",
+            orders,
+            boringVault,
+            100e18,
+            hex"",
+            hex"00"
+        );
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    PendleRouterDecoderAndSanitizer.PendleRouterDecoderAndSanitizer__NoBytes.selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        orders = new DecoderCustomTypes.FillOrderParams[](2);
+        orders[0].order = DecoderCustomTypes.Order({
+            salt: 8373482081934227929253689972963323292519685394038939188831665232063109942581,
+            expiry: 1723946188,
+            nonce: 0,
+            orderType: DecoderCustomTypes.OrderType.SY_FOR_YT,
+            token: 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
+            YT: getAddress(sourceChain, "pendleEethYtDecember"),
+            maker: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            receiver: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            makingAmount: 16158236360418398872,
+            lnImpliedRate: 67658648473814805,
+            failSafeRate: 900000000000000000,
+            permit: hex""
+        });
+        orders[0].signature =
+            hex"89c53ba1ee3f7edd13d82cf5de29bbf0fd9ff3a48de32ec3651bd89f0196bbed0fcf94c12d1853cf935cac31c6900159bf157e29ad17d3e2a04dedf1247849d91c";
+        orders[0].makingAmount = 1687467958106575287;
+        orders[1].order = DecoderCustomTypes.Order({
+            salt: 8373482081934227929253689972963323292519685394038939188831665232063109942581,
+            expiry: 1723946188,
+            nonce: 0,
+            orderType: DecoderCustomTypes.OrderType.SY_FOR_YT,
+            token: 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
+            YT: getAddress(sourceChain, "pendle_weETHs_yt_08_28_24"),
+            maker: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            receiver: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            makingAmount: 16158236360418398872,
+            lnImpliedRate: 67658648473814805,
+            failSafeRate: 900000000000000000,
+            permit: hex""
+        });
+        orders[1].signature =
+            hex"89c53ba1ee3f7edd13d82cf5de29bbf0fd9ff3a48de32ec3651bd89f0196bbed0fcf94c12d1853cf935cac31c6900159bf157e29ad17d3e2a04dedf1247849d91c";
+        orders[1].makingAmount = 1687467958106575287;
+        targetData[1] = abi.encodeWithSignature(
+            "fill(((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],address,uint256,bytes,bytes)",
+            orders,
+            boringVault,
+            100e18,
+            hex"",
+            hex""
+        );
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    PendleRouterDecoderAndSanitizer.PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch.selector,
+                    getAddress(sourceChain, "pendle_weETHs_yt_08_28_24"),
+                    getAddress(sourceChain, "pendleEethYtDecember")
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+    }
 
     // ========================================= HELPER FUNCTIONS =========================================
 
