@@ -126,45 +126,7 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         DecoderCustomTypes.ApproxParams calldata,
         DecoderCustomTypes.LimitOrderData calldata limit
     ) external pure virtual returns (bytes memory addressesFound) {
-        addressesFound = abi.encodePacked(receiver, market);
-
-        // TODO make this into a internal func?
-        if (limit.limitRouter != address(0)) {
-            // Trying to fill limit orders.
-            addressesFound = abi.encodePacked(addressesFound, limit.limitRouter);
-            if (limit.optData.length > 0) revert PendleRouterDecoderAndSanitizer__NoBytes();
-
-            address savedYt;
-            // Make sure all normal fills have the same yt.
-            for (uint256 i; i < limit.normalFills.length; ++i) {
-                if (savedYt == address(0)) {
-                    // Update saved yt.
-                    savedYt = limit.normalFills[i].order.YT;
-                } else {
-                    // Make sure this orders YT matches the saved yt.
-                    if (savedYt != limit.normalFills[i].order.YT) {
-                        revert PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch();
-                    }
-                }
-            }
-            // Make sure all flash fills have the same yt.
-            for (uint256 i; i < limit.flashFills.length; ++i) {
-                if (savedYt == address(0)) {
-                    // Update saved yt.
-                    savedYt = limit.flashFills[i].order.YT;
-                } else {
-                    // Make sure this orders YT matches the saved yt.
-                    if (savedYt != limit.flashFills[i].order.YT) {
-                        revert PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch();
-                    }
-                }
-            }
-
-            // If yt is set, encode it.
-            if (savedYt != address(0)) {
-                addressesFound = abi.encodePacked(addressesFound, savedYt);
-            }
-        }
+        addressesFound = abi.encodePacked(receiver, market, _sanitizeLimitOrderData(limit));
     }
 
     function swapExactPtForSy(
@@ -174,44 +136,7 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         uint256, /*minSyOut*/
         DecoderCustomTypes.LimitOrderData calldata limit
     ) external pure virtual returns (bytes memory addressesFound) {
-        addressesFound = abi.encodePacked(receiver, market);
-
-        if (limit.limitRouter != address(0)) {
-            // Trying to fill limit orders.
-            addressesFound = abi.encodePacked(addressesFound, limit.limitRouter);
-            if (limit.optData.length > 0) revert PendleRouterDecoderAndSanitizer__NoBytes();
-
-            address savedYt;
-            // Make sure all normal fills have the same yt.
-            for (uint256 i; i < limit.normalFills.length; ++i) {
-                if (savedYt == address(0)) {
-                    // Update saved yt.
-                    savedYt = limit.normalFills[i].order.YT;
-                } else {
-                    // Make sure this orders YT matches the saved yt.
-                    if (savedYt != limit.normalFills[i].order.YT) {
-                        revert PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch();
-                    }
-                }
-            }
-            // Make sure all flash fills have the same yt.
-            for (uint256 i; i < limit.flashFills.length; ++i) {
-                if (savedYt == address(0)) {
-                    // Update saved yt.
-                    savedYt = limit.flashFills[i].order.YT;
-                } else {
-                    // Make sure this orders YT matches the saved yt.
-                    if (savedYt != limit.flashFills[i].order.YT) {
-                        revert PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch();
-                    }
-                }
-            }
-
-            // If yt is set, encode it.
-            if (savedYt != address(0)) {
-                addressesFound = abi.encodePacked(addressesFound, savedYt);
-            }
-        }
+        addressesFound = abi.encodePacked(receiver, market, _sanitizeLimitOrderData(limit));
     }
 
     /**
@@ -245,6 +170,50 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         // If yt is set, encode it.
         if (savedYt != address(0)) {
             addressesFound = abi.encodePacked(addressesFound, savedYt);
+        }
+    }
+
+    function _sanitizeLimitOrderData(DecoderCustomTypes.LimitOrderData calldata limit)
+        internal
+        pure
+        virtual
+        returns (bytes memory addressesFound)
+    {
+        if (limit.limitRouter != address(0)) {
+            // Trying to fill limit orders.
+            addressesFound = abi.encodePacked(addressesFound, limit.limitRouter);
+            if (limit.optData.length > 0) revert PendleRouterDecoderAndSanitizer__NoBytes();
+
+            address savedYt;
+            // Make sure all normal fills have the same yt.
+            for (uint256 i; i < limit.normalFills.length; ++i) {
+                if (savedYt == address(0)) {
+                    // Update saved yt.
+                    savedYt = limit.normalFills[i].order.YT;
+                } else {
+                    // Make sure this orders YT matches the saved yt.
+                    if (savedYt != limit.normalFills[i].order.YT) {
+                        revert PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch();
+                    }
+                }
+            }
+            // Make sure all flash fills have the same yt.
+            for (uint256 i; i < limit.flashFills.length; ++i) {
+                if (savedYt == address(0)) {
+                    // Update saved yt.
+                    savedYt = limit.flashFills[i].order.YT;
+                } else {
+                    // Make sure this orders YT matches the saved yt.
+                    if (savedYt != limit.flashFills[i].order.YT) {
+                        revert PendleRouterDecoderAndSanitizer__LimitOrderYtMismatch();
+                    }
+                }
+            }
+
+            // If yt is set, encode it.
+            if (savedYt != address(0)) {
+                addressesFound = abi.encodePacked(addressesFound, savedYt);
+            }
         }
     }
 }

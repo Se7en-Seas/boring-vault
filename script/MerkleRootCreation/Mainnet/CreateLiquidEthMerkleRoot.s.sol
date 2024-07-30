@@ -92,11 +92,11 @@ contract CreateLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addMorphoBlueSupplyLeafs(leafs, 0x698fe98247a40c5771537b5786b2f3f9d78eb487b4ce4d75533cd0e94d88a115);
 
         // ========================== Pendle ==========================
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarket"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleZircuitWeETHMarket"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketSeptember"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketDecember"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleKarakWeETHMarketSeptember"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarket"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleZircuitWeETHMarket"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketSeptember"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketDecember"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleKarakWeETHMarketSeptember"), false);
         // _addPendleMarketLeafs(leafs, pendleZircuitWeETHMarketAugust);
         // _addPendleMarketLeafs(leafs, pendleWeETHMarketJuly);
 
@@ -242,8 +242,8 @@ contract CreateLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
             leafs, itbReserveProtocolPositionManager, tokensUsed, "ETHPlus ITB Reserve Protocol Position Manager"
         );
 
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleZircuitWeETHMarketAugust"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketJuly"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleZircuitWeETHMarketAugust"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketJuly"), false);
 
         // ========================== PancakeSwapV3 ==========================
         setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", pancakeSwapDataDecoderAndSanitizer);

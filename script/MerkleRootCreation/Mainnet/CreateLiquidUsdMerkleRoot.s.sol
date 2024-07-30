@@ -152,17 +152,17 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         _addMorphoBlueSupplyLeafs(leafs, 0xb323495f7e4148be5643a4ea4a8221eef163e4bccfdedc2a6f4696baacbc86cc);
 
         // ========================== Pendle ==========================
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleUSDeMarket"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleZircuitUSDeMarket"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleSUSDeMarketSeptember"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleSUSDeMarketJuly"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleKarakUSDeMarket"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleKarakSUSDeMarket"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleUSDeZircuitMarketAugust"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_sUSDe_08_23_24"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_sUSDe_12_25_24"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_USDe_08_23_24"));
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_USDe_12_25_24"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleUSDeMarket"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleZircuitUSDeMarket"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleSUSDeMarketSeptember"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleSUSDeMarketJuly"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleKarakUSDeMarket"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleKarakSUSDeMarket"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleUSDeZircuitMarketAugust"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_sUSDe_08_23_24"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_sUSDe_12_25_24"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_USDe_08_23_24"), false);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_USDe_12_25_24"), false);
 
         // ========================== Ethena ==========================
         /**

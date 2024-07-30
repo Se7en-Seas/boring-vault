@@ -179,11 +179,9 @@ contract PendleLimitOrderIntegrationTest is Test, MerkleTreeHelper {
         deal(getAddress(sourceChain, "pendleWeethSyDecember"), address(boringVault), 100e18);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](32);
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketDecember"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketDecember"), true);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-
-        _generateTestLeafs(leafs, manageTree);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
