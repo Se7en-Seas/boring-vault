@@ -20,7 +20,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
     address public pancakeSwapDataDecoderAndSanitizer = 0x4dE66AA174b99481dAAe12F2Cdd5D76Dc14Eb3BC;
     address public itbDecoderAndSanitizer = 0xEEb53299Cb894968109dfa420D69f0C97c835211;
+    address public itbAaveDecoderAndSanitizer = 0x7fA5dbDB1A76d2990Ea0f3c74e520E3fcE94748B;
     address public itbReserveProtocolPositionManager = 0x778aC5d0EE062502fADaa2d300a51dE0869f7995;
+    address public itbAaveLidoPositionManager = 0xC4F5Ee078a1C4DA280330546C29840d45ab32753;
 
     function setUp() external {}
 
@@ -59,6 +61,14 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         borrowAssets[1] = getERC20(sourceChain, "WSTETH");
         borrowAssets[2] = getERC20(sourceChain, "RETH");
         _addSparkLendLeafs(leafs, supplyAssets, borrowAssets);
+
+        // ========================== Aave V3 Lido ==========================
+        supplyAssets = new ERC20[](2);
+        supplyAssets[0] = getERC20(sourceChain, "WETH");
+        supplyAssets[1] = getERC20(sourceChain, "WSTETH");
+        borrowAssets = new ERC20[](1);
+        borrowAssets[0] = getERC20(sourceChain, "WETH");
+        _addAaveV3LidoLeafs(leafs, supplyAssets, borrowAssets);
 
         // ========================== Lido ==========================
         _addLidoLeafs(leafs);
@@ -245,6 +255,12 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
             leafs, itbReserveProtocolPositionManager, tokensUsed, "ETHPlus ITB Reserve Protocol Position Manager"
         );
 
+        // ========================== ITB Lido Aave V3 wETH ==========================
+        itbDecoderAndSanitizer = itbAaveDecoderAndSanitizer;
+        supplyAssets = new ERC20[](1);
+        supplyAssets[0] = getERC20(sourceChain, "WETH");
+        _addLeafsForItbAaveV3(leafs, itbAaveLidoPositionManager, supplyAssets, "ITB Aave V3 WETH");
+
         // ========================== Native Bridge Leafs ==========================
         ERC20[] memory bridgeAssets = new ERC20[](5);
         bridgeAssets[0] = getERC20(sourceChain, "WETH");
@@ -401,6 +417,54 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
                 itbDecoderAndSanitizer
             );
             leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
+        }
+    }
+
+    function _addLeafsForItbAaveV3(
+        ManageLeaf[] memory leafs,
+        address itbPositionManager,
+        ERC20[] memory tokensUsed,
+        string memory itbContractName
+    ) internal {
+        _addLeafsForITBPositionManager(leafs, itbPositionManager, tokensUsed, itbContractName);
+        for (uint256 i; i < tokensUsed.length; ++i) {
+            // Deposit
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbPositionManager,
+                false,
+                "deposit(address,uint256)",
+                new address[](1),
+                string.concat("Deposit ", tokensUsed[i].symbol(), " to the ", itbContractName, " contract"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
+            // Withdraw Supply
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                itbPositionManager,
+                false,
+                "withdrawSupply(address,uint256)",
+                new address[](1),
+                string.concat("Withdraw ", tokensUsed[i].symbol(), " supply from the ", itbContractName, " contract"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
+        }
+
+        // Approve Lido v3 Pool to spend tokensUsed.
+        for (uint256 i; i < tokensUsed.length; ++i) {
+            leafIndex++;
+            leafs[leafIndex] = ManageLeaf(
+                address(tokensUsed[i]),
+                false,
+                "approveToken(address,address,uint256)",
+                new address[](2),
+                string.concat(itbContractName, ": Approve ", tokensUsed[i].symbol(), " to be spent by the Lido v3 Pool"),
+                itbDecoderAndSanitizer
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(tokensUsed[i]);
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "v3LidoPool");
         }
     }
 
