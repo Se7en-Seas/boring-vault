@@ -226,6 +226,11 @@ contract ChainValues {
         values[mainnet]["rETH_wETH_gauge"] = 0x79eF6103A513951a3b25743DB509E267685726B7.toBytes32();
         values[mainnet]["aura_reth_weth"] = 0xDd1fE5AD401D4777cE89959b7fa587e569Bf125D.toBytes32();
 
+        values[mainnet]["rsETH_wETH_id"] = 0x58aadfb1afac0ad7fca1148f3cde6aedf5236b6d00000000000000000000067f;
+        values[mainnet]["rsETH_wETH"] = 0x58AAdFB1Afac0ad7fca1148f3cdE6aEDF5236B6D.toBytes32();
+        values[mainnet]["rsETH_wETH_gauge"] = 0xdf04E3a7ab9857a16FB97174e0f1001aa44380AF.toBytes32();
+        values[mainnet]["aura_rsETH_wETH"] = 0xB5FdB4f75C26798A62302ee4959E4281667557E0.toBytes32();
+
         values[mainnet]["ezETH_weETH_rswETH"] = 0x848a5564158d84b8A8fb68ab5D004Fae11619A54.toBytes32();
         values[mainnet]["ezETH_weETH_rswETH_gauge"] = 0x253ED65fff980AEE7E94a0dC57BE304426048b35.toBytes32();
         values[mainnet]["aura_ezETH_weETH_rswETH"] = 0xce98eb8b2Fb98049b3F2dB0A212Ba7ca3Efd63b0.toBytes32();
