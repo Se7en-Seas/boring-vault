@@ -555,6 +555,7 @@ contract ChainValues {
 
         values[mainnet]["pendleZircuitWeETHMarketAugust"] = 0x6c269DFc142259c52773430b3c78503CC994a93E.toBytes32();
         values[mainnet]["pendleWeETHMarketJuly"] = 0xe1F19CBDa26b6418B0C8E1EE978a533184496066.toBytes32();
+        values[mainnet]["pendleWeETHkSeptember"] = 0x905A5a4792A0C27a2AdB2777f98C577D320079EF.toBytes32();
 
         values[mainnet]["pendle_sUSDe_08_23_24"] = 0xbBf399db59A845066aAFce9AE55e68c505FA97B7.toBytes32();
         values[mainnet]["pendle_sUSDe_12_25_24"] = 0xa0ab94DeBB3cC9A7eA77f3205ba4AB23276feD08.toBytes32();
