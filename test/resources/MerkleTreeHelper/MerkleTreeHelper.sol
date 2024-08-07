@@ -1922,7 +1922,9 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
     }
 
     // ========================================= Pendle Router =========================================
-    function _addPendleMarketLeafs(ManageLeaf[] memory leafs, address marketAddress) internal {
+    function _addPendleMarketLeafs(ManageLeaf[] memory leafs, address marketAddress, bool allowLimitOrderFills)
+        internal
+    {
         PendleMarket market = PendleMarket(marketAddress);
         (address sy, address pt, address yt) = market.readTokens();
         PendleSy SY = PendleSy(sy);
@@ -2185,6 +2187,113 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
         leafs[leafIndex].argumentAddresses[1] = marketAddress;
+
+        if (allowLimitOrderFills) {
+            // Re-add the swap between SY and PT leaves, but add in the limit order router, and YT in the argumentAddresses.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "pendleRouter"),
+                false,
+                "swapExactSyForPt(address,address,uint256,uint256,(uint256,uint256,uint256,uint256,uint256),(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+                new address[](4),
+                string.concat("Swap ", ERC20(sy).symbol(), " for ", ERC20(pt).symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = marketAddress;
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "pendleLimitOrderRouter");
+            leafs[leafIndex].argumentAddresses[3] = yt;
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "pendleRouter"),
+                false,
+                "swapExactPtForSy(address,address,uint256,uint256,(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+                new address[](4),
+                string.concat("Swap ", ERC20(pt).symbol(), " for ", ERC20(sy).symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = marketAddress;
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "pendleLimitOrderRouter");
+            leafs[leafIndex].argumentAddresses[3] = yt;
+
+            _addPendleLimitOrderLeafs(leafs, marketAddress);
+        }
+    }
+
+    // ========================================= Pendle Limit Order =========================================
+
+    function _addPendleLimitOrderLeafs(ManageLeaf[] memory leafs, address marketAddress) internal {
+        // Approve Limit Order Router to spend yt, pt and sy.
+        PendleMarket market = PendleMarket(marketAddress);
+        (address sy, address pt, address yt) = market.readTokens();
+
+        if (!tokenToSpenderToApprovalInTree[yt][getAddress(sourceChain, "pendleLimitOrderRouter")]) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                yt,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Pendle Limit Order Router to spend ", ERC20(yt).symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pendleLimitOrderRouter");
+            tokenToSpenderToApprovalInTree[yt][getAddress(sourceChain, "pendleLimitOrderRouter")] = true;
+        }
+
+        if (!tokenToSpenderToApprovalInTree[pt][getAddress(sourceChain, "pendleLimitOrderRouter")]) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                pt,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Pendle Limit Order Router to spend ", ERC20(pt).symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pendleLimitOrderRouter");
+            tokenToSpenderToApprovalInTree[pt][getAddress(sourceChain, "pendleLimitOrderRouter")] = true;
+        }
+
+        if (!tokenToSpenderToApprovalInTree[sy][getAddress(sourceChain, "pendleLimitOrderRouter")]) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                sy,
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Pendle Limit Order Router to spend ", ERC20(sy).symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "pendleLimitOrderRouter");
+            tokenToSpenderToApprovalInTree[sy][getAddress(sourceChain, "pendleLimitOrderRouter")] = true;
+        }
+
+        // Add fill leaf.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "pendleLimitOrderRouter"),
+            false,
+            "fill(((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],address,uint256,bytes,bytes)",
+            new address[](2),
+            string.concat("Fill Limit orders for ", ERC20(sy).symbol(), " Pendle market"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = yt;
     }
 
     // ========================================= Balancer =========================================
