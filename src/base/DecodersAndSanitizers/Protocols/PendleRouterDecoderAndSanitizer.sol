@@ -183,7 +183,7 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
     {
         if (limit.limitRouter != address(0)) {
             // Trying to fill limit orders.
-            addressesFound = abi.encodePacked(addressesFound, limit.limitRouter);
+            addressesFound = abi.encodePacked(limit.limitRouter);
             if (limit.optData.length > 0) revert PendleRouterDecoderAndSanitizer__NoBytes();
 
             address savedYt;
