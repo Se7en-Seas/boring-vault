@@ -76,6 +76,6 @@ For more detailed information, please refer to the [documentation](https://docs.
 In order to run the tests make sure the following is done.
 
 1. Foundry is [installed](https://book.getfoundry.sh/getting-started/installation)
-2. Copy `sample.env`, rename the copy to `.env`, and add your infura key.
+2. Copy `sample.env`, rename the copy to `.env`, and update all RPCs.
 3. Run `forge install`
 4. Run `forge test`
