@@ -76,13 +76,14 @@ contract ContractNames {
     string public constant BridgingTestVaultEthAerodromeDecoderAndSanitizerName =
         "Bridging Test ETH Vault Aerodrome Decoder and Sanitizer V0.0";
 
-    string public constant CanaryBtcRolesAuthorityName = "Lombard BTC RolesAuthority Version 0.0";
-    string public constant CanaryBtcName = "Lombard BTC V0.1";
-    string public constant CanaryBtcManagerName = "Lombard BTC Manager With Merkle Verification V0.0";
-    string public constant CanaryBtcAccountantName = "Lombard BTC Accountant With Rate Providers V0.1";
-    string public constant CanaryBtcTellerName = "Lombard BTC Teller With Multi Asset Support V0.1";
-    string public constant CanaryBtcDecoderAndSanitizerName = "Lombard BTC Decoder and Sanitizer V0.0";
-    string public constant CanaryBtcDelayedWithdrawer = "Lombard BTC Delayed Withdrawer V0.0";
+    string public constant CanaryBtcRolesAuthorityName = "Lombard Earn RolesAuthority Version 0.0";
+    string public constant CanaryBtcName = "Lombard Earn V0.0";
+    string public constant CanaryBtcManagerName = "Lombard Earn Manager With Merkle Verification V0.0";
+    string public constant CanaryBtcAccountantName = "Lombard Earn Accountant With Rate Providers V0.0";
+    string public constant CanaryBtcTellerName = "Lombard Earn Teller With Multi Asset Support V0.0";
+    string public constant CanaryBtcDecoderAndSanitizerName = "Lombard Earn Decoder and Sanitizer V0.0";
+    string public constant CanaryBtcDelayedWithdrawer = "Lombard Earn Delayed Withdrawer V0.0";
+
     string public constant TestCCIPTellerName = "Test CCIP Teller V0.0";
 
     string public constant SymbioticLRTVaultRolesAuthorityName = "Symbiotic LRT Vault RolesAuthority V0.0";
