@@ -152,4 +152,12 @@ contract ContractNames {
     string public constant SWETHRateProviderName = "SWETH Generic Rate Provider V0.0";
     string public constant SFRXETHRateProviderName = "SFRXETH Generic Rate Provider V0.0";
     string public constant WEETHRateProviderName = "weETH Generic Rate Provider V0.0";
+
+    string public constant OnyxPearlRolesAuthorityName = "Onyx Pearl RolesAuthority Version 0.0";
+    string public constant OnyxPearlName = "Onyx Pearl V0.0";
+    string public constant OnyxPearlManagerName = "Onyx Pearl Manager With Merkle Verification V0.0";
+    string public constant OnyxPearlAccountantName = "Onyx Pearl Accountant With Rate Providers V0.0";
+    string public constant OnyxPearlTellerName = "Onyx Pearl Teller With Multi Asset Support V0.0";
+    string public constant OnyxPearlDecoderAndSanitizerName = "Onyx Pearl Decoder and Sanitizer V0.0";
+    string public constant OnyxPearlDelayedWithdrawer = "Onyx Pearl Delayed Withdrawer V0.0";
 }
