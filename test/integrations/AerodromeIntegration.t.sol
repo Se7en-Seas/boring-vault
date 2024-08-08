@@ -244,8 +244,6 @@ contract AerodromeIntegrationTest is Test, MerkleTreeHelper {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        _generateTestLeafs(leafs, manageTree);
-
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](6);
@@ -381,8 +379,6 @@ contract AerodromeIntegrationTest is Test, MerkleTreeHelper {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        _generateTestLeafs(leafs, manageTree);
-
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](6);
@@ -481,10 +477,11 @@ contract AerodromeIntegrationTest is Test, MerkleTreeHelper {
             mintParams
         );
 
-
         vm.expectRevert(
             bytes(
-                abi.encodeWithSelector(VelodromeDecoderAndSanitizer.VelodromeDecoderAndSanitizer__PoolCreationNotAllowed.selector)
+                abi.encodeWithSelector(
+                    VelodromeDecoderAndSanitizer.VelodromeDecoderAndSanitizer__PoolCreationNotAllowed.selector
+                )
             )
         );
         manager.manageVaultWithMerkleVerification(

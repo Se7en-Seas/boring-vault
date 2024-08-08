@@ -36,10 +36,15 @@ contract PendleLimitOrderIntegrationTest is Test, MerkleTreeHelper {
     uint8 public constant BALANCER_VAULT_ROLE = 6;
 
     function setUp() external {
+        uint256 blockNumber = 20421105;
+
+        _setup(blockNumber);
+    }
+
+    function _setup(uint256 blockNumber) internal {
         setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 20421105;
 
         _startFork(rpcKey, blockNumber);
 
@@ -54,11 +59,11 @@ contract PendleLimitOrderIntegrationTest is Test, MerkleTreeHelper {
             )
         );
 
-        setAddress(false, sourceChain, "boringVault", address(boringVault));
-        setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
-        setAddress(false, sourceChain, "manager", address(manager));
-        setAddress(false, sourceChain, "managerAddress", address(manager));
-        setAddress(false, sourceChain, "accountantAddress", address(1));
+        setAddress(true, sourceChain, "boringVault", address(boringVault));
+        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+        setAddress(true, sourceChain, "manager", address(manager));
+        setAddress(true, sourceChain, "managerAddress", address(manager));
+        setAddress(true, sourceChain, "accountantAddress", address(1));
 
         rolesAuthority = new RolesAuthority(address(this), Authority(address(0)));
         boringVault.setAuthority(rolesAuthority);
@@ -187,7 +192,7 @@ contract PendleLimitOrderIntegrationTest is Test, MerkleTreeHelper {
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
         manageLeafs[0] = leafs[3]; // Approve router to spend SY
-        manageLeafs[1] = leafs[19]; // call swapExactSyForPt
+        manageLeafs[1] = leafs[21]; // call swapExactSyForPt
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](2);
@@ -241,6 +246,92 @@ contract PendleLimitOrderIntegrationTest is Test, MerkleTreeHelper {
 
         uint256 ptBalance = getERC20(sourceChain, "pendleEethPtDecember").balanceOf(address(boringVault));
         assertGt(ptBalance, 100e18, "PT balance should be greater than 100.");
+    }
+
+    function testPendleLimitOrdersSwapExactYtForSy() external {
+        // Call _setup again so a more recent block number can be used.
+        uint256 blockNumber = 20484884;
+        _setup(blockNumber);
+
+        // Mint Super Symbiotic SY to Boring Vault
+        deal(getAddress(sourceChain, "pendleEethYtDecember"), address(boringVault), 100e18);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](32);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketDecember"), true);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[5]; // Approve router to spend SY
+        manageLeafs[1] = leafs[24]; // call swapExactYtForSy
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](2);
+        targets[0] = getAddress(sourceChain, "pendleEethYtDecember");
+        targets[1] = getAddress(sourceChain, "pendleRouter");
+
+        bytes[] memory targetData = new bytes[](2);
+        targetData[0] = abi.encodeWithSignature(
+            "approve(address,uint256)", getAddress(sourceChain, "pendleRouter"), type(uint256).max
+        );
+        DecoderCustomTypes.LimitOrderData memory limitOrderData;
+        limitOrderData.limitRouter = getAddress(sourceChain, "pendleLimitOrderRouter");
+        limitOrderData.epsSkipMarket = 0;
+        limitOrderData.normalFills = new DecoderCustomTypes.FillOrderParams[](2);
+        limitOrderData.normalFills[0].order = DecoderCustomTypes.Order({
+            salt: 8047857094735320382736058386853120644420157220700791925551291130259777545960,
+            expiry: 1723136926,
+            nonce: 0,
+            orderType: DecoderCustomTypes.OrderType.SY_FOR_YT,
+            token: 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
+            YT: getAddress(sourceChain, "pendleEethYtDecember"),
+            maker: 0xA14ad7F4C766BD5ca9b79A4A81873b8bCdF57C86,
+            receiver: 0xA14ad7F4C766BD5ca9b79A4A81873b8bCdF57C86,
+            makingAmount: 120000000000000000,
+            lnImpliedRate: 73250461739592673,
+            failSafeRate: 900000000000000000,
+            permit: hex""
+        });
+        limitOrderData.normalFills[0].signature =
+            hex"708f7929a84c358f0a1dfae34c8d18da50b1b926ac20cf5f57104609fae0f5dc5bb6d1e6415e17c52b70440fc3c79fb2854e8e1b0d658826d81150cbdf5896f81b";
+        limitOrderData.normalFills[0].makingAmount = 120000000000000000;
+        limitOrderData.normalFills[1].order = DecoderCustomTypes.Order({
+            salt: 8373482081934227929253689972963323292519685394038939188831665232063109942581,
+            expiry: 1723946188,
+            nonce: 0,
+            orderType: DecoderCustomTypes.OrderType.SY_FOR_YT,
+            token: 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
+            YT: getAddress(sourceChain, "pendleEethYtDecember"),
+            maker: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            receiver: 0x9fb1750Da6266a05601855bb62767eBC742707B1,
+            makingAmount: 16158236360418398872,
+            lnImpliedRate: 67658648473814805,
+            failSafeRate: 900000000000000000,
+            permit: hex""
+        });
+        limitOrderData.normalFills[1].signature =
+            hex"89c53ba1ee3f7edd13d82cf5de29bbf0fd9ff3a48de32ec3651bd89f0196bbed0fcf94c12d1853cf935cac31c6900159bf157e29ad17d3e2a04dedf1247849d91c";
+        limitOrderData.normalFills[1].makingAmount = 834128382588750478;
+        targetData[1] = abi.encodeWithSignature(
+            "swapExactYtForSy(address,address,uint256,uint256,(address,uint256,((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],((uint256,uint256,uint256,uint8,address,address,address,address,uint256,uint256,uint256,bytes),bytes,uint256)[],bytes))",
+            address(boringVault),
+            getAddress(sourceChain, "pendleWeETHMarketDecember"),
+            100e18,
+            0,
+            limitOrderData
+        );
+
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
+        uint256[] memory values = new uint256[](2);
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        uint256 syBalance = getERC20(sourceChain, "pendleWeethSyDecember").balanceOf(address(boringVault));
+        assertGt(syBalance, 0, "SY balance should be greater than 0.");
     }
 
     function testSwapLimitOrderReverts() external {
