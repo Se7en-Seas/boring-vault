@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.21;
 
 import {Client} from "@ccip/contracts/src/v0.8/ccip/libraries/Client.sol";

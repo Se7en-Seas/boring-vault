@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.21;
 
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
@@ -481,10 +481,11 @@ contract AerodromeIntegrationTest is Test, MerkleTreeHelper {
             mintParams
         );
 
-
         vm.expectRevert(
             bytes(
-                abi.encodeWithSelector(VelodromeDecoderAndSanitizer.VelodromeDecoderAndSanitizer__PoolCreationNotAllowed.selector)
+                abi.encodeWithSelector(
+                    VelodromeDecoderAndSanitizer.VelodromeDecoderAndSanitizer__PoolCreationNotAllowed.selector
+                )
             )
         );
         manager.manageVaultWithMerkleVerification(
