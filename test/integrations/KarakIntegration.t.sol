@@ -153,15 +153,14 @@ contract KarakIntegrationTest is Test, MerkleTreeHelper {
             abi.encodeWithSignature("gimmieShares(address,uint256)", getAddress(sourceChain, "kweETH"), 500e18);
         targetData[4] =
             abi.encodeWithSignature("returnShares(address,uint256)", getAddress(sourceChain, "kweETH"), 500e18);
-        {
-            DecoderCustomTypes.WithdrawRequest[] memory requests = new DecoderCustomTypes.WithdrawRequest[](1);
-            requests[0].vaults = new address[](1);
-            requests[0].vaults[0] = getAddress(sourceChain, "kweETH");
-            requests[0].shares = new uint256[](1);
-            requests[0].shares[0] = 1_000e18;
-            requests[0].withdrawer = address(boringVault);
-            targetData[5] = abi.encodeWithSignature("startWithdraw((address[],uint256[],address)[])", requests);
-        }
+
+        DecoderCustomTypes.WithdrawRequest[] memory requests = new DecoderCustomTypes.WithdrawRequest[](1);
+        requests[0].vaults = new address[](1);
+        requests[0].vaults[0] = getAddress(sourceChain, "kweETH");
+        requests[0].shares = new uint256[](1);
+        requests[0].shares[0] = 1_000e18;
+        requests[0].withdrawer = address(boringVault);
+        targetData[5] = abi.encodeWithSignature("startWithdraw((address[],uint256[],address)[])", requests);
 
         address[] memory decodersAndSanitizers = new address[](6);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
@@ -176,6 +175,8 @@ contract KarakIntegrationTest is Test, MerkleTreeHelper {
             manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](6)
         );
 
+        uint256 start = block.timestamp;
+
         skip(10 days);
 
         manageLeafs = new ManageLeaf[](1);
@@ -186,21 +187,13 @@ contract KarakIntegrationTest is Test, MerkleTreeHelper {
         targets = new address[](1);
         targets[0] = getAddress(sourceChain, "delegationSupervisor");
 
-        DecoderCustomTypes.QueuedWithdrawal[] memory startedWithdrawals;
-
-        // {
-        //     bytes memory data =
-        //         hex"00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000147d3694400aa8bea9c2808f1133dbe467c2589979e5b8199b38b37a986b58c93000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000005615deb798bb3e4dfa0139dfa1b3d433cc23b72f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000066bbc67f00000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000005615deb798bb3e4dfa0139dfa1b3d433cc23b72f00000000000000000000000000000000000000000000000000000000000000010000000000000000000000002dabcea55a12d73191aece59f508b191fb68adac000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000003635c9adc5dea00000";
-
-        //     (, startedWithdrawals) = abi.decode(data, (bytes32[], DecoderCustomTypes.QueuedWithdrawal[]));
-        // }
         targetData = new bytes[](1);
-        // DecoderCustomTypes.QueuedWithdrawal[] memory startedWithdrawals = new DecoderCustomTypes.QueuedWithdrawal[](1);
-        // startedWithdrawals[0].staker = address(boringVault);
-        // startedWithdrawals[0].delegatedTo = address(0);
-        // startedWithdrawals[0].nonce = 0;
-        // startedWithdrawals[0].start = 0;
-        // startedWithdrawals[0].request = requests[0];
+        DecoderCustomTypes.QueuedWithdrawal[] memory startedWithdrawals = new DecoderCustomTypes.QueuedWithdrawal[](1);
+        startedWithdrawals[0].staker = address(boringVault);
+        startedWithdrawals[0].delegatedTo = address(0);
+        startedWithdrawals[0].nonce = 0;
+        startedWithdrawals[0].start = start;
+        startedWithdrawals[0].request = requests[0];
         targetData[0] = abi.encodeWithSignature(
             "finishWithdraw((address,address,uint256,uint256,(address[],uint256[],address))[])", startedWithdrawals
         );
@@ -208,25 +201,16 @@ contract KarakIntegrationTest is Test, MerkleTreeHelper {
         decodersAndSanitizers = new address[](1);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
 
+        uint256 weETHBalanceBefore = getERC20(sourceChain, "WEETH").balanceOf(address(boringVault));
         manager.manageVaultWithMerkleVerification(
             manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](1)
         );
+        uint256 weETHBalanceAfter = getERC20(sourceChain, "WEETH").balanceOf(address(boringVault));
+
+        assertEq(weETHBalanceAfter - weETHBalanceBefore, 1_000e18, "Should have received 1_000e18 WEETH");
     }
 
-    bytes public data;
-    DecoderCustomTypes.QueuedWithdrawal[] memory startedWithdrawals
-
-    function testHunch() external {
-        data =
-            hex"00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000147d3694400aa8bea9c2808f1133dbe467c2589979e5b8199b38b37a986b58c93000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000005615deb798bb3e4dfa0139dfa1b3d433cc23b72f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000066bbc67f00000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000005615deb798bb3e4dfa0139dfa1b3d433cc23b72f00000000000000000000000000000000000000000000000000000000000000010000000000000000000000002dabcea55a12d73191aece59f508b191fb68adac000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000003635c9adc5dea00000";
-
-        (, DecoderCustomTypes.QueuedWithdrawal[] memory startedWithdrawals) =
-            abi.decode(data, (bytes32[], DecoderCustomTypes.QueuedWithdrawal[]));
-
-        // Console log the entire struct.
-        console.log(startedWithdrawals[0].nonce);
-        // console.log(startedWithdrawals[0].start);
-    }
+    // TODO handle reverts
 
     // function testBridgingToArbitrumERC20Reverts() external {
     //     deal(getAddress(sourceChain, "WETH"), address(boringVault), 101e18);
