@@ -10,8 +10,8 @@
             "Bytes4(TARGET_FUNCTION_SELECTOR)",
             "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)"
         ],
-        "LeafCount": 227,
-        "ManageRoot": "0xec2b65be891c0e21923247f009df4cee4b6e28cfa064b061c9eded81e18aeb03",
+        "LeafCount": 223,
+        "ManageRoot": "0x85d127d5f4b916cb9fbc91ead3b6fc3351a6b0219762fb4d0af14a7dce856409",
         "ManagerAddress": "0x227975088C28DBBb4b421c6d96781a53578f19a8",
         "TreeCapacity": 256
     },
@@ -423,6 +423,111 @@
             "FunctionSignature": "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
             "LeafDigest": "0x780112db498132878fb89b63def82c9b828ef79a772f3b7d57fcc464ba1cdc85",
             "PackedArgumentAddresses": "0x420000000000000000000000000000000000000604c0599ae5a44757c0af6f9ec3b93da8976c150ace629400c6aedb64f087cac40ae6a382aeeef49046415998764c29ab2a25cbea6254146d50d22687f0bb20865277abd641a307ece5ee04e79073416cf0bb20865277abd641a307ece5ee04e79073416c",
+            "TargetAddress": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
+        },
+        {
+            "AddressArguments": [
+                "0x4200000000000000000000000000000000000006",
+                "0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452",
+                "0x4A11590e5326138B514E08A9B52202D42077Ca65",
+                "0x46415998764C29aB2a25CbeA6254146D50D22687",
+                "0xf0bb20865277aBd641a307eCe5Ee04E79073416C"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x568a4E08909aab6995979dB24B3cdaE00244CeB4",
+            "Description": "Supply WETH to MorphoBlue wstETH/WETH 94.50 LLTV market",
+            "FunctionSelector": "0xa99aad89",
+            "FunctionSignature": "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            "LeafDigest": "0x921b3fa67f23957dcb5323ce44c492a6ff83710b4e94cee8c0614e6be062ee08",
+            "PackedArgumentAddresses": "0x4200000000000000000000000000000000000006c1cba3fcea344f92d9239c08c0568f6f2f0ee4524a11590e5326138b514e08a9b52202d42077ca6546415998764c29ab2a25cbea6254146d50d22687f0bb20865277abd641a307ece5ee04e79073416c",
+            "TargetAddress": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
+        },
+        {
+            "AddressArguments": [
+                "0x4200000000000000000000000000000000000006",
+                "0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452",
+                "0x4A11590e5326138B514E08A9B52202D42077Ca65",
+                "0x46415998764C29aB2a25CbeA6254146D50D22687",
+                "0xf0bb20865277aBd641a307eCe5Ee04E79073416C",
+                "0xf0bb20865277aBd641a307eCe5Ee04E79073416C"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x568a4E08909aab6995979dB24B3cdaE00244CeB4",
+            "Description": "Withdraw WETH from MorphoBlue wstETH/WETH 94.50 LLTV market",
+            "FunctionSelector": "0x5c2bea49",
+            "FunctionSignature": "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+            "LeafDigest": "0x82c3b4c5efd7c4a9c61c43a035b99675570a340e8c8b29f33de20056f2289c9f",
+            "PackedArgumentAddresses": "0x4200000000000000000000000000000000000006c1cba3fcea344f92d9239c08c0568f6f2f0ee4524a11590e5326138b514e08a9b52202d42077ca6546415998764c29ab2a25cbea6254146d50d22687f0bb20865277abd641a307ece5ee04e79073416cf0bb20865277abd641a307ece5ee04e79073416c",
+            "TargetAddress": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
+        },
+        {
+            "AddressArguments": [
+                "0x4200000000000000000000000000000000000006",
+                "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22",
+                "0xB03855Ad5AFD6B8db8091DD5551CAC4ed621d9E6",
+                "0x46415998764C29aB2a25CbeA6254146D50D22687",
+                "0xf0bb20865277aBd641a307eCe5Ee04E79073416C"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x568a4E08909aab6995979dB24B3cdaE00244CeB4",
+            "Description": "Supply WETH to MorphoBlue cbETH/WETH 96.50 LLTV market",
+            "FunctionSelector": "0xa99aad89",
+            "FunctionSignature": "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            "LeafDigest": "0x08fea18d939d01527aee6ffb2fcb413fa7e8d29fef430edd5fe3d4ea6aec906e",
+            "PackedArgumentAddresses": "0x42000000000000000000000000000000000000062ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22b03855ad5afd6b8db8091dd5551cac4ed621d9e646415998764c29ab2a25cbea6254146d50d22687f0bb20865277abd641a307ece5ee04e79073416c",
+            "TargetAddress": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
+        },
+        {
+            "AddressArguments": [
+                "0x4200000000000000000000000000000000000006",
+                "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22",
+                "0xB03855Ad5AFD6B8db8091DD5551CAC4ed621d9E6",
+                "0x46415998764C29aB2a25CbeA6254146D50D22687",
+                "0xf0bb20865277aBd641a307eCe5Ee04E79073416C",
+                "0xf0bb20865277aBd641a307eCe5Ee04E79073416C"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x568a4E08909aab6995979dB24B3cdaE00244CeB4",
+            "Description": "Withdraw WETH from MorphoBlue cbETH/WETH 96.50 LLTV market",
+            "FunctionSelector": "0x5c2bea49",
+            "FunctionSignature": "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+            "LeafDigest": "0x2907787d468a0e85d77b20743a6d37e43eb8f8a4dbfc90ed3cbc860e783406ec",
+            "PackedArgumentAddresses": "0x42000000000000000000000000000000000000062ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22b03855ad5afd6b8db8091dd5551cac4ed621d9e646415998764c29ab2a25cbea6254146d50d22687f0bb20865277abd641a307ece5ee04e79073416cf0bb20865277abd641a307ece5ee04e79073416c",
+            "TargetAddress": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
+        },
+        {
+            "AddressArguments": [
+                "0x4200000000000000000000000000000000000006",
+                "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22",
+                "0xB03855Ad5AFD6B8db8091DD5551CAC4ed621d9E6",
+                "0x46415998764C29aB2a25CbeA6254146D50D22687",
+                "0xf0bb20865277aBd641a307eCe5Ee04E79073416C"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x568a4E08909aab6995979dB24B3cdaE00244CeB4",
+            "Description": "Supply WETH to MorphoBlue cbETH/WETH 94.50 LLTV market",
+            "FunctionSelector": "0xa99aad89",
+            "FunctionSignature": "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
+            "LeafDigest": "0x08fea18d939d01527aee6ffb2fcb413fa7e8d29fef430edd5fe3d4ea6aec906e",
+            "PackedArgumentAddresses": "0x42000000000000000000000000000000000000062ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22b03855ad5afd6b8db8091dd5551cac4ed621d9e646415998764c29ab2a25cbea6254146d50d22687f0bb20865277abd641a307ece5ee04e79073416c",
+            "TargetAddress": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
+        },
+        {
+            "AddressArguments": [
+                "0x4200000000000000000000000000000000000006",
+                "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22",
+                "0xB03855Ad5AFD6B8db8091DD5551CAC4ed621d9E6",
+                "0x46415998764C29aB2a25CbeA6254146D50D22687",
+                "0xf0bb20865277aBd641a307eCe5Ee04E79073416C",
+                "0xf0bb20865277aBd641a307eCe5Ee04E79073416C"
+            ],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x568a4E08909aab6995979dB24B3cdaE00244CeB4",
+            "Description": "Withdraw WETH from MorphoBlue cbETH/WETH 94.50 LLTV market",
+            "FunctionSelector": "0x5c2bea49",
+            "FunctionSignature": "withdraw((address,address,address,address,uint256),uint256,uint256,address,address)",
+            "LeafDigest": "0x2907787d468a0e85d77b20743a6d37e43eb8f8a4dbfc90ed3cbc860e783406ec",
+            "PackedArgumentAddresses": "0x42000000000000000000000000000000000000062ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22b03855ad5afd6b8db8091dd5551cac4ed621d9e646415998764c29ab2a25cbea6254146d50d22687f0bb20865277abd641a307ece5ee04e79073416cf0bb20865277abd641a307ece5ee04e79073416c",
             "TargetAddress": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
         },
         {
@@ -3771,6 +3876,9 @@
             "0x8f3557d0413a8deef075c1a3d1bb623e3e22d32734fd4aafa92a614f98975563",
             "0x58ff87e2fd97be732491572b5dbccd6af7c6f506aafc481bb70de1ccf663be2a",
             "0x8d0321ba209836b83f2cb6c9b07d99f9a48e0b21e1c45ac33baa354ec7219067",
+            "0x6f38e39d155ae00d6cb9f43b2149b1a158c32b47f1b576dba363dcdf93389e0d",
+            "0xb7953903d5fd6287d2d78ab6b4ff473db3ba6e0b89f242c237912f250de9dd29",
+            "0xb7953903d5fd6287d2d78ab6b4ff473db3ba6e0b89f242c237912f250de9dd29",
             "0x8328efb03ac4eba32faf1d3414878b627c3554b1a966934a7002630b27479d76",
             "0xaa33c3f158a48c49ef31ed98237e400d741ec26bf34d0924e30795806cf427c6",
             "0x562bb6439ae6cb1efd35fbe80b40994345a09d40e91f358557bc90bc2c201cc5",
@@ -3916,6 +4024,12 @@
             "0x617b03116ba49336c3af3795c2938447e3e97555104e7e0770db609f1d492f0d",
             "0x9ace9dd682b3616b4519c3ef860d4909548889b35268c873ea64aa413922d7a3",
             "0x780112db498132878fb89b63def82c9b828ef79a772f3b7d57fcc464ba1cdc85",
+            "0x921b3fa67f23957dcb5323ce44c492a6ff83710b4e94cee8c0614e6be062ee08",
+            "0x82c3b4c5efd7c4a9c61c43a035b99675570a340e8c8b29f33de20056f2289c9f",
+            "0x08fea18d939d01527aee6ffb2fcb413fa7e8d29fef430edd5fe3d4ea6aec906e",
+            "0x2907787d468a0e85d77b20743a6d37e43eb8f8a4dbfc90ed3cbc860e783406ec",
+            "0x08fea18d939d01527aee6ffb2fcb413fa7e8d29fef430edd5fe3d4ea6aec906e",
+            "0x2907787d468a0e85d77b20743a6d37e43eb8f8a4dbfc90ed3cbc860e783406ec",
             "0x512b9e6cf66306d8ef87612290b44be7106670513efa2ef6ebdd114edeea324e",
             "0xf43321d7b5a7ebf3db0b8ed235c1756422a0f06df9e9fb31f8b2d88c79e4d6a5",
             "0x4cba36896f86f503442277cafcbbc7c5913afdcf4ae544f703850c0da53fc297",
