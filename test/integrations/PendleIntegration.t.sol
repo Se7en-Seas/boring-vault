@@ -113,7 +113,7 @@ contract PendleIntegrationTest is Test, MerkleTreeHelper {
         deal(getAddress(sourceChain, "WEETH"), address(boringVault), 1_000e18);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](32);
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarket"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarket"), false);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -204,7 +204,7 @@ contract PendleIntegrationTest is Test, MerkleTreeHelper {
         // PY -> SY
         // SY -> WEETH
         ManageLeaf[] memory leafs = new ManageLeaf[](32);
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarket"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarket"), false);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -358,7 +358,7 @@ contract PendleIntegrationTest is Test, MerkleTreeHelper {
         // add liquidity
         // remove liquidity
         ManageLeaf[] memory leafs = new ManageLeaf[](32);
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarket"));
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarket"), false);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 

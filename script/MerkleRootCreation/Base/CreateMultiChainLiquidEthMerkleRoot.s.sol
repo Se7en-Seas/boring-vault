@@ -63,6 +63,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== MorphoBlue ==========================
         _addMorphoBlueSupplyLeafs(leafs, getBytes32(sourceChain, "weETH_wETH_915"));
+        _addMorphoBlueSupplyLeafs(leafs, getBytes32(sourceChain, "wstETH_wETH_945"));
+        _addMorphoBlueSupplyLeafs(leafs, getBytes32(sourceChain, "cbETH_wETH_965"));
+        _addMorphoBlueSupplyLeafs(leafs, getBytes32(sourceChain, "cbETH_wETH_945"));
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](3);
@@ -87,31 +90,40 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](11);
-        SwapKind[] memory kind = new SwapKind[](11);
-        assets[0] = getAddress(sourceChain, "WETH");
-        kind[0] = SwapKind.BuyAndSell;
-        assets[1] = getAddress(sourceChain, "WEETH");
-        kind[1] = SwapKind.BuyAndSell;
-        assets[2] = getAddress(sourceChain, "WSTETH");
-        kind[2] = SwapKind.BuyAndSell;
-        assets[3] = getAddress(sourceChain, "CBETH");
-        kind[3] = SwapKind.BuyAndSell;
-        assets[4] = getAddress(sourceChain, "CRV");
-        kind[4] = SwapKind.Sell;
-        assets[5] = getAddress(sourceChain, "AURA");
-        kind[5] = SwapKind.Sell;
-        assets[6] = getAddress(sourceChain, "BAL");
-        kind[6] = SwapKind.Sell;
-        assets[7] = getAddress(sourceChain, "RETH");
-        kind[7] = SwapKind.BuyAndSell;
-        assets[8] = getAddress(sourceChain, "BSDETH");
-        kind[8] = SwapKind.BuyAndSell;
-        assets[9] = getAddress(sourceChain, "AERO");
-        kind[9] = SwapKind.Sell;
-        assets[10] = getAddress(sourceChain, "SFRXETH");
-        kind[10] = SwapKind.BuyAndSell;
-        _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
+        {
+            address[] memory assets = new address[](11);
+            SwapKind[] memory kind = new SwapKind[](11);
+            assets[0] = getAddress(sourceChain, "WETH");
+            kind[0] = SwapKind.BuyAndSell;
+            assets[1] = getAddress(sourceChain, "WEETH");
+            kind[1] = SwapKind.BuyAndSell;
+            assets[2] = getAddress(sourceChain, "WSTETH");
+            kind[2] = SwapKind.BuyAndSell;
+            assets[3] = getAddress(sourceChain, "CBETH");
+            kind[3] = SwapKind.BuyAndSell;
+            assets[4] = getAddress(sourceChain, "CRV");
+            kind[4] = SwapKind.Sell;
+            assets[5] = getAddress(sourceChain, "AURA");
+            kind[5] = SwapKind.Sell;
+            assets[6] = getAddress(sourceChain, "BAL");
+            kind[6] = SwapKind.Sell;
+            assets[7] = getAddress(sourceChain, "RETH");
+            kind[7] = SwapKind.BuyAndSell;
+            assets[8] = getAddress(sourceChain, "BSDETH");
+            kind[8] = SwapKind.BuyAndSell;
+            assets[9] = getAddress(sourceChain, "AERO");
+            kind[9] = SwapKind.Sell;
+            assets[10] = getAddress(sourceChain, "SFRXETH");
+            kind[10] = SwapKind.BuyAndSell;
+            _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
+        }
+
+        // ========================== Compound V3 ==========================
+        ERC20[] memory collateralAssets = new ERC20[](1);
+        collateralAssets[0] = getERC20(sourceChain, "CBETH");
+        _addCompoundV3Leafs(
+            leafs, collateralAssets, getAddress(sourceChain, "cWETHV3"), getAddress(sourceChain, "cometRewards")
+        );
 
         // ========================== Flashloans ==========================
         _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WETH"));
