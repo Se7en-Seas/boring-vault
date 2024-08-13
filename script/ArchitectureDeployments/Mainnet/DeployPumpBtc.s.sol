@@ -6,11 +6,10 @@ import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
-import {EtherFiLiquidEthDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
+import {PumpBtcDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PumpBtcDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployCanaryBtc.s.sol:DeployCanaryBtcScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployPumpBtc.s.sol:DeployPumpBtcScript --with-gas-price 3000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
@@ -19,8 +18,8 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "pump liquid BTC";
-    string public boringVaultSymbol = "liquidpumpBTC";
+    string public boringVaultName = "Pump BTC Vault";
+    string public boringVaultSymbol = "pumpBTCv";
     uint8 public boringVaultDecimals = 8;
     address public owner = dev0Address;
 
@@ -31,12 +30,12 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
 
     function run() external {
         // Configure the deployment.
-        configureDeployment.deployContracts = false;
-        configureDeployment.setupRoles = false;
+        configureDeployment.deployContracts = true;
+        configureDeployment.setupRoles = true;
         configureDeployment.setupDepositAssets = true;
         configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = false;
-        configureDeployment.setupTestUser = false;
+        configureDeployment.finishSetup = true;
+        configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -69,14 +68,14 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
-        bytes memory creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode; // TODO update deocder
+        bytes memory creationCode = type(PumpBtcDecoderAndSanitizer).creationCode;
         bytes memory constructorArgs =
             abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
         // Setup extra deposit assets.
         depositAssets.push(
             DepositAsset({
-                asset: LBTC, // TODO add in Pump BTC token
+                asset: pumpBTC,
                 isPeggedToBase: true,
                 rateProvider: address(0),
                 genericRateProviderName: "",
@@ -88,7 +87,7 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: LBTC,
+                asset: pumpBTC,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,

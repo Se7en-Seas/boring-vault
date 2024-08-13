@@ -135,6 +135,7 @@ contract ChainValues {
         values[mainnet]["WBETH"] = 0xa2E3356610840701BDf5611a53974510Ae27E2e1.toBytes32();
         values[mainnet]["UNIETH"] = 0xF1376bceF0f78459C0Ed0ba5ddce976F1ddF51F4.toBytes32();
         values[mainnet]["CBETH"] = 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704.toBytes32();
+        values[mainnet]["pumpBTC"] = 0xF469fBD2abcd6B9de8E169d128226C0Fc90a012e.toBytes32();
 
         // Rate providers
         values[mainnet]["WEETH_RATE_PROVIDER"] = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee.toBytes32();
