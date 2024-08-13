@@ -15,7 +15,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C;
-    address public rawDataDecoderAndSanitizer = 0xB240f07102a907B7B007A36f2ef70EbC9BFf14E8;
+    address public rawDataDecoderAndSanitizer = 0x96B0d32c5F8C15Ee7B4aaF19a7F92809a8c9eDeD;
     address public pancakeSwapDataDecoderAndSanitizer = 0x47F62174e7A8EF939d8525C9670025d19DeFd821;
     address public managerAddress = 0xcFF411d5C54FE0583A984beE1eF43a4776854B9A;
     address public accountantAddress = 0xc315D6e14DDCDC7407784e2Caf815d131Bc1D3E7;
@@ -214,6 +214,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         // ========================== Fluid fToken ==========================
         _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fUSDC"));
         _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fUSDT"));
+
+        // ========================== Compound V3 ==========================
+        ERC20[] memory collateralAssets = new ERC20[](0);
+        _addCompoundV3Leafs(
+            leafs, collateralAssets, getAddress(sourceChain, "cUSDCV3"), getAddress(sourceChain, "cometRewards")
+        );
+        _addCompoundV3Leafs(
+            leafs, collateralAssets, getAddress(sourceChain, "cUSDTV3"), getAddress(sourceChain, "cometRewards")
+        );
 
         // ========================== 1inch ==========================
         /**
