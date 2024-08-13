@@ -122,6 +122,10 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
             leafs, collateralAssets, getAddress(sourceChain, "cWETHV3"), getAddress(sourceChain, "cometRewards")
         );
 
+        // ========================== Fluid fToken ==========================
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fWETH"));
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fWSTETH"));
+
         // ========================== Flashloans ==========================
         _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WETH"));
         _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WEETH"));
