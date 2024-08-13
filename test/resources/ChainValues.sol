@@ -743,6 +743,9 @@ contract ChainValues {
         // MorphoBlue
         values[base]["morphoBlue"] = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb.toBytes32();
         values[base]["weETH_wETH_915"] = 0x78d11c03944e0dc298398f0545dc8195ad201a18b0388cb8058b1bcb89440971;
+        values[base]["wstETH_wETH_945"] = 0x3a4048c64ba1b375330d376b1ce40e4047d03b47ab4d48af484edec9fec801ba;
+        values[base]["cbETH_wETH_965"] = 0x6600aae6c56d242fa6ba68bd527aff1a146e77813074413186828fd3f1cdca91;
+        values[base]["cbETH_wETH_945"] = 0x84662b4f95b85d6b082b68d32cf71bb565b3f22f216a65509cc2ede7dccdfe8c;
 
         values[base]["uniV3Router"] = 0x2626664c2603336E57B271c5C0b26F421741e481.toBytes32();
 
@@ -939,5 +942,9 @@ contract ChainValues {
         values[optimism]["velodromeRouter"] = 0xa062aE8A9c5e11aaA026fc2670B0D65cCc8B2858.toBytes32();
         values[optimism]["velodromeNonFungiblePositionManager"] = 0x416b433906b1B72FA758e166e239c43d68dC6F29.toBytes32();
         values[optimism]["velodrome_Weth_Wsteth_v3_1_gauge"] = 0xb2218A2cFeF38Ca30AE8C88B41f2E2BdD9347E3e.toBytes32();
+
+        // Compound V3
+        values[optimism]["cWETHV3"] = 0xE36A30D249f7761327fd973001A32010b521b6Fd.toBytes32();
+        values[optimism]["cometRewards"] = 0x443EA0340cb75a160F31A440722dec7b5bc3C2E9.toBytes32();
     }
 }
