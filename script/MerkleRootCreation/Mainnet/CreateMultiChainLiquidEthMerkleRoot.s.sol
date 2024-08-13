@@ -105,6 +105,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketJuly"), true);
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_weETHs_market_08_28_24"), true);
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHkSeptember"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_weETHs_market_12_25_24"), true);
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](9);
