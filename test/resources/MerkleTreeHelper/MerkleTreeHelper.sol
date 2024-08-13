@@ -4083,19 +4083,6 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex] = ManageLeaf(
             vaultSupervisor,
             false,
-            "depositAndGimmie(address,uint256,uint256)",
-            new address[](1),
-            string.concat("Deposit and Gimmie ", underlying.symbol(), " into ", ERC4626(vault).symbol()),
-            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-        );
-        leafs[leafIndex].argumentAddresses[0] = vault;
-
-        unchecked {
-            leafIndex++;
-        }
-        leafs[leafIndex] = ManageLeaf(
-            vaultSupervisor,
-            false,
             "gimmieShares(address,uint256)",
             new address[](1),
             string.concat("Gimmie shares into ", ERC4626(vault).symbol()),

@@ -122,10 +122,9 @@ contract KarakIntegrationTest is Test, MerkleTreeHelper {
         manageLeafs[0] = leafs[0]; // approve weETH
         manageLeafs[1] = leafs[1]; // approve kweETH
         manageLeafs[2] = leafs[2]; // deposit
-        // manageLeafs[3] = leafs[3]; // depositAndGimme
-        manageLeafs[3] = leafs[4]; // gimmieShares
-        manageLeafs[4] = leafs[5]; // returnShares
-        manageLeafs[5] = leafs[6]; // startWithdraw
+        manageLeafs[3] = leafs[3]; // gimmieShares
+        manageLeafs[4] = leafs[4]; // returnShares
+        manageLeafs[5] = leafs[5]; // startWithdraw
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
@@ -133,7 +132,6 @@ contract KarakIntegrationTest is Test, MerkleTreeHelper {
         targets[0] = getAddress(sourceChain, "WEETH");
         targets[1] = getAddress(sourceChain, "kweETH");
         targets[2] = getAddress(sourceChain, "vaultSupervisor");
-        // targets[3] = getAddress(sourceChain, "vaultSupervisor");
         targets[3] = getAddress(sourceChain, "vaultSupervisor");
         targets[4] = getAddress(sourceChain, "vaultSupervisor");
         targets[5] = getAddress(sourceChain, "delegationSupervisor");
@@ -146,9 +144,6 @@ contract KarakIntegrationTest is Test, MerkleTreeHelper {
         );
         targetData[2] =
             abi.encodeWithSignature("deposit(address,uint256,uint256)", getAddress(sourceChain, "kweETH"), 1_000e18, 0);
-        // targetData[3] = abi.encodeWithSignature(
-        //     "depositAndGimmie(address,uint256,uint256)", getAddress(sourceChain, "kweETH"), 100e18, 0
-        // );
         targetData[3] =
             abi.encodeWithSignature("gimmieShares(address,uint256)", getAddress(sourceChain, "kweETH"), 500e18);
         targetData[4] =
@@ -169,7 +164,6 @@ contract KarakIntegrationTest is Test, MerkleTreeHelper {
         decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
-        // decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
 
         manager.manageVaultWithMerkleVerification(
             manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](6)
@@ -180,7 +174,7 @@ contract KarakIntegrationTest is Test, MerkleTreeHelper {
         skip(10 days);
 
         manageLeafs = new ManageLeaf[](1);
-        manageLeafs[0] = leafs[7]; // finishWithdraw
+        manageLeafs[0] = leafs[6]; // finishWithdraw
 
         manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
@@ -210,87 +204,232 @@ contract KarakIntegrationTest is Test, MerkleTreeHelper {
         assertEq(weETHBalanceAfter - weETHBalanceBefore, 1_000e18, "Should have received 1_000e18 WEETH");
     }
 
-    // TODO handle reverts
+    function testKarakReverts() external {
+        deal(getAddress(sourceChain, "WEETH"), address(boringVault), 1_000e18);
 
-    // function testBridgingToArbitrumERC20Reverts() external {
-    //     deal(getAddress(sourceChain, "WETH"), address(boringVault), 101e18);
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kweETH"));
 
-    //     ManageLeaf[] memory leafs = new ManageLeaf[](2);
-    //     ERC20[] memory bridgeAssets = new ERC20[](1);
-    //     bridgeAssets[0] = getERC20(sourceChain, "WETH");
-    //     ERC20[] memory feeTokens = new ERC20[](1);
-    //     feeTokens[0] = getERC20(sourceChain, "WETH");
-    //     _addCcipBridgeLeafs(leafs, ccipArbitrumChainSelector, bridgeAssets, feeTokens);
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-    //     bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
-    //     manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](6);
+        manageLeafs[0] = leafs[0]; // approve weETH
+        manageLeafs[1] = leafs[1]; // approve kweETH
+        manageLeafs[2] = leafs[2]; // deposit
+        manageLeafs[3] = leafs[3]; // gimmieShares
+        manageLeafs[4] = leafs[4]; // returnShares
+        manageLeafs[5] = leafs[5]; // startWithdraw
 
-    //     ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
-    //     manageLeafs[0] = leafs[0];
-    //     manageLeafs[1] = leafs[1];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
-    //     bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+        address[] memory targets = new address[](6);
+        targets[0] = getAddress(sourceChain, "WEETH");
+        targets[1] = getAddress(sourceChain, "kweETH");
+        targets[2] = getAddress(sourceChain, "vaultSupervisor");
+        targets[3] = getAddress(sourceChain, "vaultSupervisor");
+        targets[4] = getAddress(sourceChain, "vaultSupervisor");
+        targets[5] = getAddress(sourceChain, "delegationSupervisor");
 
-    //     address[] memory targets = new address[](2);
-    //     targets[0] = getAddress(sourceChain, "WETH");
-    //     targets[1] = getAddress(sourceChain, "ccipRouter");
+        bytes[] memory targetData = new bytes[](6);
+        targetData[0] =
+            abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "kweETH"), type(uint256).max);
+        targetData[1] = abi.encodeWithSignature(
+            "approve(address,uint256)", getAddress(sourceChain, "vaultSupervisor"), type(uint256).max
+        );
+        targetData[2] =
+            abi.encodeWithSignature("deposit(address,uint256,uint256)", getAddress(sourceChain, "kweETH"), 1_000e18, 0);
+        targetData[3] =
+            abi.encodeWithSignature("gimmieShares(address,uint256)", getAddress(sourceChain, "kweETH"), 500e18);
+        targetData[4] =
+            abi.encodeWithSignature("returnShares(address,uint256)", getAddress(sourceChain, "kweETH"), 500e18);
 
-    //     bytes[] memory targetData = new bytes[](2);
-    //     targetData[0] = abi.encodeWithSignature(
-    //         "approve(address,uint256)", getAddress(sourceChain, "ccipRouter"), type(uint256).max
-    //     );
-    //     DecoderCustomTypes.EVM2AnyMessage memory message;
-    //     message.receiver = abi.encode(address(boringVault));
-    //     message.data = "01";
-    //     message.tokenAmounts = new DecoderCustomTypes.EVMTokenAmount[](1);
-    //     message.tokenAmounts[0].token = getAddress(sourceChain, "WETH");
-    //     message.tokenAmounts[0].amount = 100e18;
-    //     message.feeToken = getAddress(sourceChain, "WETH");
-    //     message.extraArgs = abi.encode(bytes4(0x97a657c9), 0);
+        DecoderCustomTypes.WithdrawRequest[] memory requests = new DecoderCustomTypes.WithdrawRequest[](2);
+        requests[0].vaults = new address[](1);
+        requests[0].vaults[0] = getAddress(sourceChain, "kweETH");
+        requests[0].shares = new uint256[](1);
+        requests[0].shares[0] = 1_000e18;
+        requests[0].withdrawer = address(boringVault);
+        targetData[5] = abi.encodeWithSignature("startWithdraw((address[],uint256[],address)[])", requests);
 
-    //     targetData[1] = abi.encodeWithSignature(
-    //         "ccipSend(uint64,(bytes,bytes,(address,uint256)[],address,bytes))", ccipArbitrumChainSelector, message
-    //     );
-    //     uint256[] memory values = new uint256[](2);
-    //     address[] memory decodersAndSanitizers = new address[](2);
-    //     decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-    //     decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        address[] memory decodersAndSanitizers = new address[](6);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
 
-    //     // Call reverts since message.data is not empty.
-    //     vm.expectRevert(
-    //         bytes(abi.encodeWithSelector(CCIPDecoderAndSanitizer.CCIPDecoderAndSanitizer__NonZeroDataLength.selector))
-    //     );
-    //     manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    KarakDecoderAndSanitizer.KarakDecoderAndSanitizer__InvalidRequestsLength.selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](6)
+        );
 
-    //     // Fix the data length, but set the extraArgs tag to invalid.
-    //     message.data = "";
-    //     message.extraArgs = abi.encode(bytes4(0x97a657c8), 0);
-    //     targetData[1] = abi.encodeWithSignature(
-    //         "ccipSend(uint64,(bytes,bytes,(address,uint256)[],address,bytes))", ccipArbitrumChainSelector, message
-    //     );
-    //     vm.expectRevert(
-    //         bytes(abi.encodeWithSelector(CCIPDecoderAndSanitizer.CCIPDecoderAndSanitizer__InvalidExtraArgsTag.selector))
-    //     );
-    //     manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+        requests = new DecoderCustomTypes.WithdrawRequest[](1);
+        requests[0].vaults = new address[](2);
+        requests[0].vaults[0] = getAddress(sourceChain, "kweETH");
+        requests[0].shares = new uint256[](1);
+        requests[0].shares[0] = 1_000e18;
+        requests[0].withdrawer = address(boringVault);
+        targetData[5] = abi.encodeWithSignature("startWithdraw((address[],uint256[],address)[])", requests);
 
-    //     // Fix the tag, but set gas limit to non zero.
-    //     message.extraArgs = abi.encode(bytes4(0x97a657c9), 1);
-    //     targetData[1] = abi.encodeWithSignature(
-    //         "ccipSend(uint64,(bytes,bytes,(address,uint256)[],address,bytes))", ccipArbitrumChainSelector, message
-    //     );
-    //     vm.expectRevert(
-    //         bytes(abi.encodeWithSelector(CCIPDecoderAndSanitizer.CCIPDecoderAndSanitizer__NonZeroGasLimit.selector))
-    //     );
-    //     manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    KarakDecoderAndSanitizer.KarakDecoderAndSanitizer__InvalidRequestsLength.selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](6)
+        );
 
-    //     // Fix the gas limit and call now succeeds.
-    //     message.extraArgs = abi.encode(bytes4(0x97a657c9), 0);
-    //     targetData[1] = abi.encodeWithSignature(
-    //         "ccipSend(uint64,(bytes,bytes,(address,uint256)[],address,bytes))", ccipArbitrumChainSelector, message
-    //     );
-    //     manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-    // }
+        requests = new DecoderCustomTypes.WithdrawRequest[](1);
+        requests[0].vaults = new address[](1);
+        requests[0].vaults[0] = getAddress(sourceChain, "kweETH");
+        requests[0].shares = new uint256[](2);
+        requests[0].shares[0] = 1_000e18;
+        requests[0].withdrawer = address(boringVault);
+        targetData[5] = abi.encodeWithSignature("startWithdraw((address[],uint256[],address)[])", requests);
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    KarakDecoderAndSanitizer.KarakDecoderAndSanitizer__InvalidRequestsLength.selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](6)
+        );
+
+        requests = new DecoderCustomTypes.WithdrawRequest[](1);
+        requests[0].vaults = new address[](1);
+        requests[0].vaults[0] = getAddress(sourceChain, "kweETH");
+        requests[0].shares = new uint256[](1);
+        requests[0].shares[0] = 1_000e18;
+        requests[0].withdrawer = address(boringVault);
+        targetData[5] = abi.encodeWithSignature("startWithdraw((address[],uint256[],address)[])", requests);
+
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](6)
+        );
+
+        uint256 start = block.timestamp;
+
+        skip(10 days);
+
+        manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[6]; // finishWithdraw
+
+        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        targets = new address[](1);
+        targets[0] = getAddress(sourceChain, "delegationSupervisor");
+
+        targetData = new bytes[](1);
+        DecoderCustomTypes.QueuedWithdrawal[] memory startedWithdrawals = new DecoderCustomTypes.QueuedWithdrawal[](2);
+        startedWithdrawals[0].staker = address(boringVault);
+        startedWithdrawals[0].delegatedTo = address(0);
+        startedWithdrawals[0].nonce = 0;
+        startedWithdrawals[0].start = start;
+        startedWithdrawals[0].request = requests[0];
+        targetData[0] = abi.encodeWithSignature(
+            "finishWithdraw((address,address,uint256,uint256,(address[],uint256[],address))[])", startedWithdrawals
+        );
+
+        decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    KarakDecoderAndSanitizer.KarakDecoderAndSanitizer__InvalidRequestsLength.selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](1)
+        );
+
+        requests[0].vaults = new address[](2);
+        requests[0].vaults[0] = getAddress(sourceChain, "kweETH");
+        requests[0].shares = new uint256[](1);
+        requests[0].shares[0] = 1_000e18;
+        requests[0].withdrawer = address(boringVault);
+        startedWithdrawals = new DecoderCustomTypes.QueuedWithdrawal[](1);
+        startedWithdrawals[0].staker = address(boringVault);
+        startedWithdrawals[0].delegatedTo = address(0);
+        startedWithdrawals[0].nonce = 0;
+        startedWithdrawals[0].start = start;
+        startedWithdrawals[0].request = requests[0];
+        targetData[0] = abi.encodeWithSignature(
+            "finishWithdraw((address,address,uint256,uint256,(address[],uint256[],address))[])", startedWithdrawals
+        );
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    KarakDecoderAndSanitizer.KarakDecoderAndSanitizer__InvalidRequestsLength.selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](1)
+        );
+
+        requests[0].vaults = new address[](1);
+        requests[0].vaults[0] = getAddress(sourceChain, "kweETH");
+        requests[0].shares = new uint256[](2);
+        requests[0].shares[0] = 1_000e18;
+        requests[0].withdrawer = address(boringVault);
+        startedWithdrawals = new DecoderCustomTypes.QueuedWithdrawal[](1);
+        startedWithdrawals[0].staker = address(boringVault);
+        startedWithdrawals[0].delegatedTo = address(0);
+        startedWithdrawals[0].nonce = 0;
+        startedWithdrawals[0].start = start;
+        startedWithdrawals[0].request = requests[0];
+        targetData[0] = abi.encodeWithSignature(
+            "finishWithdraw((address,address,uint256,uint256,(address[],uint256[],address))[])", startedWithdrawals
+        );
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    KarakDecoderAndSanitizer.KarakDecoderAndSanitizer__InvalidRequestsLength.selector
+                )
+            )
+        );
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](1)
+        );
+
+        requests[0].vaults = new address[](1);
+        requests[0].vaults[0] = getAddress(sourceChain, "kweETH");
+        requests[0].shares = new uint256[](1);
+        requests[0].shares[0] = 1_000e18;
+        requests[0].withdrawer = address(boringVault);
+        startedWithdrawals = new DecoderCustomTypes.QueuedWithdrawal[](1);
+        startedWithdrawals[0].staker = address(boringVault);
+        startedWithdrawals[0].delegatedTo = address(0);
+        startedWithdrawals[0].nonce = 0;
+        startedWithdrawals[0].start = start;
+        startedWithdrawals[0].request = requests[0];
+        targetData[0] = abi.encodeWithSignature(
+            "finishWithdraw((address,address,uint256,uint256,(address[],uint256[],address))[])", startedWithdrawals
+        );
+
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](1)
+        );
+    }
 
     // ========================================= HELPER FUNCTIONS =========================================
 

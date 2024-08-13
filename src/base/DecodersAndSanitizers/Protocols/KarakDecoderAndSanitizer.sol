@@ -17,15 +17,6 @@ abstract contract KarakDecoderAndSanitizer is BaseDecoderAndSanitizer {
         addressesFound = abi.encodePacked(vault);
     }
 
-    function depositAndGimmie(address vault, uint256, /*amount*/ uint256 /*minOut*/ )
-        external
-        pure
-        virtual
-        returns (bytes memory addressesFound)
-    {
-        addressesFound = abi.encodePacked(vault);
-    }
-
     function gimmieShares(address vault, uint256 /*shares*/ )
         external
         pure
