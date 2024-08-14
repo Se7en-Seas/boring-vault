@@ -21,7 +21,7 @@ contract DeployEtherFiBtcScript is DeployArcticArchitecture, MainnetAddresses {
     string public boringVaultName = "ether.fi BTC";
     string public boringVaultSymbol = "eBTC";
     uint8 public boringVaultDecimals = 8;
-    address public owner = dev0Address;
+    address public owner = dev1Address;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
@@ -31,11 +31,11 @@ contract DeployEtherFiBtcScript is DeployArcticArchitecture, MainnetAddresses {
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = false;
-        configureDeployment.setupRoles = true;
+        configureDeployment.setupRoles = false;
         configureDeployment.setupDepositAssets = true;
         configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = true;
-        configureDeployment.setupTestUser = true;
+        configureDeployment.finishSetup = false;
+        configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -72,10 +72,32 @@ contract DeployEtherFiBtcScript is DeployArcticArchitecture, MainnetAddresses {
         bytes memory constructorArgs =
             abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
+        // Setup extra deposit assets.
+        depositAssets.push(
+            DepositAsset({
+                asset: TBTC,
+                isPeggedToBase: true,
+                rateProvider: address(0),
+                genericRateProviderName: "",
+                target: address(0),
+                selector: bytes4(0),
+                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
+
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
                 asset: WBTC,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: TBTC,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -88,7 +110,7 @@ contract DeployEtherFiBtcScript is DeployArcticArchitecture, MainnetAddresses {
         uint64 shareLockPeriod = 1 days;
         address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
-        vm.startBroadcast(privateKey);
+        vm.startBroadcast();
 
         _deploy(
             "EtherFiBtcDeployment.json",
