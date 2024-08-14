@@ -638,6 +638,8 @@ contract ChainValues {
         values[mainnet]["ETHxDefaultCollateral"] = 0xBdea8e677F9f7C294A4556005c640Ee505bE6925.toBytes32();
         values[mainnet]["uniETHDefaultCollateral"] = 0x1C57ea879dd3e8C9fefa8224fdD1fa20dd54211E.toBytes32();
         values[mainnet]["sUSDeDefaultCollateral"] = 0x19d0D8e6294B7a04a2733FE433444704B791939A.toBytes32();
+        values[mainnet]["wBTCDefaultCollateral"] = 0x971e5b5D4baa5607863f3748FeBf287C7bf82618.toBytes32();
+        values[mainnet]["tBTCDefaultCollateral"] = 0x0C969ceC0729487d264716e55F232B404299032c.toBytes32();
 
         // Karak
         values[mainnet]["vaultSupervisor"] = 0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC.toBytes32();
