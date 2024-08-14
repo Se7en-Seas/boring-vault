@@ -56,8 +56,6 @@ contract CreateEtherFiBTCMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        leafIndex = 0;
-
         ManageLeaf[] memory leafs = new ManageLeaf[](32);
 
         // ========================== Symbiotic ==========================
