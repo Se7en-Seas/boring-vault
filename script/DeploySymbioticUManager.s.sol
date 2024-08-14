@@ -72,9 +72,7 @@ contract DeploySymbioticUManagerScript is MerkleTreeHelper, ContractNames {
 
         vm.startBroadcast(privateKey);
 
-        symbioticUManager =  SymbioticUManager(
-           0xaA107EC4649497d92232B41021BFce80ACc54b37
-        );
+        symbioticUManager = SymbioticUManager(0xaA107EC4649497d92232B41021BFce80ACc54b37);
 
         symbioticUManager.updateMerkleTree(merkleTree, false);
 
