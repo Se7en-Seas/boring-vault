@@ -19,7 +19,7 @@ contract CreateStakedEthfiMerkleRootScript is Script, MerkleTreeHelper {
     address public boringVault = 0x86B5780b606940Eb59A062aA85a07959518c0161;
     address public managerAddress = 0xb623FaF559b414A1C7EF2d15f3260CA0Fd239431;
     address public accountantAddress = 0x05A1552c5e18F5A0BB9571b5F2D6a4765ebdA32b;
-    address public rawDataDecoderAndSanitizer = 0xcfa57ea1b1E138cf89050253CcF5d0836566C06D;
+    address public rawDataDecoderAndSanitizer = 0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781;
 
     address public itbDecoderAndSanitizer = 0xcfa57ea1b1E138cf89050253CcF5d0836566C06D;
 
@@ -41,7 +41,12 @@ contract CreateStakedEthfiMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", itbDecoderAndSanitizer);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        ManageLeaf[] memory leafs = new ManageLeaf[](32);
+
+        // ========================== Symbiotic ==========================
+        address[] memory defaultCollaterals = new address[](1);
+        defaultCollaterals[0] = getAddress(sourceChain, "ethfiDefaultCollateral");
+        _addSymbioticLeafs(leafs, defaultCollaterals);
 
         // ========================== ITB Karak Position Managers ==========================
         _addLeafsForITBKarakPositionManager(
