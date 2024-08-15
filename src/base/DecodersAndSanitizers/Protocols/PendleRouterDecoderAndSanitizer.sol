@@ -139,6 +139,27 @@ abstract contract PendleRouterDecoderAndSanitizer is BaseDecoderAndSanitizer {
         addressesFound = abi.encodePacked(receiver, market, _sanitizeLimitOrderData(limit));
     }
 
+    function swapExactSyForYt(
+        address receiver,
+        address market,
+        uint256, /*exactSyIn*/
+        uint256, /*minYtOut*/
+        DecoderCustomTypes.ApproxParams calldata, /*guessYtOut*/
+        DecoderCustomTypes.LimitOrderData calldata limit
+    ) external pure returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(receiver, market, _sanitizeLimitOrderData(limit));
+    }
+
+    function swapExactYtForSy(
+        address receiver,
+        address market,
+        uint256, /*exactYtIn*/
+        uint256, /*minSyOut*/
+        DecoderCustomTypes.LimitOrderData calldata limit
+    ) external pure returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(receiver, market, _sanitizeLimitOrderData(limit));
+    }
+
     /**
      * @notice `params[i].order.token` is restricted to be either an input or an output token for the SY,
      *         so addressesFound only reports the YT address from the FillOrderParams, as the YT address derives
