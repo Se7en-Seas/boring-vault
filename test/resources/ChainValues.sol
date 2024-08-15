@@ -758,6 +758,10 @@ contract ChainValues {
         // Compound V3
         values[base]["cWETHV3"] = 0x46e6b214b524310239732D51387075E0e70970bf.toBytes32();
         values[base]["cometRewards"] = 0x123964802e6ABabBE1Bc9547D72Ef1B69B00A6b1.toBytes32();
+
+        // Instadapp Fluid
+        values[base]["fWETH"] = 0x9272D6153133175175Bc276512B2336BE3931CE9.toBytes32();
+        values[base]["fWSTETH"] = 0x896E39f0E9af61ECA9dD2938E14543506ef2c2b5.toBytes32();
     }
 
     function _addArbitrumValues() private {
