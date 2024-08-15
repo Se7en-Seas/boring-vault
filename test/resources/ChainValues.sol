@@ -72,6 +72,11 @@ contract ChainValues {
         values[mainnet]["liquidV1PriceRouter"] = 0x693799805B502264f9365440B93C113D86a4fFF5.toBytes32();
         values[mainnet]["liquidPayoutAddress"] = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A.toBytes32();
         values[mainnet]["liquidMultisig"] = 0xCEA8039076E35a825854c5C2f85659430b06ec96.toBytes32();
+        values[mainnet]["liquidEth"] = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C.toBytes32();
+        values[mainnet]["liquidEthStrategist"] = 0x41DFc53B13932a2690C9790527C1967d8579a6ae.toBytes32();
+        values[mainnet]["liquidEthManager"] = 0x227975088C28DBBb4b421c6d96781a53578f19a8.toBytes32();
+        values[mainnet]["superSymbiotic"] = 0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88.toBytes32();
+        values[mainnet]["superSymbioticTeller"] = 0x99dE9e5a3eC2750a6983C8732E6e795A35e7B861.toBytes32();
         values[mainnet]["weETHs"] = 0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88.toBytes32();
 
         // DeFi Ecosystem
@@ -480,6 +485,7 @@ contract ChainValues {
         values[mainnet]["lrtDepositPool"] = 0x036676389e48133B63a802f8635AD39E752D375D.toBytes32();
         // Compound V3
         values[mainnet]["cUSDCV3"] = 0xc3d688B66703497DAA19211EEdff47f25384cdc3.toBytes32();
+        values[mainnet]["cUSDTV3"] = 0x3Afdc9BCA9213A35503b077a6072F3D0d5AB0840.toBytes32();
         values[mainnet]["cWETHV3"] = 0xA17581A9E3356d9A858b789D68B4d866e593aE94.toBytes32();
         values[mainnet]["cometRewards"] = 0x1B0e765F6224C21223AeA2af16c1C46E38885a40.toBytes32();
         // Morpho Blue
@@ -566,6 +572,8 @@ contract ChainValues {
         values[mainnet]["pendle_weETHs_sy_08_28_24"] = 0x9e8f10574ACc2c62C6e5d19500CEd39163Da37A9.toBytes32();
         values[mainnet]["pendle_weETHs_pt_08_28_24"] = 0xda6530EfaFD63A42d7b9a0a5a60A03839CDb813A.toBytes32();
         values[mainnet]["pendle_weETHs_yt_08_28_24"] = 0x28cE264D0938C1051687FEbDCeFacc2242BA9E0E.toBytes32();
+
+        values[mainnet]["pendle_weETHs_market_12_25_24"] = 0x40789E8536C668c6A249aF61c81b9dfaC3EB8F32.toBytes32();
 
         // Aave V3
         values[mainnet]["v3Pool"] = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2.toBytes32();
@@ -755,6 +763,10 @@ contract ChainValues {
         // Compound V3
         values[base]["cWETHV3"] = 0x46e6b214b524310239732D51387075E0e70970bf.toBytes32();
         values[base]["cometRewards"] = 0x123964802e6ABabBE1Bc9547D72Ef1B69B00A6b1.toBytes32();
+
+        // Instadapp Fluid
+        values[base]["fWETH"] = 0x9272D6153133175175Bc276512B2336BE3931CE9.toBytes32();
+        values[base]["fWSTETH"] = 0x896E39f0E9af61ECA9dD2938E14543506ef2c2b5.toBytes32();
     }
 
     function _addArbitrumValues() private {

@@ -15,7 +15,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
-    address public rawDataDecoderAndSanitizer = 0xdCbC0DeF063C497aA25Eb52eB29aa96C90be0F79;
+    address public rawDataDecoderAndSanitizer = 0xE97Fc71E71B979A3b78134186AD3b4B8327108BF;
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
     address public pancakeSwapDataDecoderAndSanitizer = 0x4dE66AA174b99481dAAe12F2Cdd5D76Dc14Eb3BC;
@@ -23,6 +23,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
     address public itbAaveDecoderAndSanitizer = 0x7fA5dbDB1A76d2990Ea0f3c74e520E3fcE94748B;
     address public itbReserveProtocolPositionManager = 0x778aC5d0EE062502fADaa2d300a51dE0869f7995;
     address public itbAaveLidoPositionManager = 0xC4F5Ee078a1C4DA280330546C29840d45ab32753;
+    address public itbAaveLidoPositionManager2 = 0x572F323Aa330B467C356c5a30Bf9A20480F4fD52;
 
     function setUp() external {}
 
@@ -104,6 +105,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketJuly"), true);
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_weETHs_market_08_28_24"), true);
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHkSeptember"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_weETHs_market_12_25_24"), true);
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](9);
@@ -266,6 +268,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         supplyAssets = new ERC20[](1);
         supplyAssets[0] = getERC20(sourceChain, "WETH");
         _addLeafsForItbAaveV3(leafs, itbAaveLidoPositionManager, supplyAssets, "ITB Aave V3 WETH");
+        _addLeafsForItbAaveV3(leafs, itbAaveLidoPositionManager2, supplyAssets, "ITB Aave V3 WETH 2");
 
         // ========================== Native Bridge Leafs ==========================
         ERC20[] memory bridgeAssets = new ERC20[](5);
