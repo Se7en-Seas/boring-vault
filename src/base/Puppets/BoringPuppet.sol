@@ -9,22 +9,36 @@ import {PuppetLib} from "src/base/Puppets/PuppetLib.sol";
 contract BoringPuppet is ERC721Holder, ERC1155Holder {
     using Address for address;
 
+    //============================== MODIFIERS ===============================
+
+    modifier onlyBoringVault() {
+        if (msg.sender != boringVault) revert BoringPuppet__OnlyBoringVault();
+        _;
+    }
+
     //============================== ERRORS ===============================
 
     error BoringPuppet__OnlyBoringVault();
 
     //============================== CONSTRUCTOR ===============================
 
+    /**
+     * @notice The address of the BoringVault that can control this puppet.
+     */
     address internal immutable boringVault;
 
     constructor(address _boringVault) {
         boringVault = _boringVault;
     }
 
-    fallback() external payable {
-        // Verify msg.sender is the boringVault
-        if (msg.sender != boringVault) revert BoringPuppet__OnlyBoringVault();
+    //============================== FALLBACK ===============================
 
+    /**
+     * @notice This contract in its current state can only be interacted with by the BoringVault.
+     * @notice The real target is extracted from the call data using `extractTargetFromCalldata()`.
+     * @notice The puppet then forwards
+     */
+    fallback() external payable onlyBoringVault {
         // Exctract real target from end of calldata
         address target = PuppetLib.extractTargetFromCalldata();
 

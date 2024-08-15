@@ -199,10 +199,10 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
         targetData[0] = abi.encodeWithSignature(
             "approve(address,uint256)",
             getAddress(sourceChain, "swellSimpleStaking"),
-            type(uint256).max,
-            getAddress(sourceChain, "WETH"),
-            PuppetLib.TARGET_FLAG
+            type(uint256).max
         );
+        // Note this logic even works with encode packing the data to reduce calldata size.
+        targetData[0] = abi.encodePacked(targetData[0], getAddress(sourceChain, "WETH"), PuppetLib.TARGET_FLAG);
         targetData[1] = abi.encodeWithSignature(
             "deposit(address,uint256,address)",
             getAddress(sourceChain, "WETH"),
