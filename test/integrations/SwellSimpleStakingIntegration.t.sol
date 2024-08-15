@@ -169,10 +169,8 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
     function testSwellSimpleStakingIntegrationViaPuppet() external {
         deal(getAddress(sourceChain, "WETH"), address(boringPuppet), 1_000e18);
 
-        // approve
-        // Call deposit
-        // withdraw
-        // complete withdraw
+        // Before creating merkle leafs, set the boringVault address to be the puppet.
+        setAddress(true, sourceChain, "boringVault", address(boringPuppet));
         ManageLeaf[] memory leafs = new ManageLeaf[](4);
         _addSwellSimpleStakingLeafs(
             leafs, getAddress(sourceChain, "WETH"), getAddress(sourceChain, "swellSimpleStaking")
@@ -185,17 +183,19 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](3);
         manageLeafs[0] = puppetLeafs[0];
         manageLeafs[1] = puppetLeafs[1];
+        manageLeafs[2] = puppetLeafs[2];
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
-        address[] memory targets = new address[](2);
+        address[] memory targets = new address[](3);
         targets[0] = address(boringPuppet);
         targets[1] = address(boringPuppet);
+        targets[2] = address(boringPuppet);
 
-        bytes[] memory targetData = new bytes[](2);
+        bytes[] memory targetData = new bytes[](3);
         targetData[0] = abi.encodeWithSignature(
             "approve(address,uint256)",
             getAddress(sourceChain, "swellSimpleStaking"),
@@ -207,32 +207,33 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
             "deposit(address,uint256,address)",
             getAddress(sourceChain, "WETH"),
             1_000e18,
-            address(boringVault),
+            address(boringPuppet),
             getAddress(sourceChain, "swellSimpleStaking"),
             PuppetLib.TARGET_FLAG
         );
-        // targetData[2] = abi.encodeWithSignature(
-        //     "withdraw(address,uint256,address)",
-        //     getAddress(sourceChain, "WETH"),
-        //     1_000e18,
-        //     address(boringVault),
-        //     getAddress(sourceChain, "swellSimpleStaking"),
-        //     PuppetLib.TARGET_FLAG
-        // );
+        targetData[2] = abi.encodeWithSignature(
+            "withdraw(address,uint256,address)",
+            getAddress(sourceChain, "WETH"),
+            1_000e18,
+            address(boringPuppet),
+            getAddress(sourceChain, "swellSimpleStaking"),
+            PuppetLib.TARGET_FLAG
+        );
 
-        address[] memory decodersAndSanitizers = new address[](2);
+        address[] memory decodersAndSanitizers = new address[](3);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
 
-        uint256[] memory values = new uint256[](2);
+        uint256[] memory values = new uint256[](3);
 
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
-        // assertEq(
-        //     getERC20(sourceChain, "WETH").balanceOf(address(boringVault)),
-        //     1_000e18,
-        //     "BoringVault should have received 1,000 WETH"
-        // );
+        assertEq(
+            getERC20(sourceChain, "WETH").balanceOf(address(boringPuppet)),
+            1_000e18,
+            "BoringVault should have received 1,000 WETH"
+        );
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

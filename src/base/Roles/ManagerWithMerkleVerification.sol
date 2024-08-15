@@ -10,6 +10,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {BalancerVault} from "src/interfaces/BalancerVault.sol";
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {IPausable} from "src/interfaces/IPausable.sol";
+import {PuppetLib} from "src/base/Puppets/PuppetLib.sol";
 
 contract ManagerWithMerkleVerification is Auth, IPausable {
     using FixedPointMathLib for uint256;
@@ -244,8 +245,10 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
     ) internal view {
         // Use address decoder to get addresses in call data.
         bytes memory packedArgumentAddresses = abi.decode(decoderAndSanitizer.functionStaticCall(targetData), (bytes));
-        // TODO instead of adding in the logic in all decoders to extract the puppet target, it can be added here. PuppetLib.extractTargetFromCalldata(), but the function will need to
-        // be changed to input calldata
+        address puppetTarget = PuppetLib.extractTargetFromInput(targetData);
+        if (puppetTarget != address(0)) {
+            packedArgumentAddresses = abi.encodePacked(packedArgumentAddresses, puppetTarget);
+        }
 
         if (
             !_verifyManageProof(
