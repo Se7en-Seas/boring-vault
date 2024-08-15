@@ -14,6 +14,9 @@ import {
 } from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
+import {PuppetLib} from "src/base/Puppets/PuppetLib.sol";
+import {BoringPuppet} from "src/base/Puppets/BoringPuppet.sol";
+
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
@@ -27,6 +30,7 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
     BoringVault public boringVault;
     address public rawDataDecoderAndSanitizer;
     RolesAuthority public rolesAuthority;
+    BoringPuppet public boringPuppet;
 
     uint8 public constant MANAGER_ROLE = 1;
     uint8 public constant STRATEGIST_ROLE = 2;
@@ -44,6 +48,8 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
         _startFork(rpcKey, blockNumber);
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
+
+        boringPuppet = new BoringPuppet(address(boringVault));
 
         manager =
             new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
@@ -158,6 +164,75 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
             1_000e18,
             "BoringVault should have received 1,000 WETH"
         );
+    }
+
+    function testSwellSimpleStakingIntegrationViaPuppet() external {
+        deal(getAddress(sourceChain, "WETH"), address(boringPuppet), 1_000e18);
+
+        // approve
+        // Call deposit
+        // withdraw
+        // complete withdraw
+        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        _addSwellSimpleStakingLeafs(
+            leafs, getAddress(sourceChain, "WETH"), getAddress(sourceChain, "swellSimpleStaking")
+        );
+
+        // Convert the leafs into puppet leafs.
+        ManageLeaf[] memory puppetLeafs = _createPuppetLeafs(leafs, address(boringPuppet));
+
+        bytes32[][] memory manageTree = _generateMerkleTree(puppetLeafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = puppetLeafs[0];
+        manageLeafs[1] = puppetLeafs[1];
+
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](2);
+        targets[0] = address(boringPuppet);
+        targets[1] = address(boringPuppet);
+
+        bytes[] memory targetData = new bytes[](2);
+        targetData[0] = abi.encodeWithSignature(
+            "approve(address,uint256)",
+            getAddress(sourceChain, "swellSimpleStaking"),
+            type(uint256).max,
+            getAddress(sourceChain, "WETH"),
+            PuppetLib.TARGET_FLAG
+        );
+        targetData[1] = abi.encodeWithSignature(
+            "deposit(address,uint256,address)",
+            getAddress(sourceChain, "WETH"),
+            1_000e18,
+            address(boringVault),
+            getAddress(sourceChain, "swellSimpleStaking"),
+            PuppetLib.TARGET_FLAG
+        );
+        // targetData[2] = abi.encodeWithSignature(
+        //     "withdraw(address,uint256,address)",
+        //     getAddress(sourceChain, "WETH"),
+        //     1_000e18,
+        //     address(boringVault),
+        //     getAddress(sourceChain, "swellSimpleStaking"),
+        //     PuppetLib.TARGET_FLAG
+        // );
+
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
+        uint256[] memory values = new uint256[](2);
+
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        // assertEq(
+        //     getERC20(sourceChain, "WETH").balanceOf(address(boringVault)),
+        //     1_000e18,
+        //     "BoringVault should have received 1,000 WETH"
+        // );
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

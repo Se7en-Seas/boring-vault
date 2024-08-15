@@ -13,6 +13,7 @@ abstract contract SwellSimpleStakingDecoderAndSanitizer is BaseDecoderAndSanitiz
         returns (bytes memory addressesFound)
     {
         addressesFound = abi.encodePacked(_token, _receiver);
+        addressesFound = appendPuppetTargetIfPresent(addressesFound);
     }
 
     function withdraw(address _token, uint256, /*_amount*/ address _receiver)
@@ -22,5 +23,6 @@ abstract contract SwellSimpleStakingDecoderAndSanitizer is BaseDecoderAndSanitiz
         returns (bytes memory addressesFound)
     {
         addressesFound = abi.encodePacked(_token, _receiver);
+        addressesFound = appendPuppetTargetIfPresent(addressesFound);
     }
 }

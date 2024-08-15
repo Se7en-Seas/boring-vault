@@ -244,6 +244,8 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
     ) internal view {
         // Use address decoder to get addresses in call data.
         bytes memory packedArgumentAddresses = abi.decode(decoderAndSanitizer.functionStaticCall(targetData), (bytes));
+        // TODO instead of adding in the logic in all decoders to extract the puppet target, it can be added here. PuppetLib.extractTargetFromCalldata(), but the function will need to
+        // be changed to input calldata
 
         if (
             !_verifyManageProof(
