@@ -124,8 +124,6 @@ contract CamelotV3IntegrationTest is Test, MerkleTreeHelper {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        _generateTestLeafs(leafs, manageTree);
-
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](9);
@@ -232,8 +230,6 @@ contract CamelotV3IntegrationTest is Test, MerkleTreeHelper {
         _addCamelotV3Leafs(leafs, token0, token1);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-
-        _generateTestLeafs(leafs, manageTree);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
