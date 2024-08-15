@@ -480,6 +480,7 @@ contract ChainValues {
         values[mainnet]["lrtDepositPool"] = 0x036676389e48133B63a802f8635AD39E752D375D.toBytes32();
         // Compound V3
         values[mainnet]["cUSDCV3"] = 0xc3d688B66703497DAA19211EEdff47f25384cdc3.toBytes32();
+        values[mainnet]["cUSDTV3"] = 0x3Afdc9BCA9213A35503b077a6072F3D0d5AB0840.toBytes32();
         values[mainnet]["cWETHV3"] = 0xA17581A9E3356d9A858b789D68B4d866e593aE94.toBytes32();
         values[mainnet]["cometRewards"] = 0x1B0e765F6224C21223AeA2af16c1C46E38885a40.toBytes32();
         // Morpho Blue
