@@ -14,10 +14,10 @@ import "forge-std/Script.sol";
 contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
-    address public boringVault = 0x5401b8620E5FB570064CA9114fd1e135fd77D57c;
-    address public rawDataDecoderAndSanitizer = 0x402d89D6c763E8e79b77Ac1424f28cbA80ac9caa;
-    address public managerAddress = 0xcf38e37872748E3b66741A42560672A6cef75e9B;
-    address public accountantAddress = 0x28634D0c5edC67CF2450E74deA49B90a4FF93dCE;
+    address public boringVault = 0x91588c197BdD947bd4966E33728db03cD52CbA24;
+    address public rawDataDecoderAndSanitizer = 0x7704820fCcD83Be3F625154C3460da0b6672e53b;
+    address public managerAddress = 0xeBC7d8B1796eE587c2E91473c0b07A34a1a61E70;
+    address public accountantAddress = 0xcB762D7bedfA78c725f2F347220d41062b6B0A4A;
 
     function setUp() external {}
 
@@ -103,6 +103,14 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== Flashloans ==========================
         _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WBTC"));
+
+        // ========================== Curve ==========================
+        _addCurveLeafs(
+            leafs, getAddress(sourceChain, "lBTC_wBTC_Curve_Pool"), 2, getAddress(sourceChain, "lBTC_wBTC_Curve_Gauge")
+        );
+
+        // ========================== Convex ==========================
+        // _addConvexLeafs(leafs, getERC20(sourceChain, "lBTC_wBTC_Curve_Pool"), CONVEX_REWARDS_CONTRACT);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
