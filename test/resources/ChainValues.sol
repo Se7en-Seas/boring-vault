@@ -15,6 +15,7 @@ contract ChainValues {
     string public constant arbitrum = "arbitrum";
     string public constant optimism = "optimism";
     string public constant base = "base";
+    string public constant holesky = "holesky";
 
     // Bridging constants.
     uint64 public constant ccipArbitrumChainSelector = 4949039107694359620;
@@ -62,6 +63,9 @@ contract ChainValues {
         _addBaseValues();
         _addArbitrumValues();
         _addOptimismValues();
+
+        // Add testnet values
+        _addHoleskyValues();
     }
 
     function _addMainnetValues() private {
@@ -958,5 +962,13 @@ contract ChainValues {
         // Compound V3
         values[optimism]["cWETHV3"] = 0xE36A30D249f7761327fd973001A32010b521b6Fd.toBytes32();
         values[optimism]["cometRewards"] = 0x443EA0340cb75a160F31A440722dec7b5bc3C2E9.toBytes32();
+    }
+
+    function _addHoleskyValues() private {
+        // ERC20
+        values[holesky]["WSTETH"] = 0x8d09a4502Cc8Cf1547aD300E066060D043f6982D.toBytes32();
+
+        // Symbiotic
+        values[holesky]["wstETHSymbioticVault"] = 0x89D62D1d89d8636367fc94998b3bE095a3d9c2f9.toBytes32();
     }
 }
