@@ -39,7 +39,7 @@ contract CreateStakedEthfiMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "boringVault", boringVault);
         setAddress(false, mainnet, "managerAddress", managerAddress);
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
-        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", itbDecoderAndSanitizer);
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](32);
 
