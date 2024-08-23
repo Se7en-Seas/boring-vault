@@ -34,6 +34,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
         bool finishSetup;
         bool setupTestUser;
         bool saveDeploymentDetails;
+        bool initiatePullFundsFromVault;
         address deployerAddress;
         address balancerVault;
         address WETH;
@@ -634,6 +635,16 @@ contract DeployArcticArchitecture is Script, ContractNames {
                 );
             }
 
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                    MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.setPullFundsFromVault.selector
+                )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.setPullFundsFromVault.selector, true
+                );
+            }
+
             // STRATEGIST_MULTISIG_ROLE
             if (
                 !rolesAuthority.doesRoleHaveCapability(
@@ -675,6 +686,15 @@ contract DeployArcticArchitecture is Script, ContractNames {
             ) {
                 rolesAuthority.setRoleCapability(
                     STRATEGIST_MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.setFeeAddress.selector, true
+                );
+            }
+            if (
+                !rolesAuthority.doesRoleHaveCapability(
+                    STRATEGIST_MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.setPullFundsFromVault.selector
+                )
+            ) {
+                rolesAuthority.setRoleCapability(
+                    STRATEGIST_MULTISIG_ROLE, address(delayedWithdrawer), DelayedWithdraw.setPullFundsFromVault.selector, true
                 );
             }
             // STRATEGIST_ROLE
@@ -818,6 +838,11 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     withdrawAsset.maxLoss
                 );
             }
+        }
+
+        if (configureDeployment.initiatePullFundsFromVault) {
+            // Setup pull funds from vault.
+            delayedWithdrawer.setPullFundsFromVault(configureDeployment.initiatePullFundsFromVault);
         }
 
         if (configureDeployment.finishSetup) {
