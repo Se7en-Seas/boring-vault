@@ -2,7 +2,7 @@
     "metadata": {
         "AccountantAddress": "0x05A1552c5e18F5A0BB9571b5F2D6a4765ebdA32b",
         "BoringVaultAddress": "0x86B5780b606940Eb59A062aA85a07959518c0161",
-        "DecoderAndSanitizerAddress": "0xcfa57ea1b1E138cf89050253CcF5d0836566C06D",
+        "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
         "DigestComposition": [
             "Bytes20(DECODER_AND_SANITIZER_ADDRESS)",
             "Bytes20(TARGET_ADDRESS)",
@@ -11,7 +11,7 @@
             "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)"
         ],
         "LeafCount": 19,
-        "ManageRoot": "0x560b6a769dc6d4d02f1a0ecb5a00059963ba592823bc99d41b31321d201e2d6b",
+        "ManageRoot": "0x778c792247151d4d0be0f56df8442c61be83cb9e0b971c7f37c2c025975cf8ab",
         "ManagerAddress": "0xb623FaF559b414A1C7EF2d15f3260CA0Fd239431",
         "TreeCapacity": 32
     },
@@ -21,11 +21,11 @@
                 "0x21DbBA985eEA6ba7F27534a72CCB292eBA1D2c7c"
             ],
             "CanSendValue": false,
-            "DecoderAndSanitizerAddress": "0xcfa57ea1b1E138cf89050253CcF5d0836566C06D",
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
             "Description": "Approve Symbiotic DefaultCollateral_ether.fi governance token to spend ETHFI",
             "FunctionSelector": "0x095ea7b3",
             "FunctionSignature": "approve(address,uint256)",
-            "LeafDigest": "0x7fa5722316124b3447500bb3b29b0d2fb42f115d6cf95af43d3f6f2b63a27641",
+            "LeafDigest": "0x8c206d9c326edff3609f1f7ae3fbb622c8ba98e37cfffbbc2bced4e61d9b9971",
             "PackedArgumentAddresses": "0x21dbba985eea6ba7f27534a72ccb292eba1d2c7c",
             "TargetAddress": "0xFe0c30065B384F05761f15d0CC899D4F9F9Cc0eB"
         },
@@ -34,11 +34,11 @@
                 "0x86B5780b606940Eb59A062aA85a07959518c0161"
             ],
             "CanSendValue": false,
-            "DecoderAndSanitizerAddress": "0xcfa57ea1b1E138cf89050253CcF5d0836566C06D",
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
             "Description": "Deposit ETHFI into Symbiotic DefaultCollateral_ether.fi governance token",
             "FunctionSelector": "0x47e7ef24",
             "FunctionSignature": "deposit(address,uint256)",
-            "LeafDigest": "0xf5dacfa3abd49ac24760ce4e945aab795e101e12283b04de2b99116a667c98f3",
+            "LeafDigest": "0xbd58225be944f1a1cd3c9b7827155b86f8f894a9957fbf173a930e4ec95fa378",
             "PackedArgumentAddresses": "0x86b5780b606940eb59a062aa85a07959518c0161",
             "TargetAddress": "0x21DbBA985eEA6ba7F27534a72CCB292eBA1D2c7c"
         },
@@ -47,11 +47,11 @@
                 "0x86B5780b606940Eb59A062aA85a07959518c0161"
             ],
             "CanSendValue": false,
-            "DecoderAndSanitizerAddress": "0xcfa57ea1b1E138cf89050253CcF5d0836566C06D",
+            "DecoderAndSanitizerAddress": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
             "Description": "Withdraw DC_ETHFI from Symbiotic DefaultCollateral_ether.fi governance token",
             "FunctionSelector": "0xf3fef3a3",
             "FunctionSignature": "withdraw(address,uint256)",
-            "LeafDigest": "0xcc9c498222bd757af6d8f02ffbf17196e580717a5b0e424b7cc0a346ceaacad2",
+            "LeafDigest": "0x707867c27fe5174f4e73bfc0274c7dee3cb8533060434a4a7a53a460f51db02a",
             "PackedArgumentAddresses": "0x86b5780b606940eb59a062aa85a07959518c0161",
             "TargetAddress": "0x21DbBA985eEA6ba7F27534a72CCB292eBA1D2c7c"
         },
@@ -391,20 +391,20 @@
     ],
     "MerkleTree": {
         "0": [
-            "0x560b6a769dc6d4d02f1a0ecb5a00059963ba592823bc99d41b31321d201e2d6b"
+            "0x778c792247151d4d0be0f56df8442c61be83cb9e0b971c7f37c2c025975cf8ab"
         ],
         "1": [
-            "0xd0814f6a37954c50a7a0a2b9d40f7161c4a89d7302bf5a867a79f5c7f2c81a44",
+            "0x7c8bec9c4a5f026c2801adb4908a0453cc33deaf990602173ab5d9e8464e6a0e",
             "0x81e57328e22c1692a5c1b6c3915794c7d8921f1821c848dba54375bc1c1333b5"
         ],
         "2": [
-            "0x64d07eb57e8eace446a7b89abf9009e01d8cd9c6bea3906bdf89def7aa2274c9",
+            "0x379cb6c802e1263999088625801792af6a5b7689a598087082f75d0fa367f265",
             "0x5deb034e29552c8ca54042bc067044275f7feaed1b01c74b3fe16204e6fdc576",
             "0xb1b8b9a2bedc177b95840527dfa6f25c0797437c9501d3b50b166a3fd0f4a6d8",
             "0x41fbd3a0cfdfcee05cf3eb16d95ed1c81f50c3c6268bb806b406ec06ee93e704"
         ],
         "3": [
-            "0xb2123c3c844bf2c8facc6bd61b48c3fe1bc4c4cfc5e8ee7174e5ace6bbece666",
+            "0xe2e57b6ce9550dd2ef36c3b9f484f9f17eb6d58e75bfbdd75492482da7b9d612",
             "0x39def727972f3e868b736fb1136e373b39f242c68c15effd7e054731f765cd3d",
             "0x124441b4ab994d71126d70aea036aed45d70c101b94b261b98dd4fe1d610990b",
             "0x7b09191081d98f71795522416b3c27cfe944867d7726ff975999a537bb448191",
@@ -414,8 +414,8 @@
             "0x849eda7a295b642e5ddaf49a30eec4470cf507efa83b4104c0752d069c7638fe"
         ],
         "4": [
-            "0xb068a4e2fb50966ebc86b4e1a3b1c4c7936f52ef69abb124e5e1b1a3fb8d0a6b",
-            "0xb64236fcae97ff6f352e160bb0faba6996939394b2214174b51bb9cca21bbd95",
+            "0xcc72e0e570f3b8d2ee328981ea50fcfff011999c47308757c3c149f15cc04e89",
+            "0x78376072a9a7c82fef882ce0ca4e4355d0deaa3a00d86bb1667d1e7474badf54",
             "0x3ab641284b0c564e970c08f075e47331d3a1f21183b0e0ff2bf68ed42075bedd",
             "0xe22291380c362deb0216ed9d603794517e6c4398f15f744f6f85b7b3192a699a",
             "0x4b8b52f00c8ae530c4f036f2f3aabae93fd527c4507113adce39126e2a4f73ac",
@@ -432,9 +432,9 @@
             "0xc5a36f3b7b955966d5ed3135dcc612f978306d73bce3697e230afae57fbaeeba"
         ],
         "5": [
-            "0x7fa5722316124b3447500bb3b29b0d2fb42f115d6cf95af43d3f6f2b63a27641",
-            "0xf5dacfa3abd49ac24760ce4e945aab795e101e12283b04de2b99116a667c98f3",
-            "0xcc9c498222bd757af6d8f02ffbf17196e580717a5b0e424b7cc0a346ceaacad2",
+            "0x8c206d9c326edff3609f1f7ae3fbb622c8ba98e37cfffbbc2bced4e61d9b9971",
+            "0xbd58225be944f1a1cd3c9b7827155b86f8f894a9957fbf173a930e4ec95fa378",
+            "0x707867c27fe5174f4e73bfc0274c7dee3cb8533060434a4a7a53a460f51db02a",
             "0x2b9c291c05fe71d3c19324f33c2c17014f8b76639e869df252e238d26bda7ab2",
             "0x5065bf84fcc1426d021019bc1dcfb063cb4aaee663fedd8e83bf5bfec9a943eb",
             "0x95b94342b318f2fa60103b148e201c61fba901d5ee191c719c3cbe3f912911c1",
