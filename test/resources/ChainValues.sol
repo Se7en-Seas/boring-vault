@@ -140,8 +140,8 @@ contract ChainValues {
         values[mainnet]["WBETH"] = 0xa2E3356610840701BDf5611a53974510Ae27E2e1.toBytes32();
         values[mainnet]["UNIETH"] = 0xF1376bceF0f78459C0Ed0ba5ddce976F1ddF51F4.toBytes32();
         values[mainnet]["CBETH"] = 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704.toBytes32();
-        values[mainnet]["USD0"]= 0x73A15FeD60Bf67631dC6cd7Bc5B6e8da8190aCF5.toBytes32();
-        values[mainnet]["USD0_plus"]= 0x35D8949372D46B7a3D5A56006AE77B215fc69bC0.toBytes32();
+        values[mainnet]["USD0"] = 0x73A15FeD60Bf67631dC6cd7Bc5B6e8da8190aCF5.toBytes32();
+        values[mainnet]["USD0_plus"] = 0x35D8949372D46B7a3D5A56006AE77B215fc69bC0.toBytes32();
 
         // Rate providers
         values[mainnet]["WEETH_RATE_PROVIDER"] = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee.toBytes32();
@@ -652,6 +652,8 @@ contract ChainValues {
         values[mainnet]["ETHxDefaultCollateral"] = 0xBdea8e677F9f7C294A4556005c640Ee505bE6925.toBytes32();
         values[mainnet]["uniETHDefaultCollateral"] = 0x1C57ea879dd3e8C9fefa8224fdD1fa20dd54211E.toBytes32();
         values[mainnet]["sUSDeDefaultCollateral"] = 0x19d0D8e6294B7a04a2733FE433444704B791939A.toBytes32();
+        values[mainnet]["wBTCDefaultCollateral"] = 0x971e5b5D4baa5607863f3748FeBf287C7bf82618.toBytes32();
+        values[mainnet]["tBTCDefaultCollateral"] = 0x0C969ceC0729487d264716e55F232B404299032c.toBytes32();
         values[mainnet]["ethfiDefaultCollateral"] = 0x21DbBA985eEA6ba7F27534a72CCB292eBA1D2c7c.toBytes32();
 
         // Karak
