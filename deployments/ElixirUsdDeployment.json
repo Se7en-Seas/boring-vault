@@ -1,8 +1,24 @@
 {
   "DepositAssets": {
+    "DAI": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
     "USDC": {
       "isPeggedToBase": true,
       "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "USDT": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "deUSD": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "sdeUSD": {
+      "isPeggedToBase": false,
+      "rateProvider": "0x54b97cD6E6474570678a89421136B299709C8245"
     }
   },
   "WithdrawAssets": {
@@ -24,22 +40,28 @@
       "WithdrawDelay": 259200,
       "WithdrawFee": 0
     },
-    "USDe": {
-      "CompletionWindow": 1209600,
+    "deUSD": {
+      "CompletionWindow": 604800,
       "MaxLoss": 100,
-      "WithdrawDelay": 604800,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "sdeUSD": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
       "WithdrawFee": 0
     }
   },
   "accountantConfiguration": {
     "AllowedExchangeRateChangeLower": 9950,
     "AllowedExchangeRateChangeUpper": 10050,
-    "Base": "USDC",
-    "BaseAddress": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "Base": "deUSD",
+    "BaseAddress": "0x15700B564Ca08D9439C58cA5053166E8317aa138",
     "ManagementFee": 200,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
-    "StartingExchangeRate": 1000000
+    "StartingExchangeRate": 1000000000000000000
   },
   "core": {
     "AccountantWithRateProviders": "0xBae19b38Bf727Be64AF0B578c34985c3D612e2Ba",
@@ -52,8 +74,8 @@
     "TellerWithMultiAssetSupport": "0x417e1Ef6eB82c3E6a60c2DC342e574E4C51B4D35"
   },
   "depositConfiguration": {
-    "AllowPublicDeposits": false,
-    "AllowPublicWithdraws": true,
+    "AllowPublicDeposits": true,
+    "AllowPublicWithdraws": false,
     "ShareLockPeriod": 86400
   }
 }

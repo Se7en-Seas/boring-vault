@@ -10,7 +10,7 @@ import {EtherFiLiquidUsdDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployElixirUsd.s.sol:DeployElixirUsdScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployElixirUsd.s.sol:DeployElixirUsdScript --with-gas-price 10000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployElixirUsdScript is DeployArcticArchitecture, MainnetAddresses {
@@ -19,9 +19,9 @@ contract DeployElixirUsdScript is DeployArcticArchitecture, MainnetAddresses {
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Ether.Fi Liquid USD";
-    string public boringVaultSymbol = "liquidUSD";
-    uint8 public boringVaultDecimals = 6;
+    string public boringVaultName = "TODO";
+    string public boringVaultSymbol = "TODO";
+    uint8 public boringVaultDecimals = 18;
     address public owner = dev0Address;
 
     function setUp() external {
@@ -32,11 +32,11 @@ contract DeployElixirUsdScript is DeployArcticArchitecture, MainnetAddresses {
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
-        configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = false;
-        configureDeployment.setupTestUser = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = true;
+        configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -57,9 +57,9 @@ contract DeployElixirUsdScript is DeployArcticArchitecture, MainnetAddresses {
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = USDC;
+        accountantParameters.base = deUSD;
         // Decimals are in terms of `base`.
-        accountantParameters.startingExchangeRate = 1e6;
+        accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
         accountantParameters.managementFee = 0.02e4;
         accountantParameters.performanceFee = 0;
@@ -74,6 +74,50 @@ contract DeployElixirUsdScript is DeployArcticArchitecture, MainnetAddresses {
             abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
         // Setup extra deposit assets.
+        depositAssets.push(
+            DepositAsset({
+                asset: USDC,
+                isPeggedToBase: true,
+                rateProvider: address(0),
+                genericRateProviderName: "",
+                target: address(0),
+                selector: bytes4(0),
+                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
+        depositAssets.push(
+            DepositAsset({
+                asset: USDT,
+                isPeggedToBase: true,
+                rateProvider: address(0),
+                genericRateProviderName: "",
+                target: address(0),
+                selector: bytes4(0),
+                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
+        depositAssets.push(
+            DepositAsset({
+                asset: DAI,
+                isPeggedToBase: true,
+                rateProvider: address(0),
+                genericRateProviderName: "",
+                target: address(0),
+                selector: bytes4(0),
+                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
+        depositAssets.push(
+            DepositAsset({
+                asset: sdeUSD,
+                isPeggedToBase: false,
+                rateProvider: address(0),
+                genericRateProviderName: sdeUSDRateProviderName,
+                target: address(sdeUSD),
+                selector: bytes4(keccak256(abi.encodePacked("previewRedeem(uint256)"))),
+                params: [bytes32(uint256(1e18)), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
         // none to setup
 
         // Setup withdraw assets.
@@ -96,23 +140,32 @@ contract DeployElixirUsdScript is DeployArcticArchitecture, MainnetAddresses {
                 maxLoss: 0.01e4
             })
         );
-
         withdrawAssets.push(
             WithdrawAsset({asset: DAI, withdrawDelay: 3 days, completionWindow: 7 days, withdrawFee: 0, maxLoss: 0.01e4})
         );
 
         withdrawAssets.push(
             WithdrawAsset({
-                asset: USDE,
-                withdrawDelay: 7 days,
-                completionWindow: 14 days,
+                asset: deUSD,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
                 withdrawFee: 0,
                 maxLoss: 0.01e4
             })
         );
 
-        bool allowPublicDeposits = false;
-        bool allowPublicWithdraws = true;
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: sdeUSD,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+
+        bool allowPublicDeposits = true;
+        bool allowPublicWithdraws = false;
         uint64 shareLockPeriod = 1 days;
         address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
