@@ -428,6 +428,9 @@ contract ChainValues {
         values[mainnet]["deUSD_FRAX_Curve_Pool"] = 0x88DFb9370fE350aA51ADE31C32549d4d3A24fAf2.toBytes32();
         values[mainnet]["deUSD_FRAX_Curve_Gauge"] = 0x7C634909DDbfd5C6EEd7Ccf3611e8C4f3643635d.toBytes32();
 
+        values[mainnet]["lBTC_wBTC_Curve_Pool"] = 0xF130E387e2083EE79f3588e678c9B446A07860cb.toBytes32();
+        values[mainnet]["lBTC_wBTC_Curve_Gauge"] = 0xf5e3077173E4c21Df78d8712c41c8dAEA9040481.toBytes32();
+
         values[mainnet]["WethMkUsdPool"] = 0xc89570207c5BA1B0E3cD372172cCaEFB173DB270.toBytes32();
 
         // Convex-Curve Platform Specifics
