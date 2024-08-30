@@ -242,6 +242,14 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
             getAddress(sourceChain, "USDC_USDT_05")
         );
 
+        // ========================== Curve ==========================
+        _addCurveLeafs(
+            leafs,
+            getAddress(sourceChain, "USD0_USD0++_CurvePool"),
+            2,
+            getAddress(sourceChain, "USD0_USD0++_CurveGauge")
+        );
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/LiquidUsualStrategistLeafs.json";
