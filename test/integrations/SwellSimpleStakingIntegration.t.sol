@@ -14,8 +14,8 @@ import {
 } from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
-import {PuppetLib} from "src/base/Puppets/PuppetLib.sol";
-import {BoringPuppet} from "src/base/Puppets/BoringPuppet.sol";
+import {DroneLib} from "src/base/Drones/DroneLib.sol";
+import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
 
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
@@ -30,7 +30,7 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
     BoringVault public boringVault;
     address public rawDataDecoderAndSanitizer;
     RolesAuthority public rolesAuthority;
-    BoringPuppet public boringPuppet;
+    BoringDrone public boringDrone;
 
     uint8 public constant MANAGER_ROLE = 1;
     uint8 public constant STRATEGIST_ROLE = 2;
@@ -49,7 +49,7 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
-        boringPuppet = new BoringPuppet(address(boringVault));
+        boringDrone = new BoringDrone(address(boringVault));
 
         manager =
             new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
@@ -166,18 +166,18 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
         );
     }
 
-    function testSwellSimpleStakingIntegrationViaPuppet() external {
-        deal(getAddress(sourceChain, "WETH"), address(boringPuppet), 1_000e18);
+    function testSwellSimpleStakingIntegrationViaDrone() external {
+        deal(getAddress(sourceChain, "WETH"), address(boringDrone), 1_000e18);
 
         // Before creating merkle leafs, set the boringVault address to be the puppet.
-        setAddress(true, sourceChain, "boringVault", address(boringPuppet));
+        setAddress(true, sourceChain, "boringVault", address(boringDrone));
         ManageLeaf[] memory leafs = new ManageLeaf[](4);
         _addSwellSimpleStakingLeafs(
             leafs, getAddress(sourceChain, "WETH"), getAddress(sourceChain, "swellSimpleStaking")
         );
 
         // Convert the leafs into puppet leafs.
-        ManageLeaf[] memory puppetLeafs = _createPuppetLeafs(leafs, address(boringPuppet));
+        ManageLeaf[] memory puppetLeafs = _createPuppetLeafs(leafs, address(boringDrone));
 
         bytes32[][] memory manageTree = _generateMerkleTree(puppetLeafs);
 
@@ -191,33 +191,31 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](3);
-        targets[0] = address(boringPuppet);
-        targets[1] = address(boringPuppet);
-        targets[2] = address(boringPuppet);
+        targets[0] = address(boringDrone);
+        targets[1] = address(boringDrone);
+        targets[2] = address(boringDrone);
 
         bytes[] memory targetData = new bytes[](3);
         targetData[0] = abi.encodeWithSignature(
-            "approve(address,uint256)",
-            getAddress(sourceChain, "swellSimpleStaking"),
-            type(uint256).max
+            "approve(address,uint256)", getAddress(sourceChain, "swellSimpleStaking"), type(uint256).max
         );
         // Note this logic even works with encode packing the data to reduce calldata size.
-        targetData[0] = abi.encodePacked(targetData[0], getAddress(sourceChain, "WETH"), PuppetLib.TARGET_FLAG);
+        targetData[0] = abi.encodePacked(targetData[0], getAddress(sourceChain, "WETH"), DroneLib.TARGET_FLAG);
         targetData[1] = abi.encodeWithSignature(
             "deposit(address,uint256,address)",
             getAddress(sourceChain, "WETH"),
             1_000e18,
-            address(boringPuppet),
+            address(boringDrone),
             getAddress(sourceChain, "swellSimpleStaking"),
-            PuppetLib.TARGET_FLAG
+            DroneLib.TARGET_FLAG
         );
         targetData[2] = abi.encodeWithSignature(
             "withdraw(address,uint256,address)",
             getAddress(sourceChain, "WETH"),
             1_000e18,
-            address(boringPuppet),
+            address(boringDrone),
             getAddress(sourceChain, "swellSimpleStaking"),
-            PuppetLib.TARGET_FLAG
+            DroneLib.TARGET_FLAG
         );
 
         address[] memory decodersAndSanitizers = new address[](3);
@@ -230,7 +228,7 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
         assertEq(
-            getERC20(sourceChain, "WETH").balanceOf(address(boringPuppet)),
+            getERC20(sourceChain, "WETH").balanceOf(address(boringDrone)),
             1_000e18,
             "BoringVault should have received 1,000 WETH"
         );

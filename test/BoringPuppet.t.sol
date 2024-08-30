@@ -3,16 +3,16 @@ pragma solidity 0.8.21;
 
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {BoringPuppet} from "src/base/Puppets/BoringPuppet.sol";
-import {PuppetLib} from "src/base/Puppets/PuppetLib.sol";
+import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
+import {DroneLib} from "src/base/Drones/DroneLib.sol";
 import {MerkleTreeHelper, ERC20} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract BoringPuppetTest is Test, MerkleTreeHelper {
+contract BoringDroneTest is Test, MerkleTreeHelper {
     using Address for address;
 
-    BoringPuppet public boringPuppet;
+    BoringDrone public boringDrone;
 
     function setUp() external {
         // Setup forked environment.
@@ -22,19 +22,19 @@ contract BoringPuppetTest is Test, MerkleTreeHelper {
         _startFork(rpcKey, blockNumber);
         setSourceChainName("mainnet");
 
-        boringPuppet = new BoringPuppet(address(this));
+        boringDrone = new BoringDrone(address(this));
     }
 
     function testPuppet() external {
         // Make the puppet approve this address to spend USDC
         bytes memory callData = abi.encodeWithSelector(
-            ERC20.approve.selector, address(this), 777, getAddress(sourceChain, "USDC"), PuppetLib.TARGET_FLAG
+            ERC20.approve.selector, address(this), 777, getAddress(sourceChain, "USDC"), DroneLib.TARGET_FLAG
         );
 
-        address(boringPuppet).functionCall(callData);
+        address(boringDrone).functionCall(callData);
 
         assertEq(
-            getERC20(sourceChain, "USDC").allowance(address(boringPuppet), address(this)), 777, "USDC allowance not set"
+            getERC20(sourceChain, "USDC").allowance(address(boringDrone), address(this)), 777, "USDC allowance not set"
         );
     }
     // ========================================= HELPER FUNCTIONS =========================================

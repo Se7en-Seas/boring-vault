@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.0;
 
-library PuppetLib {
-    bytes32 internal constant TARGET_FLAG = keccak256(bytes("PuppetLib.target"));
+library DroneLib {
+    bytes32 internal constant TARGET_FLAG = keccak256(bytes("DroneLib.target"));
 
     function extractTargetFromCalldata() internal pure returns (address target) {
         target = extractTargetFromInput(msg.data);
