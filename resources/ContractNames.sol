@@ -143,6 +143,16 @@ contract ContractNames {
     string public constant YakMilkUsdVaultDecoderAndSanitizerName = "Yak Milk Usd Vault Decoder and Sanitizer V0.0";
     string public constant YakMilkUsdVaultDelayedWithdrawer = "Yak Milk Usd Vault Delayed Withdrawer V0.0";
 
+    string public constant EtherFiElixirUsdRolesAuthorityName = "EtherFi Elixir USD RolesAuthority Version 0.0";
+    string public constant EtherFiElixirUsdName = "EtherFi Elixir USD V0.0";
+    string public constant EtherFiElixirUsdManagerName = "EtherFi Elixir USD Manager With Merkle Verification V0.0";
+    string public constant EtherFiElixirUsdAccountantName = "EtherFi Elixir USD Accountant With Rate Providers V0.0";
+    string public constant EtherFiElixirUsdTellerName = "EtherFi Elixir USD Teller With Multi Asset Support V0.0";
+    string public constant EtherFiElixirUsdDecoderAndSanitizerName = "EtherFi Elixir USD Decoder and Sanitizer V0.0";
+    string public constant EtherFiElixirUsdDelayedWithdrawer = "EtherFi Elixir USD Delayed Withdrawer V0.0";
+    string public constant EtherFiElixirUsdPancakeSwapDecoderAndSanitizerName =
+        "EtherFi Elixir USD PancakeSwap Decoder and Sanitizer V0.0";
+
     string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.3";
 
     // Generic Rate Providers
@@ -170,4 +180,5 @@ contract ContractNames {
     string public constant SWETHRateProviderName = "SWETH Generic Rate Provider V0.0";
     string public constant SFRXETHRateProviderName = "SFRXETH Generic Rate Provider V0.0";
     string public constant WEETHRateProviderName = "weETH Generic Rate Provider V0.0";
+    string public constant sdeUSDRateProviderName = "sdeUSD Generic Rate Provider V0.0";
 }
