@@ -6,11 +6,10 @@ import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
-import {EtherFiLiquidEthDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
+import {LombardEarnDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/LombardEarnDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployCanaryBtc.s.sol:DeployCanaryBtcScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployCanaryBtc.s.sol:DeployCanaryBtcScript --with-gas-price 3000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
@@ -19,8 +18,8 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Lombard BTC Vault";
-    string public boringVaultSymbol = "LBTCv";
+    string public boringVaultName = "Lombard Earn";
+    string public boringVaultSymbol = "LBTCe";
     uint8 public boringVaultDecimals = 8;
     address public owner = dev0Address;
 
@@ -32,11 +31,11 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = false;
-        configureDeployment.setupRoles = false;
+        configureDeployment.setupRoles = true;
         configureDeployment.setupDepositAssets = true;
         configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = false;
-        configureDeployment.setupTestUser = false;
+        configureDeployment.finishSetup = true;
+        configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -69,7 +68,7 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
-        bytes memory creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode;
+        bytes memory creationCode = type(LombardEarnDecoderAndSanitizer).creationCode;
         bytes memory constructorArgs =
             abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
@@ -114,7 +113,7 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "LombardBtcDeployment.json",
+            "LombardEarnDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,

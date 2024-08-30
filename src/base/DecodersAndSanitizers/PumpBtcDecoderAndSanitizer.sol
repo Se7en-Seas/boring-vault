@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.21;
 
 import {BaseDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
@@ -23,6 +23,8 @@ import {SwellSimpleStakingDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/SwellSimpleStakingDecoderAndSanitizer.sol";
 import {ZircuitSimpleStakingDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/ZircuitSimpleStakingDecoderAndSanitizer.sol";
+import {PumpStakingDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/PumpStakingDecoderAndSanitizer.sol";
 
 contract PumpBtcDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
@@ -40,7 +42,8 @@ contract PumpBtcDecoderAndSanitizer is
     AaveV3DecoderAndSanitizer,
     EigenLayerLSTStakingDecoderAndSanitizer,
     SwellSimpleStakingDecoderAndSanitizer,
-    ZircuitSimpleStakingDecoderAndSanitizer
+    ZircuitSimpleStakingDecoderAndSanitizer,
+    PumpStakingDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)

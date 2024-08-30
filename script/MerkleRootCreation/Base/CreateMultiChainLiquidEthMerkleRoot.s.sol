@@ -63,6 +63,9 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== MorphoBlue ==========================
         _addMorphoBlueSupplyLeafs(leafs, getBytes32(sourceChain, "weETH_wETH_915"));
+        _addMorphoBlueSupplyLeafs(leafs, getBytes32(sourceChain, "wstETH_wETH_945"));
+        _addMorphoBlueSupplyLeafs(leafs, getBytes32(sourceChain, "cbETH_wETH_965"));
+        _addMorphoBlueSupplyLeafs(leafs, getBytes32(sourceChain, "cbETH_wETH_945"));
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](3);
@@ -121,6 +124,10 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addCompoundV3Leafs(
             leafs, collateralAssets, getAddress(sourceChain, "cWETHV3"), getAddress(sourceChain, "cometRewards")
         );
+
+        // ========================== Fluid fToken ==========================
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fWETH"));
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fWSTETH"));
 
         // ========================== Flashloans ==========================
         _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WETH"));
