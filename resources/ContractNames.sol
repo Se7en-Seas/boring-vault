@@ -19,7 +19,7 @@ contract ContractNames {
     string public constant EtherFiLiquidUsdManagerName = "EtherFi Liquid USD Manager With Merkle Verification V0.0";
     string public constant EtherFiLiquidUsdAccountantName = "EtherFi Liquid USD Accountant With Rate Providers V0.0";
     string public constant EtherFiLiquidUsdTellerName = "EtherFi Liquid USD Teller With Multi Asset Support V0.0";
-    string public constant EtherFiLiquidUsdDecoderAndSanitizerName = "EtherFi Liquid USD Decoder and Sanitizer V0.3";
+    string public constant EtherFiLiquidUsdDecoderAndSanitizerName = "EtherFi Liquid USD Decoder and Sanitizer V0.4";
     string public constant EtherFiLiquidUsdDelayedWithdrawer = "EtherFi Liquid USD Delayed Withdrawer V0.0";
     string public constant EtherFiLiquidUsdPancakeSwapDecoderAndSanitizerName =
         "EtherFi Liquid USD PancakeSwap Decoder and Sanitizer V0.0";
@@ -29,7 +29,7 @@ contract ContractNames {
     string public constant EtherFiLiquidEthManagerName = "EtherFi Liquid ETH Manager With Merkle Verification V0.1";
     string public constant EtherFiLiquidEthAccountantName = "EtherFi Liquid ETH Accountant With Rate Providers V0.1";
     string public constant EtherFiLiquidEthTellerName = "EtherFi Liquid ETH Teller With Multi Asset Support V0.1";
-    string public constant EtherFiLiquidEthDecoderAndSanitizerName = "EtherFi Liquid ETH Decoder and Sanitizer V0.6";
+    string public constant EtherFiLiquidEthDecoderAndSanitizerName = "EtherFi Liquid ETH Decoder and Sanitizer V0.8";
     string public constant EtherFiLiquidEthDelayedWithdrawer = "EtherFi Liquid ETH Delayed Withdrawer V0.0";
     string public constant EtherFiLiquidEthPancakeSwapDecoderAndSanitizerName =
         "EtherFi Liquid ETH PancakeSwap Decoder and Sanitizer V0.0";
@@ -53,6 +53,24 @@ contract ContractNames {
     string public constant EtherFiLiquidBtcTellerName = "EtherFi Liquid BTC Teller With Multi Asset Support V0.0";
     string public constant EtherFiLiquidBtcDecoderAndSanitizerName = "EtherFi Liquid BTC Decoder and Sanitizer V0.1";
     string public constant EtherFiLiquidBtcDelayedWithdrawer = "EtherFi Liquid BTC Delayed Withdrawer V0.0";
+
+    string public constant EtherFiBtcRolesAuthorityName = "ether.fi BTC RolesAuthority Version 0.0";
+    string public constant EtherFiBtcName = "ether.fi BTC V0.0";
+    string public constant EtherFiBtcManagerName = "ether.fi BTC Manager With Merkle Verification V0.0";
+    string public constant EtherFiBtcAccountantName = "ether.fi BTC Accountant With Rate Providers V0.0";
+    string public constant EtherFiBtcTellerName = "ether.fi BTC Teller With Multi Asset Support V0.0";
+    string public constant EtherFiBtcDecoderAndSanitizerName = "ether.fi BTC Decoder and Sanitizer V0.0";
+    string public constant EtherFiBtcDelayedWithdrawer = "ether.fi BTC Delayed Withdrawer V0.0";
+
+    string public constant EtherFiLiquidUsualRolesAuthorityName = "EtherFi Liquid Usual RolesAuthority Version 0.0";
+    string public constant EtherFiLiquidUsualName = "EtherFi Liquid Usual V0.0";
+    string public constant EtherFiLiquidUsualManagerName = "EtherFi Liquid Usual Manager With Merkle Verification V0.0";
+    string public constant EtherFiLiquidUsualAccountantName = "EtherFi Liquid Usual Accountant With Rate Providers V0.0";
+    string public constant EtherFiLiquidUsualTellerName = "EtherFi Liquid Usual Teller With Multi Asset Support V0.0";
+    string public constant EtherFiLiquidUsualDecoderAndSanitizerName = "EtherFi Liquid Usual Decoder and Sanitizer V0.4";
+    string public constant EtherFiLiquidUsualDelayedWithdrawer = "EtherFi Liquid Usual Delayed Withdrawer V0.0";
+    string public constant EtherFiLiquidUsualPancakeSwapDecoderAndSanitizerName =
+        "EtherFi Liquid Usual PancakeSwap Decoder and Sanitizer V0.0";
 
     string public constant AvalancheVaultRolesAuthorityName = "Avalanche Vault RolesAuthority Version 0.0";
     string public constant AvalancheVaultName = "Avalanche Vault V0.0";
@@ -126,6 +144,16 @@ contract ContractNames {
     string public constant YakMilkUsdVaultDecoderAndSanitizerName = "Yak Milk Usd Vault Decoder and Sanitizer V0.0";
     string public constant YakMilkUsdVaultDelayedWithdrawer = "Yak Milk Usd Vault Delayed Withdrawer V0.0";
 
+    string public constant EtherFiElixirUsdRolesAuthorityName = "EtherFi Elixir USD RolesAuthority Version 0.0";
+    string public constant EtherFiElixirUsdName = "EtherFi Elixir USD V0.0";
+    string public constant EtherFiElixirUsdManagerName = "EtherFi Elixir USD Manager With Merkle Verification V0.0";
+    string public constant EtherFiElixirUsdAccountantName = "EtherFi Elixir USD Accountant With Rate Providers V0.0";
+    string public constant EtherFiElixirUsdTellerName = "EtherFi Elixir USD Teller With Multi Asset Support V0.0";
+    string public constant EtherFiElixirUsdDecoderAndSanitizerName = "EtherFi Elixir USD Decoder and Sanitizer V0.0";
+    string public constant EtherFiElixirUsdDelayedWithdrawer = "EtherFi Elixir USD Delayed Withdrawer V0.0";
+    string public constant EtherFiElixirUsdPancakeSwapDecoderAndSanitizerName =
+        "EtherFi Elixir USD PancakeSwap Decoder and Sanitizer V0.0";
+
     string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.3";
 
     // Generic Rate Providers
@@ -153,4 +181,5 @@ contract ContractNames {
     string public constant SWETHRateProviderName = "SWETH Generic Rate Provider V0.0";
     string public constant SFRXETHRateProviderName = "SFRXETH Generic Rate Provider V0.0";
     string public constant WEETHRateProviderName = "weETH Generic Rate Provider V0.0";
+    string public constant sdeUSDRateProviderName = "sdeUSD Generic Rate Provider V0.0";
 }

@@ -17,15 +17,15 @@ import {GearboxDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protoco
 import {PendleRouterDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/PendleRouterDecoderAndSanitizer.sol";
 import {AaveV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/AaveV3DecoderAndSanitizer.sol";
-import {LidoDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/LidoDecoderAndSanitizer.sol";
-import {EthenaWithdrawDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/Protocols/EthenaWithdrawDecoderAndSanitizer.sol";
-import {FluidFTokenDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/Protocols/FluidFTokenDecoderAndSanitizer.sol";
-import {CompoundV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/CompoundV3DecoderAndSanitizer.sol";
-import {MerklDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/MerklDecoderAndSanitizer.sol";
+import {EigenLayerLSTStakingDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/EigenLayerLSTStakingDecoderAndSanitizer.sol";
+import {SwellSimpleStakingDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/SwellSimpleStakingDecoderAndSanitizer.sol";
+import {ZircuitSimpleStakingDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/ZircuitSimpleStakingDecoderAndSanitizer.sol";
+import {SymbioticDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/SymbioticDecoderAndSanitizer.sol";
 
-contract EtherFiLiquidUsdDecoderAndSanitizer is
+contract EtherFiBtcDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
     BalancerV2DecoderAndSanitizer,
     MorphoBlueDecoderAndSanitizer,
@@ -39,11 +39,10 @@ contract EtherFiLiquidUsdDecoderAndSanitizer is
     GearboxDecoderAndSanitizer,
     PendleRouterDecoderAndSanitizer,
     AaveV3DecoderAndSanitizer,
-    LidoDecoderAndSanitizer,
-    EthenaWithdrawDecoderAndSanitizer,
-    FluidFTokenDecoderAndSanitizer,
-    CompoundV3DecoderAndSanitizer,
-    MerklDecoderAndSanitizer
+    EigenLayerLSTStakingDecoderAndSanitizer,
+    SwellSimpleStakingDecoderAndSanitizer,
+    ZircuitSimpleStakingDecoderAndSanitizer,
+    SymbioticDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
@@ -78,7 +77,7 @@ contract EtherFiLiquidUsdDecoderAndSanitizer is
     }
 
     /**
-     * @notice BalancerV2, NativeWrapper, Curve, Fluid FToken, and Gearbox all specify a `withdraw(uint256)`,
+     * @notice BalancerV2, NativeWrapper, Curve, and Gearbox all specify a `withdraw(uint256)`,
      *         all cases are handled the same way.
      */
     function withdraw(uint256)
@@ -110,30 +109,28 @@ contract EtherFiLiquidUsdDecoderAndSanitizer is
     }
 
     /**
-     * @notice EtherFi, and Lido all specify a `wrap(uint256)`,
+     * @notice BalancerV2, NativeWrapper, Curve, and Gearbox all specify a `withdraw(uint256)`,
      *         all cases are handled the same way.
      */
-    function wrap(uint256)
+    function withdraw(address _token, uint256, /*_amount*/ address _receiver)
         external
         pure
-        override(EtherFiDecoderAndSanitizer, LidoDecoderAndSanitizer)
+        override(AaveV3DecoderAndSanitizer, SwellSimpleStakingDecoderAndSanitizer)
         returns (bytes memory addressesFound)
     {
-        // Nothing to sanitize or return
-        return addressesFound;
+        addressesFound = abi.encodePacked(_token, _receiver);
     }
 
     /**
-     * @notice EtherFi, and Lido all specify a `unwrap(uint256)`,
+     * @notice Zirucit, Symbiotic both specify a `withdraw(address,uint256)`,
      *         all cases are handled the same way.
      */
-    function unwrap(uint256)
+    function withdraw(address add, uint256)
         external
         pure
-        override(EtherFiDecoderAndSanitizer, LidoDecoderAndSanitizer)
+        override(ZircuitSimpleStakingDecoderAndSanitizer, SymbioticDecoderAndSanitizer)
         returns (bytes memory addressesFound)
     {
-        // Nothing to sanitize or return
-        return addressesFound;
+        addressesFound = abi.encodePacked(add);
     }
 }
