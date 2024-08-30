@@ -6,20 +6,20 @@ import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
-import {LombardEarnDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/LombardEarnDecoderAndSanitizer.sol";
+import {PumpBtcDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PumpBtcDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployCanaryBtc.s.sol:DeployCanaryBtcScript --with-gas-price 3000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployPumpBtc.s.sol:DeployPumpBtcScript --with-gas-price 3000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
+contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Lombard Earn";
-    string public boringVaultSymbol = "LBTCe";
+    string public boringVaultName = "Pump BTC Vault";
+    string public boringVaultSymbol = "pumpBTCv";
     uint8 public boringVaultDecimals = 8;
     address public owner = dev0Address;
 
@@ -30,7 +30,7 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
 
     function run() external {
         // Configure the deployment.
-        configureDeployment.deployContracts = false;
+        configureDeployment.deployContracts = true;
         configureDeployment.setupRoles = true;
         configureDeployment.setupDepositAssets = true;
         configureDeployment.setupWithdrawAssets = true;
@@ -45,14 +45,14 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         deployer = Deployer(configureDeployment.deployerAddress);
 
         // Define names to determine where contracts are deployed.
-        names.rolesAuthority = CanaryBtcRolesAuthorityName;
+        names.rolesAuthority = PumpBtcRolesAuthorityName;
         names.lens = ArcticArchitectureLensName;
-        names.boringVault = CanaryBtcName;
-        names.manager = CanaryBtcManagerName;
-        names.accountant = CanaryBtcAccountantName;
-        names.teller = CanaryBtcTellerName;
-        names.rawDataDecoderAndSanitizer = CanaryBtcDecoderAndSanitizerName;
-        names.delayedWithdrawer = CanaryBtcDelayedWithdrawer;
+        names.boringVault = PumpBtcName;
+        names.manager = PumpBtcManagerName;
+        names.accountant = PumpBtcAccountantName;
+        names.teller = PumpBtcTellerName;
+        names.rawDataDecoderAndSanitizer = PumpBtcDecoderAndSanitizerName;
+        names.delayedWithdrawer = PumpBtcDelayedWithdrawer;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
@@ -68,14 +68,14 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
-        bytes memory creationCode = type(LombardEarnDecoderAndSanitizer).creationCode;
+        bytes memory creationCode = type(PumpBtcDecoderAndSanitizer).creationCode;
         bytes memory constructorArgs =
             abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
         // Setup extra deposit assets.
         depositAssets.push(
             DepositAsset({
-                asset: LBTC,
+                asset: pumpBTC,
                 isPeggedToBase: true,
                 rateProvider: address(0),
                 genericRateProviderName: "",
@@ -87,7 +87,7 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: LBTC,
+                asset: pumpBTC,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -113,7 +113,7 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "LombardEarnDeployment.json",
+            "PumpBtcDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,

@@ -8,20 +8,18 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
-import {
-    PointFarmingDecoderAndSanitizer,
-    SwellSimpleStakingDecoderAndSanitizer
-} from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
+import {SymbioticLRTDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/SymbioticLRTDecoderAndSanitizer.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
-import {DroneLib} from "src/base/Drones/DroneLib.sol";
-import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
-
+import {
+    SymbioticVaultDecoderAndSanitizerFull,
+    SymbioticVaultDecoderAndSanitizer
+} from "src/base/DecodersAndSanitizers/SymbioticVaultDecoderAndSanitizerFull.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
+contract SymbioticVaultIntegrationTest is Test, MerkleTreeHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -30,7 +28,6 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
     BoringVault public boringVault;
     address public rawDataDecoderAndSanitizer;
     RolesAuthority public rolesAuthority;
-    BoringDrone public boringDrone;
 
     uint8 public constant MANAGER_ROLE = 1;
     uint8 public constant STRATEGIST_ROLE = 2;
@@ -40,21 +37,18 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
     uint8 public constant BALANCER_VAULT_ROLE = 6;
 
     function setUp() external {
-        setSourceChainName("mainnet");
+        setSourceChainName("holesky");
         // Setup forked environment.
-        string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 19826676;
+        string memory rpcKey = "HOLESKY_RPC_URL";
+        uint256 blockNumber = 2145334;
 
         _startFork(rpcKey, blockNumber);
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
-        boringDrone = new BoringDrone(address(boringVault), 0);
+        manager = new ManagerWithMerkleVerification(address(this), address(boringVault), address(0));
 
-        manager =
-            new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
-
-        rawDataDecoderAndSanitizer = address(new PointFarmingDecoderAndSanitizer(address(boringVault)));
+        rawDataDecoderAndSanitizer = address(new SymbioticVaultDecoderAndSanitizerFull(address(boringVault)));
 
         setAddress(false, sourceChain, "boringVault", address(boringVault));
         setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
@@ -108,20 +102,21 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
         rolesAuthority.setUserRole(address(this), ADMIN_ROLE, true);
         rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
         rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
-        rolesAuthority.setUserRole(getAddress(sourceChain, "vault"), BALANCER_VAULT_ROLE, true);
+        rolesAuthority.setUserRole(address(0), BALANCER_VAULT_ROLE, true);
+
+        // Allow the boring vault to receive ETH.
+        rolesAuthority.setPublicCapability(address(boringVault), bytes4(0), true);
     }
 
-    function testSwellSimpleStakingIntegration() external {
-        deal(getAddress(sourceChain, "WETH"), address(boringVault), 1_000e18);
+    function testSymbioticVaultIntegration() external {
+        deal(getAddress(sourceChain, "WSTETH"), address(boringVault), 100e18);
 
-        // approve
-        // Call deposit
-        // withdraw
-        // complete withdraw
-        ManageLeaf[] memory leafs = new ManageLeaf[](4);
-        _addSwellSimpleStakingLeafs(
-            leafs, getAddress(sourceChain, "WETH"), getAddress(sourceChain, "swellSimpleStaking")
-        );
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        address[] memory vaults = new address[](1);
+        vaults[0] = getAddress(sourceChain, "wstETHSymbioticVault");
+        ERC20[] memory assets = new ERC20[](1);
+        assets[0] = ERC20(getAddress(sourceChain, "WSTETH"));
+        _addSymbioticVaultLeafs(leafs, vaults, assets);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -135,102 +130,83 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](3);
-        targets[0] = getAddress(sourceChain, "WETH");
-        targets[1] = getAddress(sourceChain, "swellSimpleStaking");
-        targets[2] = getAddress(sourceChain, "swellSimpleStaking");
+        targets[0] = getAddress(sourceChain, "WSTETH");
+        targets[1] = getAddress(sourceChain, "wstETHSymbioticVault");
+        targets[2] = getAddress(sourceChain, "wstETHSymbioticVault");
 
         bytes[] memory targetData = new bytes[](3);
-        targetData[0] = abi.encodeWithSignature(
-            "approve(address,uint256)", getAddress(sourceChain, "swellSimpleStaking"), type(uint256).max
-        );
-        targetData[1] = abi.encodeWithSignature(
-            "deposit(address,uint256,address)", getAddress(sourceChain, "WETH"), 1_000e18, address(boringVault)
-        );
-        targetData[2] = abi.encodeWithSignature(
-            "withdraw(address,uint256,address)", getAddress(sourceChain, "WETH"), 1_000e18, address(boringVault)
-        );
+        targetData[0] =
+            abi.encodeWithSelector(ERC20.approve.selector, getAddress(sourceChain, "wstETHSymbioticVault"), 100e18);
+        targetData[1] = abi.encodeWithSignature("deposit(address,uint256)", boringVault, 100e18);
+        targetData[2] = abi.encodeWithSignature("withdraw(address,uint256)", boringVault, 100e18);
+
+        uint256[] memory values = new uint256[](3);
 
         address[] memory decodersAndSanitizers = new address[](3);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
 
-        uint256[] memory values = new uint256[](3);
-
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
-        assertEq(
-            getERC20(sourceChain, "WETH").balanceOf(address(boringVault)),
-            1_000e18,
-            "BoringVault should have received 1,000 WETH"
-        );
-    }
+        uint256 epoch = SymbioticVault(getAddress(sourceChain, "wstETHSymbioticVault")).currentEpoch() + 1;
 
-    function testSwellSimpleStakingIntegrationViaDrone() external {
-        deal(getAddress(sourceChain, "WETH"), address(boringDrone), 1_000e18);
+        skip(10 days);
 
-        // Before creating merkle leafs, set the boringVault address to be the puppet.
-        setAddress(true, sourceChain, "boringVault", address(boringDrone));
-        ManageLeaf[] memory leafs = new ManageLeaf[](4);
-        _addSwellSimpleStakingLeafs(
-            leafs, getAddress(sourceChain, "WETH"), getAddress(sourceChain, "swellSimpleStaking")
-        );
+        uint256 beforeClaim = vm.snapshot();
 
-        // Convert the leafs into puppet leafs.
-        ManageLeaf[] memory puppetLeafs = _createPuppetLeafs(leafs, address(boringDrone));
+        // Use claim to withdraw.
+        manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[3];
 
-        bytes32[][] memory manageTree = _generateMerkleTree(puppetLeafs);
+        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
-        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+        targets = new address[](1);
+        targets[0] = getAddress(sourceChain, "wstETHSymbioticVault");
 
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](3);
-        manageLeafs[0] = puppetLeafs[0];
-        manageLeafs[1] = puppetLeafs[1];
-        manageLeafs[2] = puppetLeafs[2];
+        targetData = new bytes[](1);
+        targetData[0] = abi.encodeWithSignature("claim(address,uint256)", boringVault, epoch);
 
-        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+        values = new uint256[](1);
 
-        address[] memory targets = new address[](3);
-        targets[0] = address(boringDrone);
-        targets[1] = address(boringDrone);
-        targets[2] = address(boringDrone);
-
-        bytes[] memory targetData = new bytes[](3);
-        targetData[0] = abi.encodeWithSignature(
-            "approve(address,uint256)", getAddress(sourceChain, "swellSimpleStaking"), type(uint256).max
-        );
-        // Note this logic even works with encode packing the data to reduce calldata size.
-        targetData[0] = abi.encodePacked(targetData[0], getAddress(sourceChain, "WETH"), DroneLib.TARGET_FLAG);
-        targetData[1] = abi.encodeWithSignature(
-            "deposit(address,uint256,address)",
-            getAddress(sourceChain, "WETH"),
-            1_000e18,
-            address(boringDrone),
-            getAddress(sourceChain, "swellSimpleStaking"),
-            DroneLib.TARGET_FLAG
-        );
-        targetData[2] = abi.encodeWithSignature(
-            "withdraw(address,uint256,address)",
-            getAddress(sourceChain, "WETH"),
-            1_000e18,
-            address(boringDrone),
-            getAddress(sourceChain, "swellSimpleStaking"),
-            DroneLib.TARGET_FLAG
-        );
-
-        address[] memory decodersAndSanitizers = new address[](3);
+        decodersAndSanitizers = new address[](1);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
-        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
-
-        uint256[] memory values = new uint256[](3);
 
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
         assertEq(
-            getERC20(sourceChain, "WETH").balanceOf(address(boringDrone)),
-            1_000e18,
-            "BoringVault should have received 1,000 WETH"
+            getERC20(sourceChain, "WSTETH").balanceOf(address(boringVault)),
+            100e18,
+            "BoringVault should have 100 wstETH."
+        );
+
+        vm.revertTo(beforeClaim);
+
+        // Use claimBatch to withdraw.
+        manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[4];
+
+        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        targets = new address[](1);
+        targets[0] = getAddress(sourceChain, "wstETHSymbioticVault");
+
+        targetData = new bytes[](1);
+        uint256[] memory batch = new uint256[](1);
+        batch[0] = epoch;
+        targetData[0] = abi.encodeWithSignature("claimBatch(address,uint256[])", boringVault, batch);
+
+        values = new uint256[](1);
+
+        decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        assertEq(
+            getERC20(sourceChain, "WSTETH").balanceOf(address(boringVault)),
+            100e18,
+            "BoringVault should have 100 wstETH."
         );
     }
 
@@ -240,4 +216,8 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
     }
+}
+
+interface SymbioticVault {
+    function currentEpoch() external view returns (uint256);
 }
