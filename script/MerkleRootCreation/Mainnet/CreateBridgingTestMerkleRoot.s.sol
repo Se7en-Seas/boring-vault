@@ -37,7 +37,7 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](64);
+        ManageLeaf[] memory leafs = new ManageLeaf[](256);
 
         // ========================== Native Bridge ==========================
         ERC20[] memory nativeBridgeTokens = new ERC20[](2);
@@ -101,6 +101,17 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
         _addLayerZeroLeafs(
             leafs, getERC20(sourceChain, "WEETH"), getAddress(sourceChain, "EtherFiOFTAdapter"), layerZeroBaseEndpointId
         );
+
+        // ========================== Pendle ==========================
+        // update to use Liquid ETHs Decoder and Sanitizer.
+        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", 0xdCbC0DeF063C497aA25Eb52eB29aa96C90be0F79);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarket"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleZircuitWeETHMarket"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketSeptember"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketDecember"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleKarakWeETHMarketSeptember"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleZircuitWeETHMarketAugust"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketJuly"), true);
 
         string memory filePath = "./leafs/Mainnet/BridgingTestStrategistLeafs.json";
 

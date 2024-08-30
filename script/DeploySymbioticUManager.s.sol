@@ -21,12 +21,12 @@ contract DeploySymbioticUManagerScript is MerkleTreeHelper, ContractNames {
 
     uint256 public privateKey;
 
-    address public managerAddress = 0xA24dD7B978Fbe36125cC4817192f7b8AA18d213c;
-    address public rawDataDecoderAndSanitizer = 0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781;
-    BoringVault public boringVault = BoringVault(payable(0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88));
+    address public managerAddress = 0x382d0106F308864D5462332D9D3bB54a60384B70;
+    address public rawDataDecoderAndSanitizer = 0xa2Da7A948254692d7B261bBd27b3Cd1E2C7B033c;
+    BoringVault public boringVault = BoringVault(payable(0x657e8C867D8B37dCC18fA4Caead9C45EB088C642));
     ManagerWithMerkleVerification public manager =
-        ManagerWithMerkleVerification(0xA24dD7B978Fbe36125cC4817192f7b8AA18d213c);
-    address public accountantAddress = 0xbe16605B22a7faCEf247363312121670DFe5afBE;
+        ManagerWithMerkleVerification(0x382d0106F308864D5462332D9D3bB54a60384B70);
+    address public accountantAddress = 0x1b293DC39F94157fA0D1D36d7e0090C8B8B8c13F;
     RolesAuthority public rolesAuthority;
     SymbioticUManager public symbioticUManager;
 
@@ -49,6 +49,9 @@ contract DeploySymbioticUManagerScript is MerkleTreeHelper, ContractNames {
     }
 
     function generateSniperMerkleRoot() public {
+        sourceChain = "mainnet";
+        deployer = Deployer(getAddress(sourceChain, "deployerAddress"));
+
         rolesAuthority = RolesAuthority(deployer.getAddress(SevenSeasRolesAuthorityName));
 
         setSourceChainName(mainnet);
@@ -57,19 +60,11 @@ contract DeploySymbioticUManagerScript is MerkleTreeHelper, ContractNames {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        deployer = Deployer(getAddress(sourceChain, "deployerAddress"));
+        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "wBTCDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "tBTCDefaultCollateral"));
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](16);
-        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "wstETHDefaultCollateral"));
-        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "cbETHDefaultCollateral"));
-        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "wBETHDefaultCollateral"));
-        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "rETHDefaultCollateral"));
-        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "mETHDefaultCollateral"));
-        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "swETHDefaultCollateral"));
-        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "sfrxETHDefaultCollateral"));
-        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "ETHxDefaultCollateral"));
-
-        string memory filePath = "./leafs/SuperSymbioticSniperLeafs.json";
+        string memory filePath = "./leafs/etherfiBTCSniperLeafs.json";
 
         bytes32[][] memory merkleTree = _generateMerkleTree(leafs);
 
@@ -77,51 +72,49 @@ contract DeploySymbioticUManagerScript is MerkleTreeHelper, ContractNames {
 
         vm.startBroadcast(privateKey);
 
-        symbioticUManager = new SymbioticUManager(
-            getAddress(sourceChain, "dev0Address"), rolesAuthority, address(manager), address(boringVault)
-        );
+        symbioticUManager = SymbioticUManager(0xaA107EC4649497d92232B41021BFce80ACc54b37);
 
         symbioticUManager.updateMerkleTree(merkleTree, false);
 
         symbioticUManager.setConfiguration(
-            DefaultCollateral(getAddress(sourceChain, "wstETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+            DefaultCollateral(getAddress(sourceChain, "wBTCDefaultCollateral")), 0.01e8, rawDataDecoderAndSanitizer
         );
         symbioticUManager.setConfiguration(
-            DefaultCollateral(getAddress(sourceChain, "cbETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+            DefaultCollateral(getAddress(sourceChain, "tBTCDefaultCollateral")), 0.01e8, rawDataDecoderAndSanitizer
         );
-        symbioticUManager.setConfiguration(
-            DefaultCollateral(getAddress(sourceChain, "wBETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
-        );
-        symbioticUManager.setConfiguration(
-            DefaultCollateral(getAddress(sourceChain, "rETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
-        );
-        symbioticUManager.setConfiguration(
-            DefaultCollateral(getAddress(sourceChain, "mETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
-        );
-        symbioticUManager.setConfiguration(
-            DefaultCollateral(getAddress(sourceChain, "swETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
-        );
-        symbioticUManager.setConfiguration(
-            DefaultCollateral(getAddress(sourceChain, "sfrxETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
-        );
-        symbioticUManager.setConfiguration(
-            DefaultCollateral(getAddress(sourceChain, "ETHxDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
-        );
+        // symbioticUManager.setConfiguration(
+        //     DefaultCollateral(getAddress(sourceChain, "wBETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+        // );
+        // symbioticUManager.setConfiguration(
+        //     DefaultCollateral(getAddress(sourceChain, "rETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+        // );
+        // symbioticUManager.setConfiguration(
+        //     DefaultCollateral(getAddress(sourceChain, "mETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+        // );
+        // symbioticUManager.setConfiguration(
+        //     DefaultCollateral(getAddress(sourceChain, "swETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+        // );
+        // symbioticUManager.setConfiguration(
+        //     DefaultCollateral(getAddress(sourceChain, "sfrxETHDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+        // );
+        // symbioticUManager.setConfiguration(
+        //     DefaultCollateral(getAddress(sourceChain, "ETHxDefaultCollateral")), 1e18, rawDataDecoderAndSanitizer
+        // );
 
-        rolesAuthority.setRoleCapability(
-            STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.updateMerkleTree.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.setConfiguration.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            SNIPER_ROLE, address(symbioticUManager), SymbioticUManager.assemble.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            SNIPER_ROLE, address(symbioticUManager), SymbioticUManager.fullAssemble.selector, true
-        );
+        // rolesAuthority.setRoleCapability(
+        //     STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.updateMerkleTree.selector, true
+        // );
+        // rolesAuthority.setRoleCapability(
+        //     STRATEGIST_MULTISIG_ROLE, address(symbioticUManager), SymbioticUManager.setConfiguration.selector, true
+        // );
+        // rolesAuthority.setRoleCapability(
+        //     SNIPER_ROLE, address(symbioticUManager), SymbioticUManager.assemble.selector, true
+        // );
+        // rolesAuthority.setRoleCapability(
+        //     SNIPER_ROLE, address(symbioticUManager), SymbioticUManager.fullAssemble.selector, true
+        // );
 
-        rolesAuthority.transferOwnership(getAddress(sourceChain, "dev1Address"));
+        // rolesAuthority.transferOwnership(getAddress(sourceChain, "dev1Address"));
         symbioticUManager.transferOwnership(getAddress(sourceChain, "dev1Address"));
 
         /// Note need to give strategist role to symbioticUManager

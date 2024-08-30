@@ -1,0 +1,81 @@
+{
+  "DepositAssets": {
+    "DAI": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "USDC": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "USDT": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "deUSD": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "sdeUSD": {
+      "isPeggedToBase": false,
+      "rateProvider": "0x54b97cD6E6474570678a89421136B299709C8245"
+    }
+  },
+  "WithdrawAssets": {
+    "DAI": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "USDC": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "USDT": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "deUSD": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "sdeUSD": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    }
+  },
+  "accountantConfiguration": {
+    "AllowedExchangeRateChangeLower": 9950,
+    "AllowedExchangeRateChangeUpper": 10050,
+    "Base": "deUSD",
+    "BaseAddress": "0x15700B564Ca08D9439C58cA5053166E8317aa138",
+    "ManagementFee": 200,
+    "MinimumUpateDelayInSeconds": 21600,
+    "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
+    "StartingExchangeRate": 1000000000000000000
+  },
+  "core": {
+    "AccountantWithRateProviders": "0xBae19b38Bf727Be64AF0B578c34985c3D612e2Ba",
+    "BoringVault": "0x352180974C71f84a934953Cf49C4E538a6F9c997",
+    "DecoderAndSanitizer": "0x0b01C5F5D333f9921240ab08dA92805F41604add",
+    "DelayedWithdraw": "0xAf66Ad820D96AE3Dd6DD6FF2296592b7ac0b975F",
+    "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
+    "ManagerWithMerkleVerification": "0x4D0EF2A55db2439A37507a893b624f89eC7A403c",
+    "RolesAuthority": "0xc9CA4f230d30913877C9A18eEF7e907ee32EBeF2",
+    "TellerWithMultiAssetSupport": "0x417e1Ef6eB82c3E6a60c2DC342e574E4C51B4D35"
+  },
+  "depositConfiguration": {
+    "AllowPublicDeposits": true,
+    "AllowPublicWithdraws": false,
+    "ShareLockPeriod": 86400
+  }
+}

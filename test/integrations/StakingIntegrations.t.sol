@@ -12,6 +12,8 @@ import {StakingDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Staking
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
+import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
+import {DroneLib} from "src/base/Drones/DroneLib.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -24,6 +26,7 @@ contract StakingIntegrationsTest is Test, MerkleTreeHelper {
     BoringVault public boringVault;
     address public rawDataDecoderAndSanitizer;
     RolesAuthority public rolesAuthority;
+    BoringDrone public boringDrone;
 
     uint8 public constant MANAGER_ROLE = 1;
     uint8 public constant STRATEGIST_ROLE = 2;
@@ -46,6 +49,8 @@ contract StakingIntegrationsTest is Test, MerkleTreeHelper {
         _startFork(rpcKey, blockNumber);
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
+
+        boringDrone = new BoringDrone(address(boringVault), 0);
 
         manager =
             new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
@@ -328,6 +333,55 @@ contract StakingIntegrationsTest is Test, MerkleTreeHelper {
         address[] memory decodersAndSanitizers = new address[](2);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+    }
+
+    function testNativeWrapperIntegratioViaDrone() external {
+        deal(getAddress(sourceChain, "WETH"), address(boringDrone), 100e18);
+
+        // Unwrap all WETH
+        // mint WETH via deposit
+        setAddress(true, sourceChain, "boringVault", address(boringDrone));
+        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        _addNativeLeafs(leafs);
+        leafs[2] = ManageLeaf(
+            address(boringDrone),
+            false,
+            "withdrawNativeFromDrone()",
+            new address[](0),
+            "Withdraw native from drone",
+            rawDataDecoderAndSanitizer
+        );
+
+        // Convert the leafs into puppet leafs.
+        ManageLeaf[] memory puppetLeafs = _createPuppetLeafs(leafs, address(boringDrone));
+
+        bytes32[][] memory manageTree = _generateMerkleTree(puppetLeafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](3);
+        manageLeafs[0] = puppetLeafs[1];
+        manageLeafs[1] = puppetLeafs[2];
+        manageLeafs[2] = puppetLeafs[0];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](3);
+        targets[0] = address(boringDrone);
+        targets[1] = address(boringDrone);
+        targets[2] = address(boringDrone);
+
+        bytes[] memory targetData = new bytes[](3);
+        targetData[0] =
+            abi.encodeWithSignature("withdraw(uint256)", 100e18, getAddress(sourceChain, "WETH"), DroneLib.TARGET_FLAG);
+        targetData[1] = abi.encodeWithSignature("withdrawNativeFromDrone()", address(boringDrone), DroneLib.TARGET_FLAG);
+        targetData[2] = abi.encodeWithSignature("deposit()", getAddress(sourceChain, "WETH"), DroneLib.TARGET_FLAG);
+        uint256[] memory values = new uint256[](3);
+        values[2] = 100e18;
+        address[] memory decodersAndSanitizers = new address[](3);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 

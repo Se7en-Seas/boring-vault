@@ -22,6 +22,8 @@ import {EthenaWithdrawDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/EthenaWithdrawDecoderAndSanitizer.sol";
 import {FluidFTokenDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/FluidFTokenDecoderAndSanitizer.sol";
+import {CompoundV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/CompoundV3DecoderAndSanitizer.sol";
+import {MerklDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/MerklDecoderAndSanitizer.sol";
 
 contract EtherFiLiquidUsdDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
@@ -39,7 +41,9 @@ contract EtherFiLiquidUsdDecoderAndSanitizer is
     AaveV3DecoderAndSanitizer,
     LidoDecoderAndSanitizer,
     EthenaWithdrawDecoderAndSanitizer,
-    FluidFTokenDecoderAndSanitizer
+    FluidFTokenDecoderAndSanitizer,
+    CompoundV3DecoderAndSanitizer,
+    MerklDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
