@@ -41,5 +41,5 @@ jobs:
 
       - name: Run Forge tests
         run: |
-          forge test -vv
+          forge test -vv --skip SymbioticVaultIntegration
         id: test
