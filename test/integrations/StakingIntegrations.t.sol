@@ -12,6 +12,8 @@ import {StakingDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Staking
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
+import {BoringPuppet} from "src/base/Puppets/BoringPuppet.sol";
+import {PuppetLib} from "src/base/Puppets/PuppetLib.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -24,6 +26,7 @@ contract StakingIntegrationsTest is Test, MerkleTreeHelper {
     BoringVault public boringVault;
     address public rawDataDecoderAndSanitizer;
     RolesAuthority public rolesAuthority;
+    BoringPuppet public boringPuppet;
 
     uint8 public constant MANAGER_ROLE = 1;
     uint8 public constant STRATEGIST_ROLE = 2;
@@ -46,6 +49,8 @@ contract StakingIntegrationsTest is Test, MerkleTreeHelper {
         _startFork(rpcKey, blockNumber);
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
+
+        boringPuppet = new BoringPuppet(address(boringVault));
 
         manager =
             new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
@@ -323,6 +328,43 @@ contract StakingIntegrationsTest is Test, MerkleTreeHelper {
         bytes[] memory targetData = new bytes[](2);
         targetData[0] = abi.encodeWithSignature("withdraw(uint256)", 100e18);
         targetData[1] = abi.encodeWithSignature("deposit()");
+        uint256[] memory values = new uint256[](2);
+        values[1] = 100e18;
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+    }
+
+    function testNativeWrapperIntegratioViaPuppet() external {
+        deal(getAddress(sourceChain, "WETH"), address(boringPuppet), 100e18);
+
+        // Unwrap all WETH
+        // mint WETH via deposit
+        setAddress(true, sourceChain, "boringVault", address(boringPuppet));
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        _addNativeLeafs(leafs);
+
+        // Convert the leafs into puppet leafs.
+        ManageLeaf[] memory puppetLeafs = _createPuppetLeafs(leafs, address(boringPuppet));
+
+        bytes32[][] memory manageTree = _generateMerkleTree(puppetLeafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = puppetLeafs[1];
+        manageLeafs[1] = puppetLeafs[0];
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](2);
+        targets[0] = address(boringPuppet);
+        targets[1] = address(boringPuppet);
+
+        bytes[] memory targetData = new bytes[](2);
+        targetData[0] =
+            abi.encodeWithSignature("withdraw(uint256)", 100e18, getAddress(sourceChain, "WETH"), PuppetLib.TARGET_FLAG);
+        targetData[1] = abi.encodeWithSignature("deposit()", getAddress(sourceChain, "WETH"), PuppetLib.TARGET_FLAG);
         uint256[] memory values = new uint256[](2);
         values[1] = 100e18;
         address[] memory decodersAndSanitizers = new address[](2);

@@ -43,11 +43,12 @@ contract BoringPuppet is ERC721Holder, ERC1155Holder {
         address target = PuppetLib.extractTargetFromCalldata();
 
         // Forward call to real target.
-        // TODO we could do some verification of `target`, but if it is wrong then it should just revert when it tries to make the call.
         target.functionCallWithValue(msg.data, msg.value);
     }
 
     //============================== RECEIVE ===============================
 
-    receive() external payable {}
+    receive() external payable {
+        payable(boringVault).transfer(msg.value);
+    }
 }
