@@ -30,4 +30,8 @@ contract BaseDecoderAndSanitizer {
     {
         addressesFound = abi.encodePacked(token);
     }
+
+    function withdrawNativeFromDrone() external pure returns (bytes memory addressesFound) {
+        return addressesFound;
+    }
 }
