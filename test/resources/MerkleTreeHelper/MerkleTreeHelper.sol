@@ -3353,6 +3353,83 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
     }
 
+    function _addSymbioticVaultLeafs(ManageLeaf[] memory leafs, address[] memory vaults, ERC20[] memory assets)
+        internal
+    {
+        for (uint256 i; i < assets.length; i++) {
+            // Approve
+            if (!tokenToSpenderToApprovalInTree[address(assets[i])][vaults[i]]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    address(assets[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Symbiotic Vault ", vm.toString(vaults[i]), " to spend ", assets[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = vaults[i];
+                tokenToSpenderToApprovalInTree[address(assets[i])][vaults[i]] = true;
+            }
+            // Deposit
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                vaults[i],
+                false,
+                "deposit(address,uint256)",
+                new address[](1),
+                string.concat("Deposit ", assets[i].symbol(), " into Symbiotic Vault ", vm.toString(vaults[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            // Withdraw
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                vaults[i],
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                string.concat("Withdraw ", assets[i].symbol(), " from Symbiotic Vault ", vm.toString(vaults[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+            // Claim
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                vaults[i],
+                false,
+                "claim(address,uint256)",
+                new address[](1),
+                string.concat("Claim withdraw from Symbiotic Vault ", vm.toString(vaults[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+            // ClaimBatch
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                vaults[i],
+                false,
+                "claimBatch(address,uint256[])",
+                new address[](1),
+                string.concat("Claim batch withdraw from Symbiotic Vault ", vm.toString(vaults[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        }
+    }
+
     // ========================================= ITB Karak =========================================
 
     function _addLeafsForITBKarakPositionManager(
