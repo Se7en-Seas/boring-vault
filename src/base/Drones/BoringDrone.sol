@@ -56,15 +56,6 @@ import {DroneLib} from "src/base/Drones/DroneLib.sol";
 contract BoringDrone is ERC721Holder, ERC1155Holder {
     using Address for address;
 
-    //============================== CONSTANTS ===============================
-
-    /**
-     * @notice The amount of gas needed to forward native to the BoringVault.
-     * @dev This value was determined from guess and check. Realisitically, the value should be closer to 10k, but
-     *      21k is used for extra safety.
-     */
-    uint256 internal constant SAFE_GAS_TO_FORWARD_NATIVE = 21_000;
-
     //============================== MODIFIERS ===============================
 
     modifier onlyBoringVault() {
@@ -84,8 +75,16 @@ contract BoringDrone is ERC721Holder, ERC1155Holder {
      */
     address internal immutable boringVault;
 
-    constructor(address _boringVault) {
+    /**
+     * @notice The amount of gas needed to forward native to the BoringVault.
+     * @dev This value was determined from guess and check. Realisitically, the value should be closer to 10k, but
+     *      21k is used for extra safety.
+     */
+    uint256 internal immutable safeGasToForwardNative;
+
+    constructor(address _boringVault, uint256 _safeGasToForwardNative) {
         boringVault = _boringVault;
+        safeGasToForwardNative = _safeGasToForwardNative < 21_000 ? 21_000 : _safeGasToForwardNative;
     }
 
     //============================== WITHDRAW ===============================
@@ -117,7 +116,7 @@ contract BoringDrone is ERC721Holder, ERC1155Holder {
 
     receive() external payable {
         // If gas left is less than safe gas needed to forward native, return.
-        if (gasleft() < SAFE_GAS_TO_FORWARD_NATIVE) return;
+        if (gasleft() < safeGasToForwardNative) return;
 
         (bool success,) = boringVault.call{value: msg.value}("");
         if (!success) revert BoringDrone__ReceiveFailed();

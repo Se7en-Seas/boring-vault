@@ -49,7 +49,7 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
-        boringDrone = new BoringDrone(address(boringVault));
+        boringDrone = new BoringDrone(address(boringVault), 0);
 
         manager =
             new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));

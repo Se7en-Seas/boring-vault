@@ -50,7 +50,7 @@ contract StakingIntegrationsTest is Test, MerkleTreeHelper {
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
 
-        boringDrone = new BoringDrone(address(boringVault));
+        boringDrone = new BoringDrone(address(boringVault), 0);
 
         manager =
             new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
@@ -383,14 +383,6 @@ contract StakingIntegrationsTest is Test, MerkleTreeHelper {
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-    }
-
-    function testSendingETHToDroneWithMinAmountOfGas() external {
-        deal(address(this), 1 ether);
-
-        (bool success,) = payable(address(boringDrone)).call{value: 1 ether, gas: 21_000}("");
-        assertTrue(success, "Failed to send ETH to drone with min amount of gas.");
-        assertEq(address(boringVault).balance, 1 ether, "BoringVault should have received 1 ETH.");
     }
 
     function testSwellIntegration() external {

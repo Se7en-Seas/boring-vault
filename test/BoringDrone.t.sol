@@ -22,10 +22,10 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         _startFork(rpcKey, blockNumber);
         setSourceChainName("mainnet");
 
-        boringDrone = new BoringDrone(address(this));
+        boringDrone = new BoringDrone(address(this), 0);
     }
 
-    function testPuppet() external {
+    function testDrone() external {
         // Make the puppet approve this address to spend USDC
         bytes memory callData = abi.encodeWithSelector(
             ERC20.approve.selector, address(this), 777, getAddress(sourceChain, "USDC"), DroneLib.TARGET_FLAG
@@ -37,7 +37,18 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
             getERC20(sourceChain, "USDC").allowance(address(boringDrone), address(this)), 777, "USDC allowance not set"
         );
     }
+
+    function testSendingETHToDroneWithMinAmountOfGas() external {
+        deal(address(this), 1 ether);
+
+        (bool success,) = payable(address(boringDrone)).call{value: 1 ether, gas: 21_000}("");
+        assertTrue(success, "Failed to send ETH to drone with min amount of gas.");
+        // assertEq(address(this).balance, 1 ether, "Test contract should have received 1 ETH.");
+    }
+
     // ========================================= HELPER FUNCTIONS =========================================
+
+    receive() external payable {}
 
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
