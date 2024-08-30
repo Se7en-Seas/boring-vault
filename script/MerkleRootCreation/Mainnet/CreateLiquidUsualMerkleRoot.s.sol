@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.21;
 
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
@@ -15,11 +15,9 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0xeDa663610638E6557c27e2f4e973D3393e844E70;
-    address public rawDataDecoderAndSanitizer =
-        0x8cDeD215E8fa36E1367Eeda41d24B4C87d17ABCB;
+    address public rawDataDecoderAndSanitizer = 0x8cDeD215E8fa36E1367Eeda41d24B4C87d17ABCB;
     address public managerAddress = 0x5F2Ecb56Ed33c86219840A2F89316285A1D9ee0F;
-    address public accountantAddress =
-        0x1D4F0F05e50312d3E7B65659Ef7d06aa74651e0C;
+    address public accountantAddress = 0x1D4F0F05e50312d3E7B65659Ef7d06aa74651e0C;
 
     function setUp() external {}
 
@@ -35,12 +33,7 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "boringVault", boringVault);
         setAddress(false, mainnet, "managerAddress", managerAddress);
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
-        setAddress(
-            false,
-            mainnet,
-            "rawDataDecoderAndSanitizer",
-            rawDataDecoderAndSanitizer
-        );
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](256);
 
@@ -63,30 +56,15 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "sDAI")));
 
         // ========================== MetaMorpho ==========================
-        _addERC4626Leafs(
-            leafs,
-            ERC4626(getAddress(sourceChain, "usualBoostedUSDC"))
-        );
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "usualBoostedUSDC")));
 
         // ========================== Gearbox ==========================
         /**
          * USDC, DAI, USDT deposit, withdraw,  dUSDCV3, dDAIV3 dUSDTV3 deposit, withdraw, claim
          */
-        _addGearboxLeafs(
-            leafs,
-            ERC4626(getAddress(sourceChain, "dUSDCV3")),
-            getAddress(sourceChain, "sdUSDCV3")
-        );
-        _addGearboxLeafs(
-            leafs,
-            ERC4626(getAddress(sourceChain, "dDAIV3")),
-            getAddress(sourceChain, "sdDAIV3")
-        );
-        _addGearboxLeafs(
-            leafs,
-            ERC4626(getAddress(sourceChain, "dUSDTV3")),
-            getAddress(sourceChain, "sdUSDTV3")
-        );
+        _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dUSDCV3")), getAddress(sourceChain, "sdUSDCV3"));
+        _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dDAIV3")), getAddress(sourceChain, "sdDAIV3"));
+        _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dUSDTV3")), getAddress(sourceChain, "sdUSDTV3"));
 
         // ========================== MorphoBlue ==========================
         /**
@@ -94,21 +72,11 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
          * USD0/USDC  86.00 LLTV market 0xb48bb53f0f2690c71e8813f2dc7ed6fca9ac4b0ace3faa37b4a8e5ece38fa1a2
          * USD0USD0++/USDC   86.00 LLTV market 0x864c9b82eb066ae2c038ba763dfc0221001e62fc40925530056349633eb0a259
          */
-        _addMorphoBlueSupplyLeafs(
-            leafs,
-            0xb48bb53f0f2690c71e8813f2dc7ed6fca9ac4b0ace3faa37b4a8e5ece38fa1a2
-        );
-        _addMorphoBlueSupplyLeafs(
-            leafs,
-            0x864c9b82eb066ae2c038ba763dfc0221001e62fc40925530056349633eb0a259
-        );
+        _addMorphoBlueSupplyLeafs(leafs, 0xb48bb53f0f2690c71e8813f2dc7ed6fca9ac4b0ace3faa37b4a8e5ece38fa1a2);
+        _addMorphoBlueSupplyLeafs(leafs, 0x864c9b82eb066ae2c038ba763dfc0221001e62fc40925530056349633eb0a259);
 
         // ========================== Pendle ==========================
-        _addPendleMarketLeafs(
-            leafs,
-            getAddress(sourceChain, "pendleUSD0PlusMarketOctober"),
-            true
-        );
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleUSD0PlusMarketOctober"), true);
 
         // ========================== UniswapV3 ==========================
         /**
@@ -159,16 +127,10 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
         // ========================== Compound V3 ==========================
         ERC20[] memory collateralAssets = new ERC20[](0);
         _addCompoundV3Leafs(
-            leafs,
-            collateralAssets,
-            getAddress(sourceChain, "cUSDCV3"),
-            getAddress(sourceChain, "cometRewards")
+            leafs, collateralAssets, getAddress(sourceChain, "cUSDCV3"), getAddress(sourceChain, "cometRewards")
         );
         _addCompoundV3Leafs(
-            leafs,
-            collateralAssets,
-            getAddress(sourceChain, "cUSDTV3"),
-            getAddress(sourceChain, "cometRewards")
+            leafs, collateralAssets, getAddress(sourceChain, "cUSDTV3"), getAddress(sourceChain, "cometRewards")
         );
 
         // ========================== 1inch ==========================
@@ -221,26 +183,11 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         // ========================== 1inch Uniswap V3 ==========================
-        _addLeafsFor1InchUniswapV3Swapping(
-            leafs,
-            getAddress(sourceChain, "GEAR_USDT_30")
-        );
-        _addLeafsFor1InchUniswapV3Swapping(
-            leafs,
-            getAddress(sourceChain, "DAI_USDC_01")
-        );
-        _addLeafsFor1InchUniswapV3Swapping(
-            leafs,
-            getAddress(sourceChain, "DAI_USDC_05")
-        );
-        _addLeafsFor1InchUniswapV3Swapping(
-            leafs,
-            getAddress(sourceChain, "USDC_USDT_01")
-        );
-        _addLeafsFor1InchUniswapV3Swapping(
-            leafs,
-            getAddress(sourceChain, "USDC_USDT_05")
-        );
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "GEAR_USDT_30"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "DAI_USDC_01"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "DAI_USDC_05"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDC_USDT_01"));
+        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDC_USDT_05"));
 
         // ========================== Curve ==========================
         _addCurveLeafs(
@@ -254,11 +201,6 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
 
         string memory filePath = "./leafs/LiquidUsualStrategistLeafs.json";
 
-        _generateLeafs(
-            filePath,
-            leafs,
-            manageTree[manageTree.length - 1][0],
-            manageTree
-        );
+        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 }

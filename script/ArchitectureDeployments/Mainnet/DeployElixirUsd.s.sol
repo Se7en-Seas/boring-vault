@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.21;
 
 import {DeployArcticArchitecture, ERC20, Deployer} from "script/ArchitectureDeployments/DeployArcticArchitecture.sol";
@@ -6,7 +6,8 @@ import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
-import {EtherFiLiquidUsdDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
+import {EtherFiLiquidUsdDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
 
 /**
  *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployElixirUsd.s.sol:DeployElixirUsdScript --with-gas-price 1000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
@@ -51,8 +52,7 @@ contract DeployElixirUsdScript is DeployArcticArchitecture, MainnetAddresses {
         names.manager = EtherFiElixirUsdManagerName;
         names.accountant = EtherFiElixirUsdAccountantName;
         names.teller = EtherFiElixirUsdTellerName;
-        names
-            .rawDataDecoderAndSanitizer = EtherFiElixirUsdDecoderAndSanitizerName;
+        names.rawDataDecoderAndSanitizer = EtherFiElixirUsdDecoderAndSanitizerName;
         names.delayedWithdrawer = EtherFiElixirUsdDelayedWithdrawer;
 
         // Define Accountant Parameters.
@@ -69,12 +69,9 @@ contract DeployElixirUsdScript is DeployArcticArchitecture, MainnetAddresses {
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
-        bytes memory creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer)
-            .creationCode;
-        bytes memory constructorArgs = abi.encode(
-            deployer.getAddress(names.boringVault),
-            uniswapV3NonFungiblePositionManager
-        );
+        bytes memory creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
+        bytes memory constructorArgs =
+            abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
         // Setup extra deposit assets.
         depositAssets.push(
@@ -117,9 +114,7 @@ contract DeployElixirUsdScript is DeployArcticArchitecture, MainnetAddresses {
                 rateProvider: address(0),
                 genericRateProviderName: sdeUSDRateProviderName,
                 target: address(sdeUSD),
-                selector: bytes4(
-                    keccak256(abi.encodePacked("previewRedeem(uint256)"))
-                ),
+                selector: bytes4(keccak256(abi.encodePacked("previewRedeem(uint256)"))),
                 params: [bytes32(uint256(1e18)), 0, 0, 0, 0, 0, 0, 0]
             })
         );
@@ -146,13 +141,7 @@ contract DeployElixirUsdScript is DeployArcticArchitecture, MainnetAddresses {
             })
         );
         withdrawAssets.push(
-            WithdrawAsset({
-                asset: DAI,
-                withdrawDelay: 3 days,
-                completionWindow: 7 days,
-                withdrawFee: 0,
-                maxLoss: 0.01e4
-            })
+            WithdrawAsset({asset: DAI, withdrawDelay: 3 days, completionWindow: 7 days, withdrawFee: 0, maxLoss: 0.01e4})
         );
 
         withdrawAssets.push(

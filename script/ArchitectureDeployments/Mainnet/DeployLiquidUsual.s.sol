@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.21;
 
 import {DeployArcticArchitecture, ERC20, Deployer} from "script/ArchitectureDeployments/DeployArcticArchitecture.sol";
@@ -6,7 +6,8 @@ import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
-import {EtherFiLiquidUsdDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
+import {EtherFiLiquidUsdDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
 
 /**
  *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLiquidUsual.s.sol:DeployLiquidUsualScript --with-gas-price 1000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
@@ -51,8 +52,7 @@ contract DeployLiquidUsualScript is DeployArcticArchitecture, MainnetAddresses {
         names.manager = EtherFiLiquidUsualManagerName;
         names.accountant = EtherFiLiquidUsualAccountantName;
         names.teller = EtherFiLiquidUsualTellerName;
-        names
-            .rawDataDecoderAndSanitizer = EtherFiLiquidUsualDecoderAndSanitizerName;
+        names.rawDataDecoderAndSanitizer = EtherFiLiquidUsualDecoderAndSanitizerName;
         names.delayedWithdrawer = EtherFiLiquidUsualDelayedWithdrawer;
 
         // Define Accountant Parameters.
@@ -69,12 +69,9 @@ contract DeployLiquidUsualScript is DeployArcticArchitecture, MainnetAddresses {
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
-        bytes memory creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer)
-            .creationCode;
-        bytes memory constructorArgs = abi.encode(
-            deployer.getAddress(names.boringVault),
-            uniswapV3NonFungiblePositionManager
-        );
+        bytes memory creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
+        bytes memory constructorArgs =
+            abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
         // Setup extra deposit assets.
         depositAssets.push(

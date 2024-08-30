@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.21;
 
 import {INonFungiblePositionManager} from "src/interfaces/RawDataDecoderAndSanitizerInterfaces.sol";
@@ -32,7 +32,7 @@ abstract contract VelodromeDecoderAndSanitizer is BaseDecoderAndSanitizer {
         virtual
         returns (bytes memory addressesFound)
     {
-        if(params.sqrtPriceX96 != 0) {
+        if (params.sqrtPriceX96 != 0) {
             revert VelodromeDecoderAndSanitizer__PoolCreationNotAllowed();
         }
         // Return addresses found

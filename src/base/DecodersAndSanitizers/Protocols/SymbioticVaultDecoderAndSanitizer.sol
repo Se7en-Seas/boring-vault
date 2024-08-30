@@ -1,12 +1,10 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.21;
 
 import {BaseDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
 
 abstract contract SymbioticVaultDecoderAndSanitizer is BaseDecoderAndSanitizer {
     //============================== SYMBIOTIC ===============================
-
-    // TODO do we need a `delegate` function in order to delegate stake?
 
     function deposit(address onBehalfOf, uint256 /*amount*/ )
         external
