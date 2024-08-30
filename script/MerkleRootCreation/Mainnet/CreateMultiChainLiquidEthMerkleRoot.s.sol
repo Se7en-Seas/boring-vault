@@ -15,7 +15,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0xf0bb20865277aBd641a307eCe5Ee04E79073416C;
-    address public rawDataDecoderAndSanitizer = 0xE97Fc71E71B979A3b78134186AD3b4B8327108BF;
+    address public rawDataDecoderAndSanitizer = 0xb7021861c11C786E20a888d8BA63AC591956AaA6;
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
     address public pancakeSwapDataDecoderAndSanitizer = 0x4dE66AA174b99481dAAe12F2Cdd5D76Dc14Eb3BC;
@@ -253,6 +253,19 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addConvexLeafs(
             leafs, getERC20(sourceChain, "weETH_wETH_NG_Pool"), getAddress(sourceChain, "weETH_wETH_NG_Convex_Reward")
         );
+
+        // ========================== BoringVaults ==========================
+        {
+            ERC20[] memory tellerAssets = new ERC20[](3);
+            tellerAssets[0] = getERC20(sourceChain, "WETH");
+            tellerAssets[1] = getERC20(sourceChain, "WEETH");
+            tellerAssets[2] = getERC20(sourceChain, "WSTETH");
+            address superSymbioticTeller = 0x99dE9e5a3eC2750a6983C8732E6e795A35e7B861;
+            address kingKarakTeller = 0x929B44db23740E65dF3A81eA4aAB716af1b88474;
+
+            _addTellerLeafs(leafs, superSymbioticTeller, tellerAssets);
+            _addTellerLeafs(leafs, kingKarakTeller, tellerAssets);
+        }
 
         // ========================== ITB Reserve ==========================
         ERC20[] memory tokensUsed = new ERC20[](3);

@@ -3047,6 +3047,89 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Pump Staking =========================================
+
+    function _addLeafsForPumpStaking(ManageLeaf[] memory leafs, address pumpStaking, ERC20 asset) internal {
+        // Approve
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(asset),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Pump Staking to spend ", asset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = pumpStaking;
+
+        // Stake
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "stake(uint256)",
+            new address[](0),
+            string.concat("Stake ", asset.symbol(), " into Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Unstake Request
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "unstakeRequest(uint256)",
+            new address[](0),
+            string.concat("Request unstake of ", asset.symbol(), " from Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Claim Slot
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "claimSlot(uint8)",
+            new address[](0),
+            string.concat("Claim slot from Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Claim All
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "claimAll()",
+            new address[](0),
+            string.concat("Claim all withdraws from Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Unstake Instant
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "unstakeInstant(uint256)",
+            new address[](0),
+            string.concat("Unstake ", asset.symbol(), " instantly from Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+    }
+
     // ========================================= Zircuit Staking =========================================
 
     function _addZircuitLeafs(ManageLeaf[] memory leafs, address asset, address _zircuitSimpleStaking) internal {
@@ -4135,6 +4218,38 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[1] = address(0); // Delegation not implemented yet.
         leafs[leafIndex].argumentAddresses[2] = vault;
         leafs[leafIndex].argumentAddresses[3] = getAddress(sourceChain, "boringVault");
+    }
+
+    // ========================================= Puppet =========================================
+
+    // TODO this does not factor in leafs where there are address argumetns that are the BoringVault address that really should be the puppet address.
+    function _createPuppetLeafs(ManageLeaf[] memory leafs, address puppet)
+        internal
+        pure
+        returns (ManageLeaf[] memory puppetLeafs)
+    {
+        puppetLeafs = new ManageLeaf[](leafs.length);
+
+        // Iterate through every leaf, and
+        // 1) Take the existing target and append it to the end of the argumentAddresses array.
+        // 2) Change the target to the puppet contract.
+
+        for (uint256 i; i < leafs.length; ++i) {
+            puppetLeafs[i].argumentAddresses = new address[](leafs[i].argumentAddresses.length + 1);
+            // Copy over argumentAddresses.
+            for (uint256 j; j < leafs[i].argumentAddresses.length; ++j) {
+                puppetLeafs[i].argumentAddresses[j] = leafs[i].argumentAddresses[j];
+            }
+            // Append the target to the end of the argumentAddresses array.
+            puppetLeafs[i].argumentAddresses[leafs[i].argumentAddresses.length] = leafs[i].target;
+            // Change the target to the puppet contract.
+            puppetLeafs[i].target = puppet;
+            // Copy over remaning values.
+            puppetLeafs[i].canSendValue = leafs[i].canSendValue;
+            puppetLeafs[i].signature = leafs[i].signature;
+            puppetLeafs[i].description = leafs[i].description;
+            puppetLeafs[i].decoderAndSanitizer = leafs[i].decoderAndSanitizer;
+        }
     }
 
     // ========================================= BoringVault Teller =========================================
