@@ -385,6 +385,14 @@ contract StakingIntegrationsTest is Test, MerkleTreeHelper {
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 
+    function testSendingETHToDroneWithMinAmountOfGas() external {
+        deal(address(this), 1 ether);
+
+        (bool success,) = payable(address(boringDrone)).call{value: 1 ether, gas: 21_000}("");
+        assertTrue(success, "Failed to send ETH to drone with min amount of gas.");
+        assertEq(address(boringVault).balance, 1 ether, "BoringVault should have received 1 ETH.");
+    }
+
     function testSwellIntegration() external {
         deal(getAddress(sourceChain, "WETH"), address(boringVault), 100e18);
 

@@ -56,6 +56,15 @@ import {DroneLib} from "src/base/Drones/DroneLib.sol";
 contract BoringDrone is ERC721Holder, ERC1155Holder {
     using Address for address;
 
+    //============================== CONSTANTS ===============================
+
+    /**
+     * @notice The amount of gas needed to forward native to the BoringVault.
+     * @dev This value was determined from guess and check. Realisitically, the value should be closer to 10k, but
+     *      21k is used for extra safety.
+     */
+    uint256 internal constant SAFE_GAS_TO_FORWARD_NATIVE = 21_000;
+
     //============================== MODIFIERS ===============================
 
     modifier onlyBoringVault() {
@@ -71,7 +80,7 @@ contract BoringDrone is ERC721Holder, ERC1155Holder {
     //============================== CONSTRUCTOR ===============================
 
     /**
-     * @notice The address of the BoringVault that can control this puppet.
+     * @notice The address of the BoringVault that can control this drone.
      */
     address internal immutable boringVault;
 
@@ -81,6 +90,9 @@ contract BoringDrone is ERC721Holder, ERC1155Holder {
 
     //============================== WITHDRAW ===============================
 
+    /**
+     * @notice Withdraws all native from the drone.
+     */
     function withdrawNativeFromDrone() external onlyBoringVault {
         (bool success,) = boringVault.call{value: address(this).balance}("");
         if (!success) revert BoringDrone__ReceiveFailed();
@@ -91,10 +103,10 @@ contract BoringDrone is ERC721Holder, ERC1155Holder {
     /**
      * @notice This contract in its current state can only be interacted with by the BoringVault.
      * @notice The real target is extracted from the call data using `extractTargetFromCalldata()`.
-     * @notice The puppet then forwards
+     * @notice The drone then forwards
      */
     fallback() external payable onlyBoringVault {
-        // Exctract real target from end of calldata
+        // Extract real target from end of calldata
         address target = DroneLib.extractTargetFromCalldata();
 
         // Forward call to real target.
@@ -104,8 +116,8 @@ contract BoringDrone is ERC721Holder, ERC1155Holder {
     //============================== RECEIVE ===============================
 
     receive() external payable {
-        // If gas left is less than minimum gas needed to forward ETH, return.
-        if (gasleft() < 2_300) return;
+        // If gas left is less than safe gas needed to forward native, return.
+        if (gasleft() < SAFE_GAS_TO_FORWARD_NATIVE) return;
 
         (bool success,) = boringVault.call{value: msg.value}("");
         if (!success) revert BoringDrone__ReceiveFailed();
