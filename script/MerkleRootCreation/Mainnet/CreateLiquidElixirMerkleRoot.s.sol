@@ -15,11 +15,9 @@ contract CreateLiquidElixirMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0x352180974C71f84a934953Cf49C4E538a6F9c997;
-    address public rawDataDecoderAndSanitizer =
-        0x0b01C5F5D333f9921240ab08dA92805F41604add;
+    address public rawDataDecoderAndSanitizer = 0x0b01C5F5D333f9921240ab08dA92805F41604add;
     address public managerAddress = 0x4D0EF2A55db2439A37507a893b624f89eC7A403c;
-    address public accountantAddress =
-        0xBae19b38Bf727Be64AF0B578c34985c3D612e2Ba;
+    address public accountantAddress = 0xBae19b38Bf727Be64AF0B578c34985c3D612e2Ba;
 
     function setUp() external {}
 
@@ -35,12 +33,7 @@ contract CreateLiquidElixirMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "boringVault", boringVault);
         setAddress(false, mainnet, "managerAddress", managerAddress);
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
-        setAddress(
-            false,
-            mainnet,
-            "rawDataDecoderAndSanitizer",
-            rawDataDecoderAndSanitizer
-        );
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](128);
 
@@ -87,8 +80,8 @@ contract CreateLiquidElixirMerkleRootScript is Script, MerkleTreeHelper {
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](6);
-        SwapKind[] memory kind = new SwapKind[](6);
+        address[] memory assets = new address[](7);
+        SwapKind[] memory kind = new SwapKind[](7);
         assets[0] = getAddress(sourceChain, "USDC");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "USDT");
@@ -101,27 +94,14 @@ contract CreateLiquidElixirMerkleRootScript is Script, MerkleTreeHelper {
         kind[4] = SwapKind.BuyAndSell;
         assets[5] = getAddress(sourceChain, "CRV");
         kind[5] = SwapKind.Sell;
+        assets[6] = getAddress(sourceChain, "BAL");
+        kind[6] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         // ========================== Curve ==========================
-        _addCurveLeafs(
-            leafs,
-            getAddress(sourceChain, "deUSD_USDC_Curve_Pool"),
-            2,
-            address(0)
-        );
-        _addCurveLeafs(
-            leafs,
-            getAddress(sourceChain, "deUSD_USDT_Curve_Pool"),
-            2,
-            address(0)
-        );
-        _addCurveLeafs(
-            leafs,
-            getAddress(sourceChain, "deUSD_DAI_Curve_Pool"),
-            2,
-            address(0)
-        );
+        _addCurveLeafs(leafs, getAddress(sourceChain, "deUSD_USDC_Curve_Pool"), 2, address(0));
+        _addCurveLeafs(leafs, getAddress(sourceChain, "deUSD_USDT_Curve_Pool"), 2, address(0));
+        _addCurveLeafs(leafs, getAddress(sourceChain, "deUSD_DAI_Curve_Pool"), 2, address(0));
         _addCurveLeafs(
             leafs,
             getAddress(sourceChain, "deUSD_FRAX_Curve_Pool"),
@@ -131,21 +111,13 @@ contract CreateLiquidElixirMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== Balancer ==========================
         _addBalancerLeafs(
-            leafs,
-            getBytes32(sourceChain, "deUSD_sdeUSD_ECLP_id"),
-            getAddress(sourceChain, "deUSD_sdeUSD_ECLP_Gauge")
+            leafs, getBytes32(sourceChain, "deUSD_sdeUSD_ECLP_id"), getAddress(sourceChain, "deUSD_sdeUSD_ECLP_Gauge")
         );
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        string
-            memory filePath = "./leafs/Mainnet/LiquidElixirStrategistLeafs.json";
+        string memory filePath = "./leafs/Mainnet/LiquidElixirStrategistLeafs.json";
 
-        _generateLeafs(
-            filePath,
-            leafs,
-            manageTree[manageTree.length - 1][0],
-            manageTree
-        );
+        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 }
