@@ -4031,6 +4031,38 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
     }
 
+    // ========================================= Puppet =========================================
+
+    // TODO this does not factor in leafs where there are address argumetns that are the BoringVault address that really should be the puppet address.
+    function _createPuppetLeafs(ManageLeaf[] memory leafs, address puppet)
+        internal
+        pure
+        returns (ManageLeaf[] memory puppetLeafs)
+    {
+        puppetLeafs = new ManageLeaf[](leafs.length);
+
+        // Iterate through every leaf, and
+        // 1) Take the existing target and append it to the end of the argumentAddresses array.
+        // 2) Change the target to the puppet contract.
+
+        for (uint256 i; i < leafs.length; ++i) {
+            puppetLeafs[i].argumentAddresses = new address[](leafs[i].argumentAddresses.length + 1);
+            // Copy over argumentAddresses.
+            for (uint256 j; j < leafs[i].argumentAddresses.length; ++j) {
+                puppetLeafs[i].argumentAddresses[j] = leafs[i].argumentAddresses[j];
+            }
+            // Append the target to the end of the argumentAddresses array.
+            puppetLeafs[i].argumentAddresses[leafs[i].argumentAddresses.length] = leafs[i].target;
+            // Change the target to the puppet contract.
+            puppetLeafs[i].target = puppet;
+            // Copy over remaning values.
+            puppetLeafs[i].canSendValue = leafs[i].canSendValue;
+            puppetLeafs[i].signature = leafs[i].signature;
+            puppetLeafs[i].description = leafs[i].description;
+            puppetLeafs[i].decoderAndSanitizer = leafs[i].decoderAndSanitizer;
+        }
+    }
+
     // ========================================= BoringVault Teller =========================================
 
     function _addTellerLeafs(ManageLeaf[] memory leafs, address teller, ERC20[] memory assets) internal {
