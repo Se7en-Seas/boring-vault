@@ -216,6 +216,9 @@ contract ChainValues {
         values[mainnet]["GHO_LUSD_BPT"] = 0x3FA8C89704e5d07565444009e5d9e624B40Be813.toBytes32();
         values[mainnet]["swETH_bbaWETH"] = 0xaE8535c23afeDdA9304B03c68a3563B75fc8f92b.toBytes32();
         values[mainnet]["swETH_wETH"] = 0x02D928E68D8F10C0358566152677Db51E1e2Dc8C.toBytes32();
+        values[mainnet]["deUSD_sdeUSD_ECLP"] = 0x41FDbea2E52790c0a1Dc374F07b628741f2E062D.toBytes32();
+        values[mainnet]["deUSD_sdeUSD_ECLP_Gauge"] = 0xA00DB7d9c465e95e4AA814A9340B9A161364470a.toBytes32();
+        values[mainnet]["deUSD_sdeUSD_ECLP_id"] = 0x41fdbea2e52790c0a1dc374f07b628741f2e062d0002000000000000000006be;
 
         values[mainnet]["rETH_weETH_id"] = 0x05ff47afada98a98982113758878f9a8b9fdda0a000000000000000000000645;
         values[mainnet]["rETH_weETH"] = 0x05ff47AFADa98a98982113758878F9A8B9FddA0a.toBytes32();
@@ -412,6 +415,11 @@ contract ChainValues {
         values[mainnet]["USDe_USDC_Curve_Pool"] = 0x02950460E2b9529D0E00284A5fA2d7bDF3fA4d72.toBytes32();
         values[mainnet]["USDe_DAI_Curve_Pool"] = 0xF36a4BA50C603204c3FC6d2dA8b78A7b69CBC67d.toBytes32();
         values[mainnet]["sDAI_sUSDe_Curve_Pool"] = 0x167478921b907422F8E88B43C4Af2B8BEa278d3A.toBytes32();
+        values[mainnet]["deUSD_USDC_Curve_Pool"] = 0x5F6c431AC417f0f430B84A666a563FAbe681Da94.toBytes32();
+        values[mainnet]["deUSD_USDT_Curve_Pool"] = 0x7C4e143B23D72E6938E06291f705B5ae3D5c7c7C.toBytes32();
+        values[mainnet]["deUSD_DAI_Curve_Pool"] = 0xb478Bf40dD622086E0d0889eeBbAdCb63806ADde.toBytes32();
+        values[mainnet]["deUSD_FRAX_Curve_Pool"] = 0x88DFb9370fE350aA51ADE31C32549d4d3A24fAf2.toBytes32();
+        values[mainnet]["deUSD_FRAX_Curve_Gauge"] = 0x7C634909DDbfd5C6EEd7Ccf3611e8C4f3643635d.toBytes32();
 
         values[mainnet]["WethMkUsdPool"] = 0xc89570207c5BA1B0E3cD372172cCaEFB173DB270.toBytes32();
 
