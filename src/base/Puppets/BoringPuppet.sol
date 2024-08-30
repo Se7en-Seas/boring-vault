@@ -19,6 +19,7 @@ contract BoringPuppet is ERC721Holder, ERC1155Holder {
     //============================== ERRORS ===============================
 
     error BoringPuppet__OnlyBoringVault();
+    error BoringPuppet__ReceiveFailed();
 
     //============================== CONSTRUCTOR ===============================
 
@@ -49,6 +50,7 @@ contract BoringPuppet is ERC721Holder, ERC1155Holder {
     //============================== RECEIVE ===============================
 
     receive() external payable {
-        payable(boringVault).transfer(msg.value);
+        (bool success,) = payable(boringVault).call{value: msg.value}("");
+        if (!success) revert BoringPuppet__ReceiveFailed();
     }
 }
