@@ -3047,6 +3047,89 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Pump Staking =========================================
+
+    function _addLeafsForPumpStaking(ManageLeaf[] memory leafs, address pumpStaking, ERC20 asset) internal {
+        // Approve
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(asset),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Pump Staking to spend ", asset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = pumpStaking;
+
+        // Stake
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "stake(uint256)",
+            new address[](0),
+            string.concat("Stake ", asset.symbol(), " into Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Unstake Request
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "unstakeRequest(uint256)",
+            new address[](0),
+            string.concat("Request unstake of ", asset.symbol(), " from Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Claim Slot
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "claimSlot(uint8)",
+            new address[](0),
+            string.concat("Claim slot from Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Claim All
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "claimAll()",
+            new address[](0),
+            string.concat("Claim all withdraws from Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Unstake Instant
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "unstakeInstant(uint256)",
+            new address[](0),
+            string.concat("Unstake ", asset.symbol(), " instantly from Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+    }
+
     // ========================================= Zircuit Staking =========================================
 
     function _addZircuitLeafs(ManageLeaf[] memory leafs, address asset, address _zircuitSimpleStaking) internal {
