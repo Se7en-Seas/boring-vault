@@ -4114,6 +4114,112 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
     }
 
+    // ========================================= Karak =========================================
+
+    function _addKarakLeafs(ManageLeaf[] memory leafs, address vaultSupervisor, address vault) internal {
+        address delegationSupervisor = VaultSupervisor(vaultSupervisor).delegationSupervisor();
+        ERC20 underlying = ERC4626(vault).asset();
+
+        // Add leaf to approve karak vault to spend underlying.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(underlying),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Karak Vault to spend ", underlying.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = vault;
+
+        // Approve vault supervisor to spend vault shares
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            vault,
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Vault Supervisor to spend ", ERC4626(vault).symbol(), " shares"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = vaultSupervisor;
+
+        // Add deposit leafs
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            vaultSupervisor,
+            false,
+            "deposit(address,uint256,uint256)",
+            new address[](1),
+            string.concat("Deposit ", underlying.symbol(), " into ", ERC4626(vault).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = vault;
+
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            vaultSupervisor,
+            false,
+            "gimmieShares(address,uint256)",
+            new address[](1),
+            string.concat("Gimmie shares into ", ERC4626(vault).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = vault;
+
+        // Add withdraw leafs
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            vaultSupervisor,
+            false,
+            "returnShares(address,uint256)",
+            new address[](1),
+            string.concat("Return shares from ", ERC4626(vault).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = vault;
+
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            delegationSupervisor,
+            false,
+            "startWithdraw((address[],uint256[],address)[])",
+            new address[](2),
+            string.concat("Start withdraw of ", underlying.symbol(), " from ", ERC4626(vault).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = vault;
+        leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            delegationSupervisor,
+            false,
+            "finishWithdraw((address,address,uint256,uint256,(address[],uint256[],address))[])",
+            new address[](4),
+            string.concat("Finish withdraw of ", underlying.symbol(), " from ", ERC4626(vault).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = address(0); // Delegation not implemented yet.
+        leafs[leafIndex].argumentAddresses[2] = vault;
+        leafs[leafIndex].argumentAddresses[3] = getAddress(sourceChain, "boringVault");
+    }
+
     // ========================================= Puppet =========================================
 
     // TODO this does not factor in leafs where there are address argumetns that are the BoringVault address that really should be the puppet address.
@@ -4470,4 +4576,8 @@ interface BalancerVault {
 
 interface VelodromV2Gauge {
     function stakingToken() external view returns (address);
+}
+
+interface VaultSupervisor {
+    function delegationSupervisor() external view returns (address);
 }

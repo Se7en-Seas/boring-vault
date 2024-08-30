@@ -659,6 +659,7 @@ contract ChainValues {
 
         // Karak
         values[mainnet]["vaultSupervisor"] = 0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC.toBytes32();
+        values[mainnet]["delegationSupervisor"] = 0xAfa904152E04aBFf56701223118Be2832A4449E0.toBytes32();
 
         values[mainnet]["kmETH"] = 0x7C22725d1E0871f0043397c9761AD99A86ffD498.toBytes32();
         values[mainnet]["kweETH"] = 0x2DABcea55a12d73191AeCe59F508b191Fb68AdaC.toBytes32();
