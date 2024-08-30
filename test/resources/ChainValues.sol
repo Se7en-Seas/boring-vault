@@ -15,6 +15,7 @@ contract ChainValues {
     string public constant arbitrum = "arbitrum";
     string public constant optimism = "optimism";
     string public constant base = "base";
+    string public constant holesky = "holesky";
 
     // Bridging constants.
     uint64 public constant ccipArbitrumChainSelector = 4949039107694359620;
@@ -62,6 +63,9 @@ contract ChainValues {
         _addBaseValues();
         _addArbitrumValues();
         _addOptimismValues();
+
+        // Add testnet values
+        _addHoleskyValues();
     }
 
     function _addMainnetValues() private {
@@ -144,6 +148,7 @@ contract ChainValues {
         values[mainnet]["USD0_plus"] = 0x35D8949372D46B7a3D5A56006AE77B215fc69bC0.toBytes32();
         values[mainnet]["deUSD"] = 0x15700B564Ca08D9439C58cA5053166E8317aa138.toBytes32();
         values[mainnet]["sdeUSD"] = 0x5C5b196aBE0d54485975D1Ec29617D42D9198326.toBytes32();
+        values[mainnet]["pumpBTC"] = 0xF469fBD2abcd6B9de8E169d128226C0Fc90a012e.toBytes32();
 
         // Rate providers
         values[mainnet]["WEETH_RATE_PROVIDER"] = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee.toBytes32();
@@ -331,6 +336,8 @@ contract ChainValues {
         values[mainnet]["triCrypto2"] = 0xD51a44d3FaE010294C616388b506AcdA1bfAAE46.toBytes32();
         values[mainnet]["weETH_wETH_ng"] = 0xDB74dfDD3BB46bE8Ce6C33dC9D82777BCFc3dEd5.toBytes32();
         values[mainnet]["weETH_wETH_ng_gauge"] = 0x053df3e4D0CeD9a3Bf0494F97E83CE1f13BdC0E2.toBytes32();
+        values[mainnet]["USD0_USD0++_CurvePool"] = 0x1d08E7adC263CfC70b1BaBe6dC5Bb339c16Eec52.toBytes32();
+        values[mainnet]["USD0_USD0++_CurveGauge"] = 0x5C00817B67b40f3b347bD4275B4BBA4840c8127a.toBytes32();
 
         values[mainnet]["UsdcCrvUsdPool"] = 0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E.toBytes32();
         values[mainnet]["UsdcCrvUsdToken"] = 0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E.toBytes32();
@@ -662,10 +669,13 @@ contract ChainValues {
         values[mainnet]["ETHxDefaultCollateral"] = 0xBdea8e677F9f7C294A4556005c640Ee505bE6925.toBytes32();
         values[mainnet]["uniETHDefaultCollateral"] = 0x1C57ea879dd3e8C9fefa8224fdD1fa20dd54211E.toBytes32();
         values[mainnet]["sUSDeDefaultCollateral"] = 0x19d0D8e6294B7a04a2733FE433444704B791939A.toBytes32();
+        values[mainnet]["wBTCDefaultCollateral"] = 0x971e5b5D4baa5607863f3748FeBf287C7bf82618.toBytes32();
+        values[mainnet]["tBTCDefaultCollateral"] = 0x0C969ceC0729487d264716e55F232B404299032c.toBytes32();
         values[mainnet]["ethfiDefaultCollateral"] = 0x21DbBA985eEA6ba7F27534a72CCB292eBA1D2c7c.toBytes32();
 
         // Karak
         values[mainnet]["vaultSupervisor"] = 0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC.toBytes32();
+        values[mainnet]["delegationSupervisor"] = 0xAfa904152E04aBFf56701223118Be2832A4449E0.toBytes32();
 
         values[mainnet]["kmETH"] = 0x7C22725d1E0871f0043397c9761AD99A86ffD498.toBytes32();
         values[mainnet]["kweETH"] = 0x2DABcea55a12d73191AeCe59F508b191Fb68AdaC.toBytes32();
@@ -710,6 +720,9 @@ contract ChainValues {
 
         // Merkl
         values[mainnet]["merklDistributor"] = 0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae.toBytes32();
+
+        // Pump Staking
+        values[mainnet]["pumpStaking"] = 0x1fCca65fb6Ae3b2758b9b2B394CB227eAE404e1E.toBytes32();
     }
 
     function _addBaseValues() private {
@@ -975,5 +988,13 @@ contract ChainValues {
         // Compound V3
         values[optimism]["cWETHV3"] = 0xE36A30D249f7761327fd973001A32010b521b6Fd.toBytes32();
         values[optimism]["cometRewards"] = 0x443EA0340cb75a160F31A440722dec7b5bc3C2E9.toBytes32();
+    }
+
+    function _addHoleskyValues() private {
+        // ERC20
+        values[holesky]["WSTETH"] = 0x8d09a4502Cc8Cf1547aD300E066060D043f6982D.toBytes32();
+
+        // Symbiotic
+        values[holesky]["wstETHSymbioticVault"] = 0x89D62D1d89d8636367fc94998b3bE095a3d9c2f9.toBytes32();
     }
 }

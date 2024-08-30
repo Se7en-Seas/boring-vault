@@ -3049,6 +3049,89 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Pump Staking =========================================
+
+    function _addLeafsForPumpStaking(ManageLeaf[] memory leafs, address pumpStaking, ERC20 asset) internal {
+        // Approve
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(asset),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Pump Staking to spend ", asset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = pumpStaking;
+
+        // Stake
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "stake(uint256)",
+            new address[](0),
+            string.concat("Stake ", asset.symbol(), " into Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Unstake Request
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "unstakeRequest(uint256)",
+            new address[](0),
+            string.concat("Request unstake of ", asset.symbol(), " from Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Claim Slot
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "claimSlot(uint8)",
+            new address[](0),
+            string.concat("Claim slot from Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Claim All
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "claimAll()",
+            new address[](0),
+            string.concat("Claim all withdraws from Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Unstake Instant
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            pumpStaking,
+            false,
+            "unstakeInstant(uint256)",
+            new address[](0),
+            string.concat("Unstake ", asset.symbol(), " instantly from Pump Staking"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+    }
+
     // ========================================= Zircuit Staking =========================================
 
     function _addZircuitLeafs(ManageLeaf[] memory leafs, address asset, address _zircuitSimpleStaking) internal {
@@ -3266,6 +3349,83 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                     " from Symbiotic ",
                     ERC20(defaultCollaterals[i]).name()
                 ),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        }
+    }
+
+    function _addSymbioticVaultLeafs(ManageLeaf[] memory leafs, address[] memory vaults, ERC20[] memory assets)
+        internal
+    {
+        for (uint256 i; i < assets.length; i++) {
+            // Approve
+            if (!tokenToSpenderToApprovalInTree[address(assets[i])][vaults[i]]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    address(assets[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Symbiotic Vault ", vm.toString(vaults[i]), " to spend ", assets[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = vaults[i];
+                tokenToSpenderToApprovalInTree[address(assets[i])][vaults[i]] = true;
+            }
+            // Deposit
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                vaults[i],
+                false,
+                "deposit(address,uint256)",
+                new address[](1),
+                string.concat("Deposit ", assets[i].symbol(), " into Symbiotic Vault ", vm.toString(vaults[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            // Withdraw
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                vaults[i],
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                string.concat("Withdraw ", assets[i].symbol(), " from Symbiotic Vault ", vm.toString(vaults[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+            // Claim
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                vaults[i],
+                false,
+                "claim(address,uint256)",
+                new address[](1),
+                string.concat("Claim withdraw from Symbiotic Vault ", vm.toString(vaults[i])),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+            // ClaimBatch
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                vaults[i],
+                false,
+                "claimBatch(address,uint256[])",
+                new address[](1),
+                string.concat("Claim batch withdraw from Symbiotic Vault ", vm.toString(vaults[i])),
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
             leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
@@ -4033,6 +4193,144 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
     }
 
+    // ========================================= Karak =========================================
+
+    function _addKarakLeafs(ManageLeaf[] memory leafs, address vaultSupervisor, address vault) internal {
+        address delegationSupervisor = VaultSupervisor(vaultSupervisor).delegationSupervisor();
+        ERC20 underlying = ERC4626(vault).asset();
+
+        // Add leaf to approve karak vault to spend underlying.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(underlying),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Karak Vault to spend ", underlying.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = vault;
+
+        // Approve vault supervisor to spend vault shares
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            vault,
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Vault Supervisor to spend ", ERC4626(vault).symbol(), " shares"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = vaultSupervisor;
+
+        // Add deposit leafs
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            vaultSupervisor,
+            false,
+            "deposit(address,uint256,uint256)",
+            new address[](1),
+            string.concat("Deposit ", underlying.symbol(), " into ", ERC4626(vault).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = vault;
+
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            vaultSupervisor,
+            false,
+            "gimmieShares(address,uint256)",
+            new address[](1),
+            string.concat("Gimmie shares into ", ERC4626(vault).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = vault;
+
+        // Add withdraw leafs
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            vaultSupervisor,
+            false,
+            "returnShares(address,uint256)",
+            new address[](1),
+            string.concat("Return shares from ", ERC4626(vault).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = vault;
+
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            delegationSupervisor,
+            false,
+            "startWithdraw((address[],uint256[],address)[])",
+            new address[](2),
+            string.concat("Start withdraw of ", underlying.symbol(), " from ", ERC4626(vault).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = vault;
+        leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            delegationSupervisor,
+            false,
+            "finishWithdraw((address,address,uint256,uint256,(address[],uint256[],address))[])",
+            new address[](4),
+            string.concat("Finish withdraw of ", underlying.symbol(), " from ", ERC4626(vault).symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = address(0); // Delegation not implemented yet.
+        leafs[leafIndex].argumentAddresses[2] = vault;
+        leafs[leafIndex].argumentAddresses[3] = getAddress(sourceChain, "boringVault");
+    }
+
+    // ========================================= Puppet =========================================
+
+    // TODO this does not factor in leafs where there are address argumetns that are the BoringVault address that really should be the puppet address.
+    function _createPuppetLeafs(ManageLeaf[] memory leafs, address puppet)
+        internal
+        pure
+        returns (ManageLeaf[] memory puppetLeafs)
+    {
+        puppetLeafs = new ManageLeaf[](leafs.length);
+
+        // Iterate through every leaf, and
+        // 1) Take the existing target and append it to the end of the argumentAddresses array.
+        // 2) Change the target to the puppet contract.
+
+        for (uint256 i; i < leafs.length; ++i) {
+            puppetLeafs[i].argumentAddresses = new address[](leafs[i].argumentAddresses.length + 1);
+            // Copy over argumentAddresses.
+            for (uint256 j; j < leafs[i].argumentAddresses.length; ++j) {
+                puppetLeafs[i].argumentAddresses[j] = leafs[i].argumentAddresses[j];
+            }
+            // Append the target to the end of the argumentAddresses array.
+            puppetLeafs[i].argumentAddresses[leafs[i].argumentAddresses.length] = leafs[i].target;
+            // Change the target to the puppet contract.
+            puppetLeafs[i].target = puppet;
+            // Copy over remaning values.
+            puppetLeafs[i].canSendValue = leafs[i].canSendValue;
+            puppetLeafs[i].signature = leafs[i].signature;
+            puppetLeafs[i].description = leafs[i].description;
+            puppetLeafs[i].decoderAndSanitizer = leafs[i].decoderAndSanitizer;
+        }
+    }
+
     // ========================================= BoringVault Teller =========================================
 
     function _addTellerLeafs(ManageLeaf[] memory leafs, address teller, ERC20[] memory assets) internal {
@@ -4357,4 +4655,8 @@ interface BalancerVault {
 
 interface VelodromV2Gauge {
     function stakingToken() external view returns (address);
+}
+
+interface VaultSupervisor {
+    function delegationSupervisor() external view returns (address);
 }

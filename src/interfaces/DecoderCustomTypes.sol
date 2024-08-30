@@ -309,4 +309,20 @@ contract DecoderCustomTypes {
         uint256 deadline;
         uint160 sqrtPriceX96;
     }
+
+    // ========================================= Karak =========================================
+
+    struct QueuedWithdrawal {
+        address staker;
+        address delegatedTo;
+        uint256 nonce;
+        uint256 start;
+        WithdrawRequest request;
+    }
+
+    struct WithdrawRequest {
+        address[] vaults;
+        uint256[] shares;
+        address withdrawer;
+    }
 }

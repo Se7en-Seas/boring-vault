@@ -54,6 +54,14 @@ contract ContractNames {
     string public constant EtherFiLiquidBtcDecoderAndSanitizerName = "EtherFi Liquid BTC Decoder and Sanitizer V0.1";
     string public constant EtherFiLiquidBtcDelayedWithdrawer = "EtherFi Liquid BTC Delayed Withdrawer V0.0";
 
+    string public constant EtherFiBtcRolesAuthorityName = "ether.fi BTC RolesAuthority Version 0.0";
+    string public constant EtherFiBtcName = "ether.fi BTC V0.0";
+    string public constant EtherFiBtcManagerName = "ether.fi BTC Manager With Merkle Verification V0.0";
+    string public constant EtherFiBtcAccountantName = "ether.fi BTC Accountant With Rate Providers V0.0";
+    string public constant EtherFiBtcTellerName = "ether.fi BTC Teller With Multi Asset Support V0.0";
+    string public constant EtherFiBtcDecoderAndSanitizerName = "ether.fi BTC Decoder and Sanitizer V0.0";
+    string public constant EtherFiBtcDelayedWithdrawer = "ether.fi BTC Delayed Withdrawer V0.0";
+
     string public constant EtherFiLiquidUsualRolesAuthorityName = "EtherFi Liquid Usual RolesAuthority Version 0.0";
     string public constant EtherFiLiquidUsualName = "EtherFi Liquid Usual V0.0";
     string public constant EtherFiLiquidUsualManagerName = "EtherFi Liquid Usual Manager With Merkle Verification V0.0";
