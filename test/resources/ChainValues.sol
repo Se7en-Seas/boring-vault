@@ -326,6 +326,8 @@ contract ChainValues {
         values[mainnet]["triCrypto2"] = 0xD51a44d3FaE010294C616388b506AcdA1bfAAE46.toBytes32();
         values[mainnet]["weETH_wETH_ng"] = 0xDB74dfDD3BB46bE8Ce6C33dC9D82777BCFc3dEd5.toBytes32();
         values[mainnet]["weETH_wETH_ng_gauge"] = 0x053df3e4D0CeD9a3Bf0494F97E83CE1f13BdC0E2.toBytes32();
+        values[mainnet]["USD0_USD0++_CurvePool"] = 0x1d08E7adC263CfC70b1BaBe6dC5Bb339c16Eec52.toBytes32();
+        values[mainnet]["USD0_USD0++_CurveGauge"] = 0x5C00817B67b40f3b347bD4275B4BBA4840c8127a.toBytes32();
 
         values[mainnet]["UsdcCrvUsdPool"] = 0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E.toBytes32();
         values[mainnet]["UsdcCrvUsdToken"] = 0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E.toBytes32();
