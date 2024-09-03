@@ -17,6 +17,7 @@ avalanche = "${AVALANCHE_RPC_URL}"
 arbitrum = "${ARBITRUM_RPC_URL}"
 optimism = "${OPTIMISM_RPC_URL}"
 base = "${BASE_RPC_URL}"
+zircuit = "${ZIRCUIT_RPC_URL}"
 
 # [etherscan]
 # mainnet = { key = "${ETHERSCAN_KEY}", url = "https://api.etherscan.io/api" }
