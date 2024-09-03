@@ -120,15 +120,38 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
             leafs,
             getAddress(sourceChain, "lBTC_wBTC_Curve_Pool"),
             2,
-            getAddress(sourceChain, "lBTC_wBTC_Curve_Gauge")
+            address(0)
         );
 
         // ========================== Convex ==========================
         // _addConvexLeafs(leafs, getERC20(sourceChain, "lBTC_wBTC_Curve_Pool"), CONVEX_REWARDS_CONTRACT);
 
+        // ========================== BoringVaults ==========================
+        {
+            ERC20[] memory tellerAssets = new ERC20[](2);
+            tellerAssets[0] = getERC20(sourceChain, "WBTC");
+            tellerAssets[1] = getERC20(sourceChain, "LBTC");
+            address eBTCTeller = 0xe19a43B1b8af6CeE71749Af2332627338B3242D1;
+
+            _addTellerLeafs(leafs, eBTCTeller, tellerAssets);
+        }
+
+        // ========================== Pendle ==========================
+        _addPendleMarketLeafs(
+            leafs,
+            getAddress(sourceChain, "pendle_eBTC_market_12_26_24"),
+            true
+        );
+
+        // ========================== MorphoBlue ==========================
+        _addMorphoBlueSupplyLeafs(
+            leafs,
+            getBytes32(sourceChain, "LBTC_WBTC_945")
+        );
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        string memory filePath = "./leafs/LombardStrategistLeafs.json";
+        string memory filePath = "./leafs/Mainnet/LombardStrategistLeafs.json";
 
         _generateLeafs(
             filePath,
