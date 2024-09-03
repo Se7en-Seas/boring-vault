@@ -15,6 +15,7 @@ contract ChainValues {
     string public constant arbitrum = "arbitrum";
     string public constant optimism = "optimism";
     string public constant base = "base";
+    string public constant zircuit = "zircuit";
     string public constant holesky = "holesky";
 
     // Bridging constants.
@@ -33,7 +34,9 @@ contract ChainValues {
 
     function getAddress(string memory chainName, string memory valueName) public view returns (address a) {
         a = values[chainName][valueName].toAddress();
-        if (a == address(0)) revert ChainValues__ZeroAddress(chainName, valueName);
+        if (a == address(0)) {
+            revert ChainValues__ZeroAddress(chainName, valueName);
+        }
     }
 
     function getERC20(string memory chainName, string memory valueName) public view returns (ERC20 erc20) {
@@ -43,7 +46,9 @@ contract ChainValues {
 
     function getBytes32(string memory chainName, string memory valueName) public view returns (bytes32 b) {
         b = values[chainName][valueName];
-        if (b == bytes32(0)) revert ChainValues__ZeroBytes32(chainName, valueName);
+        if (b == bytes32(0)) {
+            revert ChainValues__ZeroBytes32(chainName, valueName);
+        }
     }
 
     function setValue(bool overrideOk, string memory chainName, string memory valueName, bytes32 value) public {
@@ -718,6 +723,11 @@ contract ChainValues {
         values[mainnet]["optimismPortal"] = 0xbEb5Fc579115071764c7423A4f12eDde41f106Ed.toBytes32();
         values[mainnet]["optimismResolvedDelegate"] = 0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1.toBytes32();
 
+        // Zircuit Standard Bridge.
+        values[mainnet]["zircuitStandardBridge"] = 0x386B76D9cA5F5Fb150B6BFB35CF5379B22B26dd8.toBytes32();
+        values[mainnet]["zircuitPortal"] = 0xbEb5Fc579115071764c7423A4f12eDde41f106Ed.toBytes32();
+        values[mainnet]["zircuitResolvedDelegate"] = 0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1.toBytes32();
+
         // Layer Zero.
         values[mainnet]["EtherFiOFTAdapter"] = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D.toBytes32();
 
@@ -999,5 +1009,11 @@ contract ChainValues {
 
         // Symbiotic
         values[holesky]["wstETHSymbioticVault"] = 0x89D62D1d89d8636367fc94998b3bE095a3d9c2f9.toBytes32();
+    }
+
+    function _addZircuitValues() private {
+        // Standard Bridge.
+        values[zircuit]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
+        values[zircuit]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
     }
 }
