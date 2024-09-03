@@ -8,12 +8,15 @@ import {ArbitrumNativeBridgeDecoderAndSanitizer} from
 import {OFTDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/OFTDecoderAndSanitizer.sol";
 import {StandardBridgeDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/StandardBridgeDecoderAndSanitizer.sol";
+import {MantleStandardBridgeDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/MantleStandardBridgeDecoderAndSanitizer.sol";
 
 contract BridgingDecoderAndSanitizer is
     ArbitrumNativeBridgeDecoderAndSanitizer,
     CCIPDecoderAndSanitizer,
     OFTDecoderAndSanitizer,
-    StandardBridgeDecoderAndSanitizer
+    StandardBridgeDecoderAndSanitizer,
+    MantleStandardBridgeDecoderAndSanitizer
 {
     constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
 

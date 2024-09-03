@@ -279,6 +279,18 @@ contract DecoderCustomTypes {
         bytes32 latestBlockhash;
     }
 
+    // ========================================= Mantle L1StandardBridge =========================================
+
+    struct MantleWithdrawalTransaction {
+        uint256 nonce;
+        address sender;
+        address target;
+        uint256 mntValue;
+        uint256 value;
+        uint256 gasLimit;
+        bytes data;
+    }
+
     // ========================================= Camelot V3 =========================================
 
     struct CamelotMintParams {

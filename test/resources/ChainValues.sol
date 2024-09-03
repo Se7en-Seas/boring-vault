@@ -16,6 +16,7 @@ contract ChainValues {
     string public constant optimism = "optimism";
     string public constant base = "base";
     string public constant zircuit = "zircuit";
+    string public constant mantle = "mantle";
     string public constant holesky = "holesky";
 
     // Bridging constants.
@@ -68,6 +69,8 @@ contract ChainValues {
         _addBaseValues();
         _addArbitrumValues();
         _addOptimismValues();
+        _addMantleValues();
+        _addZircuitValues();
 
         // Add testnet values
         _addHoleskyValues();
@@ -723,10 +726,15 @@ contract ChainValues {
         values[mainnet]["optimismPortal"] = 0xbEb5Fc579115071764c7423A4f12eDde41f106Ed.toBytes32();
         values[mainnet]["optimismResolvedDelegate"] = 0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1.toBytes32();
 
+        // Mantle Standard Bridge.
+        values[mainnet]["mantleStandardBridge"] = 0x95fC37A27a2f68e3A647CDc081F0A89bb47c3012.toBytes32();
+        values[mainnet]["mantlePortal"] = 0xc54cb22944F2bE476E02dECfCD7e3E7d3e15A8Fb.toBytes32();
+        values[mainnet]["mantleResolvedDelegate"] = 0x676A795fe6E43C17c668de16730c3F690FEB7120.toBytes32(); // TODO update this.
+
         // Zircuit Standard Bridge.
         values[mainnet]["zircuitStandardBridge"] = 0x386B76D9cA5F5Fb150B6BFB35CF5379B22B26dd8.toBytes32();
-        values[mainnet]["zircuitPortal"] = 0xbEb5Fc579115071764c7423A4f12eDde41f106Ed.toBytes32();
-        values[mainnet]["zircuitResolvedDelegate"] = 0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1.toBytes32();
+        values[mainnet]["zircuitPortal"] = 0x17bfAfA932d2e23Bd9B909Fd5B4D2e2a27043fb1.toBytes32();
+        values[mainnet]["zircuitResolvedDelegate"] = 0x2a721cBE81a128be0F01040e3353c3805A5EA091.toBytes32();
 
         // Layer Zero.
         values[mainnet]["EtherFiOFTAdapter"] = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D.toBytes32();
@@ -1009,6 +1017,17 @@ contract ChainValues {
 
         // Symbiotic
         values[holesky]["wstETHSymbioticVault"] = 0x89D62D1d89d8636367fc94998b3bE095a3d9c2f9.toBytes32();
+    }
+
+    function _addMantleValues() private {
+        // ERC20
+        values[mantle]["WETH"] = 0xdEAddEaDdeadDEadDEADDEAddEADDEAddead1111.toBytes32();
+        values[mantle]["USDC"] = 0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9.toBytes32();
+        values[mantle]["METH"] = 0xcDA86A272531e8640cD7F1a92c01839911B90bb0.toBytes32();
+
+        // Standard Bridge.
+        values[mantle]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
+        values[mantle]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
     }
 
     function _addZircuitValues() private {

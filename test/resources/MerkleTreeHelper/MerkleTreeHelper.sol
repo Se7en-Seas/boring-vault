@@ -427,51 +427,100 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
         }
 
-        // Bridge ETH.
-        unchecked {
-            leafIndex++;
+        if (keccak256(abi.encode(sourceChain)) == keccak256(abi.encode(mantle))) {
+            // Mantle uses a nonstand `bridgeETHTo` function on their L2.
+            // Bridge ETH.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                sourceStandardBridge,
+                false,
+                "bridgeETHTo(uint256,address,uint32,bytes)",
+                new address[](1),
+                string.concat("Bridge ETH from ", sourceChain, " to ", destination),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        } else {
+            // Bridge ETH.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                sourceStandardBridge,
+                true,
+                "bridgeETHTo(address,uint32,bytes)",
+                new address[](1),
+                string.concat("Bridge ETH from ", sourceChain, " to ", destination),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
         }
-        leafs[leafIndex] = ManageLeaf(
-            sourceStandardBridge,
-            true,
-            "bridgeETHTo(address,uint32,bytes)",
-            new address[](1),
-            string.concat("Bridge ETH from ", sourceChain, " to ", destination),
-            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-        );
-        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
 
         // If we are generating leafs for some L2 back to mainnet, these leafs are not needed.
         if (keccak256(abi.encode(destination)) != keccak256(abi.encode(mainnet))) {
-            // Prove withdrawal transaction.
-            unchecked {
-                leafIndex++;
-            }
-            leafs[leafIndex] = ManageLeaf(
-                sourcePortal,
-                false,
-                "proveWithdrawalTransaction((uint256,address,address,uint256,uint256,bytes),uint256,(bytes32,bytes32,bytes32,bytes32),bytes[])",
-                new address[](2),
-                string.concat("Prove withdrawal transaction from ", destination, " to ", sourceChain),
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-            leafs[leafIndex].argumentAddresses[0] = destinationCrossDomainMessenger;
-            leafs[leafIndex].argumentAddresses[1] = sourceResolvedDelegate;
+            if (keccak256(abi.encode(destination)) == keccak256(abi.encode(mantle))) {
+                // Prove withdrawal transaction.
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    sourcePortal,
+                    false,
+                    "proveWithdrawalTransaction((uint256,address,address,uint256,uint256,uint256,bytes),uint256,(bytes32,bytes32,bytes32,bytes32),bytes[])",
+                    new address[](2),
+                    string.concat("Prove withdrawal transaction from ", destination, " to ", sourceChain),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = destinationCrossDomainMessenger;
+                leafs[leafIndex].argumentAddresses[1] = sourceResolvedDelegate;
 
-            // Finalize withdrawal transaction.
-            unchecked {
-                leafIndex++;
+                // Finalize withdrawal transaction.
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    sourcePortal,
+                    false,
+                    "finalizeWithdrawalTransaction((uint256,address,address,uint256,uint256,uint256,bytes))",
+                    new address[](2),
+                    string.concat("Finalize withdrawal transaction from ", destination, " to ", sourceChain),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = destinationCrossDomainMessenger;
+                leafs[leafIndex].argumentAddresses[1] = sourceResolvedDelegate;
+            } else {
+                // Prove withdrawal transaction.
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    sourcePortal,
+                    false,
+                    "proveWithdrawalTransaction((uint256,address,address,uint256,uint256,bytes),uint256,(bytes32,bytes32,bytes32,bytes32),bytes[])",
+                    new address[](2),
+                    string.concat("Prove withdrawal transaction from ", destination, " to ", sourceChain),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = destinationCrossDomainMessenger;
+                leafs[leafIndex].argumentAddresses[1] = sourceResolvedDelegate;
+
+                // Finalize withdrawal transaction.
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    sourcePortal,
+                    false,
+                    "finalizeWithdrawalTransaction((uint256,address,address,uint256,uint256,bytes))",
+                    new address[](2),
+                    string.concat("Finalize withdrawal transaction from ", destination, " to ", sourceChain),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = destinationCrossDomainMessenger;
+                leafs[leafIndex].argumentAddresses[1] = sourceResolvedDelegate;
             }
-            leafs[leafIndex] = ManageLeaf(
-                sourcePortal,
-                false,
-                "finalizeWithdrawalTransaction((uint256,address,address,uint256,uint256,bytes))",
-                new address[](2),
-                string.concat("Finalize withdrawal transaction from ", destination, " to ", sourceChain),
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-            leafs[leafIndex].argumentAddresses[0] = destinationCrossDomainMessenger;
-            leafs[leafIndex].argumentAddresses[1] = sourceResolvedDelegate;
         }
     }
 
