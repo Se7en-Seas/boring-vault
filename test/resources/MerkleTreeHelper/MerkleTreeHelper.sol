@@ -853,6 +853,93 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
     }
 
+    // ========================================= Scroll Native Bridge =========================================
+
+    function _addScrollNativeBridgeLeafs(
+        ManageLeaf[] memory leafs,
+        string memory destination,
+        ERC20[] memory localTokens
+    ) internal {
+        if (keccak256(abi.encode(sourceChain)) == keccak256(abi.encode(mainnet))) {
+            // Add leaf for bridging ETH.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "scrollMessenger"),
+                true,
+                "sendMessage(address,uint256,bytes,uint256)",
+                new address[](1),
+                string.concat("Bridge ETH from ", destination, " to ", sourceChain),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+            // Add leafs for bridging ERC20s.
+            for (uint256 i; i < localTokens.length; ++i) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    address(localTokens[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Scroll Gateway Router to spend ", localTokens[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "scrollGatewayRouter");
+
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "scrollGatewayRouter"),
+                    true,
+                    "depositERC20(address,address,uint256,uint256)",
+                    new address[](2),
+                    string.concat("Bridge ", localTokens[i].symbol(), " from ", sourceChain, " to ", destination),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = address(localTokens[i]);
+                leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+
+                // TODO need a claim function for ERC20s and ETH
+            }
+        } else if (keccak256(abi.encode(sourceChain)) == keccak256(abi.encode(scroll))) {
+            // Add leafs for withdrawing ETH.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "scrollMessenger"),
+                false,
+                "sendMessage(address,uint256,bytes,uint256)",
+                new address[](1),
+                string.concat("Fast Bridge ETH from ", destination, " to ", sourceChain),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+            // Add leafs for withdrawing ERC20s.
+            for (uint256 i; i < localTokens.length; ++i) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "scrollGatewayRouter"),
+                    false,
+                    "withdrawERC20(address,address,uint256,uint256)",
+                    new address[](2),
+                    string.concat("Withdraw ", localTokens[i].symbol(), " from ", sourceChain, " to ", destination),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = address(localTokens[i]);
+                leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+            }
+        }
+    }
+
     // ========================================= CCIP Send =========================================
 
     function _addCcipBridgeLeafs(

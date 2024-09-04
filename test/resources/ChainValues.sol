@@ -18,6 +18,7 @@ contract ChainValues {
     string public constant zircuit = "zircuit";
     string public constant mantle = "mantle";
     string public constant linea = "linea";
+    string public constant scroll = "scroll";
     string public constant holesky = "holesky";
 
     // Bridging constants.
@@ -73,6 +74,7 @@ contract ChainValues {
         _addMantleValues();
         _addZircuitValues();
         _addLineaValues();
+        _addScrollValues();
 
         // Add testnet values
         _addHoleskyValues();
@@ -750,6 +752,10 @@ contract ChainValues {
         // Linea Bridging
         values[mainnet]["tokenBridge"] = 0x051F1D88f0aF5763fB888eC4378b4D8B29ea3319.toBytes32(); // approve, bridge token
         values[mainnet]["lineaMessageService"] = 0xd19d4B5d358258f05D7B411E21A1460D11B0876F.toBytes32(); // claim message, sendMessage
+
+        // Scroll Bridging
+        values[mainnet]["scrollGatewayRouter"] = 0xF8B1378579659D8F7EE5f3C929c2f3E332E41Fd6.toBytes32(); // approve, depositERC20
+        values[mainnet]["scrollMessenger"] = 0x6774Bcbd5ceCeF1336b5300fb5186a12DDD8b367.toBytes32(); // sendMessage
     }
 
     function _addBaseValues() private {
@@ -1049,5 +1055,14 @@ contract ChainValues {
         // Linea Bridge.
         values[linea]["tokenBridge"] = 0x353012dc4a9A6cF55c941bADC267f82004A8ceB9.toBytes32(); //approve, also bridge token
         values[linea]["lineaMessageService"] = 0x508Ca82Df566dCD1B0DE8296e70a96332cD644ec.toBytes32(); // claim message, sendMessage
+    }
+
+    function _addScrollValues() private {
+        // ERC20
+        values[scroll]["DAI"] = 0xcA77eB3fEFe3725Dc33bccB54eDEFc3D9f764f97.toBytes32();
+
+        // Scroll Bridge.
+        values[scroll]["scrollGatewayRouter"] = 0x4C0926FF5252A435FD19e10ED15e5a249Ba19d79.toBytes32(); // withdrawERC20
+        values[scroll]["scrollMessenger"] = 0x781e90f1c8Fc4611c9b7497C3B47F99Ef6969CbC.toBytes32(); // sendMessage
     }
 }
