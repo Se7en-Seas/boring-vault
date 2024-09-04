@@ -17,10 +17,8 @@ contract CreateEtherFiBTCMerkleRootScript is Script, MerkleTreeHelper {
 
     address public boringVault = 0x657e8C867D8B37dCC18fA4Caead9C45EB088C642;
     address public managerAddress = 0x382d0106F308864D5462332D9D3bB54a60384B70;
-    address public accountantAddress =
-        0x1b293DC39F94157fA0D1D36d7e0090C8B8B8c13F;
-    address public rawDataDecoderAndSanitizer =
-        0xa2Da7A948254692d7B261bBd27b3Cd1E2C7B033c;
+    address public accountantAddress = 0x1b293DC39F94157fA0D1D36d7e0090C8B8B8c13F;
+    address public rawDataDecoderAndSanitizer = 0xa2Da7A948254692d7B261bBd27b3Cd1E2C7B033c;
 
     function setUp() external {}
 
@@ -29,8 +27,8 @@ contract CreateEtherFiBTCMerkleRootScript is Script, MerkleTreeHelper {
      */
     function run() external {
         /// NOTE Only have 1 function run at a time, otherwise the merkle root created will be wrong.
-        //generateAdminStrategistMerkleRoot();
-        generateSniperMerkleRoot();
+        generateAdminStrategistMerkleRoot();
+        //generateSniperMerkleRoot();
     }
 
     function generateSniperMerkleRoot() public {
@@ -38,37 +36,18 @@ contract CreateEtherFiBTCMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "boringVault", boringVault);
         setAddress(false, mainnet, "managerAddress", managerAddress);
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
-        setAddress(
-            false,
-            mainnet,
-            "rawDataDecoderAndSanitizer",
-            rawDataDecoderAndSanitizer
-        );
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](8);
-        _addSymbioticApproveAndDepositLeaf(
-            leafs,
-            getAddress(sourceChain, "wBTCDefaultCollateral")
-        );
-        _addSymbioticApproveAndDepositLeaf(
-            leafs,
-            getAddress(sourceChain, "tBTCDefaultCollateral")
-        );
-        _addSymbioticApproveAndDepositLeaf(
-            leafs,
-            getAddress(sourceChain, "LBTCDefaultCollateral")
-        );
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "wBTCDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "tBTCDefaultCollateral"));
+        _addSymbioticApproveAndDepositLeaf(leafs, getAddress(sourceChain, "LBTCDefaultCollateral"));
 
         string memory filePath = "./leafs/Mainnet/etherfiBTCSniperLeafs.json";
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        _generateLeafs(
-            filePath,
-            leafs,
-            manageTree[manageTree.length - 1][0],
-            manageTree
-        );
+        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 
     function generateAdminStrategistMerkleRoot() public {
@@ -76,29 +55,15 @@ contract CreateEtherFiBTCMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "boringVault", boringVault);
         setAddress(false, mainnet, "managerAddress", managerAddress);
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
-        setAddress(
-            false,
-            mainnet,
-            "rawDataDecoderAndSanitizer",
-            rawDataDecoderAndSanitizer
-        );
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](64);
 
         // ========================== Symbiotic ==========================
         address[] memory defaultCollaterals = new address[](3);
-        defaultCollaterals[0] = getAddress(
-            sourceChain,
-            "wBTCDefaultCollateral"
-        );
-        defaultCollaterals[1] = getAddress(
-            sourceChain,
-            "tBTCDefaultCollateral"
-        );
-        defaultCollaterals[2] = getAddress(
-            sourceChain,
-            "LBTCDefaultCollateral"
-        );
+        defaultCollaterals[0] = getAddress(sourceChain, "wBTCDefaultCollateral");
+        defaultCollaterals[1] = getAddress(sourceChain, "tBTCDefaultCollateral");
+        defaultCollaterals[2] = getAddress(sourceChain, "LBTCDefaultCollateral");
         _addSymbioticLeafs(leafs, defaultCollaterals);
 
         // ========================== UniswapV3 ==========================
@@ -125,16 +90,10 @@ contract CreateEtherFiBTCMerkleRootScript is Script, MerkleTreeHelper {
         kind[2] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
-        string
-            memory filePath = "./leafs/Mainnet/EtherFiBtcStrategistLeafs.json";
+        string memory filePath = "./leafs/Mainnet/EtherFiBtcStrategistLeafs.json";
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        _generateLeafs(
-            filePath,
-            leafs,
-            manageTree[manageTree.length - 1][0],
-            manageTree
-        );
+        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 }
