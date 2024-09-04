@@ -306,6 +306,13 @@ contract DecoderCustomTypes {
         bytes data;
     }
 
+    // ========================================= Scroll Bridge =========================================
+
+    struct L2MessageProof {
+        uint256 batchIndex;
+        bytes merkleProof;
+    }
+
     // ========================================= Camelot V3 =========================================
 
     struct CamelotMintParams {

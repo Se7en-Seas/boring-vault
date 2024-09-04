@@ -903,9 +903,37 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 );
                 leafs[leafIndex].argumentAddresses[0] = address(localTokens[i]);
                 leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
-
-                // TODO need a claim function for ERC20s and ETH
             }
+
+            // Add leaf for claiming ETH.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "scrollMessenger"),
+                false,
+                "relayMessageWithProof(address,address,uint256,uint256,bytes,(uint256,bytes))",
+                new address[](2),
+                string.concat("Claim ETH from ", destination, " to ", sourceChain),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+
+            // Add leaf for ERC20 claiming.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "scrollMessenger"),
+                false,
+                "relayMessageWithProof(address,address,uint256,uint256,bytes,(uint256,bytes))",
+                new address[](2),
+                string.concat("Claim ERC20s from ", destination, " to ", sourceChain),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(destination, "scrollCustomERC20Gateway");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "scrollCustomERC20Gateway");
         } else if (keccak256(abi.encode(sourceChain)) == keccak256(abi.encode(scroll))) {
             // Add leafs for withdrawing ETH.
             unchecked {
@@ -916,7 +944,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 false,
                 "sendMessage(address,uint256,bytes,uint256)",
                 new address[](1),
-                string.concat("Fast Bridge ETH from ", destination, " to ", sourceChain),
+                string.concat("Bridge ETH from ", destination, " to ", sourceChain),
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
             leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
