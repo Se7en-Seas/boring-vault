@@ -717,6 +717,142 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
     }
 
+    // ========================================= Linea Native Bridge =========================================
+
+    function _addLineaNativeBridgeLeafs(
+        ManageLeaf[] memory leafs,
+        string memory destination,
+        ERC20[] memory localTokens
+    ) internal {
+        // Approve the source chains tokenBridge to spend local tokens.
+        for (uint256 i; i < localTokens.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(localTokens[i]),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Linea ", sourceChain, " tokenBridge to spend ", localTokens[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "tokenBridge");
+
+            // Call bridgeToken to bridge the token.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "tokenBridge"),
+                false,
+                "bridgeToken(address,uint256,address)",
+                new address[](2),
+                string.concat("Bridge ", localTokens[i].symbol(), " from ", sourceChain, " to ", destination),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(localTokens[i]);
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "tokenBridge"),
+                true,
+                "bridgeToken(address,uint256,address)",
+                new address[](2),
+                string.concat("Bridge ", localTokens[i].symbol(), " from ", sourceChain, " to ", destination),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(localTokens[i]);
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+        }
+
+        if (localTokens.length > 0) {
+            if (keccak256(abi.encode(sourceChain)) == keccak256(abi.encode(mainnet))) {
+                // Call claimMessageWithProof to handle claiming ERC20s.
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "lineaMessageService"),
+                    false,
+                    "claimMessageWithProof((bytes32[],uint256,uint32,address,address,uint256,uint256,address,bytes32,bytes))",
+                    new address[](3),
+                    string.concat("Claim ERC20s from ", destination, " Token Bridge to ", sourceChain, " Token Bridge"),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(destination, "tokenBridge");
+                leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "tokenBridge");
+                leafs[leafIndex].argumentAddresses[2] = address(0);
+            } else if (keccak256(abi.encode(sourceChain)) == keccak256(abi.encode(linea))) {
+                // Use claimMessage Leaf instead of claimMessageWithProof.
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "lineaMessageService"),
+                    false,
+                    "claimMessage(address,address,uint256,uint256,address,bytes,uint256)",
+                    new address[](3),
+                    string.concat("Claim ERC20s from ", destination, " Token Bridge to ", sourceChain, " Token Bridge"),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(destination, "tokenBridge");
+                leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "tokenBridge");
+                leafs[leafIndex].argumentAddresses[2] = address(0);
+            }
+        }
+
+        // Call sendMessage to send ETH.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "lineaMessageService"),
+            true,
+            "sendMessage(address,uint256,bytes)",
+            new address[](1),
+            string.concat("Send ETH from ", sourceChain, " to ", destination),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+        // Call claimMessage to handle claiming ETH.
+        if (keccak256(abi.encode(sourceChain)) == keccak256(abi.encode(mainnet))) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "lineaMessageService"),
+                false,
+                "claimMessageWithProof((bytes32[],uint256,uint32,address,address,uint256,uint256,address,bytes32,bytes))",
+                new address[](3),
+                string.concat("Claim ETH from ", destination, " Token Bridge to ", sourceChain, " Token Bridge"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[2] = address(0);
+        } else if (keccak256(abi.encode(sourceChain)) == keccak256(abi.encode(linea))) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "lineaMessageService"),
+                false,
+                "claimMessage(address,address,uint256,uint256,address,bytes,uint256)",
+                new address[](3),
+                string.concat("Claim ETH from ", destination, " Token Bridge to ", sourceChain, " Token Bridge"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[2] = address(0);
+        }
+    }
+
     // ========================================= CCIP Send =========================================
 
     function _addCcipBridgeLeafs(

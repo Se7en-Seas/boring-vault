@@ -291,6 +291,21 @@ contract DecoderCustomTypes {
         bytes data;
     }
 
+    // ========================================= Linea Bridge =========================================
+
+    struct ClaimMessageWithProofParams {
+        bytes32[] proof;
+        uint256 messageNumber;
+        uint32 leafIndex;
+        address from;
+        address to;
+        uint256 fee;
+        uint256 value;
+        address payable feeRecipient;
+        bytes32 merkleRoot;
+        bytes data;
+    }
+
     // ========================================= Camelot V3 =========================================
 
     struct CamelotMintParams {
