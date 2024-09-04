@@ -4,7 +4,7 @@ pragma solidity 0.8.21;
 import {BaseDecoderAndSanitizer, DecoderCustomTypes} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
 
 abstract contract LineaBridgeDecoderAndSanitizer is BaseDecoderAndSanitizer {
-    //============================== StandardBridge ===============================
+    //============================== Linea Native Bridge ===============================
 
     /// @notice Example TX https://etherscan.io/tx/0x6fe5dcbafb6620980ec571cde88e6e651075214a0b698543eb5589e8889d52bd
     /// @notice Set _fee to zero in order to claim funds manually.
