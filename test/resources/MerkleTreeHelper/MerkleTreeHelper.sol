@@ -2935,7 +2935,8 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         address lst,
         address strategy,
         address _strategyManager,
-        address _delegationManager
+        address _delegationManager,
+        address operator
     ) internal {
         // Approvals.
         unchecked {
@@ -2996,6 +2997,34 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
         leafs[leafIndex].argumentAddresses[3] = strategy;
         leafs[leafIndex].argumentAddresses[4] = lst;
+
+        // Delegation.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            _delegationManager,
+            false,
+            "delegateTo(address,(bytes,uint256),bytes32)",
+            new address[](1),
+            string.concat("Delegate to ", vm.toString(operator)),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = operator;
+
+        // Undelegate
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            _delegationManager,
+            false,
+            "undelegate(address)",
+            new address[](1),
+            string.concat("Undelegate from ", vm.toString(operator)),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
     }
 
     // ========================================= Swell Simple Staking =========================================

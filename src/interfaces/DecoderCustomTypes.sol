@@ -224,6 +224,13 @@ contract DecoderCustomTypes {
         uint256[] shares;
     }
 
+    struct SignatureWithExpiry {
+        // the signature itself, formatted as a single bytes object
+        bytes signature;
+        // the expiration timestamp (UTC) of the signature
+        uint256 expiry;
+    }
+
     // ========================================= CCIP =========================================
 
     // If extraArgs is empty bytes, the default is 200k gas limit.
