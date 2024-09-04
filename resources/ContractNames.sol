@@ -7,6 +7,8 @@ contract ContractNames {
     string public constant AtomicQueueName = "Atomic Queue V0.1";
     string public constant AtomicSolverName = "Atomic Solver V4.0";
     string public constant IncentiveDistributorName = "Incentive Distributor V0.1";
+    string public constant PaymentSplitterName = "Payment Splitter V0.0";
+    string public constant PaymentSplitterRolesAuthorityName = "Payment Splitter Roles Authority V0.0";
 
     // Migration
     string public constant CellarMigrationAdaptorName = "Cellar Migration Adaptor V0.1";
