@@ -40,7 +40,7 @@ contract BaseDecoderAndSanitizer {
     /**
      * @notice The purpose of this function is to revert with a known error,
      *         so that during merkle tree creation we can verify that a
-     *         leafs decoder and sanitizer implemnts the required function
+     *         leafs decoder and sanitizer implments the required function
      *         selector.
      */
     fallback() external {
