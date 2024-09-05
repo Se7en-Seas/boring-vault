@@ -345,10 +345,6 @@ contract EigenLayerLSTStakingIntegrationTest is Test, MerkleTreeHelper {
     function testDelegation() external {
         deal(getAddress(sourceChain, "METH"), address(boringVault), 1_000e18);
 
-        // approve
-        // Call deposit
-        // withdraw
-        // complete withdraw
         ManageLeaf[] memory leafs = new ManageLeaf[](8);
         _addLeafsForEigenLayerLST(
             leafs,
@@ -356,7 +352,7 @@ contract EigenLayerLSTStakingIntegrationTest is Test, MerkleTreeHelper {
             getAddress(sourceChain, "mETHStrategy"),
             getAddress(sourceChain, "strategyManager"),
             getAddress(sourceChain, "delegationManager"),
-            address(0)
+            getAddress(sourceChain, "testOperator")
         );
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
