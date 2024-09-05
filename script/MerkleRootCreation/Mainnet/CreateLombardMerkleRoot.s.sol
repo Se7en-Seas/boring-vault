@@ -112,12 +112,6 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
         // ========================== Convex ==========================
         // _addConvexLeafs(leafs, getERC20(sourceChain, "lBTC_wBTC_Curve_Pool"), CONVEX_REWARDS_CONTRACT);
 
-        // ERC20[] memory tellerAssets = new ERC20[](1);
-        // tellerAssets[0] = getERC20(sourceChain, "WBTC");
-        // _addTellerLeafs(leafs, 0xe19a43B1b8af6CeE71749Af2332627338B3242D1, tellerAssets);
-
-        _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
-
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/LombardStrategistLeafs.json";
