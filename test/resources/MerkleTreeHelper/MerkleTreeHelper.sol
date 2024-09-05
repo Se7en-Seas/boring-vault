@@ -4501,12 +4501,13 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         address decoderAndSanitizer;
     }
 
-    error MerkleTree__DecoderAndSanitizerMissingSelector(bytes4 selector);
+    error MerkleTreeHelper__DecoderAndSanitizerMissingFunction(string signature);
 
-    // TODO could this also verify the decoder has code deployed at it? Or maybe it skips it if there is none?
     function _verifyDecoderImplementsLeafsFunctionSelectors(ManageLeaf[] memory leafs) internal view {
         for (uint256 i; i < leafs.length; ++i) {
             bytes4 selector = bytes4(keccak256(abi.encodePacked(leafs[i].signature)));
+            // This is the "selector" for an empty leaf.
+            if (selector == 0xc5d24601) continue;
             (bool success, bytes memory returndata) =
                 leafs[i].decoderAndSanitizer.staticcall(abi.encodePacked(selector));
             if (!success && returndata.length > 0) {
@@ -4519,7 +4520,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                             )
                         )
                 ) {
-                    revert MerkleTree__DecoderAndSanitizerMissingSelector(selector);
+                    revert MerkleTreeHelper__DecoderAndSanitizerMissingFunction(leafs[i].signature);
                 }
             }
         }
