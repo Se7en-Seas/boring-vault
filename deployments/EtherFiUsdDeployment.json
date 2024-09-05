@@ -1,0 +1,71 @@
+{
+  "DepositAssets": {
+    "DAI": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "USDC": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "USDT": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "USDe": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    }
+  },
+  "WithdrawAssets": {
+    "DAI": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "USDC": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "USDT": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "USDe": {
+      "CompletionWindow": 1209600,
+      "MaxLoss": 100,
+      "WithdrawDelay": 604800,
+      "WithdrawFee": 0
+    }
+  },
+  "accountantConfiguration": {
+    "AllowedExchangeRateChangeLower": 9950,
+    "AllowedExchangeRateChangeUpper": 10050,
+    "Base": "USDe",
+    "BaseAddress": "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
+    "ManagementFee": 200,
+    "MinimumUpateDelayInSeconds": 21600,
+    "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
+    "StartingExchangeRate": 1000000000000000000
+  },
+  "core": {
+    "AccountantWithRateProviders": "0xEB440B36f61Bf62E0C54C622944545f159C3B790",
+    "BoringVault": "0x939778D83b46B456224A33Fb59630B11DEC56663",
+    "DecoderAndSanitizer": "0x5c4F490eBF19F6f646146Bff7Decd75461100577",
+    "DelayedWithdraw": "0xAF19cD4000Dfc9b573197666445CBf1fdA5b68AE",
+    "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
+    "ManagerWithMerkleVerification": "0xDFC5b0d2eC65864Dc773F681E3D52c765dc083ac",
+    "RolesAuthority": "0x83dA0EabC45b14BbfaEc94a1f4De0901dB6B9633",
+    "TellerWithMultiAssetSupport": "0xA5C0bc543Ae9e522d0d8829191D759c0f0BcD098"
+  },
+  "depositConfiguration": {
+    "AllowPublicDeposits": false,
+    "AllowPublicWithdraws": true,
+    "ShareLockPeriod": 86400
+  }
+}
