@@ -8,7 +8,7 @@ import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IComet} from "src/interfaces/IComet.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
-
+import {BaseDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
 import "forge-std/Base.sol";
 
 contract MerkleTreeHelper is CommonBase, ChainValues {
@@ -4499,6 +4499,30 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         address[] argumentAddresses;
         string description;
         address decoderAndSanitizer;
+    }
+
+    error MerkleTree__DecoderAndSanitizerMissingSelector(bytes4 selector);
+
+    // TODO could this also verify the decoder has code deployed at it? Or maybe it skips it if there is none?
+    function _verifyDecoderImplementsLeafsFunctionSelectors(ManageLeaf[] memory leafs) internal view {
+        for (uint256 i; i < leafs.length; ++i) {
+            bytes4 selector = bytes4(keccak256(abi.encodePacked(leafs[i].signature)));
+            (bool success, bytes memory returndata) =
+                leafs[i].decoderAndSanitizer.staticcall(abi.encodePacked(selector));
+            if (!success && returndata.length > 0) {
+                // Make sure we did not revert from the `BaseDecoderAndSanitizer__FunctionSelectorNotSupported()` error.
+                if (
+                    keccak256(returndata)
+                        == keccak256(
+                            abi.encodePacked(
+                                BaseDecoderAndSanitizer.BaseDecoderAndSanitizer__FunctionSelectorNotSupported.selector
+                            )
+                        )
+                ) {
+                    revert MerkleTree__DecoderAndSanitizerMissingSelector(selector);
+                }
+            }
+        }
     }
 
     function _buildTrees(bytes32[][] memory merkleTreeIn) internal pure returns (bytes32[][] memory merkleTreeOut) {

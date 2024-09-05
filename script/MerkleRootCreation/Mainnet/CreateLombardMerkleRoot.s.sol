@@ -15,11 +15,9 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0x5401b8620E5FB570064CA9114fd1e135fd77D57c;
-    address public rawDataDecoderAndSanitizer =
-        0x402d89D6c763E8e79b77Ac1424f28cbA80ac9caa;
+    address public rawDataDecoderAndSanitizer = 0x402d89D6c763E8e79b77Ac1424f28cbA80ac9caa;
     address public managerAddress = 0xcf38e37872748E3b66741A42560672A6cef75e9B;
-    address public accountantAddress =
-        0x28634D0c5edC67CF2450E74deA49B90a4FF93dCE;
+    address public accountantAddress = 0x28634D0c5edC67CF2450E74deA49B90a4FF93dCE;
 
     function setUp() external {}
 
@@ -35,12 +33,7 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "boringVault", boringVault);
         setAddress(false, mainnet, "managerAddress", managerAddress);
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
-        setAddress(
-            false,
-            mainnet,
-            "rawDataDecoderAndSanitizer",
-            rawDataDecoderAndSanitizer
-        );
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         leafIndex = 0;
 
@@ -63,11 +56,7 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
         _addSparkLendLeafs(leafs, supplyAssets, borrowAssets);
 
         // ========================== Gearbox ==========================
-        _addGearboxLeafs(
-            leafs,
-            ERC4626(getAddress(sourceChain, "dWBTCV3")),
-            getAddress(sourceChain, "sdWBTCV3")
-        );
+        _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWBTCV3")), getAddress(sourceChain, "sdWBTCV3"));
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](1);
@@ -117,24 +106,22 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== Curve ==========================
         _addCurveLeafs(
-            leafs,
-            getAddress(sourceChain, "lBTC_wBTC_Curve_Pool"),
-            2,
-            getAddress(sourceChain, "lBTC_wBTC_Curve_Gauge")
+            leafs, getAddress(sourceChain, "lBTC_wBTC_Curve_Pool"), 2, getAddress(sourceChain, "lBTC_wBTC_Curve_Gauge")
         );
 
         // ========================== Convex ==========================
         // _addConvexLeafs(leafs, getERC20(sourceChain, "lBTC_wBTC_Curve_Pool"), CONVEX_REWARDS_CONTRACT);
 
+        // ERC20[] memory tellerAssets = new ERC20[](1);
+        // tellerAssets[0] = getERC20(sourceChain, "WBTC");
+        // _addTellerLeafs(leafs, 0xe19a43B1b8af6CeE71749Af2332627338B3242D1, tellerAssets);
+
+        _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/LombardStrategistLeafs.json";
 
-        _generateLeafs(
-            filePath,
-            leafs,
-            manageTree[manageTree.length - 1][0],
-            manageTree
-        );
+        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 }

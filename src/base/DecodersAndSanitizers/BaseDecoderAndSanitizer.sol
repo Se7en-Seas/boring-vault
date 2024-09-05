@@ -4,6 +4,7 @@ pragma solidity 0.8.21;
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 
 contract BaseDecoderAndSanitizer {
+    error BaseDecoderAndSanitizer__FunctionSelectorNotSupported();
     //============================== IMMUTABLES ===============================
 
     /**
@@ -33,5 +34,9 @@ contract BaseDecoderAndSanitizer {
 
     function withdrawNativeFromDrone() external pure returns (bytes memory addressesFound) {
         return addressesFound;
+    }
+
+    fallback() external {
+        revert BaseDecoderAndSanitizer__FunctionSelectorNotSupported();
     }
 }
