@@ -64,8 +64,8 @@
     "TellerWithMultiAssetSupport": "0xA5C0bc543Ae9e522d0d8829191D759c0f0BcD098"
   },
   "depositConfiguration": {
-    "AllowPublicDeposits": false,
-    "AllowPublicWithdraws": true,
+    "AllowPublicDeposits": true,
+    "AllowPublicWithdraws": false,
     "ShareLockPeriod": 86400
   }
 }

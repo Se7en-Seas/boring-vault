@@ -142,8 +142,8 @@ contract DeployEtherFiUsdScript is DeployArcticArchitecture, MainnetAddresses {
             })
         );
 
-        bool allowPublicDeposits = false;
-        bool allowPublicWithdraws = true;
+        bool allowPublicDeposits = true;
+        bool allowPublicWithdraws = false;
         uint64 shareLockPeriod = 1 days;
         address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
