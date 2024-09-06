@@ -18,7 +18,7 @@ contract DeployEtherFiUsdScript is DeployArcticArchitecture, MainnetAddresses {
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Ether.Fi USD";
+    string public boringVaultName = "ether.fi USD";
     string public boringVaultSymbol = "eUSD";
     uint8 public boringVaultDecimals = 18;
     address public owner = dev0Address;

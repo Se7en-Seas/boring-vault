@@ -19,7 +19,7 @@ contract DeployElixirUsdScript is DeployArcticArchitecture, MainnetAddresses {
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "ether.fi Liquid Elixir";
+    string public boringVaultName = "Ether.Fi Liquid Elixir";
     string public boringVaultSymbol = "liquidElixir";
     uint8 public boringVaultDecimals = 18;
     address public owner = dev1Address;
