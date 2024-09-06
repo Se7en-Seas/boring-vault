@@ -1,0 +1,145 @@
+{
+  "metadata": {
+    "AccountantAddress": "0x1b293DC39F94157fA0D1D36d7e0090C8B8B8c13F",
+    "BoringVaultAddress": "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642",
+    "DecoderAndSanitizerAddress": "0xa2Da7A948254692d7B261bBd27b3Cd1E2C7B033c",
+    "DigestComposition": [
+      "Bytes20(DECODER_AND_SANITIZER_ADDRESS)",
+      "Bytes20(TARGET_ADDRESS)",
+      "Bytes1(CAN_SEND_VALUE)",
+      "Bytes4(TARGET_FUNCTION_SELECTOR)",
+      "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)"
+    ],
+    "LeafCount": 6,
+    "ManageRoot": "0xa8ea270ba179054bef0f5aed73034571faedd8d6b1da385c6ccdd9faf4efe866",
+    "ManagerAddress": "0x382d0106F308864D5462332D9D3bB54a60384B70",
+    "TreeCapacity": 8
+  },
+  "leafs": [
+    {
+      "AddressArguments": [
+        "0x971e5b5D4baa5607863f3748FeBf287C7bf82618"
+      ],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xa2Da7A948254692d7B261bBd27b3Cd1E2C7B033c",
+      "Description": "Approve Symbiotic DefaultCollateral_Wrapped BTC to spend WBTC",
+      "FunctionSelector": "0x095ea7b3",
+      "FunctionSignature": "approve(address,uint256)",
+      "LeafDigest": "0x490a22b9c589eb2ca443b5aa2c31871b810cf54a3d4018c23be18501dd826607",
+      "PackedArgumentAddresses": "0x971e5b5d4baa5607863f3748febf287c7bf82618",
+      "TargetAddress": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+    },
+    {
+      "AddressArguments": [
+        "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"
+      ],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xa2Da7A948254692d7B261bBd27b3Cd1E2C7B033c",
+      "Description": "Deposit WBTC into Symbiotic DefaultCollateral_Wrapped BTC",
+      "FunctionSelector": "0x47e7ef24",
+      "FunctionSignature": "deposit(address,uint256)",
+      "LeafDigest": "0xf4682d94f20a16522dadf29b2b7120e0fb2e61b2b251fa98bd2cb2f41985487b",
+      "PackedArgumentAddresses": "0x657e8c867d8b37dcc18fa4caead9c45eb088c642",
+      "TargetAddress": "0x971e5b5D4baa5607863f3748FeBf287C7bf82618"
+    },
+    {
+      "AddressArguments": [
+        "0x0C969ceC0729487d264716e55F232B404299032c"
+      ],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xa2Da7A948254692d7B261bBd27b3Cd1E2C7B033c",
+      "Description": "Approve Symbiotic DefaultCollateral_tBTC v2 to spend tBTC",
+      "FunctionSelector": "0x095ea7b3",
+      "FunctionSignature": "approve(address,uint256)",
+      "LeafDigest": "0x067a538889186175fb13ae4eff4eb9c9127bed6cc9898de6b6d82666b83753aa",
+      "PackedArgumentAddresses": "0x0c969cec0729487d264716e55f232b404299032c",
+      "TargetAddress": "0x18084fbA666a33d37592fA2633fD49a74DD93a88"
+    },
+    {
+      "AddressArguments": [
+        "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"
+      ],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xa2Da7A948254692d7B261bBd27b3Cd1E2C7B033c",
+      "Description": "Deposit tBTC into Symbiotic DefaultCollateral_tBTC v2",
+      "FunctionSelector": "0x47e7ef24",
+      "FunctionSignature": "deposit(address,uint256)",
+      "LeafDigest": "0x1e9c215a19881bc9fcdec7c2c0c95a9f2ff1c8b93a6d7549675a7d748812e2be",
+      "PackedArgumentAddresses": "0x657e8c867d8b37dcc18fa4caead9c45eb088c642",
+      "TargetAddress": "0x0C969ceC0729487d264716e55F232B404299032c"
+    },
+    {
+      "AddressArguments": [
+        "0x9C0823D3A1172F9DdF672d438dec79c39a64f448"
+      ],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xa2Da7A948254692d7B261bBd27b3Cd1E2C7B033c",
+      "Description": "Approve Symbiotic DefaultCollateral_Lombard Staked Bitcoin to spend LBTC",
+      "FunctionSelector": "0x095ea7b3",
+      "FunctionSignature": "approve(address,uint256)",
+      "LeafDigest": "0xbdb80123426e4abc8b5b5174406aa3b047f196aef602350688693cfb97fa347a",
+      "PackedArgumentAddresses": "0x9c0823d3a1172f9ddf672d438dec79c39a64f448",
+      "TargetAddress": "0x8236a87084f8B84306f72007F36F2618A5634494"
+    },
+    {
+      "AddressArguments": [
+        "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"
+      ],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xa2Da7A948254692d7B261bBd27b3Cd1E2C7B033c",
+      "Description": "Deposit LBTC into Symbiotic DefaultCollateral_Lombard Staked Bitcoin",
+      "FunctionSelector": "0x47e7ef24",
+      "FunctionSignature": "deposit(address,uint256)",
+      "LeafDigest": "0x5c928dfb97d524110f9d9f9762cf40d84c28e9fff772d3751fccbbaf51f2e2b9",
+      "PackedArgumentAddresses": "0x657e8c867d8b37dcc18fa4caead9c45eb088c642",
+      "TargetAddress": "0x9C0823D3A1172F9DdF672d438dec79c39a64f448"
+    },
+    {
+      "AddressArguments": [],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
+      "Description": "",
+      "FunctionSelector": "0xc5d24601",
+      "FunctionSignature": "",
+      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+      "PackedArgumentAddresses": "0x",
+      "TargetAddress": "0x0000000000000000000000000000000000000000"
+    },
+    {
+      "AddressArguments": [],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
+      "Description": "",
+      "FunctionSelector": "0xc5d24601",
+      "FunctionSignature": "",
+      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+      "PackedArgumentAddresses": "0x",
+      "TargetAddress": "0x0000000000000000000000000000000000000000"
+    }
+  ],
+  "MerkleTree": {
+    "0": [
+      "0xa8ea270ba179054bef0f5aed73034571faedd8d6b1da385c6ccdd9faf4efe866"
+    ],
+    "1": [
+      "0x881c1ca42134100b3b8101e1ac288c777801dec40a27179c27b2b3fa5bb20420",
+      "0x6a43fa08bf783f7994896bdb3fa7fb83af1fdfa6ba87cd28f8d2a7087763dbe4"
+    ],
+    "2": [
+      "0x1068975807d933cf604943dbc4e5cf175f7442f00d92e26a52c0577c5ee56824",
+      "0x470a8462c7ad400f140975f896d7c1a2fd6aca4f539c87f519c8497922e5c3cd",
+      "0x8ab0ef51e94ec1d53d2aefa7c0acc0022c7f1df6bc714d021c042e342b024a9c",
+      "0xc5a36f3b7b955966d5ed3135dcc612f978306d73bce3697e230afae57fbaeeba"
+    ],
+    "3": [
+      "0x490a22b9c589eb2ca443b5aa2c31871b810cf54a3d4018c23be18501dd826607",
+      "0xf4682d94f20a16522dadf29b2b7120e0fb2e61b2b251fa98bd2cb2f41985487b",
+      "0x067a538889186175fb13ae4eff4eb9c9127bed6cc9898de6b6d82666b83753aa",
+      "0x1e9c215a19881bc9fcdec7c2c0c95a9f2ff1c8b93a6d7549675a7d748812e2be",
+      "0xbdb80123426e4abc8b5b5174406aa3b047f196aef602350688693cfb97fa347a",
+      "0x5c928dfb97d524110f9d9f9762cf40d84c28e9fff772d3751fccbbaf51f2e2b9",
+      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400"
+    ]
+  }
+}
