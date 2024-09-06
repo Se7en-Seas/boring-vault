@@ -286,6 +286,40 @@ contract DecoderCustomTypes {
         bytes32 latestBlockhash;
     }
 
+    // ========================================= Mantle L1StandardBridge =========================================
+
+    struct MantleWithdrawalTransaction {
+        uint256 nonce;
+        address sender;
+        address target;
+        uint256 mntValue;
+        uint256 value;
+        uint256 gasLimit;
+        bytes data;
+    }
+
+    // ========================================= Linea Bridge =========================================
+
+    struct ClaimMessageWithProofParams {
+        bytes32[] proof;
+        uint256 messageNumber;
+        uint32 leafIndex;
+        address from;
+        address to;
+        uint256 fee;
+        uint256 value;
+        address payable feeRecipient;
+        bytes32 merkleRoot;
+        bytes data;
+    }
+
+    // ========================================= Scroll Bridge =========================================
+
+    struct L2MessageProof {
+        uint256 batchIndex;
+        bytes merkleProof;
+    }
+
     // ========================================= Camelot V3 =========================================
 
     struct CamelotMintParams {
