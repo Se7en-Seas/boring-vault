@@ -116,13 +116,14 @@ contract EigenLayerLSTStakingIntegrationTest is Test, MerkleTreeHelper {
         // Call deposit
         // withdraw
         // complete withdraw
-        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
         _addLeafsForEigenLayerLST(
             leafs,
             getAddress(sourceChain, "METH"),
             getAddress(sourceChain, "mETHStrategy"),
             getAddress(sourceChain, "strategyManager"),
-            getAddress(sourceChain, "delegationManager")
+            getAddress(sourceChain, "delegationManager"),
+            address(0)
         );
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
@@ -230,13 +231,14 @@ contract EigenLayerLSTStakingIntegrationTest is Test, MerkleTreeHelper {
         // Call deposit
         // withdraw
         // complete withdraw
-        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
         _addLeafsForEigenLayerLST(
             leafs,
             getAddress(sourceChain, "METH"),
             getAddress(sourceChain, "mETHStrategy"),
             getAddress(sourceChain, "strategyManager"),
-            getAddress(sourceChain, "delegationManager")
+            getAddress(sourceChain, "delegationManager"),
+            address(0)
         );
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
@@ -337,6 +339,51 @@ contract EigenLayerLSTStakingIntegrationTest is Test, MerkleTreeHelper {
                 )
             )
         );
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+    }
+
+    function testDelegation() external {
+        deal(getAddress(sourceChain, "METH"), address(boringVault), 1_000e18);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        _addLeafsForEigenLayerLST(
+            leafs,
+            getAddress(sourceChain, "METH"),
+            getAddress(sourceChain, "mETHStrategy"),
+            getAddress(sourceChain, "strategyManager"),
+            getAddress(sourceChain, "delegationManager"),
+            getAddress(sourceChain, "testOperator")
+        );
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[4];
+        manageLeafs[1] = leafs[5];
+
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](2);
+        targets[0] = getAddress(sourceChain, "delegationManager");
+        targets[1] = getAddress(sourceChain, "delegationManager");
+
+        bytes[] memory targetData = new bytes[](2);
+        DecoderCustomTypes.SignatureWithExpiry memory signatureWithExpiry;
+        targetData[0] = abi.encodeWithSignature(
+            "delegateTo(address,(bytes,uint256),bytes32)",
+            getAddress(sourceChain, "testOperator"),
+            signatureWithExpiry,
+            bytes32(0)
+        );
+        targetData[1] = abi.encodeWithSignature("undelegate(address)", boringVault);
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+
+        uint256[] memory values = new uint256[](2);
+
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 

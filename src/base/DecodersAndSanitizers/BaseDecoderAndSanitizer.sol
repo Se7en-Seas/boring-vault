@@ -4,6 +4,7 @@ pragma solidity 0.8.21;
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 
 contract BaseDecoderAndSanitizer {
+    error BaseDecoderAndSanitizer__FunctionSelectorNotSupported();
     //============================== IMMUTABLES ===============================
 
     /**
@@ -33,5 +34,16 @@ contract BaseDecoderAndSanitizer {
 
     function withdrawNativeFromDrone() external pure returns (bytes memory addressesFound) {
         return addressesFound;
+    }
+
+    //============================== FALLBACK ===============================
+    /**
+     * @notice The purpose of this function is to revert with a known error,
+     *         so that during merkle tree creation we can verify that a
+     *         leafs decoder and sanitizer implments the required function
+     *         selector.
+     */
+    fallback() external {
+        revert BaseDecoderAndSanitizer__FunctionSelectorNotSupported();
     }
 }
