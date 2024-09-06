@@ -99,9 +99,7 @@ contract MerkleTreeCheckerTest is Test, MerkleTreeHelper {
         _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WBTC"));
 
         // ========================== Curve ==========================
-        _addCurveLeafs(
-            leafs, getAddress(sourceChain, "lBTC_wBTC_Curve_Pool"), 2, getAddress(sourceChain, "lBTC_wBTC_Curve_Gauge")
-        );
+        _addCurveLeafs(leafs, getAddress(sourceChain, "lBTC_wBTC_Curve_Pool"), 2, address(0));
 
         _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
     }
@@ -181,9 +179,7 @@ contract MerkleTreeCheckerTest is Test, MerkleTreeHelper {
         _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WBTC"));
 
         // ========================== Curve ==========================
-        _addCurveLeafs(
-            leafs, getAddress(sourceChain, "lBTC_wBTC_Curve_Pool"), 2, getAddress(sourceChain, "lBTC_wBTC_Curve_Gauge")
-        );
+        _addCurveLeafs(leafs, getAddress(sourceChain, "lBTC_wBTC_Curve_Pool"), 2, address(0));
 
         ERC20[] memory tellerAssets = new ERC20[](1);
         tellerAssets[0] = getERC20(sourceChain, "WBTC");

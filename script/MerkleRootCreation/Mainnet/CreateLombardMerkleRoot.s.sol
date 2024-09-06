@@ -15,7 +15,7 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0x5401b8620E5FB570064CA9114fd1e135fd77D57c;
-    address public rawDataDecoderAndSanitizer = 0x402d89D6c763E8e79b77Ac1424f28cbA80ac9caa;
+    address public rawDataDecoderAndSanitizer = 0x1060E9391dfdba7F1F24D142eFE71544F590d33F;
     address public managerAddress = 0xcf38e37872748E3b66741A42560672A6cef75e9B;
     address public accountantAddress = 0x28634D0c5edC67CF2450E74deA49B90a4FF93dCE;
 
@@ -105,16 +105,34 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
         _addBalancerFlashloanLeafs(leafs, getAddress(sourceChain, "WBTC"));
 
         // ========================== Curve ==========================
-        _addCurveLeafs(
-            leafs, getAddress(sourceChain, "lBTC_wBTC_Curve_Pool"), 2, getAddress(sourceChain, "lBTC_wBTC_Curve_Gauge")
-        );
+        _addCurveLeafs(leafs, getAddress(sourceChain, "lBTC_wBTC_Curve_Pool"), 2, address(0));
 
         // ========================== Convex ==========================
         // _addConvexLeafs(leafs, getERC20(sourceChain, "lBTC_wBTC_Curve_Pool"), CONVEX_REWARDS_CONTRACT);
 
+        // ========================== BoringVaults ==========================
+        {
+            ERC20[] memory tellerAssets = new ERC20[](2);
+            tellerAssets[0] = getERC20(sourceChain, "WBTC");
+            tellerAssets[1] = getERC20(sourceChain, "LBTC");
+            address eBTCTeller = 0xe19a43B1b8af6CeE71749Af2332627338B3242D1;
+
+            _addTellerLeafs(leafs, eBTCTeller, tellerAssets);
+        }
+
+        // ========================== Pendle ==========================
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_eBTC_market_12_26_24"), true);
+
+        // ========================== MorphoBlue ==========================
+        _addMorphoBlueSupplyLeafs(leafs, getBytes32(sourceChain, "LBTC_WBTC_945"));
+
+        // ========================== MetaMorpho ==========================
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "Re7WBTC")));
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "gauntletWBTCcore")));
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        string memory filePath = "./leafs/LombardStrategistLeafs.json";
+        string memory filePath = "./leafs/Mainnet/LombardStrategistLeafs.json";
 
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }

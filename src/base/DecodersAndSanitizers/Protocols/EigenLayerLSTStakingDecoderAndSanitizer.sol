@@ -53,4 +53,16 @@ abstract contract EigenLayerLSTStakingDecoderAndSanitizer is BaseDecoderAndSanit
             }
         }
     }
+
+    function delegateTo(
+        address operator,
+        DecoderCustomTypes.SignatureWithExpiry calldata, /*approverSignatureAndExpiry*/
+        bytes32 /*approverSalt*/
+    ) external pure returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(operator);
+    }
+
+    function undelegate(address staker) external pure returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(staker);
+    }
 }
