@@ -15,6 +15,10 @@ contract ChainValues {
     string public constant arbitrum = "arbitrum";
     string public constant optimism = "optimism";
     string public constant base = "base";
+    string public constant zircuit = "zircuit";
+    string public constant mantle = "mantle";
+    string public constant linea = "linea";
+    string public constant scroll = "scroll";
     string public constant holesky = "holesky";
 
     // Bridging constants.
@@ -33,7 +37,9 @@ contract ChainValues {
 
     function getAddress(string memory chainName, string memory valueName) public view returns (address a) {
         a = values[chainName][valueName].toAddress();
-        if (a == address(0)) revert ChainValues__ZeroAddress(chainName, valueName);
+        if (a == address(0)) {
+            revert ChainValues__ZeroAddress(chainName, valueName);
+        }
     }
 
     function getERC20(string memory chainName, string memory valueName) public view returns (ERC20 erc20) {
@@ -43,7 +49,9 @@ contract ChainValues {
 
     function getBytes32(string memory chainName, string memory valueName) public view returns (bytes32 b) {
         b = values[chainName][valueName];
-        if (b == bytes32(0)) revert ChainValues__ZeroBytes32(chainName, valueName);
+        if (b == bytes32(0)) {
+            revert ChainValues__ZeroBytes32(chainName, valueName);
+        }
     }
 
     function setValue(bool overrideOk, string memory chainName, string memory valueName, bytes32 value) public {
@@ -63,6 +71,10 @@ contract ChainValues {
         _addBaseValues();
         _addArbitrumValues();
         _addOptimismValues();
+        _addMantleValues();
+        _addZircuitValues();
+        _addLineaValues();
+        _addScrollValues();
 
         // Add testnet values
         _addHoleskyValues();
@@ -723,6 +735,16 @@ contract ChainValues {
         values[mainnet]["optimismPortal"] = 0xbEb5Fc579115071764c7423A4f12eDde41f106Ed.toBytes32();
         values[mainnet]["optimismResolvedDelegate"] = 0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1.toBytes32();
 
+        // Mantle Standard Bridge.
+        values[mainnet]["mantleStandardBridge"] = 0x95fC37A27a2f68e3A647CDc081F0A89bb47c3012.toBytes32();
+        values[mainnet]["mantlePortal"] = 0xc54cb22944F2bE476E02dECfCD7e3E7d3e15A8Fb.toBytes32();
+        values[mainnet]["mantleResolvedDelegate"] = 0x676A795fe6E43C17c668de16730c3F690FEB7120.toBytes32(); // TODO update this.
+
+        // Zircuit Standard Bridge.
+        values[mainnet]["zircuitStandardBridge"] = 0x386B76D9cA5F5Fb150B6BFB35CF5379B22B26dd8.toBytes32();
+        values[mainnet]["zircuitPortal"] = 0x17bfAfA932d2e23Bd9B909Fd5B4D2e2a27043fb1.toBytes32();
+        values[mainnet]["zircuitResolvedDelegate"] = 0x2a721cBE81a128be0F01040e3353c3805A5EA091.toBytes32();
+
         // Layer Zero.
         values[mainnet]["EtherFiOFTAdapter"] = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D.toBytes32();
 
@@ -731,6 +753,15 @@ contract ChainValues {
 
         // Pump Staking
         values[mainnet]["pumpStaking"] = 0x1fCca65fb6Ae3b2758b9b2B394CB227eAE404e1E.toBytes32();
+
+        // Linea Bridging
+        values[mainnet]["tokenBridge"] = 0x051F1D88f0aF5763fB888eC4378b4D8B29ea3319.toBytes32(); // approve, bridge token
+        values[mainnet]["lineaMessageService"] = 0xd19d4B5d358258f05D7B411E21A1460D11B0876F.toBytes32(); // claim message, sendMessage
+
+        // Scroll Bridging
+        values[mainnet]["scrollGatewayRouter"] = 0xF8B1378579659D8F7EE5f3C929c2f3E332E41Fd6.toBytes32(); // approve, depositERC20
+        values[mainnet]["scrollMessenger"] = 0x6774Bcbd5ceCeF1336b5300fb5186a12DDD8b367.toBytes32(); // sendMessage
+        values[mainnet]["scrollCustomERC20Gateway"] = 0x67260A8B73C5B77B55c1805218A42A7A6F98F515.toBytes32(); // sendMessage
     }
 
     function _addBaseValues() private {
@@ -1005,5 +1036,41 @@ contract ChainValues {
 
         // Symbiotic
         values[holesky]["wstETHSymbioticVault"] = 0x89D62D1d89d8636367fc94998b3bE095a3d9c2f9.toBytes32();
+    }
+
+    function _addMantleValues() private {
+        // ERC20
+        values[mantle]["WETH"] = 0xdEAddEaDdeadDEadDEADDEAddEADDEAddead1111.toBytes32();
+        values[mantle]["USDC"] = 0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9.toBytes32();
+        values[mantle]["METH"] = 0xcDA86A272531e8640cD7F1a92c01839911B90bb0.toBytes32();
+
+        // Standard Bridge.
+        values[mantle]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
+        values[mantle]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
+    }
+
+    function _addZircuitValues() private {
+        // Standard Bridge.
+        values[zircuit]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
+        values[zircuit]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
+    }
+
+    function _addLineaValues() private {
+        // ERC20
+        values[linea]["DAI"] = 0x4AF15ec2A0BD43Db75dd04E62FAA3B8EF36b00d5.toBytes32();
+
+        // Linea Bridge.
+        values[linea]["tokenBridge"] = 0x353012dc4a9A6cF55c941bADC267f82004A8ceB9.toBytes32(); //approve, also bridge token
+        values[linea]["lineaMessageService"] = 0x508Ca82Df566dCD1B0DE8296e70a96332cD644ec.toBytes32(); // claim message, sendMessage
+    }
+
+    function _addScrollValues() private {
+        // ERC20
+        values[scroll]["DAI"] = 0xcA77eB3fEFe3725Dc33bccB54eDEFc3D9f764f97.toBytes32();
+
+        // Scroll Bridge.
+        values[scroll]["scrollGatewayRouter"] = 0x4C0926FF5252A435FD19e10ED15e5a249Ba19d79.toBytes32(); // withdrawERC20
+        values[scroll]["scrollMessenger"] = 0x781e90f1c8Fc4611c9b7497C3B47F99Ef6969CbC.toBytes32(); // sendMessage
+        values[scroll]["scrollCustomERC20Gateway"] = 0xaC78dff3A87b5b534e366A93E785a0ce8fA6Cc62.toBytes32(); // sendMessage
     }
 }
