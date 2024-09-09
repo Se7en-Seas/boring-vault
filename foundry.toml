@@ -19,6 +19,7 @@ optimism = "${OPTIMISM_RPC_URL}"
 base = "${BASE_RPC_URL}"
 zircuit = "${ZIRCUIT_RPC_URL}"
 scroll = "${SCROLL_RPC_URL}"
+linea = "${LINEA_RPC_URL}"
 
 # [etherscan]
 # mainnet = { key = "${ETHERSCAN_KEY}", url = "https://api.etherscan.io/api" }

@@ -4630,7 +4630,6 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
 
     // ========================================= Puppet =========================================
 
-    // TODO this does not factor in leafs where there are address argumetns that are the BoringVault address that really should be the puppet address.
     function _createPuppetLeafs(ManageLeaf[] memory leafs, address puppet)
         internal
         pure
@@ -4658,6 +4657,91 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             puppetLeafs[i].description = leafs[i].description;
             puppetLeafs[i].decoderAndSanitizer = leafs[i].decoderAndSanitizer;
         }
+    }
+
+    // ========================================= Drone =========================================
+
+    function _addLeafsForDroneTransfers(ManageLeaf[] memory leafs, address drone, ERC20[] memory assets) internal {
+        for (uint256 i; i < assets.length; ++i) {
+            // Add leaf for BoringVault to transfer to drone.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(assets[i]),
+                false,
+                "transfer(address,uint256)",
+                new address[](1),
+                string.concat("Transfer ", assets[i].symbol(), " to drone: ", vm.toString(drone)),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = drone;
+
+            // Add leaf for drone to transfer to BoringVault.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                drone,
+                false,
+                "transfer(address,uint256)",
+                new address[](2),
+                string.concat("Transfer ", assets[i].symbol(), " to BoringVault"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = address(assets[i]);
+        }
+
+        // Add leaf so boringVault can withdraw native from drone.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            drone,
+            false,
+            "withdrawNativeFromDrone()",
+            new address[](0),
+            string.concat("Withdraw native from drone: ", vm.toString(drone)),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+    }
+
+    function _createDroneLeafs(ManageLeaf[] memory leafs, address drone, uint256 startIndex, uint256 endIndex)
+        internal
+    {
+        address boringVault = getAddress(sourceChain, "boringVault");
+        // Update boringVault address to be drone, so leafs work as expected.
+        setAddress(true, sourceChain, "boringVault", drone);
+
+        // Iterate through every leaf, and
+        // 1) Take the existing target and append it to the end of the argumentAddresses array.
+        // 2) Change the target to the drone contract.
+
+        for (uint256 i = startIndex; i < endIndex; ++i) {
+            address[] memory temp = new address[](leafs[i].argumentAddresses.length + 1);
+            // Copy argumentAddresses into temporary array.
+            for (uint256 j; j < leafs[i].argumentAddresses.length; ++j) {
+                temp[j] = leafs[i].argumentAddresses[j];
+            }
+
+            // Expand argumentAddresses array by 1.
+            leafs[i].argumentAddresses = new address[](leafs[i].argumentAddresses.length + 1);
+
+            // Copy over argumentAddresses into leaf address arguments array.
+            for (uint256 j; j < leafs[i].argumentAddresses.length; ++j) {
+                leafs[i].argumentAddresses[j] = temp[j];
+            }
+
+            // Append the target to the end of the argumentAddresses array.
+            leafs[i].argumentAddresses[leafs[i].argumentAddresses.length] = leafs[i].target;
+
+            // Change the target to the puppet contract.
+            leafs[i].target = drone;
+        }
+
+        // Change boringVault address back to original.
+        setAddress(true, sourceChain, "boringVault", boringVault);
     }
 
     // ========================================= BoringVault Teller =========================================
