@@ -657,6 +657,7 @@ contract ChainValues {
         values[mainnet]["strategyManager"] = 0x858646372CC42E1A627fcE94aa7A7033e7CF075A.toBytes32();
         values[mainnet]["delegationManager"] = 0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A.toBytes32();
         values[mainnet]["mETHStrategy"] = 0x298aFB19A105D59E74658C4C334Ff360BadE6dd2.toBytes32();
+        values[mainnet]["USDeStrategy"] = 0x298aFB19A105D59E74658C4C334Ff360BadE6dd2.toBytes32();
         values[mainnet]["testOperator"] = 0xDbEd88D83176316fc46797B43aDeE927Dc2ff2F5.toBytes32();
 
         // Swell

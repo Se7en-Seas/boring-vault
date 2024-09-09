@@ -20,6 +20,10 @@ contract BaseDecoderAndSanitizer {
         addressesFound = abi.encodePacked(spender);
     }
 
+    function transfer(address _to, uint256) external pure returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(_to);
+    }
+
     function claimFees(address feeAsset) external pure returns (bytes memory addressesFound) {
         addressesFound = abi.encodePacked(feeAsset);
     }
