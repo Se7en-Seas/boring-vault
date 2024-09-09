@@ -37,7 +37,7 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
 
         leafIndex = 0;
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](128);
+        ManageLeaf[] memory leafs = new ManageLeaf[](256);
 
         // ========================== Aave V3 ==========================
         ERC20[] memory supplyAssets = new ERC20[](1);
@@ -122,6 +122,7 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== Pendle ==========================
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_eBTC_market_12_26_24"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_LBTC_corn_market_12_26_24"), true);
 
         // ========================== MorphoBlue ==========================
         _addMorphoBlueSupplyLeafs(leafs, getBytes32(sourceChain, "LBTC_WBTC_945"));
@@ -129,6 +130,9 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
         // ========================== MetaMorpho ==========================
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "Re7WBTC")));
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "gauntletWBTCcore")));
+
+        // ========================== Gearbox ==========================
+        _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWBTCV3")), getAddress(sourceChain, "sdWBTCV3"));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
