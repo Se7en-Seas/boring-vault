@@ -134,7 +134,7 @@ contract ContractNames {
     string public constant EtherFiUsdManagerName = "EtherFi USD Manager With Merkle Verification V0.0";
     string public constant EtherFiUsdAccountantName = "EtherFi USD Accountant With Rate Providers V0.0";
     string public constant EtherFiUsdTellerName = "EtherFi USD Teller With Multi Asset Support V0.0";
-    string public constant EtherFiUsdDecoderAndSanitizerName = "EtherFi USD Decoder and Sanitizer V0.0";
+    string public constant EtherFiUsdDecoderAndSanitizerName = "EtherFi USD Decoder and Sanitizer V0.1";
     string public constant EtherFiUsdDelayedWithdrawer = "EtherFi USD Delayed Withdrawer V0.0";
 
     string public constant YakMilkAvaxVaultRolesAuthorityName = "Yak Milk Avax Vault RolesAuthority V0.0";

@@ -9,7 +9,7 @@ import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 import {EtherFiUsdDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiUsdDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployEtherFiUsd.s.sol:DeployEtherFiUsdScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployEtherFiUsd.s.sol:DeployEtherFiUsdScript --with-gas-price 10000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployEtherFiUsdScript is DeployArcticArchitecture, MainnetAddresses {
@@ -31,12 +31,12 @@ contract DeployEtherFiUsdScript is DeployArcticArchitecture, MainnetAddresses {
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = true;
-        configureDeployment.setupDepositAssets = true;
-        configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = true;
-        configureDeployment.setupTestUser = true;
-        configureDeployment.saveDeploymentDetails = true;
+        configureDeployment.setupRoles = false;
+        configureDeployment.setupDepositAssets = false;
+        configureDeployment.setupWithdrawAssets = false;
+        configureDeployment.finishSetup = false;
+        configureDeployment.setupTestUser = false;
+        configureDeployment.saveDeploymentDetails = false;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
         configureDeployment.WETH = address(WETH);
