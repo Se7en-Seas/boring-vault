@@ -20,7 +20,7 @@
     "AllowedExchangeRateChangeLower": 9950,
     "AllowedExchangeRateChangeUpper": 10050,
     "Base": "WETH",
-    "BaseAddress": "0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f",
+    "BaseAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     "ManagementFee": 200,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",

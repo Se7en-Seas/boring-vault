@@ -3,17 +3,17 @@ pragma solidity 0.8.21;
 
 import {DeployArcticArchitecture, ERC20, Deployer} from "script/ArchitectureDeployments/DeployArcticArchitecture.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
-import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
+import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
 
 // Import Decoder and Sanitizer to deploy.
-import {EtherFiLiquidEthDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
+import {PointFarmingDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 10000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 7000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MainnetAddresses {
+contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHelper {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
@@ -22,21 +22,39 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MainnetAddre
     string public boringVaultName = "Bridging Test Vault";
     string public boringVaultSymbol = "BTEV";
     uint8 public boringVaultDecimals = 18;
-    address public owner = dev0Address;
+
+    address internal owner;
+    address internal testAddress;
+    ERC20 internal WETH;
+    address internal balancerVault;
+    address internal deployerAddress;
+    address internal uniswapV3NonFungiblePositionManager;
+    address internal liquidPayoutAddress;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
         vm.createSelectFork("mainnet");
+        setSourceChainName(mainnet);
+
+        owner = getAddress(sourceChain, "dev0Address");
+        testAddress = getAddress(sourceChain, "dev0Address");
+        WETH = getERC20(sourceChain, "WETH");
+        balancerVault = getAddress(sourceChain, "balancerVault");
+        deployerAddress = getAddress(sourceChain, "deployerAddress");
+        uniswapV3NonFungiblePositionManager = getAddress(sourceChain, "uniswapV3NonFungiblePositionManager");
+        liquidPayoutAddress = getAddress(sourceChain, "liquidPayoutAddress");
+
+        droneCount = 1;
     }
 
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
-        configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = false;
-        configureDeployment.setupTestUser = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = true;
+        configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -54,6 +72,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MainnetAddre
         names.teller = BridgingTestVaultEthTellerName;
         names.rawDataDecoderAndSanitizer = BridgingTestVaultEthDecoderAndSanitizerName;
         names.delayedWithdrawer = BridgingTestVaultEthDelayedWithdrawer;
+        names.droneBaseName = BridgingTestVaultDroneName;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
@@ -69,9 +88,8 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MainnetAddre
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
-        bytes memory creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode;
-        bytes memory constructorArgs =
-            abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
+        bytes memory creationCode = type(PointFarmingDecoderAndSanitizer).creationCode;
+        bytes memory constructorArgs = abi.encode(deployer.getAddress(names.boringVault));
 
         // Setup extra deposit assets.
         // none
@@ -95,7 +113,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MainnetAddre
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "MainnetBridgingTestVaultDeployment.json",
+            "Mainnet/BridgingTestVaultDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
@@ -106,7 +124,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MainnetAddre
             allowPublicDeposits,
             allowPublicWithdraws,
             shareLockPeriod,
-            dev0Address
+            testAddress
         );
 
         vm.stopBroadcast();

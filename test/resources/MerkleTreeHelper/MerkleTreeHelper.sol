@@ -4719,14 +4719,15 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         // 2) Change the target to the drone contract.
 
         for (uint256 i = startIndex; i < endIndex; ++i) {
-            address[] memory temp = new address[](leafs[i].argumentAddresses.length + 1);
+            uint256 newLength = leafs[i].argumentAddresses.length + 1;
+            address[] memory temp = new address[](newLength);
             // Copy argumentAddresses into temporary array.
             for (uint256 j; j < leafs[i].argumentAddresses.length; ++j) {
                 temp[j] = leafs[i].argumentAddresses[j];
             }
 
             // Expand argumentAddresses array by 1.
-            leafs[i].argumentAddresses = new address[](leafs[i].argumentAddresses.length + 1);
+            leafs[i].argumentAddresses = new address[](newLength);
 
             // Copy over argumentAddresses into leaf address arguments array.
             for (uint256 j; j < leafs[i].argumentAddresses.length; ++j) {
@@ -4734,10 +4735,13 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             }
 
             // Append the target to the end of the argumentAddresses array.
-            leafs[i].argumentAddresses[leafs[i].argumentAddresses.length] = leafs[i].target;
+            leafs[i].argumentAddresses[newLength - 1] = leafs[i].target;
 
             // Change the target to the puppet contract.
             leafs[i].target = drone;
+
+            // Update Description.
+            leafs[i].description = string.concat("(Drone: ", vm.toString(drone), ") ", leafs[i].description);
         }
 
         // Change boringVault address back to original.

@@ -17,7 +17,7 @@ import {ArcticArchitectureLens} from "src/helper/ArcticArchitectureLens.sol";
 import {ContractNames} from "resources/ContractNames.sol";
 import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
 import {DelayedWithdraw} from "src/base/Roles/DelayedWithdraw.sol";
-
+import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 
@@ -250,9 +250,8 @@ contract DeployArcticArchitecture is Script, ContractNames {
                 string memory droneName = string.concat(names.droneBaseName, "-", vm.toString(i));
                 deployedAddress = _getAddressIfDeployed(droneName);
                 if (deployedAddress == address(0)) {
-                    creationCode = type(DelayedWithdraw).creationCode;
-                    constructorArgs =
-                        abi.encode(owner, address(boringVault), address(accountant), delayedWithdrawFeeAddress);
+                    creationCode = type(BoringDrone).creationCode;
+                    constructorArgs = abi.encode(address(boringVault), 0);
                     droneAddresses.push(deployer.deployContract(droneName, creationCode, constructorArgs, 0));
                 } else {
                     droneAddresses.push(deployedAddress);

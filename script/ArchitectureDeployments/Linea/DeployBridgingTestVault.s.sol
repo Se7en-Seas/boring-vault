@@ -10,7 +10,7 @@ import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
 import {PointFarmingDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Linea/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 10000000 --evm-version london --broadcast --etherscan-api-key $LINEASCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Linea/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 70000000 --evm-version london --broadcast --etherscan-api-key $LINEASCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHelper {
@@ -72,6 +72,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
         names.teller = BridgingTestVaultEthTellerName;
         names.rawDataDecoderAndSanitizer = BridgingTestVaultEthDecoderAndSanitizerName;
         names.delayedWithdrawer = BridgingTestVaultEthDelayedWithdrawer;
+        names.droneBaseName = BridgingTestVaultDroneName;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
