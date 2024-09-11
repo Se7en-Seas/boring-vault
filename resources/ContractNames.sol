@@ -81,19 +81,20 @@ contract ContractNames {
     string public constant AvalancheVaultDecoderAndSanitizerName = "Avalanche Vault Decoder and Sanitizer V0.1";
     string public constant AvalancheVaultDelayedWithdrawer = "Avalanche Vault Delayed Withdrawer V0.0";
 
-    string public constant BridgingTestVaultEthRolesAuthorityName = "Bridging Test ETH Vault RolesAuthority V1.0";
-    string public constant BridgingTestVaultEthName = "Bridging Test ETH Vault V1.0";
+    string public constant BridgingTestVaultEthRolesAuthorityName = "Bridging Test ETH Vault RolesAuthority V1.3";
+    string public constant BridgingTestVaultEthName = "Bridging Test ETH Vault V1.3";
     string public constant BridgingTestVaultEthManagerName =
-        "Bridging Test ETH Vault Manager With Merkle Verification V1.0";
+        "Bridging Test ETH Vault Manager With Merkle Verification V1.3";
     string public constant BridgingTestVaultEthAccountantName =
-        "Bridging Test ETH Vault Accountant With Rate Providers V1.0";
+        "Bridging Test ETH Vault Accountant With Rate Providers V1.3";
     string public constant BridgingTestVaultEthTellerName =
-        "Bridging Test ETH Vault Teller With Multi Asset Support V1.0";
+        "Bridging Test ETH Vault Teller With Multi Asset Support V1.3";
     string public constant BridgingTestVaultEthDecoderAndSanitizerName =
-        "Bridging Test ETH Vault Decoder and Sanitizer V1.3";
-    string public constant BridgingTestVaultEthDelayedWithdrawer = "Bridging Test ETH Vault Delayed Withdrawer V1.0";
+        "Bridging Test ETH Vault Decoder and Sanitizer V1.4";
+    string public constant BridgingTestVaultEthDelayedWithdrawer = "Bridging Test ETH Vault Delayed Withdrawer V1.3";
     string public constant BridgingTestVaultEthAerodromeDecoderAndSanitizerName =
         "Bridging Test ETH Vault Aerodrome Decoder and Sanitizer V0.0";
+    string public constant BridgingTestVaultDroneName = "btv-drone V0.1";
 
     string public constant CanaryBtcRolesAuthorityName = "Lombard Earn RolesAuthority Version 0.0";
     string public constant CanaryBtcName = "Lombard Earn V0.0";

@@ -10,7 +10,7 @@ import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
 import {PointFarmingDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 7000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Linea/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 70000000 --evm-version london --broadcast --etherscan-api-key $LINEASCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHelper {
@@ -33,15 +33,15 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("mainnet");
-        setSourceChainName(mainnet);
+        vm.createSelectFork("linea");
+        setSourceChainName(linea);
 
         owner = getAddress(sourceChain, "dev0Address");
         testAddress = getAddress(sourceChain, "dev0Address");
         WETH = getERC20(sourceChain, "WETH");
-        balancerVault = getAddress(sourceChain, "balancerVault");
+        balancerVault = address(0);
         deployerAddress = getAddress(sourceChain, "deployerAddress");
-        uniswapV3NonFungiblePositionManager = getAddress(sourceChain, "uniswapV3NonFungiblePositionManager");
+        uniswapV3NonFungiblePositionManager = address(0);
         liquidPayoutAddress = getAddress(sourceChain, "liquidPayoutAddress");
 
         droneCount = 1;
@@ -50,11 +50,11 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = true;
-        configureDeployment.setupDepositAssets = true;
-        configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = true;
-        configureDeployment.setupTestUser = true;
+        configureDeployment.setupRoles = false;
+        configureDeployment.setupDepositAssets = false;
+        configureDeployment.setupWithdrawAssets = false;
+        configureDeployment.finishSetup = false;
+        configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -113,7 +113,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "Mainnet/BridgingTestVaultDeployment.json",
+            "Linea/BridgingTestVaultDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
