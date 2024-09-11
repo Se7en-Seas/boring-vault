@@ -169,6 +169,7 @@ contract EtherFiLiquid1MigrationTest is Test, MerkleTreeHelper {
     }
 
     function testMigration() external {
+        dev1Address = 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1;
         // Setup the BoringVault position.
         // Add both migration adaptors and positions to the registry.
         // Also setAddress 1 to be the migration share price oracle.
