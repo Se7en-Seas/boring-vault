@@ -11,7 +11,7 @@ import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Base/DeployETHFIStaking.s.sol:DeployETHFIStakingScript --with-gas-price 30000000 --evm-version london --broadcast --etherscan-api-key $BASESCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Base/DeployETHFIStaking.s.sol:DeployETHFIStakingScript --with-gas-price 40000000 --evm-version london --broadcast --etherscan-api-key $BASESCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployETHFIStakingScript is DeployArcticArchitecture, BaseAddresses {
@@ -33,11 +33,11 @@ contract DeployETHFIStakingScript is DeployArcticArchitecture, BaseAddresses {
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
-        configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = false;
-        configureDeployment.setupTestUser = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = true;
+        configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
