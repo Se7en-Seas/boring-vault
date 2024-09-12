@@ -30,7 +30,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
     // address public itbCurve_sDai_sUsde = address(65);
     // address public itbCurveConvex_FraxUsdc = address(65);
     // address public itbCurveConvex_UsdcCrvUsd = address(65);
-    address public itbDecoderAndSanitizer = 0x7fA5dbDB1A76d2990Ea0f3c74e520E3fcE94748B;
+    address public itbSyrupUsdc = 0xb9df565c8456d7F40f61c7E83aF9F9B31F25b30c;
+    address public itbSyrupUsdt = 0x1bc7694b92AE221E7d3d775BaDe5C4e1C996d69B;
+
+    address public itbDecoderAndSanitizer = 0xB3c6024F30e969949dA9bB28d2B07429C2b89111;
 
     function setUp() external {}
 
@@ -392,6 +395,22 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
          * unstake dUSDTV3 from sdUSDTV3
          */
         // _addLeafsForItbGearbox(leafs, itbGearboxUsdt, USDT, ERC20(dUSDTV3), sdUSDTV3, "ITB Gearbox USDT");
+
+        // ========================== ITB Syrup ==========================
+        _addLeafsForItbSyrup(
+            leafs,
+            itbSyrupUsdc,
+            getERC20(sourceChain, "USDC"),
+            getAddress(sourceChain, "syrupRouter"),
+            "ITB Syrup USDC Position Manager"
+        );
+        _addLeafsForItbSyrup(
+            leafs,
+            itbSyrupUsdt,
+            getERC20(sourceChain, "USDT"),
+            getAddress(sourceChain, "syrupRouter"),
+            "ITB Syrup USDT Position Manager"
+        );
 
         // ========================== ITB Curve/Convex PYUSD/USDC ==========================
         /**
@@ -1001,6 +1020,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
 
         _addPancakeSwapV3Leafs(leafs, token0, token1);
 
+        _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/LiquidUsdStrategistLeafs.json";
@@ -1172,6 +1193,86 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
             "unstake(uint256)",
             new address[](0),
             string.concat("Unstake ", diesal.symbol(), " from Gearbox s", diesal.symbol(), " contract"),
+            itbDecoderAndSanitizer
+        );
+    }
+
+    function _addLeafsForItbSyrup(
+        ManageLeaf[] memory leafs,
+        address itbPositionManager,
+        ERC20 underlying,
+        address syrupRouter,
+        string memory itbContractName
+    ) internal {
+        ERC20[] memory tokensUsed = new ERC20[](1);
+        tokensUsed[0] = underlying;
+        _addLeafsForITBPositionManager(leafs, itbPositionManager, tokensUsed, itbContractName);
+
+        // Approvals
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "approveToken(address,address,uint256)",
+            new address[](2),
+            string.concat("Approve Syrup Router to spend ", underlying.symbol()),
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(underlying);
+        leafs[leafIndex].argumentAddresses[1] = address(syrupRouter);
+
+        // Deposit
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "deposit(uint256,bytes32)",
+            new address[](0),
+            string.concat("Deposit ", underlying.symbol(), " into Syrup ", underlying.symbol(), " Position"),
+            itbDecoderAndSanitizer
+        );
+
+        // Withdraw
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "startWithdrawal(uint256)",
+            new address[](0),
+            string.concat("Start Withdraw ", underlying.symbol(), " from Syrup ", underlying.symbol(), " Position"),
+            itbDecoderAndSanitizer
+        );
+
+        // Assemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "assemble()",
+            new address[](0),
+            string.concat("Assemble Syrup ", underlying.symbol(), " Position"),
+            itbDecoderAndSanitizer
+        );
+
+        // Disassemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "disassemble(uint256)",
+            new address[](0),
+            string.concat("Disassemble Syrup ", underlying.symbol(), " Position"),
+            itbDecoderAndSanitizer
+        );
+
+        // Full Disassemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "fullDisassemble()",
+            new address[](0),
+            string.concat("Full Disassemble Syrup ", underlying.symbol(), " Position"),
             itbDecoderAndSanitizer
         );
     }
