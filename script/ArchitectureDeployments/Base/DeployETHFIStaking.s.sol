@@ -33,19 +33,18 @@ contract DeployETHFIStakingScript is DeployArcticArchitecture, BaseAddresses {
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = true;
-        configureDeployment.setupDepositAssets = true;
-        configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = true;
-        configureDeployment.setupTestUser = true;
+        configureDeployment.setupRoles = false;
+        configureDeployment.setupDepositAssets = false;
+        configureDeployment.setupWithdrawAssets = false;
+        configureDeployment.finishSetup = false;
+        configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
         configureDeployment.WETH = address(WETH);
 
         // Set boringCreationCode so we deploy BoringGovernance.
-        // boringCreationCode = type(BoringGovernance).creationCode;
-        // TODO set proper ETHFI address, and set foundry.toml to be london
+        boringCreationCode = type(BoringGovernance).creationCode;
 
         // Save deployer.
         deployer = Deployer(configureDeployment.deployerAddress);

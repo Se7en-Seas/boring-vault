@@ -1,13 +1,13 @@
 {
   "DepositAssets": {
-    "weETH": {
+    "ETHFI": {
       "isPeggedToBase": true,
       "rateProvider": "0x0000000000000000000000000000000000000000"
     }
   },
   "Drones": "",
   "WithdrawAssets": {
-    "weETH": {
+    "ETHFI": {
       "CompletionWindow": 604800,
       "MaxLoss": 100,
       "WithdrawDelay": 259200,
@@ -17,8 +17,8 @@
   "accountantConfiguration": {
     "AllowedExchangeRateChangeLower": 9950,
     "AllowedExchangeRateChangeUpper": 10050,
-    "Base": "weETH",
-    "BaseAddress": "0x04C0599Ae5A44757c0af6F9eC3b93da8976c150A",
+    "Base": "ETHFI",
+    "BaseAddress": "0x6C240DDA6b5c336DF09A4D011139beAAa1eA2Aa2",
     "ManagementFee": 0,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
