@@ -65,6 +65,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== Pendle ==========================
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketSeptember"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_weETH_market_12_25_24"), true);
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](10);
@@ -154,11 +155,11 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== Native Bridge Leafs ==========================
         ERC20[] memory bridgeAssets = new ERC20[](5);
-        bridgeAssets[0] = getERC20(sourceChain, "WETH");
-        bridgeAssets[1] = getERC20(sourceChain, "WEETH");
-        bridgeAssets[2] = getERC20(sourceChain, "WSTETH");
-        bridgeAssets[3] = getERC20(sourceChain, "RETH");
-        bridgeAssets[4] = getERC20(sourceChain, "CBETH");
+        bridgeAssets[0] = getERC20(mainnet, "WETH");
+        bridgeAssets[1] = getERC20(mainnet, "WEETH");
+        bridgeAssets[2] = getERC20(mainnet, "WSTETH");
+        bridgeAssets[3] = getERC20(mainnet, "RETH");
+        bridgeAssets[4] = getERC20(mainnet, "CBETH");
         _addArbitrumNativeBridgeLeafs(leafs, bridgeAssets);
 
         // ========================== CCIP Bridge Leafs ==========================

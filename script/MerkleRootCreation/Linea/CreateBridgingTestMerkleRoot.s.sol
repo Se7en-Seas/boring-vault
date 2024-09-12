@@ -10,7 +10,7 @@ import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper
 import "forge-std/Script.sol";
 
 /**
- *  source .env && forge script script/MerkleRootCreation/Mainnet/CreateBridgingTestMerkleRoot.s.sol --rpc-url $MAINNET_RPC_URL
+ *  source .env && forge script script/MerkleRootCreation/Linea/CreateBridgingTestMerkleRoot.s.sol --rpc-url $LINEA_RPC_URL
  */
 contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
@@ -32,29 +32,29 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
     }
 
     function generateAdminStrategistMerkleRoot() public {
-        setSourceChainName(mainnet);
-        setAddress(false, mainnet, "boringVault", boringVault);
-        setAddress(false, mainnet, "managerAddress", managerAddress);
-        setAddress(false, mainnet, "accountantAddress", accountantAddress);
-        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+        setSourceChainName(linea);
+        setAddress(false, linea, "boringVault", boringVault);
+        setAddress(false, linea, "managerAddress", managerAddress);
+        setAddress(false, linea, "accountantAddress", accountantAddress);
+        setAddress(false, linea, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
 
         // ========================== Linea Bridge ==========================
         ERC20[] memory localTokens = new ERC20[](1);
         localTokens[0] = getERC20(sourceChain, "DAI");
-        _addLineaNativeBridgeLeafs(leafs, "linea", localTokens);
+        _addLineaNativeBridgeLeafs(leafs, "mainnet", localTokens);
 
         // ========================== Drone Linea Bridge ==========================
         uint256 startIndex = leafIndex + 1;
-        _addLineaNativeBridgeLeafs(leafs, "linea", localTokens);
+        _addLineaNativeBridgeLeafs(leafs, "mainnet", localTokens);
 
         _createDroneLeafs(leafs, drone, startIndex, leafIndex + 1);
 
         // ========================== Drone Transfers ==========================
         _addLeafsForDroneTransfers(leafs, drone, localTokens);
 
-        string memory filePath = "./leafs/Mainnet/BridgingTestStrategistLeafs.json";
+        string memory filePath = "./leafs/Linea/BridgingTestStrategistLeafs.json";
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 

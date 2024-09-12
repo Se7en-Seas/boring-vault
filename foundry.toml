@@ -3,7 +3,7 @@
 # This overrides the `auto_detect_solc` value
 solc_version = '0.8.21'
 auto_detect_solc = false
-evm_version = 'shanghai'
+evm_version = 'cancun'
 optimizer = true
 optimizer_runs = 200
 fs_permissions = [{ access = "read-write", path = "./" }]
@@ -17,6 +17,9 @@ avalanche = "${AVALANCHE_RPC_URL}"
 arbitrum = "${ARBITRUM_RPC_URL}"
 optimism = "${OPTIMISM_RPC_URL}"
 base = "${BASE_RPC_URL}"
+zircuit = "${ZIRCUIT_RPC_URL}"
+scroll = "${SCROLL_RPC_URL}"
+linea = "${LINEA_RPC_URL}"
 
 # [etherscan]
 # mainnet = { key = "${ETHERSCAN_KEY}", url = "https://api.etherscan.io/api" }

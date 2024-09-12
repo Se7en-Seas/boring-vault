@@ -17,9 +17,5 @@ import {GearboxDecoderAndSanitizer} from
 contract ITBPositionDecoderAndSanitizer is BaseDecoderAndSanitizer, GearboxDecoderAndSanitizer {
     constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
 
-    function transfer(address _to, uint256) external pure returns (bytes memory addressesFound) {
-        addressesFound = abi.encodePacked(_to);
-    }
-
     //============================== HANDLE FUNCTION COLLISIONS ===============================
 }

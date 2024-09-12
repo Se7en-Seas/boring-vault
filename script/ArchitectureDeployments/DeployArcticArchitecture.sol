@@ -17,7 +17,7 @@ import {ArcticArchitectureLens} from "src/helper/ArcticArchitectureLens.sol";
 import {ContractNames} from "resources/ContractNames.sol";
 import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
 import {DelayedWithdraw} from "src/base/Roles/DelayedWithdraw.sol";
-
+import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 
@@ -50,6 +50,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
         string teller;
         string rawDataDecoderAndSanitizer;
         string delayedWithdrawer;
+        string droneBaseName;
     }
 
     ArchitectureNames public names;
@@ -112,12 +113,16 @@ contract DeployArcticArchitecture is Script, ContractNames {
     uint8 public constant STRATEGIST_ROLE = 7;
     uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 11;
 
+    uint8 public droneCount;
+    address[] public droneAddresses;
+
     string finalJson;
     string coreOutput;
     string depositAssetConfigurationOutput;
     string withdrawAssetConfigurationOutput;
     string accountantConfigurationOutput;
     string depositConfigurationOutput;
+    string droneOutput;
 
     function _getAddressIfDeployed(string memory name) internal view returns (address) {
         address deployedAt = deployer.getAddress(name);
@@ -240,6 +245,18 @@ contract DeployArcticArchitecture is Script, ContractNames {
             } else {
                 delayedWithdrawer = DelayedWithdraw(deployedAddress);
             }
+
+            for (uint256 i; i < droneCount; ++i) {
+                string memory droneName = string.concat(names.droneBaseName, "-", vm.toString(i));
+                deployedAddress = _getAddressIfDeployed(droneName);
+                if (deployedAddress == address(0)) {
+                    creationCode = type(BoringDrone).creationCode;
+                    constructorArgs = abi.encode(address(boringVault), 0);
+                    droneAddresses.push(deployer.deployContract(droneName, creationCode, constructorArgs, 0));
+                } else {
+                    droneAddresses.push(deployedAddress);
+                }
+            }
         } else {
             rolesAuthority = RolesAuthority(_getAddressIfDeployed(names.rolesAuthority));
             lens = ArcticArchitectureLens(_getAddressIfDeployed(names.lens));
@@ -249,6 +266,11 @@ contract DeployArcticArchitecture is Script, ContractNames {
             teller = TellerWithMultiAssetSupport(payable(_getAddressIfDeployed(names.teller)));
             rawDataDecoderAndSanitizer = _getAddressIfDeployed(names.rawDataDecoderAndSanitizer);
             delayedWithdrawer = DelayedWithdraw(_getAddressIfDeployed(names.delayedWithdrawer));
+            for (uint256 i; i < droneCount; ++i) {
+                string memory droneName = string.concat(names.droneBaseName, "-", vm.toString(i));
+                address deployedAddress = _getAddressIfDeployed(droneName);
+                droneAddresses.push(deployedAddress);
+            }
         }
 
         if (configureDeployment.setupRoles) {
@@ -945,6 +967,14 @@ contract DeployArcticArchitecture is Script, ContractNames {
             }
 
             {
+                string memory drones = "drone key";
+                for (uint256 i; i < droneAddresses.length; i++) {
+                    droneOutput =
+                        vm.serializeAddress(drones, string.concat("drone-", vm.toString(i)), droneAddresses[i]);
+                }
+            }
+
+            {
                 string memory depositConfiguration = "deposit configuration key";
                 vm.serializeBool(depositConfiguration, "AllowPublicDeposits", allowPublicDeposits);
                 vm.serializeBool(depositConfiguration, "AllowPublicWithdraws", allowPublicWithdraws);
@@ -955,6 +985,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
             vm.serializeString(finalJson, "core", coreOutput);
             vm.serializeString(finalJson, "accountantConfiguration", accountantConfigurationOutput);
             vm.serializeString(finalJson, "WithdrawAssets", withdrawAssetConfigurationOutput);
+            vm.serializeString(finalJson, "Drones", droneOutput);
             finalJson = vm.serializeString(finalJson, "DepositAssets", depositAssetConfigurationOutput);
 
             vm.writeJson(finalJson, filePath);
