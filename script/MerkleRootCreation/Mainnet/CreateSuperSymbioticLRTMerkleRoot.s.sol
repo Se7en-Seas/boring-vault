@@ -19,6 +19,7 @@ contract CreateSuperSymbioticLRTMerkleRootScript is Script, MerkleTreeHelper {
     address public managerAddress = 0xA24dD7B978Fbe36125cC4817192f7b8AA18d213c;
     address public accountantAddress = 0xbe16605B22a7faCEf247363312121670DFe5afBE;
     address public rawDataDecoderAndSanitizer = 0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781;
+    address public stakingDecoderAndSanitizer = 0x8940DCA8e4e55C228B5060979f225e95E9249421;
 
     function setUp() external {}
 
@@ -63,8 +64,6 @@ contract CreateSuperSymbioticLRTMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "managerAddress", managerAddress);
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
-
-        leafIndex = 0;
 
         ManageLeaf[] memory leafs = new ManageLeaf[](512);
 
@@ -288,6 +287,15 @@ contract CreateSuperSymbioticLRTMerkleRootScript is Script, MerkleTreeHelper {
          * deposit, withdraw
          */
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "SFRXETH")));
+
+        // ========================== Staking ==========================
+        setAddress(true, mainnet, "rawDataDecoderAndSanitizer", stakingDecoderAndSanitizer);
+
+        _addNativeLeafs(leafs);
+        _addEtherFiLeafs(leafs);
+        _addLidoLeafs(leafs);
+        _addSwellStakingLeafs(leafs);
+        _addMantleStakingLeafs(leafs);
 
         string memory filePath = "./leafs/SuperSymbioticStrategistLeafs.json";
 
