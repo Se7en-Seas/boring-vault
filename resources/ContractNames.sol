@@ -96,6 +96,14 @@ contract ContractNames {
         "Bridging Test ETH Vault Aerodrome Decoder and Sanitizer V0.0";
     string public constant BridgingTestVaultDroneName = "btv-drone V0.1";
 
+    string public constant StakedETHFIRolesAuthorityName = "Staked ETHFI RolesAuthority Version 0.0";
+    string public constant StakedETHFIName = "Staked ETHFI V0.1";
+    string public constant StakedETHFIManagerName = "Staked ETHFI Manager With Merkle Verification V0.0";
+    string public constant StakedETHFIAccountantName = "Staked ETHFI Accountant With Rate Providers V0.0";
+    string public constant StakedETHFITellerName = "Staked ETHFI Teller With Multi Asset Support V0.0";
+    string public constant StakedETHFIDecoderAndSanitizerName = "Staked ETHFI Decoder and Sanitizer V0.0";
+    string public constant StakedETHFIDelayedWithdrawer = "Staked ETHFI Delayed Withdrawer V0.0";
+
     string public constant CanaryBtcRolesAuthorityName = "Lombard Earn RolesAuthority Version 0.0";
     string public constant CanaryBtcName = "Lombard Earn V0.0";
     string public constant CanaryBtcManagerName = "Lombard Earn Manager With Merkle Verification V0.0";
@@ -103,6 +111,14 @@ contract ContractNames {
     string public constant CanaryBtcTellerName = "Lombard Earn Teller With Multi Asset Support V0.0";
     string public constant CanaryBtcDecoderAndSanitizerName = "Lombard Earn Decoder and Sanitizer V0.0";
     string public constant CanaryBtcDelayedWithdrawer = "Lombard Earn Delayed Withdrawer V0.0";
+
+    string public constant CbBtcDefiVaultRolesAuthorityName = "CB BTC DeFi Vault RolesAuthority Version 0.0";
+    string public constant CbBtcDefiVaultName = "CB BTC DeFi Vault V0.0";
+    string public constant CbBtcDefiVaultManagerName = "CB BTC DeFi Vault Manager With Merkle Verification V0.0";
+    string public constant CbBtcDefiVaultAccountantName = "CB BTC DeFi Vault Accountant With Rate Providers V0.0";
+    string public constant CbBtcDefiVaultTellerName = "CB BTC DeFi Vault Teller With Multi Asset Support V0.0";
+    string public constant CbBtcDefiVaultDecoderAndSanitizerName = "CB BTC DeFi Vault Decoder and Sanitizer V0.0";
+    string public constant CbBtcDefiVaultDelayedWithdrawer = "CB BTC DeFi Vault Delayed Withdrawer V0.0";
 
     string public constant TestCCIPTellerName = "Test CCIP Teller V0.0";
 
