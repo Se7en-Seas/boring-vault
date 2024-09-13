@@ -188,7 +188,7 @@ contract ContractNames {
     string public constant EtherFiElixirUsdPancakeSwapDecoderAndSanitizerName =
         "EtherFi Elixir USD PancakeSwap Decoder and Sanitizer V0.0";
 
-    string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.3";
+    string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.4";
 
     // Generic Rate Providers
     string public constant PendlePTweETHRateProviderName = "Pendle PT weETH Rate Provider V0.0";

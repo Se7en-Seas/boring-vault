@@ -27,7 +27,7 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("optimism");
+        vm.createSelectFork("mainnet");
     }
 
     function run() external {
@@ -35,14 +35,14 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
         bytes memory constructorArgs;
         vm.startBroadcast(privateKey);
 
-        creationCode = type(AerodromeDecoderAndSanitizer).creationCode;
-        constructorArgs =
-            abi.encode(0xf0bb20865277aBd641a307eCe5Ee04E79073416C, 0x416b433906b1B72FA758e166e239c43d68dC6F29);
-        deployer.deployContract(EtherFiLiquidEthAerodromeDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+        // creationCode = type(AerodromeDecoderAndSanitizer).creationCode;
+        // constructorArgs =
+        //     abi.encode(0xf0bb20865277aBd641a307eCe5Ee04E79073416C, 0x416b433906b1B72FA758e166e239c43d68dC6F29);
+        // deployer.deployContract(EtherFiLiquidEthAerodromeDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
-        // creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
-        // constructorArgs = abi.encode(boringVault, uniswapV3NonFungiblePositionManager);
-        // deployer.deployContract(EtherFiLiquidUsdDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+        creationCode = type(ITBPositionDecoderAndSanitizer).creationCode;
+        constructorArgs = abi.encode(boringVault);
+        deployer.deployContract(ItbPositionDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
         vm.stopBroadcast();
     }

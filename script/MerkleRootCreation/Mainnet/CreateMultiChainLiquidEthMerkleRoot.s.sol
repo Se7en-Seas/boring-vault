@@ -143,8 +143,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](15);
-        SwapKind[] memory kind = new SwapKind[](15);
+        address[] memory assets = new address[](16);
+        SwapKind[] memory kind = new SwapKind[](16);
         assets[0] = getAddress(sourceChain, "WETH");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "WEETH");
@@ -175,6 +175,8 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         kind[13] = SwapKind.BuyAndSell;
         assets[14] = getAddress(sourceChain, "RSETH");
         kind[14] = SwapKind.BuyAndSell;
+        assets[15] = getAddress(sourceChain, "CAKE");
+        kind[15] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "wstETH_wETH_01"));
@@ -256,14 +258,36 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== BoringVaults ==========================
         {
-            ERC20[] memory tellerAssets = new ERC20[](3);
+            ERC20[] memory tellerAssets = new ERC20[](11);
             tellerAssets[0] = getERC20(sourceChain, "WETH");
-            tellerAssets[1] = getERC20(sourceChain, "WEETH");
-            tellerAssets[2] = getERC20(sourceChain, "WSTETH");
+            tellerAssets[1] = getERC20(sourceChain, "EETH");
+            tellerAssets[2] = getERC20(sourceChain, "WEETH");
+            tellerAssets[3] = getERC20(sourceChain, "WSTETH");
+            tellerAssets[4] = getERC20(sourceChain, "CBETH");
+            tellerAssets[5] = getERC20(sourceChain, "WBETH");
+            tellerAssets[6] = getERC20(sourceChain, "RETH");
+            tellerAssets[7] = getERC20(sourceChain, "METH");
+            tellerAssets[8] = getERC20(sourceChain, "SWETH");
+            tellerAssets[9] = getERC20(sourceChain, "SFRXETH");
+            tellerAssets[10] = getERC20(sourceChain, "ETHX");
             address superSymbioticTeller = 0x99dE9e5a3eC2750a6983C8732E6e795A35e7B861;
-            address kingKarakTeller = 0x929B44db23740E65dF3A81eA4aAB716af1b88474;
-
             _addTellerLeafs(leafs, superSymbioticTeller, tellerAssets);
+
+            tellerAssets = new ERC20[](13);
+            tellerAssets[0] = getERC20(sourceChain, "WETH");
+            tellerAssets[1] = getERC20(sourceChain, "EETH");
+            tellerAssets[2] = getERC20(sourceChain, "WEETH");
+            tellerAssets[3] = getERC20(sourceChain, "WSTETH");
+            tellerAssets[4] = getERC20(sourceChain, "CBETH");
+            tellerAssets[5] = getERC20(sourceChain, "WBETH");
+            tellerAssets[6] = getERC20(sourceChain, "RETH");
+            tellerAssets[7] = getERC20(sourceChain, "METH");
+            tellerAssets[8] = getERC20(sourceChain, "SWETH");
+            tellerAssets[9] = getERC20(sourceChain, "SFRXETH");
+            tellerAssets[10] = getERC20(sourceChain, "ETHX");
+            tellerAssets[11] = getERC20(sourceChain, "RSWETH");
+            tellerAssets[12] = getERC20(sourceChain, "RSETH");
+            address kingKarakTeller = 0x929B44db23740E65dF3A81eA4aAB716af1b88474;
             _addTellerLeafs(leafs, kingKarakTeller, tellerAssets);
         }
 
