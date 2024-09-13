@@ -116,6 +116,8 @@ contract DeployArcticArchitecture is Script, ContractNames {
     uint8 public droneCount;
     address[] public droneAddresses;
 
+    bytes public boringCreationCode;
+
     string finalJson;
     string coreOutput;
     string depositAssetConfigurationOutput;
@@ -171,7 +173,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
 
             deployedAddress = _getAddressIfDeployed(names.boringVault);
             if (deployedAddress == address(0)) {
-                creationCode = type(BoringVault).creationCode;
+                creationCode = boringCreationCode.length == 0 ? type(BoringVault).creationCode : boringCreationCode;
                 constructorArgs = abi.encode(owner, boringVaultName, boringVaultSymbol, boringVaultDecimals);
                 boringVault =
                     BoringVault(payable(deployer.deployContract(names.boringVault, creationCode, constructorArgs, 0)));
