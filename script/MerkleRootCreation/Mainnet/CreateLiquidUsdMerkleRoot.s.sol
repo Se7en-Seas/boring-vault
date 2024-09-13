@@ -399,20 +399,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         // _addLeafsForItbGearbox(leafs, itbGearboxUsdt, USDT, ERC20(dUSDTV3), sdUSDTV3, "ITB Gearbox USDT");
 
         // ========================== ITB Syrup ==========================
-        _addLeafsForItbSyrup(
-            leafs,
-            itbSyrupUsdc,
-            getERC20(sourceChain, "USDC"),
-            getAddress(sourceChain, "syrupRouter"),
-            "ITB Syrup USDC Position Manager"
-        );
-        _addLeafsForItbSyrup(
-            leafs,
-            itbSyrupUsdt,
-            getERC20(sourceChain, "USDT"),
-            getAddress(sourceChain, "syrupRouter"),
-            "ITB Syrup USDT Position Manager"
-        );
+        _addLeafsForItbSyrup(leafs, itbSyrupUsdc, getERC20(sourceChain, "USDC"), "ITB Syrup USDC Position Manager");
+        _addLeafsForItbSyrup(leafs, itbSyrupUsdt, getERC20(sourceChain, "USDT"), "ITB Syrup USDT Position Manager");
 
         // ========================== ITB Curve/Convex PYUSD/USDC ==========================
         /**
@@ -1203,25 +1191,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         ManageLeaf[] memory leafs,
         address itbPositionManager,
         ERC20 underlying,
-        address syrupRouter,
         string memory itbContractName
     ) internal {
         ERC20[] memory tokensUsed = new ERC20[](1);
         tokensUsed[0] = underlying;
         _addLeafsForITBPositionManager(leafs, itbPositionManager, tokensUsed, itbContractName);
-
-        // Approvals
-        leafIndex++;
-        leafs[leafIndex] = ManageLeaf(
-            itbPositionManager,
-            false,
-            "approveToken(address,address,uint256)",
-            new address[](2),
-            string.concat("Approve Syrup Router to spend ", underlying.symbol()),
-            itbDecoderAndSanitizer
-        );
-        leafs[leafIndex].argumentAddresses[0] = address(underlying);
-        leafs[leafIndex].argumentAddresses[1] = address(syrupRouter);
 
         // Deposit
         leafIndex++;
