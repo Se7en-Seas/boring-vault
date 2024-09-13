@@ -96,6 +96,14 @@ contract ContractNames {
         "Bridging Test ETH Vault Aerodrome Decoder and Sanitizer V0.0";
     string public constant BridgingTestVaultDroneName = "btv-drone V0.1";
 
+    string public constant StakedETHFIRolesAuthorityName = "Staked ETHFI RolesAuthority Version 0.0";
+    string public constant StakedETHFIName = "Staked ETHFI V0.1";
+    string public constant StakedETHFIManagerName = "Staked ETHFI Manager With Merkle Verification V0.0";
+    string public constant StakedETHFIAccountantName = "Staked ETHFI Accountant With Rate Providers V0.0";
+    string public constant StakedETHFITellerName = "Staked ETHFI Teller With Multi Asset Support V0.0";
+    string public constant StakedETHFIDecoderAndSanitizerName = "Staked ETHFI Decoder and Sanitizer V0.0";
+    string public constant StakedETHFIDelayedWithdrawer = "Staked ETHFI Delayed Withdrawer V0.0";
+
     string public constant CanaryBtcRolesAuthorityName = "Lombard Earn RolesAuthority Version 0.0";
     string public constant CanaryBtcName = "Lombard Earn V0.0";
     string public constant CanaryBtcManagerName = "Lombard Earn Manager With Merkle Verification V0.0";
