@@ -40,21 +40,27 @@ contract CreateCbBTCMerkleRootScript is Script, MerkleTreeHelper {
         ManageLeaf[] memory leafs = new ManageLeaf[](64);
 
         // ========================== UniswapV3 ==========================
-        address[] memory token0 = new address[](1);
+        address[] memory token0 = new address[](3);
         token0[0] = getAddress(sourceChain, "WBTC");
+        token0[1] = getAddress(sourceChain, "WBTC");
+        token0[2] = getAddress(sourceChain, "TBTC");
 
-        address[] memory token1 = new address[](1);
+        address[] memory token1 = new address[](3);
         token1[0] = getAddress(sourceChain, "cbBTC");
+        token1[1] = getAddress(sourceChain, "TBTC");
+        token1[2] = getAddress(sourceChain, "cbBTC");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](2);
-        SwapKind[] memory kind = new SwapKind[](2);
+        address[] memory assets = new address[](3);
+        SwapKind[] memory kind = new SwapKind[](3);
         assets[0] = getAddress(sourceChain, "WBTC");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "cbBTC");
         kind[1] = SwapKind.BuyAndSell;
+        assets[2] = getAddress(sourceChain, "TBTC");
+        kind[2] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         // ========================== Pendle ==========================

@@ -40,13 +40,15 @@ contract CreateCbBTCMerkleRootScript is Script, MerkleTreeHelper {
         ManageLeaf[] memory leafs = new ManageLeaf[](32);
 
         // ========================== UniswapV3 ==========================
-        address[] memory token0 = new address[](2);
+        address[] memory token0 = new address[](3);
         token0[0] = getAddress(sourceChain, "cbBTC");
         token0[1] = getAddress(sourceChain, "cbBTC");
+        token0[2] = getAddress(sourceChain, "tBTC");
 
-        address[] memory token1 = new address[](2);
+        address[] memory token1 = new address[](3);
         token1[0] = getAddress(sourceChain, "dlcBTC");
         token1[1] = getAddress(sourceChain, "tBTC");
+        token1[2] = getAddress(sourceChain, "dlcBTC");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
