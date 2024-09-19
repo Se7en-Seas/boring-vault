@@ -6,6 +6,8 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {MerkleTreeHelper, ERC20} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 import {AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902} from
     "src/helper/AaveV3EtherFiSetup/AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902/src/20240902_AaveV3EthereumEtherFi_EtherFiEthereumActivation/AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902.sol";
+import {MockAaveOracle} from "src/helper/MockAaveOracle.sol";
+import {IAaveV3Pool} from "src/interfaces/IAaveV3Pool.sol";
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
 contract BoringDroneTest is Test, MerkleTreeHelper {
@@ -19,6 +21,12 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
 
     address usdcWhale = 0x37305B1cD40574E4C5Ce33f8e8306Be057fD7341;
     address public aaveMarketSetup;
+    address public mockOracle;
+    IAaveV3Pool public aaveV3Pool;
+
+    address public constant weETHs = 0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88;
+    address public constant weETHs_accountant = 0xbe16605B22a7faCEf247363312121670DFe5afBE;
+    address public constant eth_usd_feed = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
 
     function setUp() external {
         // Setup forked environment.
@@ -35,9 +43,16 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         // Give executor enough assets to execute the payload.
         deal(getAddress(sourceChain, "WEETH"), aaveExecutor, 1e18);
         vm.prank(usdcWhale);
-        getERC20(sourceChain, "USDC").transfer(aaveExecutor, 100e6);
-        deal(getAddress(sourceChain, "PYUSD"), aaveExecutor, 100e6);
-        deal(getAddress(sourceChain, "FRAX"), aaveExecutor, 1e18);
+        getERC20(sourceChain, "USDC").transfer(aaveExecutor, 1_000_000e6);
+        deal(getAddress(sourceChain, "PYUSD"), aaveExecutor, 1_000_000e6);
+        deal(getAddress(sourceChain, "FRAX"), aaveExecutor, 1_000_000e18);
+        deal(weETHs, aaveExecutor, 1e18);
+
+        mockOracle = address(new MockAaveOracle(weETHs_accountant, eth_usd_feed));
+
+        assertTrue(mockOracle == 0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f, "Update oracle in aave setup contract");
+
+        aaveV3Pool = IAaveV3Pool(getAddress(sourceChain, "v3EtherFiPool"));
 
         aaveMarketSetup = address(new AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902());
 
@@ -64,14 +79,32 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
             hex"15034cba0000000000000000000000009aee0b04504cef83a65ac3f0e838d0593bcb2bc700000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a600000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000066d9c2d7";
         vm.prank(aaveQueuePayloadCaller);
         (success,) = aavePayloadController.call(queuePayload);
+
+        skip(5 days);
+        payload = abi.encodeWithSignature("executePayload(uint40)", 166);
+        vm.prank(aaveExecutePayloadCaller);
+        (success,) = aavePayloadController.call(payload);
+        require(success, "Failed to execute payload");
     }
 
-    function testHunch() public {
-        skip(5 days);
-        bytes memory payload = abi.encodeWithSignature("executePayload(uint40)", 166);
-        vm.prank(aaveExecutePayloadCaller);
-        (bool success,) = aavePayloadController.call(payload);
-        require(success, "Failed to execute payload");
+    function testSupplyingweETHsAndBorrowing() public {
+        deal(weETHs, address(this), 1_000e18);
+
+        // Approve pool to spend weETHs.
+        ERC20(weETHs).approve(address(aaveV3Pool), 1_000e18);
+
+        // Supply weETHs to the pool.
+        aaveV3Pool.supply(weETHs, 1_000e18, address(this), 0);
+
+        // Borrow USDC from pool.
+        aaveV3Pool.borrow(getAddress(sourceChain, "USDC"), 1_000e6, 2, 0, address(this));
+
+        // Check if we have borrowed USDC.
+        assertEq(
+            getERC20(sourceChain, "USDC").balanceOf(address(this)),
+            1_000e6,
+            "This contract should have borrowed 1_000 USDC"
+        );
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

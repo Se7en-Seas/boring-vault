@@ -35,11 +35,11 @@ contract AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902 is AaveV3Paylo
     address public constant weETH = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
     uint256 public constant weETH_SEED_AMOUNT = 1e17;
     address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    uint256 public constant USDC_SEED_AMOUNT = 100e6;
+    uint256 public constant USDC_SEED_AMOUNT = 1_000_000e6;
     address public constant PYUSD = 0x6c3ea9036406852006290770BEdFcAbA0e23A0e8;
-    uint256 public constant PYUSD_SEED_AMOUNT = 100e6;
+    uint256 public constant PYUSD_SEED_AMOUNT = 1_000_000e6;
     address public constant FRAX = 0x853d955aCEf822Db058eb8505911ED77F175b99e;
-    uint256 public constant FRAX_SEED_AMOUNT = 1e18;
+    uint256 public constant FRAX_SEED_AMOUNT = 1_000_000e18;
     address public constant weETHs = 0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88;
     uint256 public constant weETHs_SEED_AMOUNT = 1e17;
 
@@ -64,13 +64,15 @@ contract AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902 is AaveV3Paylo
         AaveV3EthereumEtherFi.POOL.supply(PYUSD, PYUSD_SEED_AMOUNT, address(AaveV3EthereumEtherFi.COLLECTOR), 0);
         IERC20(FRAX).forceApprove(address(AaveV3EthereumEtherFi.POOL), FRAX_SEED_AMOUNT);
         AaveV3EthereumEtherFi.POOL.supply(FRAX, FRAX_SEED_AMOUNT, address(AaveV3EthereumEtherFi.COLLECTOR), 0);
+        IERC20(weETHs).forceApprove(address(AaveV3EthereumEtherFi.POOL), weETHs_SEED_AMOUNT);
+        AaveV3EthereumEtherFi.POOL.supply(weETHs, weETHs_SEED_AMOUNT, address(AaveV3EthereumEtherFi.COLLECTOR), 0);
 
         // Catapulta service fee
         AaveV3Ethereum.COLLECTOR.transfer(MiscEthereum.GHO_TOKEN, 0x6D53be86136c3d4AA6448Ce4bF6178AD66e63661, 15000e18);
     }
 
     function newListings() public pure override returns (IAaveV3ConfigEngine.Listing[] memory) {
-        IAaveV3ConfigEngine.Listing[] memory listings = new IAaveV3ConfigEngine.Listing[](4);
+        IAaveV3ConfigEngine.Listing[] memory listings = new IAaveV3ConfigEngine.Listing[](5);
         listings[0] = IAaveV3ConfigEngine.Listing({
             asset: weETH,
             assetSymbol: "weETH",
@@ -171,31 +173,31 @@ contract AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902 is AaveV3Paylo
                 variableRateSlope2: 80_00
             })
         });
-        // listings[4] = IAaveV3ConfigEngine.Listing({
-        //     asset: weETHs,
-        //     assetSymbol: "weETHs",
-        //     priceFeed: 0xf112aF6F0A332B815fbEf3Ff932c057E570b62d3, // TODO this needs to be updated
-        //     eModeCategory: AaveV3EthereumEtherFiEModes.NONE,
-        //     enabledToBorrow: EngineFlags.DISABLED,
-        //     stableRateModeEnabled: EngineFlags.DISABLED,
-        //     borrowableInIsolation: EngineFlags.DISABLED,
-        //     withSiloedBorrowing: EngineFlags.DISABLED,
-        //     flashloanable: EngineFlags.ENABLED,
-        //     ltv: 78_00,
-        //     liqThreshold: 81_00,
-        //     liqBonus: 6_00,
-        //     reserveFactor: 45_00,
-        //     supplyCap: 50_000,
-        //     borrowCap: 0,
-        //     debtCeiling: 0,
-        //     liqProtocolFee: 10_00,
-        //     rateStrategyParams: IAaveV3ConfigEngine.InterestRateInputData({
-        //         optimalUsageRatio: 35_00,
-        //         baseVariableBorrowRate: 0,
-        //         variableRateSlope1: 7_00,
-        //         variableRateSlope2: 300_00
-        //     })
-        // });
+        listings[4] = IAaveV3ConfigEngine.Listing({
+            asset: weETHs,
+            assetSymbol: "weETHs",
+            priceFeed: 0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f,
+            eModeCategory: AaveV3EthereumEtherFiEModes.NONE,
+            enabledToBorrow: EngineFlags.DISABLED,
+            stableRateModeEnabled: EngineFlags.DISABLED,
+            borrowableInIsolation: EngineFlags.DISABLED,
+            withSiloedBorrowing: EngineFlags.DISABLED,
+            flashloanable: EngineFlags.ENABLED,
+            ltv: 78_00,
+            liqThreshold: 81_00,
+            liqBonus: 6_00,
+            reserveFactor: 45_00,
+            supplyCap: 50_000,
+            borrowCap: 0,
+            debtCeiling: 0,
+            liqProtocolFee: 10_00,
+            rateStrategyParams: IAaveV3ConfigEngine.InterestRateInputData({
+                optimalUsageRatio: 35_00,
+                baseVariableBorrowRate: 0,
+                variableRateSlope1: 7_00,
+                variableRateSlope2: 300_00
+            })
+        });
 
         return listings;
     }

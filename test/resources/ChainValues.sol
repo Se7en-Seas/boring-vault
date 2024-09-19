@@ -625,6 +625,9 @@ contract ChainValues {
         // Aave V3 Lido
         values[mainnet]["v3LidoPool"] = 0x4e033931ad43597d96D6bcc25c280717730B58B1.toBytes32();
 
+        // Aave V3 Ether.Fi
+        values[mainnet]["v3EtherFiPool"] = 0x0AA97c284e98396202b6A04024F5E2c65026F3c0.toBytes32();
+
         // SparkLend
         values[mainnet]["sparkLendPool"] = 0xC13e21B648A5Ee794902342038FF3aDAB66BE987.toBytes32();
 
