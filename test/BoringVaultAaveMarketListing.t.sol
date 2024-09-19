@@ -3,7 +3,10 @@ pragma solidity 0.8.21;
 
 import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {RolesAuthority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {MerkleTreeHelper, ERC20} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
+import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
+import {LiquidationHelper} from "src/helper/LiquidationHelper.sol";
 import {AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902} from
     "src/helper/AaveV3EtherFiSetup/AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902/src/20240902_AaveV3EthereumEtherFi_EtherFiEthereumActivation/AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902.sol";
 import {MockAaveOracle} from "src/helper/MockAaveOracle.sol";
@@ -22,11 +25,16 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
     address usdcWhale = 0x37305B1cD40574E4C5Ce33f8e8306Be057fD7341;
     address public aaveMarketSetup;
     address public mockOracle;
+    LiquidationHelper public liquidationHelper;
     IAaveV3Pool public aaveV3Pool;
 
     address public constant weETHs = 0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88;
     address public constant weETHs_accountant = 0xbe16605B22a7faCEf247363312121670DFe5afBE;
+    address public constant weETHs_teller = 0x99dE9e5a3eC2750a6983C8732E6e795A35e7B861;
     address public constant eth_usd_feed = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
+    AccountantWithRateProviders public accountant = AccountantWithRateProviders(weETHs_accountant);
+    address public exchangeRateUpdater = 0x41DFc53B13932a2690C9790527C1967d8579a6ae;
+    address public boringVaultOwner = 0xCEA8039076E35a825854c5C2f85659430b06ec96;
 
     function setUp() external {
         // Setup forked environment.
@@ -42,8 +50,10 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
 
         // Give executor enough assets to execute the payload.
         deal(getAddress(sourceChain, "WEETH"), aaveExecutor, 1e18);
-        vm.prank(usdcWhale);
+        vm.startPrank(usdcWhale);
         getERC20(sourceChain, "USDC").transfer(aaveExecutor, 1_000_000e6);
+        getERC20(sourceChain, "USDC").transfer(address(this), 1_000_000e6);
+        vm.stopPrank();
         deal(getAddress(sourceChain, "PYUSD"), aaveExecutor, 1_000_000e6);
         deal(getAddress(sourceChain, "FRAX"), aaveExecutor, 1_000_000e18);
         deal(weETHs, aaveExecutor, 1e18);
@@ -51,6 +61,30 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         mockOracle = address(new MockAaveOracle(weETHs_accountant, eth_usd_feed));
 
         assertTrue(mockOracle == 0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f, "Update oracle in aave setup contract");
+
+        LiquidationHelper.WithdrawOrder[] memory preferredWithdrawOrder = new LiquidationHelper.WithdrawOrder[](4);
+        preferredWithdrawOrder[0] =
+            LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WEETH"), amount: type(uint96).max});
+        preferredWithdrawOrder[1] =
+            LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "EETH"), amount: type(uint96).max});
+        preferredWithdrawOrder[2] =
+            LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WETH"), amount: type(uint96).max});
+        preferredWithdrawOrder[3] =
+            LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WSTETH"), amount: type(uint96).max});
+
+        liquidationHelper = new LiquidationHelper(
+            address(this),
+            Authority(address(0)),
+            getAddress(sourceChain, "v3EtherFiPool"),
+            weETHs_teller,
+            preferredWithdrawOrder
+        );
+
+        // give liquidation helper SOLVER_ROLE so it can call bulkWithdraw
+        RolesAuthority auth = RolesAuthority(address(accountant.authority()));
+
+        vm.prank(boringVaultOwner);
+        auth.setUserRole(address(liquidationHelper), 12, true);
 
         aaveV3Pool = IAaveV3Pool(getAddress(sourceChain, "v3EtherFiPool"));
 
@@ -88,22 +122,62 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
     }
 
     function testSupplyingweETHsAndBorrowing() public {
-        deal(weETHs, address(this), 1_000e18);
+        address user = vm.addr(1);
+        deal(weETHs, user, 1_000e18);
 
+        vm.startPrank(user);
         // Approve pool to spend weETHs.
         ERC20(weETHs).approve(address(aaveV3Pool), 1_000e18);
 
         // Supply weETHs to the pool.
-        aaveV3Pool.supply(weETHs, 1_000e18, address(this), 0);
+        aaveV3Pool.supply(weETHs, 1_000e18, user, 0);
+
+        address debt = getAddress(sourceChain, "USDC");
+        uint256 debtToCover = 1_000e6;
 
         // Borrow USDC from pool.
-        aaveV3Pool.borrow(getAddress(sourceChain, "USDC"), 1_000e6, 2, 0, address(this));
+        aaveV3Pool.borrow(debt, debtToCover, 2, 0, user);
+
+        vm.stopPrank();
 
         // Check if we have borrowed USDC.
-        assertEq(
-            getERC20(sourceChain, "USDC").balanceOf(address(this)),
-            1_000e6,
-            "This contract should have borrowed 1_000 USDC"
+        assertEq(getERC20(sourceChain, "USDC").balanceOf(user), 1_000e6, "User should have borrowed 1_000 USDC");
+    }
+
+    function testLiquidating() public {
+        address userToLiquidate = vm.addr(1);
+        deal(weETHs, userToLiquidate, 10e18);
+
+        vm.startPrank(userToLiquidate);
+        // Approve pool to spend weETHs.
+        ERC20(weETHs).approve(address(aaveV3Pool), 1_000e18);
+
+        // Supply weETHs to the pool.
+        aaveV3Pool.supply(weETHs, 10e18, userToLiquidate, 0);
+
+        address debt = getAddress(sourceChain, "USDC");
+        uint256 debtToCover = 1_000e6;
+
+        // Borrow USDC from pool.
+        aaveV3Pool.borrow(debt, debtToCover, 2, 0, userToLiquidate);
+
+        vm.stopPrank();
+
+        // Update exchange rate to a very low value.
+        vm.prank(exchangeRateUpdater);
+        accountant.updateExchangeRate(0.005e18);
+
+        vm.prank(boringVaultOwner);
+        accountant.unpause();
+
+        // Try to liquidate the user.
+        ERC20(debt).approve(address(liquidationHelper), debtToCover);
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInPreferredOrder(ERC20(debt), userToLiquidate, debtToCover);
+
+        assertGt(
+            getERC20(sourceChain, "WEETH").balanceOf(address(this)),
+            0,
+            "This address should have got weETH from liquidation"
         );
     }
 

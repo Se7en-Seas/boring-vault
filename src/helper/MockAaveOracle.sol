@@ -17,7 +17,7 @@ contract MockAaveOracle {
     function latestAnswer() external view returns (int256) {
         uint256 rateOfShareInEth = accountant.getRate();
         uint256 rateOfBaseInUsd = uint256(chainlinkAggregator.latestAnswer());
-        return int256(rateOfShareInEth.mulDivDown(rateOfBaseInUsd, 1e8));
+        return int256(rateOfShareInEth.mulDivDown(rateOfBaseInUsd, 1e18));
     }
 }
 

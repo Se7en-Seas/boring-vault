@@ -17,15 +17,21 @@ contract LiquidationHelper is Auth {
 
     error LiquidationHelper__OnlyCallableByBalancerVault();
     error LiquidationHelper__OnlyCallableInFlashloan();
-    error LiquidationHelper__OnlyBadFlashloanInputs();
+    error LiquidationHelper__PreferredWithdrawOrderInputMustHaveMaxAmounts();
 
     enum LiquidationType {
         AaveV3,
         Comet
     }
 
+    struct WithdrawOrder {
+        ERC20 asset;
+        uint96 amount; // if type(uint256).max is used, we try to withdraw as much as possible from the BoringVault for that asset
+    }
+
+    WithdrawOrder[] public preferredWithdrawOrder;
+
     IAaveV3Pool internal immutable aaveV3Pool;
-    BalancerVault internal immutable balancerVault;
     TellerWithMultiAssetSupport internal immutable teller;
     AccountantWithRateProviders internal immutable accountant;
     ERC20 internal immutable boringVault;
@@ -33,138 +39,139 @@ contract LiquidationHelper is Auth {
 
     bool internal inLiquidation;
 
-    constructor(address _owner, Authority _auth, address _aaveV3Pool, address _balancerVault, address _teller)
-        Auth(_owner, _auth)
-    {
+    constructor(
+        address _owner,
+        Authority _auth,
+        address _aaveV3Pool,
+        address _teller,
+        WithdrawOrder[] memory _preferredWithdrawOrder
+    ) Auth(_owner, _auth) {
         aaveV3Pool = IAaveV3Pool(_aaveV3Pool);
-        balancerVault = BalancerVault(_balancerVault);
         teller = TellerWithMultiAssetSupport(_teller);
         accountant = AccountantWithRateProviders(teller.accountant());
         boringVault = ERC20(teller.vault());
         ONE_SHARE = 10 ** boringVault.decimals();
+        // Okay for this to be empty.
+        for (uint256 i; i < _preferredWithdrawOrder.length; ++i) {
+            if (_preferredWithdrawOrder[i].amount != type(uint96).max) {
+                revert LiquidationHelper__PreferredWithdrawOrderInputMustHaveMaxAmounts();
+            }
+            preferredWithdrawOrder.push(_preferredWithdrawOrder[i]);
+        }
+    }
+
+    // ============================================ ADMIN FUNCTIONS ============================================
+    function setPreferredWithdrawOrder(WithdrawOrder[] calldata _preferredWithdrawOrder) external requiresAuth {
+        delete preferredWithdrawOrder;
+        for (uint256 i; i < _preferredWithdrawOrder.length; ++i) {
+            if (_preferredWithdrawOrder[i].amount != type(uint96).max) {
+                revert LiquidationHelper__PreferredWithdrawOrderInputMustHaveMaxAmounts();
+            }
+            preferredWithdrawOrder.push(_preferredWithdrawOrder[i]);
+        }
     }
 
     // ========================================= LIQUIDATION FUNCTIONS =========================================
 
-    function liquidateUserOnAaveV3(ERC20 debt, address user, uint256 debtToCover, bool useFlashloan)
+    function liquidateUserOnAaveV3AndWithdrawInPreferredOrder(ERC20 debt, address user, uint256 debtToCover)
         external
         requiresAuth
     {
-        if (useFlashloan) {
-            address[] memory tokens = new address[](1);
-            tokens[0] = address(debt);
-            uint256[] memory amounts = new uint256[](1);
-            amounts[0] = debtToCover;
-            bytes memory userData = abi.encode(LiquidationType.AaveV3, user, msg.sender);
-            inLiquidation = true;
-            balancerVault.flashLoan(address(this), tokens, amounts, userData);
-            inLiquidation = false;
-        } else {
-            debt.safeTransferFrom(msg.sender, address(this), debtToCover);
-            _liquidateUserOnAaveV3(debt, user, debtToCover, msg.sender);
-
-            // Then transfer tokens back to liquidator.
-            debt.safeTransfer(msg.sender, debtToCover);
-        }
+        debt.safeTransferFrom(msg.sender, address(this), debtToCover);
+        WithdrawOrder[] memory withdrawOrder = preferredWithdrawOrder;
+        uint256 totalShares = _liquidateUserOnAaveV3(debt, user, debtToCover);
+        _withdrawFromBoringVaultInOrder(totalShares, withdrawOrder, msg.sender);
     }
 
-    // Compound V3 liquidations
-    function buyCollateralFromComet(
-        IComet comet,
-        address[] calldata users,
-        uint256 minAmount,
-        uint256 baseAmount,
-        bool useFlashloan,
-        bool absorb
+    function liquidateUserOnAaveV3AndWithdrawInCustomOrder(
+        ERC20 debt,
+        address user,
+        uint256 debtToCover,
+        WithdrawOrder[] calldata withdrawOrder
     ) external requiresAuth {
-        if (absorb) {
-            comet.absorb(msg.sender, users);
-        }
+        debt.safeTransferFrom(msg.sender, address(this), debtToCover);
+        uint256 totalShares = _liquidateUserOnAaveV3(debt, user, debtToCover);
+        _withdrawFromBoringVaultInOrder(totalShares, withdrawOrder, msg.sender);
+    }
+
+    function buyCollateralFromCometAndWithdrawInPreferredOrder(IComet comet, uint256 minAmount, uint256 baseAmount)
+        external
+        requiresAuth
+    {
+        WithdrawOrder[] memory withdrawOrder = preferredWithdrawOrder;
 
         ERC20 base = ERC20(comet.baseToken());
 
-        if (useFlashloan) {
-            address[] memory tokens = new address[](1);
-            tokens[0] = address(base);
-            uint256[] memory amounts = new uint256[](1);
-            amounts[0] = baseAmount;
-            bytes memory userData = abi.encode(LiquidationType.Comet, comet, base, minAmount, baseAmount, msg.sender);
-            inLiquidation = true;
-            balancerVault.flashLoan(address(this), tokens, amounts, userData);
-            inLiquidation = false;
-        } else {
-            base.safeTransferFrom(msg.sender, address(this), baseAmount);
-            _buyCollateralFromComet(comet, base, minAmount, baseAmount, msg.sender);
-        }
+        base.safeTransferFrom(msg.sender, address(this), baseAmount);
+        uint256 totalShares = _buyCollateralFromComet(comet, base, minAmount, baseAmount);
+        _withdrawFromBoringVaultInOrder(totalShares, withdrawOrder, msg.sender);
     }
 
-    // ========================================= FLASHLOAN FUNCTIONS =========================================
-
-    function receiveFlashLoan(
-        ERC20[] calldata tokens,
-        uint256[] calldata amounts,
-        uint256[] calldata feeAmounts,
-        bytes calldata userData
-    ) external {
-        if (msg.sender != address(balancerVault)) revert LiquidationHelper__OnlyCallableByBalancerVault();
-        if (!inLiquidation) revert LiquidationHelper__OnlyCallableInFlashloan();
-
-        if (tokens.length != 1 || amounts.length != 1 || feeAmounts.length != 1 || feeAmounts[0] != 0) {
-            revert LiquidationHelper__OnlyBadFlashloanInputs();
-        }
-
-        LiquidationType liquidationType = abi.decode(userData, (LiquidationType));
-
-        if (liquidationType == LiquidationType.AaveV3) {
-            (, address user, address liquidator) = abi.decode(userData, (LiquidationType, address, address));
-            _liquidateUserOnAaveV3(tokens[0], user, amounts[0], liquidator);
-        } else if (liquidationType == LiquidationType.Comet) {
-            (, IComet comet, ERC20 base, uint256 minAmount, uint256 baseAmount, address liquidator) =
-                abi.decode(userData, (LiquidationType, IComet, ERC20, uint256, uint256, address));
-            _buyCollateralFromComet(comet, base, minAmount, baseAmount, liquidator);
-        }
-
-        // Then transfer tokens back to balancer
-        tokens[0].safeTransfer(address(balancerVault), amounts[0] + feeAmounts[0]);
-    }
-
-    // ========================================= LIQUIDATION LOGIC FUNCTIONS =========================================
-
-    function _liquidateUserOnAaveV3(ERC20 debt, address user, uint256 debtToCover, address liquidator) internal {
-        // At this point this contract should have the debt asset to repay.
-        debt.safeApprove(address(aaveV3Pool), debtToCover);
-        uint256 boringVaultDelta = boringVault.balanceOf(address(this));
-        aaveV3Pool.liquidationCall(address(boringVault), address(debt), user, debtToCover, false);
-        boringVaultDelta = boringVault.balanceOf(address(this)) - boringVaultDelta;
-
-        // Determine how many shares need to be withdrawn in order to cover the debt.
-        uint256 sharesToWithdraw = debtToCover.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(debt)); // TODO might need to add 1 wei to account for rounding
-        teller.bulkWithdraw(debt, sharesToWithdraw, debtToCover, address(this));
-
-        // Send liquidator the excess shares.
-        uint256 sharesToLiquidator = boringVaultDelta - sharesToWithdraw;
-        boringVault.safeTransfer(liquidator, sharesToLiquidator);
-    }
-
-    function _buyCollateralFromComet(
+    function buyCollateralFromCometAndWithdrawInCustomOrder(
         IComet comet,
-        ERC20 base,
         uint256 minAmount,
         uint256 baseAmount,
-        address liquidator
-    ) internal {
+        WithdrawOrder[] calldata withdrawOrder
+    ) external requiresAuth {
+        ERC20 base = ERC20(comet.baseToken());
+
+        base.safeTransferFrom(msg.sender, address(this), baseAmount);
+        uint256 totalShares = _buyCollateralFromComet(comet, base, minAmount, baseAmount);
+        _withdrawFromBoringVaultInOrder(totalShares, withdrawOrder, msg.sender);
+    }
+
+    // ========================================= INTERNAL FUNCTIONS =========================================
+
+    function _liquidateUserOnAaveV3(ERC20 debt, address user, uint256 debtToCover)
+        internal
+        returns (uint256 boringVaultDelta)
+    {
+        // At this point this contract should have the debt asset to repay.
+        debt.safeApprove(address(aaveV3Pool), debtToCover);
+        boringVaultDelta = boringVault.balanceOf(address(this));
+        aaveV3Pool.liquidationCall(address(boringVault), address(debt), user, debtToCover, false);
+        boringVaultDelta = boringVault.balanceOf(address(this)) - boringVaultDelta;
+    }
+
+    function _buyCollateralFromComet(IComet comet, ERC20 base, uint256 minAmount, uint256 baseAmount)
+        internal
+        returns (uint256 boringVaultDelta)
+    {
         // At this point this contract should have the base asset to repay.
         base.safeApprove(address(comet), baseAmount);
-        uint256 boringVaultDelta = boringVault.balanceOf(address(this));
+        boringVaultDelta = boringVault.balanceOf(address(this));
         comet.buyCollateral(address(boringVault), minAmount, baseAmount, address(this));
         boringVaultDelta = boringVault.balanceOf(address(this)) - boringVaultDelta;
+    }
 
-        // Determine how many shares need to be withdrawn in order to cover the base.
-        uint256 sharesToWithdraw = baseAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(base)); // TODO might need to add 1 wei to account for rounding
-        teller.bulkWithdraw(base, sharesToWithdraw, baseAmount, address(this));
+    function _withdrawFromBoringVaultInOrder(
+        uint256 totalShares,
+        WithdrawOrder[] memory withdrawOrder,
+        address liquidator
+    ) internal {
+        for (uint256 i; i < withdrawOrder.length; ++i) {
+            if (totalShares == 0) break;
+            uint256 amountInShares;
+            uint256 amountInAsset = uint256(withdrawOrder[i].amount);
+            if (amountInAsset == type(uint96).max) {
+                uint256 boringVaultBalance = withdrawOrder[i].asset.balanceOf(address(boringVault));
+                if (boringVaultBalance == 0) {
+                    continue;
+                }
+                amountInShares =
+                    boringVaultBalance.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(withdrawOrder[i].asset));
+            } else {
+                amountInShares =
+                    amountInAsset.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(withdrawOrder[i].asset));
+            }
+            amountInShares = amountInShares > totalShares ? totalShares : amountInShares;
+            totalShares -= amountInShares;
+            teller.bulkWithdraw(withdrawOrder[i].asset, amountInShares, 0, liquidator);
+        }
 
-        // Send liquidator the excess shares.
-        uint256 sharesToLiquidator = boringVaultDelta - sharesToWithdraw;
-        boringVault.safeTransfer(liquidator, sharesToLiquidator);
+        // Transfer remaining shares to liquidator.
+        if (totalShares > 0) {
+            boringVault.safeTransfer(liquidator, totalShares);
+        }
     }
 }
