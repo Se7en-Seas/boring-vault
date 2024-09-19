@@ -40,6 +40,8 @@ contract AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902 is AaveV3Paylo
     uint256 public constant PYUSD_SEED_AMOUNT = 100e6;
     address public constant FRAX = 0x853d955aCEf822Db058eb8505911ED77F175b99e;
     uint256 public constant FRAX_SEED_AMOUNT = 1e18;
+    address public constant weETHs = 0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88;
+    uint256 public constant weETHs_SEED_AMOUNT = 1e17;
 
     function _preExecute() internal override {
         // Set EtherFi Ethereum as ID 45, previous instance is ZkSync with ID 44
@@ -169,6 +171,31 @@ contract AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902 is AaveV3Paylo
                 variableRateSlope2: 80_00
             })
         });
+        // listings[4] = IAaveV3ConfigEngine.Listing({
+        //     asset: weETHs,
+        //     assetSymbol: "weETHs",
+        //     priceFeed: 0xf112aF6F0A332B815fbEf3Ff932c057E570b62d3, // TODO this needs to be updated
+        //     eModeCategory: AaveV3EthereumEtherFiEModes.NONE,
+        //     enabledToBorrow: EngineFlags.DISABLED,
+        //     stableRateModeEnabled: EngineFlags.DISABLED,
+        //     borrowableInIsolation: EngineFlags.DISABLED,
+        //     withSiloedBorrowing: EngineFlags.DISABLED,
+        //     flashloanable: EngineFlags.ENABLED,
+        //     ltv: 78_00,
+        //     liqThreshold: 81_00,
+        //     liqBonus: 6_00,
+        //     reserveFactor: 45_00,
+        //     supplyCap: 50_000,
+        //     borrowCap: 0,
+        //     debtCeiling: 0,
+        //     liqProtocolFee: 10_00,
+        //     rateStrategyParams: IAaveV3ConfigEngine.InterestRateInputData({
+        //         optimalUsageRatio: 35_00,
+        //         baseVariableBorrowRate: 0,
+        //         variableRateSlope1: 7_00,
+        //         variableRateSlope2: 300_00
+        //     })
+        // });
 
         return listings;
     }
