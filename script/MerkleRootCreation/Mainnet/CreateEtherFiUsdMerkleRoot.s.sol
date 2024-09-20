@@ -35,7 +35,7 @@ contract CreateEtherFiUsdMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](1024);
+        ManageLeaf[] memory leafs = new ManageLeaf[](128);
 
         // ========================== Ethena ==========================
         /**
@@ -90,96 +90,43 @@ contract CreateEtherFiUsdMerkleRootScript is Script, MerkleTreeHelper {
          * USDC <-> USDT,
          * USDC <-> DAI,
          * USDT <-> DAI,
-         * GHO <-> USDC,
-         * GHO <-> USDT,
-         * GHO <-> DAI,
-         * Swap GEAR -> USDC
-         * Swap crvUSD <-> USDC
-         * Swap crvUSD <-> USDT
-         * Swap crvUSD <-> USDe
-         * Swap FRAX <-> USDC
-         * Swap FRAX <-> USDT
-         * Swap FRAX <-> DAI
-         * Swap PYUSD <-> USDC
-         * Swap PYUSD <-> FRAX
-         * Swap PYUSD <-> crvUSD
+         * USDC <-> USDE,
+         * USDT <-> USDE,
+         * DAI <-> USDE,
+         * sUSDE <-> USDE
          */
-        address[] memory assets = new address[](16);
-        SwapKind[] memory kind = new SwapKind[](16);
+        address[] memory assets = new address[](5);
+        SwapKind[] memory kind = new SwapKind[](5);
         assets[0] = getAddress(sourceChain, "USDC");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "USDT");
         kind[1] = SwapKind.BuyAndSell;
         assets[2] = getAddress(sourceChain, "DAI");
         kind[2] = SwapKind.BuyAndSell;
-        assets[3] = getAddress(sourceChain, "GHO");
+        assets[3] = getAddress(sourceChain, "USDE");
         kind[3] = SwapKind.BuyAndSell;
-        assets[4] = getAddress(sourceChain, "USDE");
+        assets[4] = getAddress(sourceChain, "SUSDE");
         kind[4] = SwapKind.BuyAndSell;
-        assets[5] = getAddress(sourceChain, "CRVUSD");
-        kind[5] = SwapKind.BuyAndSell;
-        assets[6] = getAddress(sourceChain, "FRAX");
-        kind[6] = SwapKind.BuyAndSell;
-        assets[7] = getAddress(sourceChain, "PYUSD");
-        kind[7] = SwapKind.BuyAndSell;
-        assets[8] = getAddress(sourceChain, "GEAR");
-        kind[8] = SwapKind.Sell;
-        assets[9] = getAddress(sourceChain, "CRV");
-        kind[9] = SwapKind.Sell;
-        assets[10] = getAddress(sourceChain, "CVX");
-        kind[10] = SwapKind.Sell;
-        assets[11] = getAddress(sourceChain, "AURA");
-        kind[11] = SwapKind.Sell;
-        assets[12] = getAddress(sourceChain, "BAL");
-        kind[12] = SwapKind.Sell;
-        assets[13] = getAddress(sourceChain, "INST");
-        kind[13] = SwapKind.Sell;
-        assets[14] = getAddress(sourceChain, "RSR");
-        kind[14] = SwapKind.Sell;
-        assets[15] = getAddress(sourceChain, "PENDLE");
-        kind[15] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
-        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "PENDLE_wETH_30"));
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDe_USDT_01"));
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDe_USDC_01"));
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDe_DAI_01"));
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "sUSDe_USDT_05"));
-        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "GEAR_wETH_100"));
-        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "GEAR_USDT_30"));
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "DAI_USDC_01"));
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "DAI_USDC_05"));
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDC_USDT_01"));
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDC_USDT_05"));
-        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "USDC_wETH_05"));
-        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "FRAX_USDC_05"));
-        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "FRAX_USDC_01"));
-        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "FRAX_USDT_05"));
-        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "DAI_FRAX_05"));
-        _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "PYUSD_USDC_01"));
-
-        // ========================== Merkl ==========================
-        {
-            ERC20[] memory tokensToClaim = new ERC20[](1);
-            tokensToClaim[0] = getERC20(sourceChain, "UNI");
-            _addMerklLeafs(
-                leafs,
-                getAddress(sourceChain, "merklDistributor"),
-                getAddress(sourceChain, "dev1Address"),
-                tokensToClaim
-            );
-        }
-
         // ========================== Eigen Layer ==========================
         // TODO USDeStrategy is still wrong.
-        _addLeafsForEigenLayerLST(
-            leafs,
-            getAddress(sourceChain, "USDE"),
-            getAddress(sourceChain, "USDeStrategy"),
-            getAddress(sourceChain, "strategyManager"),
-            getAddress(sourceChain, "delegationManager"),
-            getAddress(sourceChain, "testOperator")
-        );
+        // _addLeafsForEigenLayerLST(
+        //     leafs,
+        //     getAddress(sourceChain, "USDE"),
+        //     getAddress(sourceChain, "USDeStrategy"),
+        //     getAddress(sourceChain, "strategyManager"),
+        //     getAddress(sourceChain, "delegationManager"),
+        //     getAddress(sourceChain, "testOperator")
+        // );
 
         _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
 
