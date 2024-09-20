@@ -62,14 +62,12 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
 
         assertTrue(mockOracle == 0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f, "Update oracle in aave setup contract");
 
-        LiquidationHelper.WithdrawOrder[] memory preferredWithdrawOrder = new LiquidationHelper.WithdrawOrder[](4);
+        LiquidationHelper.WithdrawOrder[] memory preferredWithdrawOrder = new LiquidationHelper.WithdrawOrder[](3);
         preferredWithdrawOrder[0] =
             LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WEETH"), amount: type(uint96).max});
         preferredWithdrawOrder[1] =
-            LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "EETH"), amount: type(uint96).max});
-        preferredWithdrawOrder[2] =
             LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WETH"), amount: type(uint96).max});
-        preferredWithdrawOrder[3] =
+        preferredWithdrawOrder[2] =
             LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WSTETH"), amount: type(uint96).max});
 
         liquidationHelper = new LiquidationHelper(
@@ -144,35 +142,19 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         assertEq(getERC20(sourceChain, "USDC").balanceOf(user), 1_000e6, "User should have borrowed 1_000 USDC");
     }
 
-    function testLiquidating() public {
+    function testLiquidatingOneWithdraw() public {
+        // Zero out all but once balance.
+        deal(getAddress(sourceChain, "WEETH"), weETHs, 10e18);
+        deal(getAddress(sourceChain, "WETH"), weETHs, 0);
+        deal(getAddress(sourceChain, "WSTETH"), weETHs, 0);
         address userToLiquidate = vm.addr(1);
-        deal(weETHs, userToLiquidate, 10e18);
-
-        vm.startPrank(userToLiquidate);
-        // Approve pool to spend weETHs.
-        ERC20(weETHs).approve(address(aaveV3Pool), 1_000e18);
-
-        // Supply weETHs to the pool.
-        aaveV3Pool.supply(weETHs, 10e18, userToLiquidate, 0);
-
-        address debt = getAddress(sourceChain, "USDC");
         uint256 debtToCover = 1_000e6;
-
-        // Borrow USDC from pool.
-        aaveV3Pool.borrow(debt, debtToCover, 2, 0, userToLiquidate);
-
-        vm.stopPrank();
-
-        // Update exchange rate to a very low value.
-        vm.prank(exchangeRateUpdater);
-        accountant.updateExchangeRate(0.005e18);
-
-        vm.prank(boringVaultOwner);
-        accountant.unpause();
+        ERC20 debt = getERC20(sourceChain, "USDC");
+        _setUserUpForLiquidation(userToLiquidate, debt, 10e18, 1_000e6, 0.0005e18);
 
         // Try to liquidate the user.
-        ERC20(debt).approve(address(liquidationHelper), debtToCover);
-        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInPreferredOrder(ERC20(debt), userToLiquidate, debtToCover);
+        debt.approve(address(liquidationHelper), debtToCover);
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInPreferredOrder(debt, userToLiquidate, debtToCover);
 
         assertGt(
             getERC20(sourceChain, "WEETH").balanceOf(address(this)),
@@ -180,6 +162,8 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
             "This address should have got weETH from liquidation"
         );
     }
+
+    // TODO refactor test to add a _setUserUpForLiquidation function, then I can deal the BoringVault ERC20s to zero out balances and check edge cases, like if no tokens are available
 
     // ========================================= HELPER FUNCTIONS =========================================
 
@@ -197,5 +181,34 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
+    }
+
+    function _setUserUpForLiquidation(
+        address userToLiquidate,
+        ERC20 debt,
+        uint256 collateralAmount,
+        uint256 debtAmount,
+        uint96 newExchangeRate
+    ) internal {
+        deal(weETHs, userToLiquidate, collateralAmount);
+
+        vm.startPrank(userToLiquidate);
+        // Approve pool to spend weETHs.
+        ERC20(weETHs).approve(address(aaveV3Pool), collateralAmount);
+
+        // Supply weETHs to the pool.
+        aaveV3Pool.supply(weETHs, collateralAmount, userToLiquidate, 0);
+
+        // Borrow from pool.
+        aaveV3Pool.borrow(address(debt), debtAmount, 2, 0, userToLiquidate);
+
+        vm.stopPrank();
+
+        // Update exchange rate to a very low value.
+        vm.prank(exchangeRateUpdater);
+        accountant.updateExchangeRate(newExchangeRate);
+
+        vm.prank(boringVaultOwner);
+        accountant.unpause();
     }
 }
