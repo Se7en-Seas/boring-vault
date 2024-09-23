@@ -471,7 +471,101 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         );
     }
 
-    // TODO revert test where we make sure the error fires
+    function testLiquidatingInCustomOrderDuplicateAssets() public {
+        address userToLiquidate = vm.addr(1);
+        ERC20 debt = getERC20(sourceChain, "USDC");
+        uint256 collateralAmount = 10e18;
+        uint256 targetLTV = 0.8e6; // This should have the same decimals as the debt asset.
+        // Zero out all but once balance.
+        deal(getAddress(sourceChain, "WEETH"), weETHs, collateralAmount);
+        deal(getAddress(sourceChain, "WETH"), weETHs, 0);
+        deal(getAddress(sourceChain, "WSTETH"), weETHs, 0);
+        uint256 currentRate = accountant.getRate();
+        uint256 borrowAmount = _setUserUpForLiquidation(
+            userToLiquidate, debt, collateralAmount, targetLTV, uint96(currentRate * 0.9999e4 / 1e4)
+        );
+
+        LiquidationHelper.WithdrawOrder[] memory customWithdrawOrder = new LiquidationHelper.WithdrawOrder[](2);
+        customWithdrawOrder[0] = LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WEETH"), amount: 777});
+        customWithdrawOrder[1] =
+            LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WEETH"), amount: type(uint96).max});
+        // Try to liquidate the user.
+        debt.approve(address(liquidationHelper), borrowAmount);
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInCustomOrder(
+            debt, userToLiquidate, borrowAmount, customWithdrawOrder
+        );
+
+        assertGt(
+            getERC20(sourceChain, "WEETH").balanceOf(address(this)),
+            0,
+            "This address should have got weETH from liquidation"
+        );
+    }
+
+    function testLiquidatingInCustomOrderUnsupportedAsset() public {
+        address userToLiquidate = vm.addr(1);
+        ERC20 debt = getERC20(sourceChain, "USDC");
+        uint256 collateralAmount = 10e18;
+        uint256 targetLTV = 0.8e6; // This should have the same decimals as the debt asset.
+        // Zero out all but once balance.
+        deal(getAddress(sourceChain, "WEETH"), weETHs, collateralAmount);
+        deal(getAddress(sourceChain, "WETH"), weETHs, 0);
+        deal(getAddress(sourceChain, "WSTETH"), weETHs, 0);
+        uint256 currentRate = accountant.getRate();
+        uint256 borrowAmount = _setUserUpForLiquidation(
+            userToLiquidate, debt, collateralAmount, targetLTV, uint96(currentRate * 0.9999e4 / 1e4)
+        );
+
+        LiquidationHelper.WithdrawOrder[] memory customWithdrawOrder = new LiquidationHelper.WithdrawOrder[](2);
+        customWithdrawOrder[0] = LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WEETH"), amount: 777});
+        customWithdrawOrder[1] =
+            LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "USDC"), amount: type(uint96).max - 1});
+        // Try to liquidate the user.
+        debt.approve(address(liquidationHelper), borrowAmount);
+
+        /// NOTE this call can still work if the unsupported asset has amount of type(uint96).max, and BoringVault has
+        /// a zero balance of it.
+        // USDC is not supported, so call reverts
+        vm.expectRevert();
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInCustomOrder(
+            debt, userToLiquidate, borrowAmount, customWithdrawOrder
+        );
+    }
+
+    function testChangingPreferredWithdrawOrder() external {
+        LiquidationHelper.WithdrawOrder[] memory preferredWithdrawOrder = new LiquidationHelper.WithdrawOrder[](2);
+        preferredWithdrawOrder[0] =
+            LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WETH"), amount: type(uint96).max});
+        preferredWithdrawOrder[1] =
+            LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "EETH"), amount: type(uint96).max});
+
+        liquidationHelper.setPreferredWithdrawOrder(preferredWithdrawOrder);
+
+        (ERC20 asset0,) = liquidationHelper.preferredWithdrawOrder(0);
+        (ERC20 asset1,) = liquidationHelper.preferredWithdrawOrder(1);
+
+        // Querying for index 2 should revert.
+        vm.expectRevert();
+        liquidationHelper.preferredWithdrawOrder(2);
+
+        assertTrue(asset0 == getERC20(sourceChain, "WETH"), "First asset should be wETH");
+        assertTrue(asset1 == getERC20(sourceChain, "EETH"), "Second asset should be eETH");
+
+        // Trying to set a preferred withdraw order with a non type uint96 amount should revert with error.
+        preferredWithdrawOrder[0] =
+            LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WETH"), amount: type(uint96).max});
+        preferredWithdrawOrder[1] =
+            LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "EETH"), amount: type(uint96).max - 1});
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    LiquidationHelper.LiquidationHelper__PreferredWithdrawOrderInputMustHaveMaxAmounts.selector
+                )
+            )
+        );
+        liquidationHelper.setPreferredWithdrawOrder(preferredWithdrawOrder);
+    }
     // ========================================= HELPER FUNCTIONS =========================================
 
     struct Action {
