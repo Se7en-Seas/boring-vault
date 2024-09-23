@@ -17,6 +17,8 @@ contract LiquidationHelper is Auth {
 
     error LiquidationHelper__PreferredWithdrawOrderInputMustHaveMaxAmounts();
 
+    // TODO event AaveLiquidation()
+
     struct WithdrawOrder {
         ERC20 asset;
         uint96 amount; // if type(uint96).max is used, we try to withdraw as much as possible from the BoringVault for that asset
