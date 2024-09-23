@@ -144,29 +144,40 @@ contract LiquidationHelper is Auth {
         boringVaultDelta = boringVault.balanceOf(address(this)) - boringVaultDelta;
     }
 
+    /**
+     * @notice We allow liquidations to work when the Teller is paused because the end state of sending the
+     *         BoringVault shares to the liquidator is the same end state as if the liquidator interacted directly
+     *         with the AaveV3 pool to perform the liquidation.
+     * @notice Lending platforms should price Boring Vault assets using getRateSafe() as opposed to the normal getRate.
+     */
     function _withdrawFromBoringVaultInOrder(
         uint256 totalShares,
         WithdrawOrder[] memory withdrawOrder,
         address liquidator
     ) internal {
-        for (uint256 i; i < withdrawOrder.length; ++i) {
-            if (totalShares == 0) break;
-            uint256 amountInShares;
-            uint256 amountInAsset = uint256(withdrawOrder[i].amount);
-            if (amountInAsset == type(uint96).max) {
-                uint256 boringVaultBalance = withdrawOrder[i].asset.balanceOf(address(boringVault));
-                if (boringVaultBalance == 0) {
-                    continue;
+        // Only attempt withdraws if Teller is not paused.
+        if (!teller.isPaused()) {
+            for (uint256 i; i < withdrawOrder.length; ++i) {
+                if (totalShares == 0) break;
+                uint256 amountInShares;
+                uint256 amountInAsset = uint256(withdrawOrder[i].amount);
+                if (amountInAsset == type(uint96).max) {
+                    uint256 boringVaultBalance = withdrawOrder[i].asset.balanceOf(address(boringVault));
+                    if (boringVaultBalance == 0) {
+                        continue;
+                    }
+                    amountInShares =
+                        boringVaultBalance.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(withdrawOrder[i].asset));
+                } else {
+                    amountInShares =
+                        amountInAsset.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(withdrawOrder[i].asset));
                 }
-                amountInShares =
-                    boringVaultBalance.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(withdrawOrder[i].asset));
-            } else {
-                amountInShares =
-                    amountInAsset.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(withdrawOrder[i].asset));
+                amountInShares = amountInShares > totalShares ? totalShares : amountInShares;
+                // Skip withdraw if calculated `amountInShares` is zero.
+                if (amountInShares == 0) continue;
+                totalShares -= amountInShares;
+                teller.bulkWithdraw(withdrawOrder[i].asset, amountInShares, 0, liquidator);
             }
-            amountInShares = amountInShares > totalShares ? totalShares : amountInShares;
-            totalShares -= amountInShares;
-            teller.bulkWithdraw(withdrawOrder[i].asset, amountInShares, 0, liquidator);
         }
 
         // Transfer remaining shares to liquidator.

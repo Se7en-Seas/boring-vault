@@ -621,6 +621,7 @@ contract ChainValues {
 
         // Aave V3
         values[mainnet]["v3Pool"] = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2.toBytes32();
+        values[mainnet]["v3Oracle"] = 0x54586bE62E3c3580375aE3723C145253060Ca0C2.toBytes32();
 
         // Aave V3 Lido
         values[mainnet]["v3LidoPool"] = 0x4e033931ad43597d96D6bcc25c280717730B58B1.toBytes32();

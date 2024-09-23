@@ -6,6 +6,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {RolesAuthority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {MerkleTreeHelper, ERC20} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
+import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {LiquidationHelper} from "src/helper/LiquidationHelper.sol";
 import {AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902} from
     "src/helper/AaveV3EtherFiSetup/AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902/src/20240902_AaveV3EthereumEtherFi_EtherFiEthereumActivation/AaveV3EthereumEtherFi_EtherFiEthereumActivation_20240902.sol";
@@ -27,12 +28,14 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
     address public mockOracle;
     LiquidationHelper public liquidationHelper;
     IAaveV3Pool public aaveV3Pool;
+    AaveOracle public oracle;
 
     address public constant weETHs = 0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88;
     address public constant weETHs_accountant = 0xbe16605B22a7faCEf247363312121670DFe5afBE;
     address public constant weETHs_teller = 0x99dE9e5a3eC2750a6983C8732E6e795A35e7B861;
     address public constant eth_usd_feed = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
     AccountantWithRateProviders public accountant = AccountantWithRateProviders(weETHs_accountant);
+    TellerWithMultiAssetSupport public teller = TellerWithMultiAssetSupport(weETHs_teller);
     address public exchangeRateUpdater = 0x41DFc53B13932a2690C9790527C1967d8579a6ae;
     address public boringVaultOwner = 0xCEA8039076E35a825854c5C2f85659430b06ec96;
 
@@ -61,6 +64,8 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         mockOracle = address(new MockAaveOracle(weETHs_accountant, eth_usd_feed));
 
         assertTrue(mockOracle == 0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f, "Update oracle in aave setup contract");
+
+        oracle = AaveOracle(getAddress(sourceChain, "v3Oracle"));
 
         LiquidationHelper.WithdrawOrder[] memory preferredWithdrawOrder = new LiquidationHelper.WithdrawOrder[](3);
         preferredWithdrawOrder[0] =
@@ -117,6 +122,8 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         vm.prank(aaveExecutePayloadCaller);
         (success,) = aavePayloadController.call(payload);
         require(success, "Failed to execute payload");
+
+        deal(getAddress(sourceChain, "WETH"), address(this), 0);
     }
 
     function testSupplyingweETHsAndBorrowing() public {
@@ -142,19 +149,23 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         assertEq(getERC20(sourceChain, "USDC").balanceOf(user), 1_000e6, "User should have borrowed 1_000 USDC");
     }
 
-    function testLiquidatingOneWithdraw() public {
+    function testLiquidatingOneWithdraw0() public {
+        address userToLiquidate = vm.addr(1);
+        ERC20 debt = getERC20(sourceChain, "USDC");
+        uint256 collateralAmount = 10e18;
+        uint256 targetLTV = 0.8e6; // This should have the same decimals as the debt asset.
         // Zero out all but once balance.
-        deal(getAddress(sourceChain, "WEETH"), weETHs, 10e18);
+        deal(getAddress(sourceChain, "WEETH"), weETHs, collateralAmount);
         deal(getAddress(sourceChain, "WETH"), weETHs, 0);
         deal(getAddress(sourceChain, "WSTETH"), weETHs, 0);
-        address userToLiquidate = vm.addr(1);
-        uint256 debtToCover = 1_000e6;
-        ERC20 debt = getERC20(sourceChain, "USDC");
-        _setUserUpForLiquidation(userToLiquidate, debt, 10e18, 1_000e6, 0.0005e18);
+        uint256 currentRate = accountant.getRate();
+        uint256 borrowAmount = _setUserUpForLiquidation(
+            userToLiquidate, debt, collateralAmount, targetLTV, uint96(currentRate * 0.9999e4 / 1e4)
+        );
 
         // Try to liquidate the user.
-        debt.approve(address(liquidationHelper), debtToCover);
-        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInPreferredOrder(debt, userToLiquidate, debtToCover);
+        debt.approve(address(liquidationHelper), borrowAmount);
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInPreferredOrder(debt, userToLiquidate, borrowAmount);
 
         assertGt(
             getERC20(sourceChain, "WEETH").balanceOf(address(this)),
@@ -163,8 +174,235 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         );
     }
 
-    // TODO refactor test to add a _setUserUpForLiquidation function, then I can deal the BoringVault ERC20s to zero out balances and check edge cases, like if no tokens are available
+    function testLiquidatingOneWithdraw1() public {
+        address userToLiquidate = vm.addr(1);
+        ERC20 debt = getERC20(sourceChain, "USDC");
+        uint256 collateralAmount = 10e18;
+        uint256 targetLTV = 0.8e6; // This should have the same decimals as the debt asset.
+        // Zero out all but once balance.
+        deal(getAddress(sourceChain, "WEETH"), weETHs, 0);
+        deal(getAddress(sourceChain, "WETH"), weETHs, collateralAmount);
+        deal(getAddress(sourceChain, "WSTETH"), weETHs, 0);
+        uint256 currentRate = accountant.getRate();
+        uint256 borrowAmount = _setUserUpForLiquidation(
+            userToLiquidate, debt, collateralAmount, targetLTV, uint96(currentRate * 0.9999e4 / 1e4)
+        );
 
+        // Try to liquidate the user.
+        debt.approve(address(liquidationHelper), borrowAmount);
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInPreferredOrder(debt, userToLiquidate, borrowAmount);
+
+        assertGt(
+            getERC20(sourceChain, "WETH").balanceOf(address(this)),
+            0,
+            "This address should have got wETH from liquidation"
+        );
+    }
+
+    function testLiquidatingOneWithdraw2() public {
+        address userToLiquidate = vm.addr(1);
+        ERC20 debt = getERC20(sourceChain, "USDC");
+        uint256 collateralAmount = 10e18;
+        uint256 targetLTV = 0.8e6; // This should have the same decimals as the debt asset.
+        // Zero out all but once balance.
+        deal(getAddress(sourceChain, "WEETH"), weETHs, 0);
+        deal(getAddress(sourceChain, "WETH"), weETHs, 0);
+        deal(getAddress(sourceChain, "WSTETH"), weETHs, collateralAmount);
+        uint256 currentRate = accountant.getRate();
+        uint256 borrowAmount = _setUserUpForLiquidation(
+            userToLiquidate, debt, collateralAmount, targetLTV, uint96(currentRate * 0.9999e4 / 1e4)
+        );
+
+        // Try to liquidate the user.
+        debt.approve(address(liquidationHelper), borrowAmount);
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInPreferredOrder(debt, userToLiquidate, borrowAmount);
+
+        assertGt(
+            getERC20(sourceChain, "WSTETH").balanceOf(address(this)),
+            0,
+            "This address should have got wstETH from liquidation"
+        );
+    }
+    // TODO tests where we have dust balances, and test where we do not have enough assets to cover withdraw so remaining shares are sent to liquidator
+
+    function testLiquidatingMultipleWithdraw0() public {
+        address userToLiquidate = vm.addr(1);
+        ERC20 debt = getERC20(sourceChain, "USDC");
+        uint256 collateralAmount = 10e18;
+        uint256 targetLTV = 0.8e6; // This should have the same decimals as the debt asset.
+        // Zero out all but once balance.
+        deal(getAddress(sourceChain, "WEETH"), weETHs, 0.001e18);
+        deal(getAddress(sourceChain, "WETH"), weETHs, collateralAmount);
+        deal(getAddress(sourceChain, "WSTETH"), weETHs, 0);
+        uint256 currentRate = accountant.getRate();
+        uint256 borrowAmount = _setUserUpForLiquidation(
+            userToLiquidate, debt, collateralAmount, targetLTV, uint96(currentRate * 0.9999e4 / 1e4)
+        );
+
+        // Try to liquidate the user.
+        debt.approve(address(liquidationHelper), borrowAmount);
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInPreferredOrder(debt, userToLiquidate, borrowAmount);
+
+        assertGt(
+            getERC20(sourceChain, "WEETH").balanceOf(address(this)),
+            0,
+            "This address should have got weETH from liquidation"
+        );
+        assertGt(
+            getERC20(sourceChain, "WETH").balanceOf(address(this)),
+            0,
+            "This address should have got wETH from liquidation"
+        );
+    }
+
+    function testLiquidatingMultipleWithdraw1() public {
+        address userToLiquidate = vm.addr(1);
+        ERC20 debt = getERC20(sourceChain, "USDC");
+        uint256 collateralAmount = 10e18;
+        uint256 targetLTV = 0.8e6; // This should have the same decimals as the debt asset.
+        // Zero out all but once balance.
+        deal(getAddress(sourceChain, "WEETH"), weETHs, 0.001e18);
+        deal(getAddress(sourceChain, "WETH"), weETHs, 0.001e18);
+        deal(getAddress(sourceChain, "WSTETH"), weETHs, collateralAmount);
+        uint256 currentRate = accountant.getRate();
+        uint256 borrowAmount = _setUserUpForLiquidation(
+            userToLiquidate, debt, collateralAmount, targetLTV, uint96(currentRate * 0.9999e4 / 1e4)
+        );
+
+        // Try to liquidate the user.
+        debt.approve(address(liquidationHelper), borrowAmount);
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInPreferredOrder(debt, userToLiquidate, borrowAmount);
+
+        assertGt(
+            getERC20(sourceChain, "WEETH").balanceOf(address(this)),
+            0,
+            "This address should have got weETH from liquidation"
+        );
+        assertGt(
+            getERC20(sourceChain, "WETH").balanceOf(address(this)),
+            0,
+            "This address should have got wETH from liquidation"
+        );
+        assertGt(
+            getERC20(sourceChain, "WSTETH").balanceOf(address(this)),
+            0,
+            "This address should have got wstETH from liquidation"
+        );
+    }
+
+    function testLiquidatingMultipleWithdraw2() public {
+        address userToLiquidate = vm.addr(1);
+        ERC20 debt = getERC20(sourceChain, "USDC");
+        uint256 collateralAmount = 10e18;
+        uint256 targetLTV = 0.8e6; // This should have the same decimals as the debt asset.
+        // Zero out all but once balance.
+        deal(getAddress(sourceChain, "WEETH"), weETHs, 0.001e18);
+        deal(getAddress(sourceChain, "WETH"), weETHs, 0.001e18);
+        deal(getAddress(sourceChain, "WSTETH"), weETHs, 0.001e18);
+        uint256 currentRate = accountant.getRate();
+        uint256 borrowAmount = _setUserUpForLiquidation(
+            userToLiquidate, debt, collateralAmount, targetLTV, uint96(currentRate * 0.9999e4 / 1e4)
+        );
+
+        // Try to liquidate the user.
+        debt.approve(address(liquidationHelper), borrowAmount);
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInPreferredOrder(debt, userToLiquidate, borrowAmount);
+
+        assertGt(
+            getERC20(sourceChain, "WEETH").balanceOf(address(this)),
+            0,
+            "This address should have got weETH from liquidation"
+        );
+        assertGt(
+            getERC20(sourceChain, "WETH").balanceOf(address(this)),
+            0,
+            "This address should have got wETH from liquidation"
+        );
+        assertGt(
+            getERC20(sourceChain, "WSTETH").balanceOf(address(this)),
+            0,
+            "This address should have got wstETH from liquidation"
+        );
+
+        assertGt(ERC20(weETHs).balanceOf(address(this)), 0, "This address should have got weETHs from liquidation");
+        assertEq(
+            ERC20(weETHs).balanceOf(address(liquidationHelper)),
+            0,
+            "Liquidation Helper should have zero weETHs from liquidation"
+        );
+    }
+
+    function testLiquidatingWhenTellerPaused() public {
+        address userToLiquidate = vm.addr(1);
+        ERC20 debt = getERC20(sourceChain, "USDC");
+        uint256 collateralAmount = 10e18;
+        uint256 targetLTV = 0.8e6; // This should have the same decimals as the debt asset.
+        // Zero out all but once balance.
+        deal(getAddress(sourceChain, "WEETH"), weETHs, 0.001e18);
+        deal(getAddress(sourceChain, "WETH"), weETHs, 0.001e18);
+        deal(getAddress(sourceChain, "WSTETH"), weETHs, 0.001e18);
+        uint256 currentRate = accountant.getRate();
+        uint256 borrowAmount = _setUserUpForLiquidation(
+            userToLiquidate, debt, collateralAmount, targetLTV, uint96(currentRate * 0.9999e4 / 1e4)
+        );
+
+        // Pause Teller.
+        vm.prank(boringVaultOwner);
+        teller.pause();
+
+        // Try to liquidate the user.
+        debt.approve(address(liquidationHelper), borrowAmount);
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInPreferredOrder(debt, userToLiquidate, borrowAmount);
+
+        assertEq(
+            getERC20(sourceChain, "WEETH").balanceOf(address(this)),
+            0,
+            "This address should get zero weETH from liquidation"
+        );
+        assertEq(
+            getERC20(sourceChain, "WETH").balanceOf(address(this)),
+            0,
+            "This address should get zero wETH from liquidation"
+        );
+        assertEq(
+            getERC20(sourceChain, "WSTETH").balanceOf(address(this)),
+            0,
+            "This address should get zero wstETH from liquidation"
+        );
+
+        assertGt(ERC20(weETHs).balanceOf(address(this)), 0, "This address should have got weETHs from liquidation");
+        assertEq(
+            ERC20(weETHs).balanceOf(address(liquidationHelper)),
+            0,
+            "Liquidation Helper should have zero weETHs from liquidation"
+        );
+    }
+
+    function testLiquidatingWhenAccountantPaused() public {
+        address userToLiquidate = vm.addr(1);
+        ERC20 debt = getERC20(sourceChain, "USDC");
+        uint256 collateralAmount = 10e18;
+        uint256 targetLTV = 0.8e6; // This should have the same decimals as the debt asset.
+        // Zero out all but once balance.
+        deal(getAddress(sourceChain, "WEETH"), weETHs, 0.001e18);
+        deal(getAddress(sourceChain, "WETH"), weETHs, 0.001e18);
+        deal(getAddress(sourceChain, "WSTETH"), weETHs, 0.001e18);
+        uint256 currentRate = accountant.getRate();
+        uint256 borrowAmount = _setUserUpForLiquidation(
+            userToLiquidate, debt, collateralAmount, targetLTV, uint96(currentRate * 0.9999e4 / 1e4)
+        );
+
+        // Pause Accountant.
+        vm.prank(boringVaultOwner);
+        accountant.pause();
+
+        // Try to liquidate the user.
+        debt.approve(address(liquidationHelper), borrowAmount);
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(AccountantWithRateProviders.AccountantWithRateProviders__Paused.selector))
+        );
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInPreferredOrder(debt, userToLiquidate, borrowAmount);
+    }
     // ========================================= HELPER FUNCTIONS =========================================
 
     struct Action {
@@ -187,9 +425,13 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         address userToLiquidate,
         ERC20 debt,
         uint256 collateralAmount,
-        uint256 debtAmount,
+        uint256 targetLTV,
         uint96 newExchangeRate
-    ) internal {
+    ) internal returns (uint256 borrowAmount) {
+        uint256 collateralPrice = uint256(MockAaveOracle(mockOracle).latestAnswer());
+        uint256 debtPrice = oracle.getAssetPrice(address(debt));
+        uint256 collateralValue = collateralPrice * collateralAmount / 1e18;
+        borrowAmount = targetLTV * collateralValue / debtPrice;
         deal(weETHs, userToLiquidate, collateralAmount);
 
         vm.startPrank(userToLiquidate);
@@ -200,7 +442,7 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         aaveV3Pool.supply(weETHs, collateralAmount, userToLiquidate, 0);
 
         // Borrow from pool.
-        aaveV3Pool.borrow(address(debt), debtAmount, 2, 0, userToLiquidate);
+        aaveV3Pool.borrow(address(debt), borrowAmount, 2, 0, userToLiquidate);
 
         vm.stopPrank();
 
@@ -211,4 +453,8 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         vm.prank(boringVaultOwner);
         accountant.unpause();
     }
+}
+
+interface AaveOracle {
+    function getAssetPrice(address asset) external view returns (uint256);
 }
