@@ -15,18 +15,11 @@ contract LiquidationHelper is Auth {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
-    error LiquidationHelper__OnlyCallableByBalancerVault();
-    error LiquidationHelper__OnlyCallableInFlashloan();
     error LiquidationHelper__PreferredWithdrawOrderInputMustHaveMaxAmounts();
-
-    enum LiquidationType {
-        AaveV3,
-        Comet
-    }
 
     struct WithdrawOrder {
         ERC20 asset;
-        uint96 amount; // if type(uint256).max is used, we try to withdraw as much as possible from the BoringVault for that asset
+        uint96 amount; // if type(uint96).max is used, we try to withdraw as much as possible from the BoringVault for that asset
     }
 
     WithdrawOrder[] public preferredWithdrawOrder;
@@ -172,6 +165,7 @@ contract LiquidationHelper is Auth {
                     amountInShares =
                         amountInAsset.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(withdrawOrder[i].asset));
                 }
+                // Limit amountInShares, so that we don't revert from subtraction underflow.
                 amountInShares = amountInShares > totalShares ? totalShares : amountInShares;
                 // Skip withdraw if calculated `amountInShares` is zero.
                 if (amountInShares == 0) continue;

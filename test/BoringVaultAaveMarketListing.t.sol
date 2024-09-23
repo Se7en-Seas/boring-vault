@@ -223,7 +223,6 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
             "This address should have got wstETH from liquidation"
         );
     }
-    // TODO tests where we have dust balances, and test where we do not have enough assets to cover withdraw so remaining shares are sent to liquidator
 
     function testLiquidatingMultipleWithdraw0() public {
         address userToLiquidate = vm.addr(1);
@@ -403,6 +402,76 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         );
         liquidationHelper.liquidateUserOnAaveV3AndWithdrawInPreferredOrder(debt, userToLiquidate, borrowAmount);
     }
+
+    function testLiquidatingInCustomOrder() public {
+        address userToLiquidate = vm.addr(1);
+        ERC20 debt = getERC20(sourceChain, "USDC");
+        uint256 collateralAmount = 10e18;
+        uint256 targetLTV = 0.8e6; // This should have the same decimals as the debt asset.
+        // Zero out all but once balance.
+        deal(getAddress(sourceChain, "WEETH"), weETHs, 777);
+        deal(getAddress(sourceChain, "WETH"), weETHs, collateralAmount);
+        deal(getAddress(sourceChain, "WSTETH"), weETHs, 0);
+        uint256 currentRate = accountant.getRate();
+        uint256 borrowAmount = _setUserUpForLiquidation(
+            userToLiquidate, debt, collateralAmount, targetLTV, uint96(currentRate * 0.9999e4 / 1e4)
+        );
+
+        LiquidationHelper.WithdrawOrder[] memory customWithdrawOrder = new LiquidationHelper.WithdrawOrder[](2);
+        customWithdrawOrder[0] = LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WEETH"), amount: 777});
+        customWithdrawOrder[1] =
+            LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WETH"), amount: type(uint96).max});
+        // Try to liquidate the user.
+        debt.approve(address(liquidationHelper), borrowAmount);
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInCustomOrder(
+            debt, userToLiquidate, borrowAmount, customWithdrawOrder
+        );
+
+        assertApproxEqAbs(
+            getERC20(sourceChain, "WEETH").balanceOf(address(this)),
+            777,
+            1,
+            "This address should have got 777 weETH from liquidation"
+        );
+
+        assertGt(
+            getERC20(sourceChain, "WETH").balanceOf(address(this)),
+            0,
+            "This address should have got wETH from liquidation"
+        );
+    }
+
+    function testLiquidatingInCustomOrderWithHugeAmount() public {
+        address userToLiquidate = vm.addr(1);
+        ERC20 debt = getERC20(sourceChain, "USDC");
+        uint256 collateralAmount = 10e18;
+        uint256 targetLTV = 0.8e6; // This should have the same decimals as the debt asset.
+        // Zero out all but once balance.
+        deal(getAddress(sourceChain, "WEETH"), weETHs, collateralAmount);
+        deal(getAddress(sourceChain, "WETH"), weETHs, 0);
+        deal(getAddress(sourceChain, "WSTETH"), weETHs, 0);
+        uint256 currentRate = accountant.getRate();
+        uint256 borrowAmount = _setUserUpForLiquidation(
+            userToLiquidate, debt, collateralAmount, targetLTV, uint96(currentRate * 0.9999e4 / 1e4)
+        );
+
+        LiquidationHelper.WithdrawOrder[] memory customWithdrawOrder = new LiquidationHelper.WithdrawOrder[](1);
+        customWithdrawOrder[0] =
+            LiquidationHelper.WithdrawOrder({asset: getERC20(sourceChain, "WEETH"), amount: type(uint96).max - 1});
+        // Try to liquidate the user.
+        debt.approve(address(liquidationHelper), borrowAmount);
+        liquidationHelper.liquidateUserOnAaveV3AndWithdrawInCustomOrder(
+            debt, userToLiquidate, borrowAmount, customWithdrawOrder
+        );
+
+        assertGt(
+            getERC20(sourceChain, "WEETH").balanceOf(address(this)),
+            0,
+            "This address should have got weETH from liquidation"
+        );
+    }
+
+    // TODO revert test where we make sure the error fires
     // ========================================= HELPER FUNCTIONS =========================================
 
     struct Action {
