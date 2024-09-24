@@ -12,6 +12,8 @@ import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
 import {IPausable} from "src/interfaces/IPausable.sol";
 
+// TODO deposit fee
+// TODO supported mapping for deposit and withdraw assets.
 contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuard, IPausable {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for ERC20;
@@ -293,6 +295,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         if (fromDenyList[from] || toDenyList[to] || operatorDenyList[operator]) {
             revert TellerWithMultiAssetSupport__TransferDenied(from, to, operator);
         }
+        // TODO remove equal sign
         if (shareUnlockTime[from] >= block.timestamp) revert TellerWithMultiAssetSupport__SharesAreLocked();
     }
 
@@ -450,6 +453,8 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         vault.enter(msg.sender, depositAsset, depositAmount, to, shares);
     }
 
+    // TODO we could optimize this such that we only change state in this if share lock period is nonzero?
+    // but then if anything is relying on deposit nonce incrementing it would be off.
     /**
      * @notice Handle share lock logic, and event.
      */
