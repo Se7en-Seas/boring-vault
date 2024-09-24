@@ -349,6 +349,7 @@ contract WithdrawQueue is Auth, ReentrancyGuard, IPausable {
         emit ThirdPartyCompletionChanged(msg.sender, asset, allow);
     }
 
+    // TODO permit method?
     /**
      * @notice Requests a withdrawal of shares for a specific asset.
      * @dev Publicly callable.
@@ -429,6 +430,8 @@ contract WithdrawQueue is Auth, ReentrancyGuard, IPausable {
             debts[i] = viewOutstandingDebt(assets[i]);
         }
     }
+
+    // TODO Add a function to view if a users requests have their maxLoss exceeded/ are ready to claim?
 
     // ========================================= INTERNAL FUNCTIONS =========================================
 
