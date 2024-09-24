@@ -12,6 +12,11 @@ import {Auth, Authority} from "@solmate/auth/Auth.sol";
 import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
 import {IPausable} from "src/interfaces/IPausable.sol";
 
+// TODO more gas efficient bulk functions.
+// TODO mulitcall
+
+// TODO if user opts out of auto claiming, then the spread should be ised to offset the withdraw fee.
+// otherwise spread goes to solver who auto claims for user.
 contract WithdrawQueue is Auth, ReentrancyGuard, IPausable {
     using SafeTransferLib for BoringVault;
     using SafeTransferLib for ERC20;
@@ -98,6 +103,8 @@ contract WithdrawQueue is Auth, ReentrancyGuard, IPausable {
      */
     mapping(address => mapping(ERC20 => WithdrawRequest)) public withdrawRequests;
 
+    uint256 public withdrawNonce; // TODO implement
+
     //============================== ERRORS ===============================
 
     error WithdrawQueue__WithdrawFeeTooHigh();
@@ -115,7 +122,7 @@ contract WithdrawQueue is Auth, ReentrancyGuard, IPausable {
     error WithdrawQueue__CannotWithdrawBoringToken();
 
     //============================== EVENTS ===============================
-
+    // TODO add nonce
     event WithdrawRequested(address indexed account, ERC20 indexed asset, uint96 shares, uint40 maturity);
     event WithdrawCancelled(address indexed account, ERC20 indexed asset, uint96 shares);
     event WithdrawCompleted(address indexed account, ERC20 indexed asset, uint256 shares, uint256 assets);
@@ -308,6 +315,8 @@ contract WithdrawQueue is Auth, ReentrancyGuard, IPausable {
         assetsOut = _completeWithdraw(asset, user, withdrawAsset, req);
     }
 
+    // TODO could the spread only go to solver if they actually solve
+
     /**
      * @notice Changes the global setting for whether or not to pull funds from the vault when completing a withdrawal.
      * @dev Callable by OWNER_ROLE.
@@ -432,6 +441,19 @@ contract WithdrawQueue is Auth, ReentrancyGuard, IPausable {
     }
 
     // TODO Add a function to view if a users requests have their maxLoss exceeded/ are ready to claim?
+    function viewState(address account, ERC20[] memory assets) public view returns (WithdrawRequest[] memory req) {
+        req = new WithdrawRequest[](assets.length);
+        for (uint256 i = 0; i < assets.length; i++) {
+            WithdrawRequest memory request = withdrawRequests[account][assets[i]];
+            req[i] = WithdrawRequest({
+                allowThirdPartyToComplete: request.allowThirdPartyToComplete,
+                maxLoss: request.maxLoss,
+                maturity: request.maturity,
+                shares: request.shares,
+                exchangeRateAtTimeOfRequest: request.exchangeRateAtTimeOfRequest
+            });
+        }
+    }
 
     // ========================================= INTERNAL FUNCTIONS =========================================
 
@@ -519,6 +541,10 @@ contract WithdrawQueue is Auth, ReentrancyGuard, IPausable {
         // Transfer assets to user.
         asset.safeTransfer(account, assetsToUser);
 
+        // TODO parameter that lets you decide how much of the spread is given to the vault.
+
+        // TODO change logic so bulk withdraws only do 1 transfer
+        // TODO Solver address?
         if (totalAssets > assetsToUser) {
             // Transfer rebalance fee to feeAddress.
             asset.safeTransfer(feeAddress, totalAssets - assetsToUser);
