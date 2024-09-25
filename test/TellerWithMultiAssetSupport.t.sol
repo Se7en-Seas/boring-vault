@@ -399,18 +399,29 @@ contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
         vm.stopPrank();
     }
 
-    // TODO refactor
-    // function testAssetIsSupported() external {
-    //     assertTrue(teller.isSupported(WETH) == true, "WETH should be supported");
+    function testUpdateAssetData() external {
+        (bool allowDeposits, bool allowWithdraws, uint16 sharePremium) = teller.assetData(WETH);
+        assertTrue(allowDeposits == true, "WETH deposits should be supported");
+        assertTrue(allowWithdraws == true, "WETH withdraws should be supported");
+        assertEq(sharePremium, 0, "WETH sharePremium should be zero.");
 
-    //     teller.removeAsset(WETH);
+        teller.updateAssetData(WETH, false, false, 0);
 
-    //     assertTrue(teller.isSupported(WETH) == false, "WETH should not be supported");
+        (allowDeposits, allowWithdraws, sharePremium) = teller.assetData(WETH);
 
-    //     teller.updateAssetData(WETH, true, true, 0);
+        assertTrue(allowDeposits == false, "WETH deposits should not be supported");
+        assertTrue(allowWithdraws == false, "WETH withdraws should not be supported");
+        assertEq(sharePremium, 0, "WETH sharePremium should be zero.");
 
-    //     assertTrue(teller.isSupported(WETH) == true, "WETH should be supported");
-    // }
+        uint16 newSharePremium = 40;
+        teller.updateAssetData(WETH, true, true, newSharePremium);
+
+        (allowDeposits, allowWithdraws, sharePremium) = teller.assetData(WETH);
+
+        assertTrue(allowDeposits == true, "WETH deposits should be supported");
+        assertTrue(allowWithdraws == true, "WETH withdraws should be supported");
+        assertEq(sharePremium, 40, "WETH sharePremium should equal newSharePremium.");
+    }
 
     function testDenyList() external {
         boringVault.setBeforeTransferHook(address(teller));
