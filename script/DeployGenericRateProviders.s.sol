@@ -180,12 +180,12 @@ contract DeployGenericRateProvidersScript is Script, ContractNames, MainnetAddre
         accountant.setRateProviderData(ERC20(pendleEethPtDecember), false, address(pendleEethPtDecemberRateProvider));
         accountant.setRateProviderData(ERC20(pendleEethYtDecember), false, address(pendleEethYtDecemberRateProvider));
 
-        teller.addAsset(ERC20(pendleWeETHMarketSeptember));
-        teller.addAsset(ERC20(pendleEethPtSeptember));
-        teller.addAsset(ERC20(pendleEethYtSeptember));
-        teller.addAsset(ERC20(pendleWeETHMarketDecember));
-        teller.addAsset(ERC20(pendleEethPtDecember));
-        teller.addAsset(ERC20(pendleEethYtDecember));
+        // teller.addAsset(ERC20(pendleWeETHMarketSeptember));
+        // teller.addAsset(ERC20(pendleEethPtSeptember));
+        // teller.addAsset(ERC20(pendleEethYtSeptember));
+        // teller.addAsset(ERC20(pendleWeETHMarketDecember));
+        // teller.addAsset(ERC20(pendleEethPtDecember));
+        // teller.addAsset(ERC20(pendleEethYtDecember));
 
         rolesAuthority.setUserRole(dev0Address, OWNER_ROLE, false);
 

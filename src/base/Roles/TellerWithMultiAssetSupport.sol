@@ -183,6 +183,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         emit Unpaused();
     }
 
+    // TODO add reasonable limit to sharePremium
     /**
      * @notice Updates the asset data for a given asset.
      * @dev The accountant must also support pricing this asset, else the `deposit` call will revert.
@@ -294,6 +295,8 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
 
     /**
      * @notice Implement beforeTransfer hook to check if shares are locked, or if `from`, `to`, or `operator` are on the deny list.
+     * @notice If share lock period is set to zero, then users will be able to mint and transfer in the same tx.
+     *         if this behavior is not desired then a share lock period of >=1 should be used.
      */
     function beforeTransfer(address from, address to, address operator) public view virtual {
         if (fromDenyList[from] || toDenyList[to] || operatorDenyList[operator]) {
