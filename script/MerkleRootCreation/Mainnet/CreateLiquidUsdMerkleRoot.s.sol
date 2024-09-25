@@ -246,8 +246,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
          * Swap PYUSD <-> FRAX
          * Swap PYUSD <-> crvUSD
          */
-        address[] memory assets = new address[](17);
-        SwapKind[] memory kind = new SwapKind[](17);
+        address[] memory assets = new address[](19);
+        SwapKind[] memory kind = new SwapKind[](19);
         assets[0] = getAddress(sourceChain, "USDC");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "USDT");
@@ -282,6 +282,10 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         kind[15] = SwapKind.Sell;
         assets[16] = getAddress(sourceChain, "CAKE");
         kind[16] = SwapKind.Sell;
+        assets[17] = getAddress(sourceChain, "deUSD");
+        kind[17] = SwapKind.BuyAndSell;
+        assets[18] = getAddress(sourceChain, "sdeUSD");
+        kind[18] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "PENDLE_wETH_30"));
@@ -314,6 +318,14 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== Ethena Withdraws ==========================
         _addEthenaSUSDeWithdrawLeafs(leafs);
+
+        // ========================== Balancer ==========================
+        _addBalancerLeafs(
+            leafs, getBytes32(sourceChain, "deUSD_sdeUSD_ECLP_id"), getAddress(sourceChain, "deUSD_sdeUSD_ECLP_Gauge")
+        );
+
+        // ========================== Aura ==========================
+        _addAuraLeafs(leafs, getAddress(sourceChain, "aura_deUSD_sdeUSD_ECLP"));
 
         // ========================== ITB Aave V3 USDC ==========================
         /**

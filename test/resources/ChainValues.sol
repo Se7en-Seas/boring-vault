@@ -237,6 +237,7 @@ contract ChainValues {
         values[mainnet]["deUSD_sdeUSD_ECLP"] = 0x41FDbea2E52790c0a1Dc374F07b628741f2E062D.toBytes32();
         values[mainnet]["deUSD_sdeUSD_ECLP_Gauge"] = 0xA00DB7d9c465e95e4AA814A9340B9A161364470a.toBytes32();
         values[mainnet]["deUSD_sdeUSD_ECLP_id"] = 0x41fdbea2e52790c0a1dc374f07b628741f2e062d0002000000000000000006be;
+        values[mainnet]["aura_deUSD_sdeUSD_ECLP"] = 0x7405Bf405185391525Ab06fABcdFf51fdc656A46.toBytes32();
 
         values[mainnet]["rETH_weETH_id"] = 0x05ff47afada98a98982113758878f9a8b9fdda0a000000000000000000000645;
         values[mainnet]["rETH_weETH"] = 0x05ff47AFADa98a98982113758878F9A8B9FddA0a.toBytes32();
