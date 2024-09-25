@@ -173,6 +173,12 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
          */
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "SUSDE")));
 
+        // ========================== Elixir ==========================
+        /**
+         * deposit, withdraw
+         */
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "sdeUSD")));
+
         // ========================== UniswapV3 ==========================
         /**
          * Full position management for USDC, USDT, DAI, USDe, sUSDe.
