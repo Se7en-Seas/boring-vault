@@ -18,8 +18,8 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Pump BTC Vault";
-    string public boringVaultSymbol = "pumpBTCv";
+    string public boringVaultName = "BTC-Fi Yield Vault LP";
+    string public boringVaultSymbol = "BTC-Fi Yield Vault LP";
     uint8 public boringVaultDecimals = 8;
     address public owner = dev0Address;
 
