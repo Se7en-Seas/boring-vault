@@ -783,7 +783,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
         if (configureDeployment.setupDepositAssets) {
             // Setup deposit asset.
             (bool allowDeposits,,) = teller.assetData(accountantParameters.base);
-            if (!allowDeposits) teller.updateAssetData(accountantParameters.base, true, false, 0); //TODO update this
+            if (!allowDeposits) teller.updateAssetData(accountantParameters.base, true, false, 0);
 
             // Setup extra deposit assets.
             for (uint256 i; i < depositAssets.length; i++) {

@@ -42,6 +42,12 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
      */
     uint256 internal constant MAX_SHARE_LOCK_PERIOD = 3 days;
 
+    /**
+     * @notice The maximum possible share premium that can be set using `updateAssetData`.
+     * @dev 1,000 or 10%
+     */
+    uint16 internal constant MAX_SHARE_PREMIUM = 1_000;
+
     // ========================================= STATE =========================================
 
     /**
@@ -107,6 +113,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     error TellerWithMultiAssetSupport__DualDeposit();
     error TellerWithMultiAssetSupport__Paused();
     error TellerWithMultiAssetSupport__TransferDenied(address from, address to, address operator);
+    error TellerWithMultiAssetSupport__SharePremiumTooLarge();
 
     //============================== EVENTS ===============================
 
@@ -183,7 +190,6 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         emit Unpaused();
     }
 
-    // TODO add reasonable limit to sharePremium
     /**
      * @notice Updates the asset data for a given asset.
      * @dev The accountant must also support pricing this asset, else the `deposit` call will revert.
@@ -193,6 +199,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         external
         requiresAuth
     {
+        if (sharePremium > MAX_SHARE_PREMIUM) revert TellerWithMultiAssetSupport__SharePremiumTooLarge();
         assetData[asset] = Asset(allowDeposits, allowWithdraws, sharePremium);
         emit AssetDataUpdated(address(asset), allowDeposits, allowWithdraws, sharePremium);
     }
