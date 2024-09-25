@@ -596,12 +596,14 @@ contract ChainValues {
 
         values[mainnet]["pendleUSDeZircuitMarketAugust"] = 0xF148a0B15712f5BfeefAdb4E6eF9739239F88b07.toBytes32();
         values[mainnet]["pendleKarakWeETHMarketSeptember"] = 0x18bAFcaBf2d5898956AE6AC31543d9657a604165.toBytes32();
+        values[mainnet]["pendleKarakWeETHMarketDecember"] = 0xFF694CC3f74E080637008B3792a9D7760cB456Ca.toBytes32();
 
         values[mainnet]["pendleSwethMarket"] = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303.toBytes32();
 
         values[mainnet]["pendleZircuitWeETHMarketAugust"] = 0x6c269DFc142259c52773430b3c78503CC994a93E.toBytes32();
         values[mainnet]["pendleWeETHMarketJuly"] = 0xe1F19CBDa26b6418B0C8E1EE978a533184496066.toBytes32();
         values[mainnet]["pendleWeETHkSeptember"] = 0x905A5a4792A0C27a2AdB2777f98C577D320079EF.toBytes32();
+        values[mainnet]["pendleWeETHkDecember"] = 0x792b9eDe7a18C26b814f87Eb5E0c8D26AD189780.toBytes32();
 
         values[mainnet]["pendle_sUSDe_08_23_24"] = 0xbBf399db59A845066aAFce9AE55e68c505FA97B7.toBytes32();
         values[mainnet]["pendle_sUSDe_12_25_24"] = 0xa0ab94DeBB3cC9A7eA77f3205ba4AB23276feD08.toBytes32();
