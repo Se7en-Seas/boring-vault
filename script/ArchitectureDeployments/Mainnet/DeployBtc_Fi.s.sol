@@ -6,13 +6,13 @@ import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
-import {PumpBtcDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PumpBtcDecoderAndSanitizer.sol";
+import {BTCFiDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/BTCFiDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployPumpBtc.s.sol:DeployPumpBtcScript --with-gas-price 3000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployBtc_Fi.s.sol:DeployBtc_FiScript --with-gas-price 3000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
+contract DeployBtc_FiScript is DeployArcticArchitecture, MainnetAddresses {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
@@ -45,14 +45,14 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
         deployer = Deployer(configureDeployment.deployerAddress);
 
         // Define names to determine where contracts are deployed.
-        names.rolesAuthority = PumpBtcRolesAuthorityName;
+        names.rolesAuthority = Btc_FiRolesAuthorityName;
         names.lens = ArcticArchitectureLensName;
-        names.boringVault = PumpBtcName;
-        names.manager = PumpBtcManagerName;
-        names.accountant = PumpBtcAccountantName;
-        names.teller = PumpBtcTellerName;
-        names.rawDataDecoderAndSanitizer = PumpBtcDecoderAndSanitizerName;
-        names.delayedWithdrawer = PumpBtcDelayedWithdrawer;
+        names.boringVault = Btc_FiName;
+        names.manager = Btc_FiManagerName;
+        names.accountant = Btc_FiAccountantName;
+        names.teller = Btc_FiTellerName;
+        names.rawDataDecoderAndSanitizer = Btc_FiDecoderAndSanitizerName;
+        names.delayedWithdrawer = Btc_FiDelayedWithdrawer;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
@@ -60,7 +60,7 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e8;
         //  4 decimals
-        accountantParameters.managementFee = 0.015e4;
+        accountantParameters.managementFee = 0.01e4;
         accountantParameters.performanceFee = 0;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;
@@ -68,7 +68,7 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
-        bytes memory creationCode = type(PumpBtcDecoderAndSanitizer).creationCode;
+        bytes memory creationCode = type(BTCFiDecoderAndSanitizer).creationCode;
         bytes memory constructorArgs =
             abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
 
@@ -76,6 +76,28 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
         depositAssets.push(
             DepositAsset({
                 asset: pumpBTC,
+                isPeggedToBase: true,
+                rateProvider: address(0),
+                genericRateProviderName: "",
+                target: address(0),
+                selector: bytes4(0),
+                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
+        depositAssets.push(
+            DepositAsset({
+                asset: cbBTC,
+                isPeggedToBase: true,
+                rateProvider: address(0),
+                genericRateProviderName: "",
+                target: address(0),
+                selector: bytes4(0),
+                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
+            })
+        );
+        depositAssets.push(
+            DepositAsset({
+                asset: fBTC,
                 isPeggedToBase: true,
                 rateProvider: address(0),
                 genericRateProviderName: "",
@@ -105,6 +127,26 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
             })
         );
 
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: cbBTC,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+
+        withdrawAssets.push(
+            WithdrawAsset({
+                asset: fBTC,
+                withdrawDelay: 3 days,
+                completionWindow: 7 days,
+                withdrawFee: 0,
+                maxLoss: 0.01e4
+            })
+        );
+
         bool allowPublicDeposits = true;
         bool allowPublicWithdraws = true;
         uint64 shareLockPeriod = 1 days;
@@ -113,7 +155,7 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "PumpBtcDeployment.json",
+            "BTC-FiDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
