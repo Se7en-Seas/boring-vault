@@ -74,14 +74,15 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     error BoringOnChainQueue__PermitFailedAndAllowanceTooLow();
     error BoringOnChainQueue__MAX_DISCOUNT();
     error BoringOnChainQueue__MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE();
+    error BoringOnChainQueue__SolveAssetMismatch();
 
     //============================== EVENTS ===============================
 
     event OnChainWithdrawRequested(
         bytes32 indexed requestId,
-        uint256 indexed nonce,
         address indexed user,
         address indexed assetOut,
+        uint256 nonce,
         uint256 amountOfShares,
         uint256 price,
         uint256 amountOfAssets,
@@ -111,13 +112,19 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         uint96 minimumShares
     );
 
+    event Paused();
+
+    event Unpaused();
+
     //============================== IMMUTABLES ===============================
 
     BoringVault public immutable boringVault;
     AccountantWithRateProviders public immutable accountant;
     uint256 internal immutable ONE_SHARE;
 
-    constructor(address _owner, address _auth, address _boringVault, address _accountant) Auth(_owner, _auth) {
+    constructor(address _owner, address _auth, address payable _boringVault, address _accountant)
+        Auth(_owner, Authority(_auth))
+    {
         boringVault = BoringVault(_boringVault);
         ONE_SHARE = 10 ** boringVault.decimals();
         accountant = AccountantWithRateProviders(_accountant);
@@ -288,13 +295,13 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         uint256 totalShares;
         uint256 requestsLength = requests.length;
         for (uint256 i = 0; i < requestsLength; ++i) {
-            if (address(solveAsset) != requests[i].assetOut) revert BoringOnChainQueue__WithdrawsNotAllowedForAsset();
+            if (address(solveAsset) != requests[i].assetOut) revert BoringOnChainQueue__SolveAssetMismatch();
             uint256 deadline = requests[i].creationTime + requests[i].secondsToDeadline;
             if (block.timestamp > deadline) revert BoringOnChainQueue__DeadlinePassed();
             requiredAssets += requests[i].amountOfAssets;
             totalShares += requests[i].amountOfShares;
             bytes32 requestId = _dequeueOnChainWithdraw(requests[i]);
-            OnChainWithdrawSolved(requestId, block.timestamp);
+            emit OnChainWithdrawSolved(requestId, block.timestamp);
         }
 
         // Transfer shares to solver.
@@ -320,6 +327,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     function _beforeNewRequest(address assetOut, uint256 amountOfShares, uint16 discount, uint24 secondsToDeadline)
         internal
+        view
     {
         if (isPaused) revert BoringOnChainQueue__Paused();
 
@@ -349,7 +357,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         // Create new request.
         uint256 requestNonce = nonce;
         nonce++;
-        uint256 price = accountant.getRateInQuoteSafe(assetOut);
+        uint256 price = accountant.getRateInQuoteSafe(ERC20(assetOut));
         price = price.mulDivDown(1e4 - discount, 1e4);
         uint256 amountOfAssets = amountOfShares.mulDivDown(price, ONE_SHARE);
         OnChainWithdraw memory req = OnChainWithdraw({
@@ -363,20 +371,28 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
             secondsToDeadline: secondsToDeadline
         });
 
-        requestId = keccak256(abi.encodePacked(req));
+        requestId = keccak256(abi.encode(req));
 
         bool addedToSet = _withdrawRequests.add(requestId);
 
         if (!addedToSet) revert BoringOnChainQueue__Keccak256Collision();
 
         emit OnChainWithdrawRequested(
-            requestId, requestNonce, user, assetOut, amountOfShares, price, block.timestamp, secondsToDeadline
+            requestId,
+            user,
+            assetOut,
+            requestNonce,
+            amountOfShares,
+            price,
+            amountOfAssets,
+            block.timestamp,
+            secondsToDeadline
         );
     }
 
     function _dequeueOnChainWithdraw(OnChainWithdraw calldata request) internal returns (bytes32 requestId) {
         // Remove request from queue.
-        requestId = keccak256(abi.encodePacked(request));
+        requestId = keccak256(abi.encode(request));
         bool removedFromSet = _withdrawRequests.remove(requestId);
         if (!removedFromSet) revert BoringOnChainQueue__RequestNotFound();
     }
