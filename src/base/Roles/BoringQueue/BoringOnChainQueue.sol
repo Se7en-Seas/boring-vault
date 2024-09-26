@@ -30,15 +30,15 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         uint96 minimumShares;
     }
 
-    // TODO If easier to handle these can be made into uint128s
+    // Downside though is that you could possibly run into block gas limit errors if the min share amount was too low and someone was spamming txs
+    // though you can still look at events in order to solve withdraws.
     struct OnChainWithdraw {
-        uint256 nonce; // read from state, used to make it impossible for request Ids to be repeated.
+        uint128 nonce; // read from state, used to make it impossible for request Ids to be repeated.
         address user; // msg.sender
         address assetOut; // input sanitized
-        uint256 amountOfShares; // input transfered in
-        uint256 price; // derived from discount and current share price
-        uint256 amountOfAssets; // derived from amountOfShares and price
-        uint256 creationTime; // time withdraw was made
+        uint128 amountOfShares; // input transfered in
+        uint128 amountOfAssets; // derived from amountOfShares and price
+        uint40 creationTime; // time withdraw was made
         uint24 secondsToDeadline; // in contract, from withdrawAsset? To get the deadline you take the creationTime and add the secondsToDeadline
     }
 
@@ -48,17 +48,15 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     // ========================================= GLOBAL STATE =========================================
 
-    // Optionally instead of a set, it could just be a mapping of bytes32 -> bool or potentially to a special bool struct
-    // struct {
-    // bool usedBefore;
-    // bool completed;
-    // }
     EnumerableSet.Bytes32Set private _withdrawRequests;
+
+    mapping(bytes32 => OnChainWithdraw) internal onChainWithdraws; // Request Id -> OnChainWithdraw
 
     mapping(address => WithdrawAsset) public withdrawAssets; // Withdraw Asset Address -> WithdrawAsset
 
-    uint248 public nonce;
+    uint128 public nonce = 1; // start on 1 since nonce 0 is considered invalid
     bool public isPaused;
+    bool public trackWithdrawsOnChain;
 
     //============================== ERRORS ===============================
 
@@ -75,6 +73,8 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     error BoringOnChainQueue__MAX_DISCOUNT();
     error BoringOnChainQueue__MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE();
     error BoringOnChainQueue__SolveAssetMismatch();
+    error BoringOnChainQueue__ZeroNonce();
+    error BoringOnChainQueue__Overflow();
 
     //============================== EVENTS ===============================
 
@@ -84,15 +84,14 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         address indexed assetOut,
         uint256 nonce,
         uint256 amountOfShares,
-        uint256 price,
         uint256 amountOfAssets,
         uint256 creationTime,
         uint24 secondsToDeadline
     );
 
-    event OnChainWithdrawCancelled(bytes32 indexed requestId, uint256 timestamp);
+    event OnChainWithdrawCancelled(bytes32 indexed requestId, address indexed user, uint256 timestamp);
 
-    event OnChainWithdrawSolved(bytes32 indexed requestId, uint256 timestamp);
+    event OnChainWithdrawSolved(bytes32 indexed requestId, address indexed user, uint256 timestamp);
 
     event WithdrawAssetSetup(
         address indexed assetOut,
@@ -116,18 +115,25 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     event Unpaused();
 
+    event TrackWithdrawsOnChainToggled(bool newState);
+
     //============================== IMMUTABLES ===============================
 
     BoringVault public immutable boringVault;
     AccountantWithRateProviders public immutable accountant;
     uint256 internal immutable ONE_SHARE;
 
-    constructor(address _owner, address _auth, address payable _boringVault, address _accountant)
-        Auth(_owner, Authority(_auth))
-    {
+    constructor(
+        address _owner,
+        address _auth,
+        address payable _boringVault,
+        address _accountant,
+        bool _trackWithdrawsOnChain
+    ) Auth(_owner, Authority(_auth)) {
         boringVault = BoringVault(_boringVault);
         ONE_SHARE = 10 ** boringVault.decimals();
         accountant = AccountantWithRateProviders(_accountant);
+        trackWithdrawsOnChain = _trackWithdrawsOnChain;
     }
 
     //=============================== ADMIN FUNCTIONS ================================
@@ -148,6 +154,12 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     function unpause() external requiresAuth {
         isPaused = false;
         emit Unpaused();
+    }
+
+    function toggleTrackWithdrawsOnChain() external requiresAuth {
+        bool oldState = trackWithdrawsOnChain;
+        trackWithdrawsOnChain = !oldState;
+        emit TrackWithdrawsOnChainToggled(!oldState);
     }
 
     function setupWithdrawAsset(
@@ -220,7 +232,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     //=============================== USER FUNCTIONS ================================
 
-    function requestOnChainWithdraw(ERC20 assetOut, uint256 amountOfShares, uint16 discount, uint24 secondsToDeadline)
+    function requestOnChainWithdraw(ERC20 assetOut, uint128 amountOfShares, uint16 discount, uint24 secondsToDeadline)
         external
         requiresAuth
         returns (bytes32 requestId)
@@ -234,7 +246,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     function requestOnChainWithdrawWithPermit(
         ERC20 assetOut,
-        uint256 amountOfShares,
+        uint128 amountOfShares,
         uint16 discount,
         uint24 secondsToDeadline,
         uint256 permitDeadline,
@@ -258,9 +270,17 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         requiresAuth
         returns (bytes32 requestId)
     {
-        if (request.user != msg.sender) revert BoringOnChainQueue__BadUser();
+        requestId = _cancelOnChainWithdraw(request);
+    }
 
-        requestId = _cancelUserOnChainWithdraw(request);
+    function cancelOnChainWithdrawUsingRequestId(bytes32 requestId)
+        external
+        requiresAuth
+        returns (OnChainWithdraw memory request)
+    {
+        request = onChainWithdraws[requestId];
+        if (request.nonce == 0) revert BoringOnChainQueue__ZeroNonce();
+        _cancelOnChainWithdraw(request);
     }
 
     function replaceOnChainWithdraw(OnChainWithdraw calldata oldRequest, uint16 discount, uint24 secondsToDeadline)
@@ -268,18 +288,17 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         requiresAuth
         returns (bytes32 oldRequestId, bytes32 newRequestId)
     {
-        if (oldRequest.user != msg.sender) revert BoringOnChainQueue__BadUser();
+        (oldRequestId, newRequestId) = _replaceOnChainWithdraw(oldRequest, discount, secondsToDeadline);
+    }
 
-        _beforeNewRequest(oldRequest.assetOut, oldRequest.amountOfShares, discount, secondsToDeadline);
-
-        oldRequestId = _dequeueOnChainWithdraw(oldRequest);
-
-        emit OnChainWithdrawCancelled(oldRequestId, block.timestamp);
-
-        // Create new request.
-        newRequestId = _queueOnChainWithdraw(
-            oldRequest.user, oldRequest.assetOut, oldRequest.amountOfShares, discount, secondsToDeadline
-        );
+    function replaceOnChainWithdrawUsingRequestId(bytes32 oldRequestId, uint16 discount, uint24 secondsToDeadline)
+        external
+        requiresAuth
+        returns (OnChainWithdraw memory oldRequest, bytes32 newRequestId)
+    {
+        oldRequest = onChainWithdraws[oldRequestId];
+        if (oldRequest.nonce == 0) revert BoringOnChainQueue__ZeroNonce();
+        (, newRequestId) = _replaceOnChainWithdraw(oldRequest, discount, secondsToDeadline);
     }
 
     //============================== SOLVER FUNCTIONS ===============================
@@ -301,7 +320,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
             requiredAssets += requests[i].amountOfAssets;
             totalShares += requests[i].amountOfShares;
             bytes32 requestId = _dequeueOnChainWithdraw(requests[i]);
-            emit OnChainWithdrawSolved(requestId, block.timestamp);
+            emit OnChainWithdrawSolved(requestId, requests[i].user, block.timestamp);
         }
 
         // Transfer shares to solver.
@@ -319,13 +338,33 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         }
     }
 
-    function getWithdrawRequests() external view returns (bytes32[] memory) {
+    function getRequestIds() external view returns (bytes32[] memory) {
         return _withdrawRequests.values();
+    }
+
+    // @notice does not verify nonce is zero, as you could have not been tracking withdraws for a period of time
+    function getWithdrawRequests()
+        external
+        view
+        returns (bytes32[] memory requestIds, OnChainWithdraw[] memory requests)
+    {
+        requestIds = _withdrawRequests.values();
+        uint256 requestsLength = requestIds.length;
+        requests = new OnChainWithdraw[](requestsLength);
+        for (uint256 i = 0; i < requestsLength; ++i) {
+            requests[i] = onChainWithdraws[requestIds[i]];
+        }
+    }
+
+    function getOnChainWithdraw(bytes32 requestId) external view returns (OnChainWithdraw memory) {
+        OnChainWithdraw memory request = onChainWithdraws[requestId];
+        if (request.nonce == 0) revert BoringOnChainQueue__ZeroNonce();
+        return onChainWithdraws[requestId];
     }
 
     //============================= INTERNAL FUNCTIONS ==============================
 
-    function _beforeNewRequest(address assetOut, uint256 amountOfShares, uint16 discount, uint24 secondsToDeadline)
+    function _beforeNewRequest(address assetOut, uint128 amountOfShares, uint16 discount, uint24 secondsToDeadline)
         internal
         view
     {
@@ -341,59 +380,84 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         if (secondsToDeadline < withdrawAsset.minimumSecondsToDeadline) revert BoringOnChainQueue__BadDeadline();
     }
 
-    function _cancelUserOnChainWithdraw(OnChainWithdraw calldata request) internal returns (bytes32 requestId) {
+    function _cancelOnChainWithdraw(OnChainWithdraw memory request) internal returns (bytes32 requestId) {
+        if (request.user != msg.sender) revert BoringOnChainQueue__BadUser();
+
+        requestId = _cancelUserOnChainWithdraw(request);
+    }
+
+    function _cancelUserOnChainWithdraw(OnChainWithdraw memory request) internal returns (bytes32 requestId) {
         requestId = _dequeueOnChainWithdraw(request);
         boringVault.safeTransfer(request.user, request.amountOfShares);
-        emit OnChainWithdrawCancelled(requestId, block.timestamp);
+        emit OnChainWithdrawCancelled(requestId, request.user, block.timestamp);
+    }
+
+    function _replaceOnChainWithdraw(OnChainWithdraw memory oldRequest, uint16 discount, uint24 secondsToDeadline)
+        internal
+        returns (bytes32 oldRequestId, bytes32 newRequestId)
+    {
+        if (oldRequest.user != msg.sender) revert BoringOnChainQueue__BadUser();
+
+        _beforeNewRequest(oldRequest.assetOut, oldRequest.amountOfShares, discount, secondsToDeadline);
+
+        oldRequestId = _dequeueOnChainWithdraw(oldRequest);
+
+        emit OnChainWithdrawCancelled(oldRequestId, oldRequest.user, block.timestamp);
+
+        // Create new request.
+        newRequestId = _queueOnChainWithdraw(
+            oldRequest.user, oldRequest.assetOut, oldRequest.amountOfShares, discount, secondsToDeadline
+        );
     }
 
     function _queueOnChainWithdraw(
         address user,
         address assetOut,
-        uint256 amountOfShares,
+        uint128 amountOfShares,
         uint16 discount,
         uint24 secondsToDeadline
     ) internal returns (bytes32 requestId) {
         // Create new request.
-        uint256 requestNonce = nonce;
+        uint128 requestNonce = nonce;
         nonce++;
         uint256 price = accountant.getRateInQuoteSafe(ERC20(assetOut));
         price = price.mulDivDown(1e4 - discount, 1e4);
-        uint256 amountOfAssets = amountOfShares.mulDivDown(price, ONE_SHARE);
+        uint256 amountOfAssets = uint256(amountOfShares).mulDivDown(price, ONE_SHARE);
+        if (amountOfAssets > type(uint128).max) revert BoringOnChainQueue__Overflow();
         OnChainWithdraw memory req = OnChainWithdraw({
             nonce: requestNonce,
             user: user,
             assetOut: assetOut,
             amountOfShares: amountOfShares,
-            price: price,
-            amountOfAssets: amountOfAssets,
-            creationTime: block.timestamp,
+            amountOfAssets: uint128(amountOfAssets),
+            creationTime: uint40(block.timestamp), // Safe to cast to uint40 as it won't overflow for 10s of thousands of years
             secondsToDeadline: secondsToDeadline
         });
 
         requestId = keccak256(abi.encode(req));
+
+        if (trackWithdrawsOnChain) {
+            // Save withdraw request on chain.
+            // TODO does this actually work? Maybe cuz there are no dynamic types?
+            onChainWithdraws[requestId] = req;
+        }
 
         bool addedToSet = _withdrawRequests.add(requestId);
 
         if (!addedToSet) revert BoringOnChainQueue__Keccak256Collision();
 
         emit OnChainWithdrawRequested(
-            requestId,
-            user,
-            assetOut,
-            requestNonce,
-            amountOfShares,
-            price,
-            amountOfAssets,
-            block.timestamp,
-            secondsToDeadline
+            requestId, user, assetOut, requestNonce, amountOfShares, amountOfAssets, block.timestamp, secondsToDeadline
         );
     }
 
-    function _dequeueOnChainWithdraw(OnChainWithdraw calldata request) internal returns (bytes32 requestId) {
+    function _dequeueOnChainWithdraw(OnChainWithdraw memory request) internal returns (bytes32 requestId) {
         // Remove request from queue.
         requestId = keccak256(abi.encode(request));
         bool removedFromSet = _withdrawRequests.remove(requestId);
         if (!removedFromSet) revert BoringOnChainQueue__RequestNotFound();
+        // TODO see what is more gas efficient if you are not tracking requests, should it read the bool, and only delete it if we are tracking?
+        // TODO might be worth it to remove this, just so that you have the history stored on chain?
+        delete onChainWithdraws[requestId];
     }
 }
