@@ -32,6 +32,9 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     // Downside though is that you could possibly run into block gas limit errors if the min share amount was too low and someone was spamming txs
     // though you can still look at events in order to solve withdraws.
+    // TODO if we wanted to add in maturity logic we can reduce nonce size by 24 bits, and add a uint24 secondsToMaturity
+    // That would also go in the WithdrawAsset data
+    // TODO this would be nice since we could feasibly then setup some more automated way users can claim their withdraws themselves.
     struct OnChainWithdraw {
         uint128 nonce; // read from state, used to make it impossible for request Ids to be repeated.
         address user; // msg.sender
