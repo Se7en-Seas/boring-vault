@@ -24,6 +24,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     struct WithdrawAsset {
         bool allowWithdraws;
+        uint24 secondsToMaturity;
         uint24 minimumSecondsToDeadline; // default deadline if user provides zero
         uint16 minDiscount;
         uint16 maxDiscount;
@@ -32,21 +33,20 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     // Downside though is that you could possibly run into block gas limit errors if the min share amount was too low and someone was spamming txs
     // though you can still look at events in order to solve withdraws.
-    // TODO if we wanted to add in maturity logic we can reduce nonce size by 24 bits, and add a uint24 secondsToMaturity
-    // That would also go in the WithdrawAsset data
-    // TODO this would be nice since we could feasibly then setup some more automated way users can claim their withdraws themselves.
     struct OnChainWithdraw {
-        uint128 nonce; // read from state, used to make it impossible for request Ids to be repeated.
+        uint96 nonce; // read from state, used to make it impossible for request Ids to be repeated.
         address user; // msg.sender
         address assetOut; // input sanitized
         uint128 amountOfShares; // input transfered in
         uint128 amountOfAssets; // derived from amountOfShares and price
         uint40 creationTime; // time withdraw was made
-        uint24 secondsToDeadline; // in contract, from withdrawAsset? To get the deadline you take the creationTime and add the secondsToDeadline
+        uint24 secondsToMaturity; // in contract, from withdrawAsset?
+        uint24 secondsToDeadline; // in contract, from withdrawAsset? To get the deadline you take the creationTime add seconds to maturity, add the secondsToDeadline
     }
 
     // ========================================= CONSTANTS =========================================
     uint16 internal constant MAX_DISCOUNT = 0.3e4;
+    uint24 internal constant MAXIMUM_SECONDS_TO_MATURITY = 30 days;
     uint24 internal constant MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE = 30 days;
 
     // ========================================= GLOBAL STATE =========================================
@@ -57,7 +57,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     mapping(address => WithdrawAsset) public withdrawAssets; // Withdraw Asset Address -> WithdrawAsset
 
-    uint128 public nonce = 1; // start on 1 since nonce 0 is considered invalid
+    uint96 public nonce = 1; // start on 1 since nonce 0 is considered invalid
     bool public isPaused;
     bool public trackWithdrawsOnChain;
 
@@ -70,6 +70,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     error BoringOnChainQueue__BadDeadline();
     error BoringOnChainQueue__BadUser();
     error BoringOnChainQueue__DeadlinePassed();
+    error BoringOnChainQueue__NotMatured();
     error BoringOnChainQueue__Keccak256Collision();
     error BoringOnChainQueue__RequestNotFound();
     error BoringOnChainQueue__PermitFailedAndAllowanceTooLow();
@@ -78,6 +79,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     error BoringOnChainQueue__SolveAssetMismatch();
     error BoringOnChainQueue__ZeroNonce();
     error BoringOnChainQueue__Overflow();
+    error BoringOnChainQueue__MAXIMUM_SECONDS_TO_MATURITY();
 
     //============================== EVENTS ===============================
 
@@ -85,10 +87,11 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         bytes32 indexed requestId,
         address indexed user,
         address indexed assetOut,
-        uint256 nonce,
-        uint256 amountOfShares,
-        uint256 amountOfAssets,
-        uint256 creationTime,
+        uint96 nonce,
+        uint128 amountOfShares,
+        uint128 amountOfAssets,
+        uint40 creationTime,
+        uint24 secondsToMaturity,
         uint24 secondsToDeadline
     );
 
@@ -98,6 +101,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     event WithdrawAssetSetup(
         address indexed assetOut,
+        uint24 secondsToMaturity,
         uint24 minimumSecondsToDeadline,
         uint16 minDiscount,
         uint16 maxDiscount,
@@ -109,6 +113,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     event WithdrawAssetUpdated(
         address indexed assetOut,
         uint24 minimumSecondsToDeadline,
+        uint24 secondsToMaturity,
         uint16 minDiscount,
         uint16 maxDiscount,
         uint96 minimumShares
@@ -168,12 +173,16 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     function setupWithdrawAsset(
         address assetOut,
         uint24 minimumSecondsToDeadline,
+        uint24 secondsToMaturity,
         uint16 minDiscount,
         uint16 maxDiscount,
         uint96 minimumShares
     ) external requiresAuth {
         // Validate input.
         if (maxDiscount > MAX_DISCOUNT) revert BoringOnChainQueue__MAX_DISCOUNT();
+        if (secondsToMaturity > MAXIMUM_SECONDS_TO_MATURITY) {
+            revert BoringOnChainQueue__MAXIMUM_SECONDS_TO_MATURITY();
+        }
         if (minimumSecondsToDeadline > MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE) {
             revert BoringOnChainQueue__MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE();
         }
@@ -183,13 +192,16 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
         withdrawAssets[assetOut] = WithdrawAsset({
             allowWithdraws: true,
+            secondsToMaturity: secondsToMaturity,
             minimumSecondsToDeadline: minimumSecondsToDeadline,
             minDiscount: minDiscount,
             maxDiscount: maxDiscount,
             minimumShares: minimumShares
         });
 
-        emit WithdrawAssetSetup(assetOut, minimumSecondsToDeadline, minDiscount, maxDiscount, minimumShares);
+        emit WithdrawAssetSetup(
+            assetOut, secondsToMaturity, minimumSecondsToDeadline, minDiscount, maxDiscount, minimumShares
+        );
     }
 
     function stopWithdrawsInAsset(address assetOut) external requiresAuth {
@@ -199,6 +211,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     function updateWithdrawAsset(
         address assetOut,
+        uint24 secondsToMaturity,
         uint24 minimumSecondsToDeadline,
         uint16 minDiscount,
         uint16 maxDiscount,
@@ -206,6 +219,9 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     ) external requiresAuth {
         // Validate input.
         if (maxDiscount > MAX_DISCOUNT) revert BoringOnChainQueue__MAX_DISCOUNT();
+        if (secondsToMaturity > MAXIMUM_SECONDS_TO_MATURITY) {
+            revert BoringOnChainQueue__MAXIMUM_SECONDS_TO_MATURITY();
+        }
         if (minimumSecondsToDeadline > MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE) {
             revert BoringOnChainQueue__MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE();
         }
@@ -213,12 +229,15 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
         WithdrawAsset storage withdrawAsset = withdrawAssets[assetOut];
         if (!withdrawAsset.allowWithdraws) revert BoringOnChainQueue__WithdrawsNotAllowedForAsset();
+        withdrawAsset.secondsToMaturity = secondsToMaturity;
         withdrawAsset.minimumSecondsToDeadline = minimumSecondsToDeadline;
         withdrawAsset.minDiscount = minDiscount;
         withdrawAsset.maxDiscount = maxDiscount;
         withdrawAsset.minimumShares = minimumShares;
 
-        emit WithdrawAssetUpdated(assetOut, minimumSecondsToDeadline, minDiscount, maxDiscount, minimumShares);
+        emit WithdrawAssetUpdated(
+            assetOut, secondsToMaturity, minimumSecondsToDeadline, minDiscount, maxDiscount, minimumShares
+        );
     }
 
     function cancelUserWithdraws(OnChainWithdraw[] calldata requests)
@@ -235,20 +254,24 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     //=============================== USER FUNCTIONS ================================
 
-    function requestOnChainWithdraw(ERC20 assetOut, uint128 amountOfShares, uint16 discount, uint24 secondsToDeadline)
+    function requestOnChainWithdraw(address assetOut, uint128 amountOfShares, uint16 discount, uint24 secondsToDeadline)
         external
         requiresAuth
         returns (bytes32 requestId)
     {
-        _beforeNewRequest(address(assetOut), amountOfShares, discount, secondsToDeadline);
+        WithdrawAsset memory withdrawAsset = withdrawAssets[assetOut];
+
+        _beforeNewRequest(withdrawAsset, amountOfShares, discount, secondsToDeadline);
 
         boringVault.safeTransferFrom(msg.sender, address(this), amountOfShares);
 
-        requestId = _queueOnChainWithdraw(msg.sender, address(assetOut), amountOfShares, discount, secondsToDeadline);
+        requestId = _queueOnChainWithdraw(
+            msg.sender, assetOut, amountOfShares, discount, withdrawAsset.secondsToMaturity, secondsToDeadline
+        );
     }
 
     function requestOnChainWithdrawWithPermit(
-        ERC20 assetOut,
+        address assetOut,
         uint128 amountOfShares,
         uint16 discount,
         uint24 secondsToDeadline,
@@ -257,7 +280,9 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         bytes32 r,
         bytes32 s
     ) external requiresAuth returns (bytes32 requestId) {
-        _beforeNewRequest(address(assetOut), amountOfShares, discount, secondsToDeadline);
+        WithdrawAsset memory withdrawAsset = withdrawAssets[assetOut];
+
+        _beforeNewRequest(withdrawAsset, amountOfShares, discount, secondsToDeadline);
 
         try boringVault.permit(msg.sender, address(this), amountOfShares, permitDeadline, v, r, s) {}
         catch {
@@ -265,7 +290,9 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
                 revert BoringOnChainQueue__PermitFailedAndAllowanceTooLow();
             }
         }
-        requestId = _queueOnChainWithdraw(msg.sender, address(assetOut), amountOfShares, discount, secondsToDeadline);
+        requestId = _queueOnChainWithdraw(
+            msg.sender, assetOut, amountOfShares, discount, withdrawAsset.secondsToMaturity, secondsToDeadline
+        );
     }
 
     function cancelOnChainWithdraw(OnChainWithdraw calldata request)
@@ -281,8 +308,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         requiresAuth
         returns (OnChainWithdraw memory request)
     {
-        request = onChainWithdraws[requestId];
-        if (request.nonce == 0) revert BoringOnChainQueue__ZeroNonce();
+        request = getOnChainWithdraw(requestId);
         _cancelOnChainWithdraw(request);
     }
 
@@ -299,8 +325,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         requiresAuth
         returns (OnChainWithdraw memory oldRequest, bytes32 newRequestId)
     {
-        oldRequest = onChainWithdraws[oldRequestId];
-        if (oldRequest.nonce == 0) revert BoringOnChainQueue__ZeroNonce();
+        oldRequest = getOnChainWithdraw(oldRequestId);
         (, newRequestId) = _replaceOnChainWithdraw(oldRequest, discount, secondsToDeadline);
     }
 
@@ -318,7 +343,9 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         uint256 requestsLength = requests.length;
         for (uint256 i = 0; i < requestsLength; ++i) {
             if (address(solveAsset) != requests[i].assetOut) revert BoringOnChainQueue__SolveAssetMismatch();
-            uint256 deadline = requests[i].creationTime + requests[i].secondsToDeadline;
+            uint256 maturity = requests[i].creationTime + requests[i].secondsToMaturity;
+            if (block.timestamp < maturity) revert BoringOnChainQueue__NotMatured();
+            uint256 deadline = maturity + requests[i].secondsToDeadline;
             if (block.timestamp > deadline) revert BoringOnChainQueue__DeadlinePassed();
             requiredAssets += requests[i].amountOfAssets;
             totalShares += requests[i].amountOfShares;
@@ -341,6 +368,8 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         }
     }
 
+    //============================== VIEW FUNCTIONS ===============================
+
     function getRequestIds() external view returns (bytes32[] memory) {
         return _withdrawRequests.values();
     }
@@ -359,7 +388,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         }
     }
 
-    function getOnChainWithdraw(bytes32 requestId) external view returns (OnChainWithdraw memory) {
+    function getOnChainWithdraw(bytes32 requestId) public view returns (OnChainWithdraw memory) {
         OnChainWithdraw memory request = onChainWithdraws[requestId];
         if (request.nonce == 0) revert BoringOnChainQueue__ZeroNonce();
         return onChainWithdraws[requestId];
@@ -367,13 +396,13 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     //============================= INTERNAL FUNCTIONS ==============================
 
-    function _beforeNewRequest(address assetOut, uint128 amountOfShares, uint16 discount, uint24 secondsToDeadline)
-        internal
-        view
-    {
+    function _beforeNewRequest(
+        WithdrawAsset memory withdrawAsset,
+        uint128 amountOfShares,
+        uint16 discount,
+        uint24 secondsToDeadline
+    ) internal view {
         if (isPaused) revert BoringOnChainQueue__Paused();
-
-        WithdrawAsset memory withdrawAsset = withdrawAssets[assetOut];
 
         if (!withdrawAsset.allowWithdraws) revert BoringOnChainQueue__WithdrawsNotAllowedForAsset();
         if (discount < withdrawAsset.minDiscount || discount > withdrawAsset.maxDiscount) {
@@ -401,7 +430,9 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     {
         if (oldRequest.user != msg.sender) revert BoringOnChainQueue__BadUser();
 
-        _beforeNewRequest(oldRequest.assetOut, oldRequest.amountOfShares, discount, secondsToDeadline);
+        WithdrawAsset memory withdrawAsset = withdrawAssets[oldRequest.assetOut];
+
+        _beforeNewRequest(withdrawAsset, oldRequest.amountOfShares, discount, secondsToDeadline);
 
         oldRequestId = _dequeueOnChainWithdraw(oldRequest);
 
@@ -409,7 +440,12 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
         // Create new request.
         newRequestId = _queueOnChainWithdraw(
-            oldRequest.user, oldRequest.assetOut, oldRequest.amountOfShares, discount, secondsToDeadline
+            oldRequest.user,
+            oldRequest.assetOut,
+            oldRequest.amountOfShares,
+            discount,
+            withdrawAsset.secondsToMaturity,
+            secondsToDeadline
         );
     }
 
@@ -418,22 +454,29 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         address assetOut,
         uint128 amountOfShares,
         uint16 discount,
+        uint24 secondsToMaturity,
         uint24 secondsToDeadline
     ) internal returns (bytes32 requestId) {
         // Create new request.
-        uint128 requestNonce = nonce;
+        uint96 requestNonce = nonce;
         nonce++;
-        uint256 price = accountant.getRateInQuoteSafe(ERC20(assetOut));
-        price = price.mulDivDown(1e4 - discount, 1e4);
-        uint256 amountOfAssets = uint256(amountOfShares).mulDivDown(price, ONE_SHARE);
-        if (amountOfAssets > type(uint128).max) revert BoringOnChainQueue__Overflow();
+        uint128 amountOfAssets128;
+        {
+            uint256 price = accountant.getRateInQuoteSafe(ERC20(assetOut));
+            price = price.mulDivDown(1e4 - discount, 1e4);
+            uint256 amountOfAssets = uint256(amountOfShares).mulDivDown(price, ONE_SHARE);
+            if (amountOfAssets > type(uint128).max) revert BoringOnChainQueue__Overflow();
+            amountOfAssets128 = uint128(amountOfAssets);
+        }
+        uint40 timeNow = uint40(block.timestamp); // Safe to cast to uint40 as it won't overflow for 10s of thousands of years
         OnChainWithdraw memory req = OnChainWithdraw({
             nonce: requestNonce,
             user: user,
             assetOut: assetOut,
             amountOfShares: amountOfShares,
-            amountOfAssets: uint128(amountOfAssets),
-            creationTime: uint40(block.timestamp), // Safe to cast to uint40 as it won't overflow for 10s of thousands of years
+            amountOfAssets: amountOfAssets128,
+            creationTime: timeNow,
+            secondsToMaturity: secondsToMaturity,
             secondsToDeadline: secondsToDeadline
         });
 
@@ -450,7 +493,15 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         if (!addedToSet) revert BoringOnChainQueue__Keccak256Collision();
 
         emit OnChainWithdrawRequested(
-            requestId, user, assetOut, requestNonce, amountOfShares, amountOfAssets, block.timestamp, secondsToDeadline
+            requestId,
+            user,
+            assetOut,
+            requestNonce,
+            amountOfShares,
+            amountOfAssets128,
+            timeNow,
+            secondsToMaturity,
+            secondsToDeadline
         );
     }
 
