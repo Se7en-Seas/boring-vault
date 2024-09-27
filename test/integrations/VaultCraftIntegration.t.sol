@@ -112,7 +112,7 @@ contract VaultCraftIntegrationTest is Test, MerkleTreeHelper {
         uint256 assets = 1_000e18;
         deal(getAddress(sourceChain, "WETH"), address(boringVault), assets);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
         _addVaultCraftLeafs(
             leafs, ERC4626(getAddress(sourceChain, "compoundV3Weth")), getAddress(sourceChain, "compoundV3WethGauge")
         );
@@ -124,8 +124,8 @@ contract VaultCraftIntegrationTest is Test, MerkleTreeHelper {
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](4);
         manageLeafs[0] = leafs[0];
         manageLeafs[1] = leafs[1];
-        manageLeafs[2] = leafs[3];
-        manageLeafs[3] = leafs[4];
+        manageLeafs[2] = leafs[5];
+        manageLeafs[3] = leafs[6];
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
@@ -160,8 +160,8 @@ contract VaultCraftIntegrationTest is Test, MerkleTreeHelper {
         skip(7 days);
 
         manageLeafs = new ManageLeaf[](3);
-        manageLeafs[0] = leafs[6];
-        manageLeafs[1] = leafs[5];
+        manageLeafs[0] = leafs[8];
+        manageLeafs[1] = leafs[7];
         manageLeafs[2] = leafs[2];
 
         manageProofs = _getProofsUsingTree(manageLeafs, manageTree);

@@ -130,6 +130,7 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
         // ========================== MetaMorpho ==========================
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "Re7WBTC")));
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "gauntletWBTCcore")));
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "MCwBTC")));
 
         // ========================== Gearbox ==========================
         _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWBTCV3")), getAddress(sourceChain, "sdWBTCV3"));

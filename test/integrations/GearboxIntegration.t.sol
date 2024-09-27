@@ -120,7 +120,7 @@ contract GearboxIntegrationTest is Test, MerkleTreeHelper {
         // claim rewards
         // sell sdWETHV3
         // sell dWETHV3
-        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
         _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWETHV3")), getAddress(sourceChain, "sdWETHV3"));
         // leafs[2] = ManageLeaf(dWETHV3, false, "approve(address,uint256)", new address[](1));
         // leafs[2].argumentAddresses[0] = sdWETHV3;
@@ -138,10 +138,10 @@ contract GearboxIntegrationTest is Test, MerkleTreeHelper {
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](7);
         manageLeafs[0] = leafs[0];
         manageLeafs[1] = leafs[1];
-        manageLeafs[2] = leafs[3];
-        manageLeafs[3] = leafs[4];
-        manageLeafs[4] = leafs[6];
-        manageLeafs[5] = leafs[5];
+        manageLeafs[2] = leafs[5];
+        manageLeafs[3] = leafs[6];
+        manageLeafs[4] = leafs[8];
+        manageLeafs[5] = leafs[7];
         manageLeafs[6] = leafs[2];
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
