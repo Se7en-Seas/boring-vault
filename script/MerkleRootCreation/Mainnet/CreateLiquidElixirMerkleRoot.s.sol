@@ -19,6 +19,8 @@ contract CreateLiquidElixirMerkleRootScript is Script, MerkleTreeHelper {
     address public managerAddress = 0x4D0EF2A55db2439A37507a893b624f89eC7A403c;
     address public accountantAddress = 0xBae19b38Bf727Be64AF0B578c34985c3D612e2Ba;
 
+    address public pancakeSwapDataDecoderAndSanitizer = 0xA33cA951986cE360eddaB0c9e3791E99aACde437;
+
     function setUp() external {}
 
     /**
@@ -35,7 +37,7 @@ contract CreateLiquidElixirMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](128);
+        ManageLeaf[] memory leafs = new ManageLeaf[](256);
 
         // ========================== UniswapV3 ==========================
         /**
@@ -113,6 +115,43 @@ contract CreateLiquidElixirMerkleRootScript is Script, MerkleTreeHelper {
         _addBalancerLeafs(
             leafs, getBytes32(sourceChain, "deUSD_sdeUSD_ECLP_id"), getAddress(sourceChain, "deUSD_sdeUSD_ECLP_Gauge")
         );
+
+        // ========================== Aura ==========================
+        _addAuraLeafs(leafs, getAddress(sourceChain, "aura_deUSD_sdeUSD_ECLP"));
+
+        // ========================== Elixir ==========================
+        /**
+         * deposit, withdraw
+         */
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "sdeUSD")));
+
+        // ========================== PancakeSwapV3 ==========================
+        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", pancakeSwapDataDecoderAndSanitizer);
+        token0 = new address[](10);
+        token0[0] = getAddress(sourceChain, "USDC");
+        token0[1] = getAddress(sourceChain, "USDC");
+        token0[2] = getAddress(sourceChain, "USDC");
+        token0[3] = getAddress(sourceChain, "USDC");
+        token0[4] = getAddress(sourceChain, "USDT");
+        token0[5] = getAddress(sourceChain, "USDT");
+        token0[6] = getAddress(sourceChain, "USDT");
+        token0[7] = getAddress(sourceChain, "DAI");
+        token0[8] = getAddress(sourceChain, "DAI");
+        token0[9] = getAddress(sourceChain, "deUSD");
+
+        token1 = new address[](10);
+        token1[0] = getAddress(sourceChain, "USDT");
+        token1[1] = getAddress(sourceChain, "DAI");
+        token1[2] = getAddress(sourceChain, "deUSD");
+        token1[3] = getAddress(sourceChain, "sdeUSD");
+        token1[4] = getAddress(sourceChain, "DAI");
+        token1[5] = getAddress(sourceChain, "deUSD");
+        token1[6] = getAddress(sourceChain, "sdeUSD");
+        token1[7] = getAddress(sourceChain, "deUSD");
+        token1[8] = getAddress(sourceChain, "sdeUSD");
+        token1[9] = getAddress(sourceChain, "sdeUSD");
+
+        _addPancakeSwapV3Leafs(leafs, token0, token1);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
