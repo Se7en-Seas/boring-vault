@@ -172,8 +172,8 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     function setupWithdrawAsset(
         address assetOut,
-        uint24 minimumSecondsToDeadline,
         uint24 secondsToMaturity,
+        uint24 minimumSecondsToDeadline,
         uint16 minDiscount,
         uint16 maxDiscount,
         uint96 minimumShares

@@ -112,7 +112,7 @@ contract BoringSolver is IBoringSolver, Auth {
         uint256 totalShares,
         uint256 requiredAssets,
         bytes calldata solveData
-    ) external {
+    ) external requiresAuth {
         if (initiator != address(this)) revert BoringSolver___WrongInitiator();
 
         address queue = msg.sender;
