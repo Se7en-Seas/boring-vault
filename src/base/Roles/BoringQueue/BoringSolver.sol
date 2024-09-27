@@ -14,7 +14,7 @@ contract BoringSolver is IBoringSolver, Auth {
     // ========================================= ENUMS =========================================
     enum SolveType {
         BORING_REDEEM, // Fill multiple user requests with a single transaction.
-        BORING_REDEEM_MINT, // Fill multiple user requests to redeem shares and mint new shares.
+        BORING_REDEEM_MINT // Fill multiple user requests to redeem shares and mint new shares.
 
     }
 
