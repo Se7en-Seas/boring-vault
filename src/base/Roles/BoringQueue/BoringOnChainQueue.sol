@@ -512,6 +512,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         if (!removedFromSet) revert BoringOnChainQueue__RequestNotFound();
         // TODO see what is more gas efficient if you are not tracking requests, should it read the bool, and only delete it if we are tracking?
         // TODO might be worth it to remove this, just so that you have the history stored on chain?
+        /// @dev so initial testing shows this costs more gas to delete? Maybe cuz we are loading in multiple cold storage slots?
         delete onChainWithdraws[requestId];
     }
 }

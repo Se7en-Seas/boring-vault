@@ -159,7 +159,9 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         WETH.safeApprove(address(boringSolver), type(uint256).max);
 
         uint256 wETHDelta = WETH.balanceOf(address(this));
+        uint256 gas = gasleft();
         boringSolver.boringRedeemSolve(boringQueue, requests, liquidEth_teller);
+        console.log("Gas used: ", gas - gasleft());
         wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
 
         assertEq(WETH.balanceOf(testUser), requests[0].amountOfAssets, "User should have received their wETH.");

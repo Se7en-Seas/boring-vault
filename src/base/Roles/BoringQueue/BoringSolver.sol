@@ -15,7 +15,6 @@ contract BoringSolver is IBoringSolver, Auth {
     enum SolveType {
         BORING_REDEEM, // Fill multiple user requests with a single transaction.
         BORING_REDEEM_MINT, // Fill multiple user requests to redeem shares and mint new shares.
-        BORING_REDEEM_MINT_SELF_SOLVE // User fulfills their own request ot redeem shares and mint new shares.
 
     }
 
@@ -131,6 +130,8 @@ contract BoringSolver is IBoringSolver, Auth {
     //============================== INTERNAL SOLVE FUNCTIONS ===============================
 
     // TODO these could be improved to withdraw the assets to this contract, then, transfer excess to either the solve, or the BoringVault.
+    // TODO could add comment about how extra assets are sent to sovlers to cover gas fees.
+    // TODO self solves go back to boring vault.
     function _boringRedeemSolve(
         address queue,
         bytes calldata solveData,
