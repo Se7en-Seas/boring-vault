@@ -129,7 +129,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     BoringVault public immutable boringVault;
     AccountantWithRateProviders public immutable accountant;
-    uint256 internal immutable ONE_SHARE;
+    uint256 public immutable ONE_SHARE;
 
     constructor(
         address _owner,

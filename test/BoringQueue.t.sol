@@ -116,12 +116,14 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
 
         // Add weETHs as a withdraw asset on the boringQueue.
         boringQueue.setupWithdrawAsset(weETHs, 0, 1 days, 1, 100, 0.01e18);
+
+        deal(address(liquidEth), address(boringQueue), 1);
     }
 
     // User interacts with atomic queue directly to "buy" shares
-    function testP2PSolve() external {
-        uint128 amountOfShares = 100e18;
-        uint16 discount = 5;
+    function testP2PSolve(uint128 amountOfShares, uint16 discount) external {
+        amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
+        discount = uint16(bound(discount, 1, 100));
         uint24 secondsToDeadline = 1 days;
         _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
 
@@ -144,9 +146,9 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         assertEq(WETH.balanceOf(testUser), requests[0].amountOfAssets, "User should have received their wETH.");
     }
 
-    function testRedeemSolve() external {
-        uint128 amountOfShares = 100e18;
-        uint16 discount = 5;
+    function testRedeemSolve(uint128 amountOfShares, uint16 discount) external {
+        amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
+        discount = uint16(bound(discount, 1, 100));
         uint24 secondsToDeadline = 1 days;
         _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
 
@@ -159,18 +161,16 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         WETH.safeApprove(address(boringSolver), type(uint256).max);
 
         uint256 wETHDelta = WETH.balanceOf(address(this));
-        uint256 gas = gasleft();
         boringSolver.boringRedeemSolve(boringQueue, requests, liquidEth_teller);
-        console.log("Gas used: ", gas - gasleft());
         wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
 
         assertEq(WETH.balanceOf(testUser), requests[0].amountOfAssets, "User should have received their wETH.");
         assertGt(wETHDelta, 0, "This address should have received some wETH.");
     }
 
-    function testRedeemMintSolve() external {
-        uint128 amountOfShares = 100e18;
-        uint16 discount = 5;
+    function testRedeemMintSolve(uint128 amountOfShares, uint16 discount) external {
+        amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
+        discount = uint16(bound(discount, 1, 100));
         uint24 secondsToDeadline = 1 days;
         _haveUserCreateRequest(testUser, weETHs, amountOfShares, discount, secondsToDeadline);
 
@@ -182,14 +182,14 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         // Approve solver to spend weETHs.
         ERC20(weETHs).safeApprove(address(boringSolver), type(uint256).max);
 
-        uint256 weETHsDelta = ERC20(weETHs).balanceOf(address(this));
+        uint256 wETHDelta = WETH.balanceOf(address(this));
         boringSolver.boringRedeemMintSolve(boringQueue, requests, liquidEth_teller, weETHs_teller, address(WETH));
-        weETHsDelta = ERC20(weETHs).balanceOf(address(this)) - weETHsDelta;
+        wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
 
         assertEq(
             ERC20(weETHs).balanceOf(testUser), requests[0].amountOfAssets, "User should have received their weETHs."
         );
-        assertGt(weETHsDelta, 0, "This address should have received some weETHs.");
+        assertGt(wETHDelta, 0, "This address should have received some wETH.");
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

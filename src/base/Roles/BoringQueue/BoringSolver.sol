@@ -49,7 +49,7 @@ contract BoringSolver is IBoringSolver, Auth {
         BoringOnChainQueue.OnChainWithdraw[] calldata requests,
         address teller
     ) external requiresAuth {
-        bytes memory solveData = abi.encode(SolveType.BORING_REDEEM, msg.sender, teller);
+        bytes memory solveData = abi.encode(SolveType.BORING_REDEEM, msg.sender, teller, true);
 
         queue.solveOnChainWithdraws(requests, solveData, address(this));
     }
@@ -63,7 +63,7 @@ contract BoringSolver is IBoringSolver, Auth {
         address intermediateAsset
     ) external requiresAuth {
         bytes memory solveData =
-            abi.encode(SolveType.BORING_REDEEM_MINT, msg.sender, fromTeller, toTeller, intermediateAsset);
+            abi.encode(SolveType.BORING_REDEEM_MINT, msg.sender, fromTeller, toTeller, intermediateAsset, true);
 
         queue.solveOnChainWithdraws(requests, solveData, address(this));
     }
@@ -78,7 +78,7 @@ contract BoringSolver is IBoringSolver, Auth {
 
         if (request[0].user != msg.sender) revert BoringSolver___OnlySelf();
 
-        bytes memory solveData = abi.encode(SolveType.BORING_REDEEM, msg.sender, teller);
+        bytes memory solveData = abi.encode(SolveType.BORING_REDEEM, msg.sender, teller, false);
 
         queue.solveOnChainWithdraws(request, solveData, address(this));
     }
@@ -97,7 +97,7 @@ contract BoringSolver is IBoringSolver, Auth {
         if (request[0].user != msg.sender) revert BoringSolver___OnlySelf();
 
         bytes memory solveData =
-            abi.encode(SolveType.BORING_REDEEM_MINT, msg.sender, fromTeller, toTeller, intermediateAsset);
+            abi.encode(SolveType.BORING_REDEEM_MINT, msg.sender, fromTeller, toTeller, intermediateAsset, false);
 
         queue.solveOnChainWithdraws(request, solveData, address(this));
     }
@@ -140,8 +140,8 @@ contract BoringSolver is IBoringSolver, Auth {
         uint256 totalShares,
         uint256 requiredAssets
     ) internal {
-        (, address solverOrigin, TellerWithMultiAssetSupport teller) =
-            abi.decode(solveData, (SolveType, address, TellerWithMultiAssetSupport));
+        (, address solverOrigin, TellerWithMultiAssetSupport teller, bool excessToSolver) =
+            abi.decode(solveData, (SolveType, address, TellerWithMultiAssetSupport, bool));
 
         if (boringVault != address(teller.vault())) {
             revert BoringSolver___BoringVaultTellerMismatch(boringVault, address(teller));
@@ -149,10 +149,16 @@ contract BoringSolver is IBoringSolver, Auth {
 
         ERC20 asset = ERC20(solveAsset);
         // Redeem the Boring Vault shares for Solve Asset.
-        teller.bulkWithdraw(asset, totalShares, requiredAssets, solverOrigin);
+        uint256 assetsOut = teller.bulkWithdraw(asset, totalShares, requiredAssets, address(this));
 
-        // Transfer required assets from Solver Origin.
-        asset.safeTransferFrom(solverOrigin, address(this), requiredAssets);
+        // Transfer excess assets to solver origin or Boring Vault.
+        // Assets are sent to solver to cover gas fees.
+        // But if users are self solving, then the excess assets go to the Boring Vault.
+        if (excessToSolver) {
+            asset.safeTransfer(solverOrigin, assetsOut - requiredAssets);
+        } else {
+            asset.safeTransfer(boringVault, assetsOut - requiredAssets);
+        }
 
         // Approve Boring Queue to spend the required assets.
         asset.approve(queue, requiredAssets);
@@ -164,15 +170,18 @@ contract BoringSolver is IBoringSolver, Auth {
         address fromBoringVault,
         address toBoringVault,
         uint256 totalShares,
-        uint256 requiredAssets
+        uint256 requiredShares
     ) internal {
         (
             ,
             address solverOrigin,
             TellerWithMultiAssetSupport fromTeller,
             TellerWithMultiAssetSupport toTeller,
-            ERC20 intermediateAsset
-        ) = abi.decode(solveData, (SolveType, address, TellerWithMultiAssetSupport, TellerWithMultiAssetSupport, ERC20));
+            ERC20 intermediateAsset,
+            bool excessToSolver
+        ) = abi.decode(
+            solveData, (SolveType, address, TellerWithMultiAssetSupport, TellerWithMultiAssetSupport, ERC20, bool)
+        );
 
         if (fromBoringVault != address(fromTeller.vault())) {
             revert BoringSolver___BoringVaultTellerMismatch(fromBoringVault, address(fromTeller));
@@ -183,19 +192,34 @@ contract BoringSolver is IBoringSolver, Auth {
         }
 
         // Redeem the fromBoringVault shares for Intermediate Asset.
-        uint256 assetsOut = fromTeller.bulkWithdraw(intermediateAsset, totalShares, 0, address(this));
+        uint256 excessAssets = fromTeller.bulkWithdraw(intermediateAsset, totalShares, 0, address(this));
+        {
+            // Determine how many assets are needed to mint requiredAssets worth of toBoringVault shares.
+            // Note mulDivUp is used to ensure we always mint enough assets to cover the requiredShares.
+            uint256 assetsToMintRequiredShares = requiredShares.mulDivUp(
+                toTeller.accountant().getRateInQuoteSafe(intermediateAsset), BoringOnChainQueue(queue).ONE_SHARE()
+            );
 
-        // Approve toBoringVault to spend the Intermediate Asset.
-        intermediateAsset.safeApprove(toBoringVault, assetsOut);
+            // Remove assetsToMintRequiredShares from excessAssets.
+            excessAssets = excessAssets - assetsToMintRequiredShares;
 
-        // Mint to BoringVault shares using Intermediate Asset.
-        toTeller.bulkDeposit(intermediateAsset, assetsOut, requiredAssets, solverOrigin);
+            // Approve toBoringVault to spend the Intermediate Asset.
+            intermediateAsset.safeApprove(toBoringVault, assetsToMintRequiredShares);
 
-        // Transfer required assets from Solver Origin.
-        ERC20 asset = ERC20(toBoringVault);
-        asset.safeTransferFrom(solverOrigin, address(this), requiredAssets);
+            // Mint to BoringVault shares using Intermediate Asset.
+            toTeller.bulkDeposit(intermediateAsset, assetsToMintRequiredShares, requiredShares, address(this));
+        }
+
+        // Transfer excess assets to solver origin or Boring Vault.
+        // Assets are sent to solver to cover gas fees.
+        // But if users are self solving, then the excess assets go to the from Boring Vault.
+        if (excessToSolver) {
+            intermediateAsset.safeTransfer(solverOrigin, excessAssets);
+        } else {
+            intermediateAsset.safeTransfer(fromBoringVault, excessAssets);
+        }
 
         // Approve Boring Queue to spend the required assets.
-        asset.approve(queue, requiredAssets);
+        ERC20(toBoringVault).approve(queue, requiredShares);
     }
 }
