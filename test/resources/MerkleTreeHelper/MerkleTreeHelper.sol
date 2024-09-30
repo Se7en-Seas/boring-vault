@@ -4777,6 +4777,40 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         setAddress(true, sourceChain, "boringVault", boringVault);
     }
 
+    // ========================================= Term Finance =========================================
+    // TODO need to use this in the test suite.
+    function _addTermFinanceLeafs(ManageLeaf[] memory leafs, ERC20[] memory purchaseTokens, address[] memory termAuctionOfferLockerAddresses, address[] memory termRepoLockers)
+        internal
+    {
+        for (uint256 i; i < purchaseTokens.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                    address(purchaseTokens[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Term Repo Locker to spend ", purchaseTokens[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+            leafs[leafIndex].argumentAddresses[0] = termRepoLockers[i];
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                    termAuctionOfferLockerAddresses[i],
+                    false,
+                    "lockOffers(TermAuctionOfferSubmission[])",
+                    new address[](2),
+                    string.concat("Submit offer submission to offer locker ", vm.toString(termAuctionOfferLockerAddresses[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+            leafs[leafIndex].argumentAddresses[0] = termRepoLockers[i];
+        }
+
+    }
+
     // ========================================= BoringVault Teller =========================================
 
     function _addTellerLeafs(ManageLeaf[] memory leafs, address teller, ERC20[] memory assets) internal {

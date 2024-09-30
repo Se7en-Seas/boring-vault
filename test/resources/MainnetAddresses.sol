@@ -591,4 +591,8 @@ contract MainnetAddresses {
     // LayerZero
     address public EtherFiOFTAdapter = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D;
     uint32 public baseEndpointId = 30184;
+
+    // Term Finance
+    address public termAuctionOfferLocker = 0xa557a6099d1a85d7569EA4B6d8ad59a94a8162CC;
+    address public termRepoLocker = 0xFD9033C9A97Bc3Ec8a44439Cb6512516c5053076;
 }
