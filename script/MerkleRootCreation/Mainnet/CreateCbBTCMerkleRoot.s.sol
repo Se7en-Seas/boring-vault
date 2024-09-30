@@ -37,7 +37,7 @@ contract CreateCbBTCMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](64);
+        ManageLeaf[] memory leafs = new ManageLeaf[](128);
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](3);
@@ -53,14 +53,16 @@ contract CreateCbBTCMerkleRootScript is Script, MerkleTreeHelper {
         _addUniswapV3Leafs(leafs, token0, token1);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](3);
-        SwapKind[] memory kind = new SwapKind[](3);
+        address[] memory assets = new address[](4);
+        SwapKind[] memory kind = new SwapKind[](4);
         assets[0] = getAddress(sourceChain, "WBTC");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "cbBTC");
         kind[1] = SwapKind.BuyAndSell;
         assets[2] = getAddress(sourceChain, "TBTC");
         kind[2] = SwapKind.BuyAndSell;
+        assets[3] = getAddress(sourceChain, "PENDLE");
+        kind[3] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         // ========================== Pendle ==========================
