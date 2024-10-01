@@ -113,6 +113,7 @@ contract ContractNames {
     string public constant CanaryBtcTellerName = "Lombard Earn Teller With Multi Asset Support V0.0";
     string public constant CanaryBtcDecoderAndSanitizerName = "Lombard Earn Decoder and Sanitizer V0.0";
     string public constant CanaryBtcDelayedWithdrawer = "Lombard Earn Delayed Withdrawer V0.0";
+    string public constant LombardPancakeSwapDecoderAndSanitizerName = "Lombard PancakeSwap Decoder and Sanitizer V0.0";
 
     string public constant CbBtcDefiVaultRolesAuthorityName = "CB BTC DeFi Vault RolesAuthority Version 0.0";
     string public constant CbBtcDefiVaultName = "CB BTC DeFi Vault V0.0";
