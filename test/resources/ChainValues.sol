@@ -81,6 +81,7 @@ contract ChainValues {
     }
 
     function _addMainnetValues() private {
+        values[mainnet]["boringDeployerContract"] = 0xFD65ADF7d2f9ea09287543520a703522E0a360C9.toBytes32();
         // Liquid Ecosystem
         values[mainnet]["deployerAddress"] = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d.toBytes32();
         values[mainnet]["dev0Address"] = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b.toBytes32();
@@ -1071,6 +1072,14 @@ contract ChainValues {
     }
 
     function _addZircuitValues() private {
+        values[zircuit]["deployerAddress"] = 0xFD65ADF7d2f9ea09287543520a703522E0a360C9.toBytes32();
+        values[zircuit]["dev0Address"] = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b.toBytes32();
+        values[zircuit]["dev1Address"] = 0xf8553c8552f906C19286F21711721E206EE4909E.toBytes32();
+        values[zircuit]["liquidPayoutAddress"] = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A.toBytes32();
+        values[zircuit]["balancerVault"] = address(1).toBytes32();
+
+        values[zircuit]["WETH"] = 0x4200000000000000000000000000000000000006.toBytes32();
+
         // Standard Bridge.
         values[zircuit]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
         values[zircuit]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
