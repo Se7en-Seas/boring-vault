@@ -10,7 +10,7 @@ import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
 import {PointFarmingDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Linea/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 70000000 --evm-version london --broadcast --etherscan-api-key $LINEASCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Scroll/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 70000000 --evm-version london --broadcast --etherscan-api-key $SCROLLSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHelper {
@@ -33,8 +33,8 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("linea");
-        setSourceChainName(linea);
+        vm.createSelectFork("scroll");
+        setSourceChainName(scroll);
 
         owner = getAddress(sourceChain, "dev0Address");
         testAddress = getAddress(sourceChain, "dev0Address");
@@ -49,7 +49,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
 
     function run() external {
         // Configure the deployment.
-        configureDeployment.deployContracts = true;
+        configureDeployment.deployContracts = false;
         configureDeployment.setupRoles = true;
         configureDeployment.setupDepositAssets = true;
         configureDeployment.setupWithdrawAssets = true;
@@ -113,7 +113,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "Linea/BridgingTestVaultDeployment.json",
+            "Scroll/BridgingTestVaultDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
