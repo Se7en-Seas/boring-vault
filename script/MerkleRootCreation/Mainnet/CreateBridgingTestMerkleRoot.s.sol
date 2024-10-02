@@ -39,7 +39,7 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        ManageLeaf[] memory leafs = new ManageLeaf[](64);
 
         // ========================== Linea Bridge ==========================
         ERC20[] memory localTokens = new ERC20[](1);
@@ -52,7 +52,7 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
         // ========================== Mantle Bridge ==========================
         localTokens = new ERC20[](1);
         localTokens[0] = getERC20("mainnet", "METH");
-        remoteTokens = new ERC20[](1);
+        ERC20[] memory remoteTokens = new ERC20[](1);
         remoteTokens[0] = getERC20("mantle", "METH");
         _addStandardBridgeLeafs(
             leafs,
@@ -66,8 +66,6 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
         );
 
         // ========================== Zircuit Bridge ==========================
-        localTokens = new ERC20[](0);
-        remoteTokens = new ERC20[](0);
         _addStandardBridgeLeafs(
             leafs,
             "zircuit",

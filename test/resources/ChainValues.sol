@@ -1081,6 +1081,7 @@ contract ChainValues {
         values[zircuit]["balancerVault"] = address(1).toBytes32();
 
         values[zircuit]["WETH"] = 0x4200000000000000000000000000000000000006.toBytes32();
+        values[zircuit]["METH"] = 0x91a0F6EBdCa0B4945FbF63ED4a95189d2b57163D.toBytes32();
 
         // Standard Bridge.
         values[zircuit]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
