@@ -18,8 +18,9 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
     address public boringVault = 0xf8203A33027607D2C82dFd67b46986096257dFA5;
     address public managerAddress = 0x3770E6021d7b2617Ba86E89EF210Cc00A7c9Af95;
     address public accountantAddress = 0xBA4397B2B1780097eD1B483E3C0717E0Ed4fAAa5;
-    address public rawDataDecoderAndSanitizer = 0x16D377CE4c95F7737Ef4B45F81301A988F62b61a;
+    address public rawDataDecoderAndSanitizer = 0xD9023495256B23D7b4FA32A5Fd724140F179F51b;
     address public drone = 0x80aA0E6c933316464D66A4CFd2A4F1C04677da73;
+    address public zircuitDrone = 0xFdC94b15819cc12a010c65A713563B65cDc060E4;
 
     function setUp() external {}
 
@@ -44,6 +45,53 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
         ERC20[] memory localTokens = new ERC20[](1);
         localTokens[0] = getERC20(sourceChain, "DAI");
         _addLineaNativeBridgeLeafs(leafs, "linea", localTokens);
+
+        // ========================== Scroll Bridge ==========================
+        _addScrollNativeBridgeLeafs(leafs, "scroll", localTokens);
+
+        // ========================== Mantle Bridge ==========================
+        localTokens = new ERC20[](1);
+        localTokens[0] = getERC20("mainnet", "METH");
+        remoteTokens = new ERC20[](1);
+        remoteTokens[0] = getERC20("mantle", "METH");
+        _addStandardBridgeLeafs(
+            leafs,
+            "mantle",
+            getAddress("mantle", "crossDomainMessenger"),
+            getAddress(sourceChain, "mantleResolvedDelegate"),
+            getAddress(sourceChain, "mantleStandardBridge"),
+            getAddress(sourceChain, "mantlePortal"),
+            localTokens,
+            remoteTokens
+        );
+
+        // ========================== Zircuit Bridge ==========================
+        localTokens = new ERC20[](0);
+        remoteTokens = new ERC20[](0);
+        _addStandardBridgeLeafs(
+            leafs,
+            "zircuit",
+            getAddress("zircuit", "crossDomainMessenger"),
+            getAddress(sourceChain, "zircuitResolvedDelegate"),
+            getAddress(sourceChain, "zircuitStandardBridge"),
+            getAddress(sourceChain, "zircuitPortal"),
+            localTokens,
+            remoteTokens
+        );
+
+        // ========================== LayerZero ==========================
+        _addLayerZeroLeafs(
+            leafs,
+            getERC20(sourceChain, "WEETH"),
+            getAddress(sourceChain, "EtherFiOFTAdapter"),
+            layerZeroLineaEndpointId
+        );
+        _addLayerZeroLeafs(
+            leafs,
+            getERC20(sourceChain, "WEETH"),
+            getAddress(sourceChain, "EtherFiOFTAdapter"),
+            layerZeroScrollEndpointId
+        );
 
         // ========================== Drone Linea Bridge ==========================
         uint256 startIndex = leafIndex + 1;

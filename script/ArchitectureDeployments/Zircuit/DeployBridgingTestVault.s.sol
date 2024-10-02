@@ -49,13 +49,13 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
 
     function run() external {
         // Configure the deployment.
-        configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
-        configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = false;
-        configureDeployment.setupTestUser = false;
-        configureDeployment.saveDeploymentDetails = false;
+        configureDeployment.deployContracts = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = true;
+        configureDeployment.setupTestUser = true;
+        configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
         configureDeployment.WETH = address(WETH);
@@ -113,7 +113,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "Scroll/BridgingTestVaultDeployment.json",
+            "Zircuit/BridgingTestVaultDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
