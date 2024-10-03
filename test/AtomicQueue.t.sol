@@ -96,8 +96,8 @@ contract AtomicQueueTest is Test, MerkleTreeHelper {
 
         accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
 
-        teller.addAsset(WETH);
-        teller.addAsset(WEETH);
+        teller.updateAssetData(WETH, true, true, 0);
+        teller.updateAssetData(WEETH, true, true, 0);
 
         // User buys some BoringVault shares.
         deal(address(WETH), address(user), 1_000e18);
