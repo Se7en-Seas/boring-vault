@@ -7,7 +7,6 @@ import {Deployer} from "src/helper/Deployer.sol";
 import {ContractNames} from "resources/ContractNames.sol";
 import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
-import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 
@@ -26,7 +25,7 @@ contract DeployGenericRateProvidersScript is Script, ContractNames, MainnetAddre
     // Contracts to deploy
     Deployer public deployer = Deployer(deployerAddress);
     AccountantWithRateProviders public accountant;
-    TellerWithMultiAssetSupport public teller;
+    LegacyTeller public teller;
     RolesAuthority public rolesAuthority;
     GenericRateProvider public pendleWeETHMarketSeptemberRateProvider;
     GenericRateProvider public pendleEethPtSeptemberRateProvider;
@@ -54,7 +53,7 @@ contract DeployGenericRateProvidersScript is Script, ContractNames, MainnetAddre
 
         rolesAuthority = RolesAuthority(deployer.getAddress(EtherFiLiquidEthRolesAuthorityName));
         accountant = AccountantWithRateProviders(deployer.getAddress(EtherFiLiquidEthAccountantName));
-        teller = TellerWithMultiAssetSupport(deployer.getAddress(EtherFiLiquidEthTellerName));
+        teller = LegacyTeller(deployer.getAddress(EtherFiLiquidEthTellerName));
     }
 
     function run() external {
@@ -193,4 +192,10 @@ contract DeployGenericRateProvidersScript is Script, ContractNames, MainnetAddre
 
         vm.stopBroadcast();
     }
+}
+
+interface LegacyTeller {
+    function deposit(ERC20 asset, uint256 amount, uint256 minMint) external returns (uint256);
+    function removeAsset(ERC20 asset) external;
+    function addAsset(ERC20 asset) external;
 }
