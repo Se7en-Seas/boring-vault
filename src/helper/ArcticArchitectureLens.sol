@@ -107,7 +107,8 @@ contract ArcticArchitectureLens {
         if (depositAsset.balanceOf(account) < depositAmount) return false;
         if (depositAsset.allowance(account, address(boringVault)) < depositAmount) return false;
         if (teller.isPaused()) return false;
-        if (!teller.isSupported(depositAsset)) return false;
+        (bool allowDeposits,,) = teller.assetData(depositAsset);
+        if (!allowDeposits) return false;
         return true;
     }
 
@@ -127,7 +128,8 @@ contract ArcticArchitectureLens {
     ) external view returns (bool) {
         if (depositAsset.balanceOf(account) < depositAmount) return false;
         if (teller.isPaused()) return false;
-        if (!teller.isSupported(depositAsset)) return false;
+        (bool allowDeposits,,) = teller.assetData(depositAsset);
+        if (!allowDeposits) return false;
         return true;
     }
 

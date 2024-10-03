@@ -239,6 +239,7 @@ contract ChainValues {
         values[mainnet]["deUSD_sdeUSD_ECLP"] = 0x41FDbea2E52790c0a1Dc374F07b628741f2E062D.toBytes32();
         values[mainnet]["deUSD_sdeUSD_ECLP_Gauge"] = 0xA00DB7d9c465e95e4AA814A9340B9A161364470a.toBytes32();
         values[mainnet]["deUSD_sdeUSD_ECLP_id"] = 0x41fdbea2e52790c0a1dc374f07b628741f2e062d0002000000000000000006be;
+        values[mainnet]["aura_deUSD_sdeUSD_ECLP"] = 0x7405Bf405185391525Ab06fABcdFf51fdc656A46.toBytes32();
 
         values[mainnet]["rETH_weETH_id"] = 0x05ff47afada98a98982113758878f9a8b9fdda0a000000000000000000000645;
         values[mainnet]["rETH_weETH"] = 0x05ff47AFADa98a98982113758878F9A8B9FddA0a.toBytes32();
@@ -535,6 +536,7 @@ contract ChainValues {
         values[mainnet]["usualBoostedUSDC"] = 0xd63070114470f685b75B74D60EEc7c1113d33a3D.toBytes32();
         values[mainnet]["gauntletWBTCcore"] = 0x443df5eEE3196e9b2Dd77CaBd3eA76C3dee8f9b2.toBytes32();
         values[mainnet]["Re7WBTC"] = 0xE0C98605f279e4D7946d25B75869c69802823763.toBytes32();
+        values[mainnet]["MCwBTC"] = 0x1c530D6de70c05A81bF1670157b9d928e9699089.toBytes32();
 
         values[mainnet]["uniswapV3PositionManager"] = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88.toBytes32();
 
@@ -598,12 +600,14 @@ contract ChainValues {
 
         values[mainnet]["pendleUSDeZircuitMarketAugust"] = 0xF148a0B15712f5BfeefAdb4E6eF9739239F88b07.toBytes32();
         values[mainnet]["pendleKarakWeETHMarketSeptember"] = 0x18bAFcaBf2d5898956AE6AC31543d9657a604165.toBytes32();
+        values[mainnet]["pendleKarakWeETHMarketDecember"] = 0xFF694CC3f74E080637008B3792a9D7760cB456Ca.toBytes32();
 
         values[mainnet]["pendleSwethMarket"] = 0x0e1C5509B503358eA1Dac119C1D413e28Cc4b303.toBytes32();
 
         values[mainnet]["pendleZircuitWeETHMarketAugust"] = 0x6c269DFc142259c52773430b3c78503CC994a93E.toBytes32();
         values[mainnet]["pendleWeETHMarketJuly"] = 0xe1F19CBDa26b6418B0C8E1EE978a533184496066.toBytes32();
         values[mainnet]["pendleWeETHkSeptember"] = 0x905A5a4792A0C27a2AdB2777f98C577D320079EF.toBytes32();
+        values[mainnet]["pendleWeETHkDecember"] = 0x792b9eDe7a18C26b814f87Eb5E0c8D26AD189780.toBytes32();
 
         values[mainnet]["pendle_sUSDe_08_23_24"] = 0xbBf399db59A845066aAFce9AE55e68c505FA97B7.toBytes32();
         values[mainnet]["pendle_sUSDe_12_25_24"] = 0xa0ab94DeBB3cC9A7eA77f3205ba4AB23276feD08.toBytes32();
@@ -620,6 +624,7 @@ contract ChainValues {
 
         values[mainnet]["pendle_eBTC_market_12_26_24"] = 0x36d3ca43ae7939645C306E26603ce16e39A89192.toBytes32();
         values[mainnet]["pendle_LBTC_corn_market_12_26_24"] = 0xCaE62858DB831272A03768f5844cbe1B40bB381f.toBytes32();
+        values[mainnet]["pendle_LBTC_market_03_26_25"] = 0x70B70Ac0445C3eF04E314DFdA6caafd825428221.toBytes32();
 
         // Aave V3
         values[mainnet]["v3Pool"] = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2.toBytes32();
