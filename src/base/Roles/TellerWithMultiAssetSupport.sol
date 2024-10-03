@@ -332,7 +332,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         uint256 depositTimestamp,
         uint256 shareLockUpPeriodAtTimeOfDeposit
     ) external requiresAuth {
-        if ((block.timestamp - depositTimestamp) > shareLockUpPeriodAtTimeOfDeposit) {
+        if ((block.timestamp - depositTimestamp) >= shareLockUpPeriodAtTimeOfDeposit) {
             // Shares are already unlocked, so we can not revert deposit.
             revert TellerWithMultiAssetSupport__SharesAreUnLocked();
         }
