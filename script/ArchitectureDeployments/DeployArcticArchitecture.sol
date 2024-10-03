@@ -469,20 +469,11 @@ contract DeployArcticArchitecture is Script, ContractNames {
             }
             if (
                 !rolesAuthority.doesRoleHaveCapability(
-                    OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.addAsset.selector
+                    OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.updateAssetData.selector
                 )
             ) {
                 rolesAuthority.setRoleCapability(
-                    OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.addAsset.selector, true
-                );
-            }
-            if (
-                !rolesAuthority.doesRoleHaveCapability(
-                    OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.removeAsset.selector
-                )
-            ) {
-                rolesAuthority.setRoleCapability(
-                    OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.removeAsset.selector, true
+                    OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.updateAssetData.selector, true
                 );
             }
             if (
@@ -791,7 +782,8 @@ contract DeployArcticArchitecture is Script, ContractNames {
 
         if (configureDeployment.setupDepositAssets) {
             // Setup deposit asset.
-            if (!teller.isSupported(accountantParameters.base)) teller.addAsset(accountantParameters.base);
+            (bool allowDeposits,,) = teller.assetData(accountantParameters.base);
+            if (!allowDeposits) teller.updateAssetData(accountantParameters.base, true, false, 0);
 
             // Setup extra deposit assets.
             for (uint256 i; i < depositAssets.length; i++) {
@@ -804,11 +796,11 @@ contract DeployArcticArchitecture is Script, ContractNames {
                 if (depositAsset.isPeggedToBase) {
                     // Rate provider is not needed.
                     accountant.setRateProviderData(depositAsset.asset, true, address(0));
-                    teller.addAsset(depositAsset.asset);
+                    teller.updateAssetData(depositAsset.asset, true, false, 0);
                 } else if (depositAsset.rateProvider != address(0)) {
                     // Rate provider is provided.
                     accountant.setRateProviderData(depositAsset.asset, false, depositAsset.rateProvider);
-                    teller.addAsset(depositAsset.asset);
+                    teller.updateAssetData(depositAsset.asset, true, false, 0);
                 } else {
                     // We need a generic rate provider.
                     creationCode = type(GenericRateProvider).creationCode;
@@ -823,7 +815,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     }
 
                     accountant.setRateProviderData(depositAsset.asset, false, depositAsset.rateProvider);
-                    teller.addAsset(depositAsset.asset);
+                    teller.updateAssetData(depositAsset.asset, true, false, 0);
                 }
             }
         }

@@ -102,15 +102,15 @@ contract ChainlinkCCIPTellerTest is Test, MerkleTreeHelper {
         rolesAuthority.setUserRole(address(destinationTeller), MINTER_ROLE, true);
         rolesAuthority.setUserRole(address(destinationTeller), BURNER_ROLE, true);
 
-        sourceTeller.addAsset(WETH);
-        sourceTeller.addAsset(ERC20(NATIVE));
-        sourceTeller.addAsset(EETH);
-        sourceTeller.addAsset(WEETH);
+        sourceTeller.updateAssetData(WETH, true, true, 0);
+        sourceTeller.updateAssetData(ERC20(NATIVE), true, true, 0);
+        sourceTeller.updateAssetData(EETH, true, true, 0);
+        sourceTeller.updateAssetData(WEETH, true, true, 0);
 
-        destinationTeller.addAsset(WETH);
-        destinationTeller.addAsset(ERC20(NATIVE));
-        destinationTeller.addAsset(EETH);
-        destinationTeller.addAsset(WEETH);
+        destinationTeller.updateAssetData(WETH, true, true, 0);
+        destinationTeller.updateAssetData(ERC20(NATIVE), true, true, 0);
+        destinationTeller.updateAssetData(EETH, true, true, 0);
+        destinationTeller.updateAssetData(WEETH, true, true, 0);
 
         router.setFee(LINK, 1e18);
 
