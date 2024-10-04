@@ -4779,7 +4779,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
 
     // ========================================= Term Finance =========================================
     // TODO need to use this in the test suite.
-    function _addTermFinanceLeafs(ManageLeaf[] memory leafs, ERC20[] memory purchaseTokens, address[] memory termAuctionOfferLockerAddresses, address[] memory termRepoLockers)
+    function _addTermFinanceLockOfferLeafs(ManageLeaf[] memory leafs, ERC20[] memory purchaseTokens, address[] memory termAuctionOfferLockerAddresses, address[] memory termRepoLockers)
         internal
     {
         for (uint256 i; i < purchaseTokens.length; i++) {
@@ -4806,7 +4806,25 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                     string.concat("Submit offer submission to offer locker ", vm.toString(termAuctionOfferLockerAddresses[i])),
                     getAddress(sourceChain, "rawDataDecoderAndSanitizer")
                 );
-            leafs[leafIndex].argumentAddresses[0] = termRepoLockers[i];
+        }
+    }
+
+    // TODO need to use this in the test suite.
+    function _addTermFinanceRedeemTermRepoTokensLeafs(ManageLeaf[] memory leafs, address[] memory termRepoServicers)
+        internal
+    {
+        for (uint256 i; i < termRepoServicers.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                    termRepoServicers[i],
+                    false,
+                    "redeemTermRepoTokens(address,uint256)",
+                    new address[](1),
+                    string.concat("Redeem TermRepo Tokens from servicer ", vm.toString(termRepoServicers[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
         }
 
     }

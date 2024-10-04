@@ -119,7 +119,7 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         termAuctionOfferLockers[0] = getAddress(sourceChain, "termAuctionOfferLocker");
         address[] memory termRepoLockers = new address[](1);
         termRepoLockers[0] = getAddress(sourceChain, "termRepoLocker");
-        _addTermFinanceLeafs(leafs, purchaseTokens, termAuctionOfferLockers, termRepoLockers);
+        _addTermFinanceLockOfferLeafs(leafs, purchaseTokens, termAuctionOfferLockers, termRepoLockers);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
@@ -134,7 +134,7 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         address[] memory targets = new address[](2);
         targets[0] = usdc;
         targets[1] = getAddress(sourceChain, "termAuctionOfferLocker");
-        bytes[] memory targetData = new bytes[](9);
+        bytes[] memory targetData = new bytes[](2);
         targetData[0] = abi.encodeWithSignature(
             "approve(address,uint256)", getAddress(sourceChain, "termRepoLocker"), type(uint256).max
         );
@@ -154,6 +154,39 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
         manager.manageVaultWithMerkleVerification(
             manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](2)
+        );
+    }
+
+    function testTermFinanceIntegrationRedeemTermRepoTokens() external {
+        address termRepoToken = getAddress(sourceChain, "termRepoToken");
+        deal(termRepoToken, address(boringVault), 1000e6);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        address[] memory termRepoServicers = new address[](1);
+        termRepoServicers[0] = getAddress(sourceChain, "termRepoServicer");
+
+        _addTermFinanceRedeemTermRepoTokensLeafs(leafs, termRepoServicers);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[3];
+  
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](1);
+        targets[0] = getAddress(sourceChain, "termRepoServicer");
+
+        bytes[] memory targetData = new bytes[](1);
+        targetData[0] = abi.encodeWithSignature("redeemTermRepoTokens(address,uint256)", address(boringVault), 1000e6);
+
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](1)
         );
     }
 
