@@ -10,6 +10,7 @@ import {SwellDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols
 import {MantleDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/MantleDecoderAndSanitizer.sol";
 import {EigenLayerLSTStakingDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/EigenLayerLSTStakingDecoderAndSanitizer.sol";
+import {FraxDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/FraxDecoderAndSanitizer.sol";
 
 contract StakingDecoderAndSanitizer is
     BaseDecoderAndSanitizer,
@@ -18,7 +19,8 @@ contract StakingDecoderAndSanitizer is
     LidoDecoderAndSanitizer,
     SwellDecoderAndSanitizer,
     MantleDecoderAndSanitizer,
-    EigenLayerLSTStakingDecoderAndSanitizer
+    EigenLayerLSTStakingDecoderAndSanitizer,
+    FraxDecoderAndSanitizer
 {
     constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
 

@@ -680,6 +680,10 @@ contract ChainValues {
         values[mainnet]["accessControlManager"] = 0x625087d72c762254a72CB22cC2ECa40da6b95EAC.toBytes32();
         values[mainnet]["depositManager"] = 0xb3D9cf8E163bbc840195a97E81F8A34E295B8f39.toBytes32();
 
+        // Frax
+        values[mainnet]["frxETHMinter"] = 0xbAFA44EFE7901E04E39Dad13167D089C559c1138.toBytes32();
+        values[mainnet]["frxETHRedemptionTicket"] = 0x82bA8da44Cd5261762e629dd5c605b17715727bd.toBytes32();
+
         // Zircuit
         values[mainnet]["zircuitSimpleStaking"] = 0xF047ab4c75cebf0eB9ed34Ae2c186f3611aEAfa6.toBytes32();
 

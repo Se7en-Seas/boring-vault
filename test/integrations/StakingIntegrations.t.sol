@@ -521,6 +521,108 @@ contract StakingIntegrationsTest is Test, MerkleTreeHelper {
         );
     }
 
+    function testFraxIntegration() external {
+        deal(address(boringVault), 100e18);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
+        _addFraxLeafs(leafs);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        _generateTestLeafs(leafs, manageTree);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](8);
+        manageLeafs[0] = leafs[7]; // ETH -> frxETH
+        manageLeafs[1] = leafs[0]; // approve sfrxETH to spend frxETH
+        manageLeafs[2] = leafs[1]; // frxETH -> sfrxETH
+        manageLeafs[3] = leafs[5]; // approve redemption ticket to spend frxETH
+        manageLeafs[4] = leafs[6]; // approve redemption ticket to spend sfrxETH
+        manageLeafs[5] = leafs[8]; // frxETH -> ETH
+        manageLeafs[6] = leafs[9]; // sfrxETH -> ETH
+        manageLeafs[7] = leafs[11]; // Cancel redemption ticket
+
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](8);
+        targets[0] = getAddress(sourceChain, "frxETHMinter");
+        targets[1] = getAddress(sourceChain, "FRXETH");
+        targets[2] = getAddress(sourceChain, "SFRXETH");
+        targets[3] = getAddress(sourceChain, "FRXETH");
+        targets[4] = getAddress(sourceChain, "SFRXETH");
+        targets[5] = getAddress(sourceChain, "frxETHRedemptionTicket");
+        targets[6] = getAddress(sourceChain, "frxETHRedemptionTicket");
+        targets[7] = getAddress(sourceChain, "frxETHRedemptionTicket");
+
+        uint256 expectedSfrxETH = ERC4626(getAddress(sourceChain, "SFRXETH")).previewDeposit(50e18);
+        uint256 expectedTokenId0 = 427;
+        uint256 expectedTokenId1 = 428;
+        bytes[] memory targetData = new bytes[](8);
+        targetData[0] = abi.encodeWithSignature("submit()");
+        targetData[1] =
+            abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "SFRXETH"), type(uint256).max);
+        targetData[2] = abi.encodeWithSignature("deposit(uint256,address)", 50e18, boringVault);
+        targetData[3] = abi.encodeWithSignature(
+            "approve(address,uint256)", getAddress(sourceChain, "frxETHRedemptionTicket"), type(uint256).max
+        );
+        targetData[4] = abi.encodeWithSignature(
+            "approve(address,uint256)", getAddress(sourceChain, "frxETHRedemptionTicket"), type(uint256).max
+        );
+        targetData[5] = abi.encodeWithSignature("enterRedemptionQueue(address,uint120)", boringVault, 50e18);
+        targetData[6] =
+            abi.encodeWithSignature("enterRedemptionQueueViaSfrxEth(address,uint120)", boringVault, expectedSfrxETH);
+        targetData[7] =
+            abi.encodeWithSignature("earlyBurnRedemptionTicketNft(address,uint256)", boringVault, expectedTokenId0);
+
+        address[] memory decodersAndSanitizers = new address[](8);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[7] = rawDataDecoderAndSanitizer;
+
+        uint256[] memory values = new uint256[](8);
+        values[0] = 100e18;
+
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        uint256 expectedFrxETHOutMinusPenalty = uint256(50e18).mulDivDown(1e4 - 0.005e4, 1e4);
+        assertApproxEqAbs(
+            getERC20(sourceChain, "FRXETH").balanceOf(address(boringVault)),
+            expectedFrxETHOutMinusPenalty,
+            1,
+            "BoringVault should have 50 FRXETH minus penalty from cancellation"
+        );
+
+        // Fast forward 12 days so ticket is matured.
+        skip(12 days);
+
+        manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[10]; // Complete withdraw
+
+        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        targets = new address[](1);
+        targets[0] = getAddress(sourceChain, "frxETHRedemptionTicket");
+
+        targetData = new bytes[](1);
+        targetData[0] =
+            abi.encodeWithSignature("burnRedemptionTicketNft(uint256,address)", expectedTokenId1, boringVault);
+
+        values = new uint256[](1);
+
+        decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        assertApproxEqAbs(address(boringVault).balance, 50e18, 1, "Boring Vault should have 50 ETH from redemption");
+    }
+
     // ========================================= HELPER FUNCTIONS =========================================
 
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
