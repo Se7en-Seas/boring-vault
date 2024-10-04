@@ -98,6 +98,9 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         liquidEth_roles_authority.setPublicCapability(
             address(boringQueue), BoringOnChainQueue.solveOnChainWithdraws.selector, true
         );
+        liquidEth_roles_authority.setPublicCapability(
+            address(boringSolver), BoringSolver.boringRedeemSelfSolve.selector, true
+        );
         liquidEth_roles_authority.setRoleCapability(222, address(boringSolver), BoringSolver.boringSolve.selector, true);
         liquidEth_roles_authority.setUserRole(address(boringQueue), 222, true);
         vm.stopPrank();
@@ -157,11 +160,10 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         // Solve users request using p2p solve.
         (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
 
-        // Approve solver to spend wETH.
-        WETH.safeApprove(address(boringSolver), type(uint256).max);
-
         uint256 wETHDelta = WETH.balanceOf(address(this));
+        uint256 gas = gasleft();
         boringSolver.boringRedeemSolve(boringQueue, requests, liquidEth_teller);
+        console.log("Gas Used: ", gas - gasleft());
         wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
 
         assertEq(WETH.balanceOf(testUser), requests[0].amountOfAssets, "User should have received their wETH.");
@@ -179,9 +181,6 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         // Solve users request using p2p solve.
         (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
 
-        // Approve solver to spend weETHs.
-        ERC20(weETHs).safeApprove(address(boringSolver), type(uint256).max);
-
         uint256 wETHDelta = WETH.balanceOf(address(this));
         boringSolver.boringRedeemMintSolve(boringQueue, requests, liquidEth_teller, weETHs_teller, address(WETH));
         wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
@@ -191,6 +190,109 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         );
         assertGt(wETHDelta, 0, "This address should have received some wETH.");
     }
+
+    function testUserRequestsThenCancels(uint128 amountOfShares, uint16 discount) external {
+        amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
+        discount = uint16(bound(discount, 1, 100));
+        uint24 secondsToDeadline = 1 days;
+        uint256 startingShares = ERC20(liquidEth).balanceOf(testUser);
+        _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
+
+        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+
+        // Cancel the request.
+        vm.prank(testUser);
+        boringQueue.cancelOnChainWithdraw(requests[0]);
+
+        uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
+
+        assertEq(WETH.balanceOf(testUser), 0, "User should not have received any wETH.");
+        assertEq(endingShares, startingShares, "User should have received their shares back.");
+    }
+
+    function testUserRequestsThenCancelsUsingRequestId(uint128 amountOfShares, uint16 discount) external {
+        amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
+        discount = uint16(bound(discount, 1, 100));
+        uint24 secondsToDeadline = 1 days;
+        uint256 startingShares = ERC20(liquidEth).balanceOf(testUser);
+        bytes32 requestId = _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
+
+        // Cancel the request.
+        vm.prank(testUser);
+        boringQueue.cancelOnChainWithdrawUsingRequestId(requestId);
+
+        uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
+
+        assertEq(WETH.balanceOf(testUser), 0, "User should not have received any wETH.");
+        assertEq(endingShares, startingShares, "User should have received their shares back.");
+    }
+
+    function testUserRequestsThenReplaces(uint128 amountOfShares, uint16 discount, uint16 newDiscount) external {
+        amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
+        discount = uint16(bound(discount, 1, 100));
+        newDiscount = uint16(bound(newDiscount, 1, 100));
+        uint24 secondsToDeadline = 1 days;
+        _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
+
+        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+
+        // Repalce the request.
+        uint256 startingShares = ERC20(liquidEth).balanceOf(testUser);
+        vm.prank(testUser);
+        boringQueue.replaceOnChainWithdraw(requests[0], newDiscount, secondsToDeadline);
+
+        uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
+
+        assertEq(WETH.balanceOf(testUser), 0, "User should not have received any wETH.");
+        assertEq(endingShares, startingShares, "User should have not gotten any shares back.");
+    }
+
+    function testUserRequestsThenReplacesUsingRequestId(uint128 amountOfShares, uint16 discount, uint16 newDiscount)
+        external
+    {
+        amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
+        discount = uint16(bound(discount, 1, 100));
+        newDiscount = uint16(bound(newDiscount, 1, 100));
+        uint24 secondsToDeadline = 1 days;
+        bytes32 requestId = _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
+
+        // Repalce the request.
+        uint256 startingShares = ERC20(liquidEth).balanceOf(testUser);
+        vm.prank(testUser);
+        boringQueue.replaceOnChainWithdrawUsingRequestId(requestId, newDiscount, secondsToDeadline);
+
+        uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
+
+        assertEq(WETH.balanceOf(testUser), 0, "User should not have received any wETH.");
+        assertEq(endingShares, startingShares, "User should have not gotten any shares back.");
+    }
+
+    function testUserRequestsThenSelfSolves(uint128 amountOfShares, uint16 discount) external {
+        amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
+        discount = uint16(bound(discount, 1, 100));
+        uint24 secondsToDeadline = 1 days;
+        uint256 startingShares = ERC20(liquidEth).balanceOf(testUser);
+        bytes32 requestId = _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
+
+        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+
+        // Fast forward 3 days so request is matured.
+        skip(3 days);
+
+        // Self Solve the request.
+        vm.prank(testUser);
+        boringSolver.boringRedeemSelfSolve(boringQueue, requestId, liquidEth_teller);
+
+        uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
+
+        assertEq(WETH.balanceOf(testUser), requests[0].amountOfAssets, "User should have received any wETH.");
+        assertEq(startingShares - endingShares, amountOfShares, "User should have had shares removed..");
+    }
+
+    // TODO test user makes multiple withdraws?
+    // TODO revert tests in queue and solver
+    // TODO admin functions in both
+    // TODO full function coverage in both
 
     // ========================================= HELPER FUNCTIONS =========================================
 

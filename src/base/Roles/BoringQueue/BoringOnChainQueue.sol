@@ -22,6 +22,14 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     // ========================================= STRUCTS =========================================
 
+    /**
+     * @param allowWithdraws Whether or not withdraws are allowed for this asset.
+     * @param secondsToMaturity The time in seconds it takes for the asset to mature.
+     * @param minimumSecondsToDeadline The minimum time in seconds a withdraw request must be valid for before it is expired
+     * @param minDiscount The minimum discount allowed for a withdraw request.
+     * @param maxDiscount The maximum discount allowed for a withdraw request.
+     * @param minimumShares The minimum amount of shares that can be withdrawn.
+     */
     struct WithdrawAsset {
         bool allowWithdraws;
         uint24 secondsToMaturity;
@@ -31,8 +39,16 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         uint96 minimumShares;
     }
 
-    // Downside though is that you could possibly run into block gas limit errors if the min share amount was too low and someone was spamming txs
-    // though you can still look at events in order to solve withdraws.
+    /**
+     * @param nonce The nonce of the request, used to make it impossible for request Ids to be repeated.
+     * @param user The user that made the request.
+     * @param assetOut The asset that the user wants to withdraw.
+     * @param amountOfShares The amount of shares the user wants to withdraw.
+     * @param amountOfAssets The amount of assets the user will receive.
+     * @param creationTime The time the request was made.
+     * @param secondsToMaturity The time in seconds it takes for the asset to mature.
+     * @param secondsToDeadline The time in seconds the request is valid for.
+     */
     struct OnChainWithdraw {
         uint96 nonce; // read from state, used to make it impossible for request Ids to be repeated.
         address user; // msg.sender
@@ -45,20 +61,52 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     }
 
     // ========================================= CONSTANTS =========================================
+    /**
+     * @notice The maximum discount allowed for a withdraw asset.
+     */
     uint16 internal constant MAX_DISCOUNT = 0.3e4;
+
+    /**
+     * @notice The maximum time in seconds a withdraw asset can take to mature.
+     */
     uint24 internal constant MAXIMUM_SECONDS_TO_MATURITY = 30 days;
+
+    /**
+     * @notice Caps the minimum time in seconds a withdraw request must be valid for before it is expired.
+     */
     uint24 internal constant MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE = 30 days;
 
     // ========================================= GLOBAL STATE =========================================
 
+    /**
+     * @notice Open Zeppelin EnumerableSet to store all withdraw requests, by there request Id.
+     */
     EnumerableSet.Bytes32Set private _withdrawRequests;
 
-    mapping(bytes32 => OnChainWithdraw) internal onChainWithdraws; // Request Id -> OnChainWithdraw
+    /**
+     * @notice Mapping of request Ids to OnChainWithdraws.
+     */
+    mapping(bytes32 => OnChainWithdraw) internal onChainWithdraws;
 
-    mapping(address => WithdrawAsset) public withdrawAssets; // Withdraw Asset Address -> WithdrawAsset
+    /**
+     * @notice Mapping of asset addresses to WithdrawAssets.
+     */
+    mapping(address => WithdrawAsset) public withdrawAssets;
 
-    uint96 public nonce = 1; // start on 1 since nonce 0 is considered invalid
+    /**
+     * @notice The nonce of the next request.
+     * @dev Start at 1, since 0 is considered invalid.
+     */
+    uint96 public nonce = 1;
+
+    /**
+     * @notice Whether or not the contract is paused.
+     */
     bool public isPaused;
+
+    /**
+     * @notice Whether or not to track withdraws on chain.
+     */
     bool public trackWithdrawsOnChain;
 
     //============================== ERRORS ===============================
@@ -127,8 +175,19 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     //============================== IMMUTABLES ===============================
 
+    /**
+     * @notice The BoringVault contract to withdraw from.
+     */
     BoringVault public immutable boringVault;
+
+    /**
+     * @notice The AccountantWithRateProviders contract to get rates from.
+     */
     AccountantWithRateProviders public immutable accountant;
+
+    /**
+     * @notice One BoringVault share.
+     */
     uint256 public immutable ONE_SHARE;
 
     constructor(
@@ -164,12 +223,26 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         emit Unpaused();
     }
 
+    /**
+     * @notice Toggle whether or not to track withdraws on chain.
+     * @dev Callable by MULTISIG_ROLE.
+     */
     function toggleTrackWithdrawsOnChain() external requiresAuth {
         bool oldState = trackWithdrawsOnChain;
         trackWithdrawsOnChain = !oldState;
         emit TrackWithdrawsOnChainToggled(!oldState);
     }
 
+    /**
+     * @notice Setup a new withdraw asset.
+     * @dev Callable by MULTISIG_ROLE.
+     * @param assetOut The asset to withdraw.
+     * @param secondsToMaturity The time in seconds it takes for the withdraw to mature.
+     * @param minimumSecondsToDeadline The minimum time in seconds a withdraw request must be valid for before it is expired.
+     * @param minDiscount The minimum discount allowed for a withdraw request.
+     * @param maxDiscount The maximum discount allowed for a withdraw request.
+     * @param minimumShares The minimum amount of shares that can be withdrawn.
+     */
     function setupWithdrawAsset(
         address assetOut,
         uint24 secondsToMaturity,
@@ -204,11 +277,26 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         );
     }
 
+    /**
+     * @notice Stop withdraws in an asset.
+     * @dev Callable by MULTISIG_ROLE.
+     * @param assetOut The asset to stop withdraws in.
+     */
     function stopWithdrawsInAsset(address assetOut) external requiresAuth {
         withdrawAssets[assetOut].allowWithdraws = false;
         emit WithdrawAssetStopped(assetOut);
     }
 
+    /**
+     * @notice Update a withdraw asset.
+     * @dev Callable by MULTISIG_ROLE.
+     * @param assetOut Withdraw asset to update.
+     * @param secondsToMaturity The time in seconds it takes for the withdraw to mature.
+     * @param minimumSecondsToDeadline The minimum time in seconds a withdraw request must be valid for before it is expired.
+     * @param minDiscount The minimum discount allowed for a withdraw request.
+     * @param maxDiscount The maximum discount allowed for a withdraw request.
+     * @param minimumShares The minimum amount of shares that can be withdrawn.
+     */
     function updateWithdrawAsset(
         address assetOut,
         uint24 secondsToMaturity,
@@ -240,6 +328,10 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         );
     }
 
+    /**
+     * @notice Cancel multiple user withdraws.
+     * @dev Callable by STRATEGIST_MULTISIG_ROLE.
+     */
     function cancelUserWithdraws(OnChainWithdraw[] calldata requests)
         external
         requiresAuth
@@ -254,6 +346,14 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     //=============================== USER FUNCTIONS ================================
 
+    /**
+     * @notice Request an on-chain withdraw.
+     * @param assetOut The asset to withdraw.
+     * @param amountOfShares The amount of shares to withdraw.
+     * @param discount The discount to apply to the withdraw in bps.
+     * @param secondsToDeadline The time in seconds the request is valid for.
+     * @return requestId The request Id.
+     */
     function requestOnChainWithdraw(address assetOut, uint128 amountOfShares, uint16 discount, uint24 secondsToDeadline)
         external
         requiresAuth
@@ -270,6 +370,18 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         );
     }
 
+    /**
+     * @notice Request an on-chain withdraw with permit.
+     * @param assetOut The asset to withdraw.
+     * @param amountOfShares The amount of shares to withdraw.
+     * @param discount The discount to apply to the withdraw in bps.
+     * @param secondsToDeadline The time in seconds the request is valid for.
+     * @param permitDeadline The deadline for the permit.
+     * @param v The v value of the permit signature.
+     * @param r The r value of the permit signature.
+     * @param s The s value of the permit signature.
+     * @return requestId The request Id.
+     */
     function requestOnChainWithdrawWithPermit(
         address assetOut,
         uint128 amountOfShares,
@@ -295,6 +407,11 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         );
     }
 
+    /**
+     * @notice Cancel an on-chain withdraw.
+     * @param request The request to cancel.
+     * @return requestId The request Id.
+     */
     function cancelOnChainWithdraw(OnChainWithdraw calldata request)
         external
         requiresAuth
@@ -303,6 +420,11 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         requestId = _cancelOnChainWithdraw(request);
     }
 
+    /**
+     * @notice Cancel an on-chain withdraw using the request Id.
+     * @param requestId The request Id to cancel.
+     * @return request The request that was canceled.
+     */
     function cancelOnChainWithdrawUsingRequestId(bytes32 requestId)
         external
         requiresAuth
@@ -312,6 +434,14 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         _cancelOnChainWithdraw(request);
     }
 
+    /**
+     * @notice Replace an on-chain withdraw.
+     * @param oldRequest The request to replace.
+     * @param discount The discount to apply to the new withdraw request in bps.
+     * @param secondsToDeadline The time in seconds the new withdraw request is valid for.
+     * @return oldRequestId The request Id of the old withdraw request.
+     * @return newRequestId The request Id of the new withdraw request.
+     */
     function replaceOnChainWithdraw(OnChainWithdraw calldata oldRequest, uint16 discount, uint24 secondsToDeadline)
         external
         requiresAuth
@@ -320,6 +450,14 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         (oldRequestId, newRequestId) = _replaceOnChainWithdraw(oldRequest, discount, secondsToDeadline);
     }
 
+    /**
+     * @notice Replace an on-chain withdraw using the request Id.
+     * @param oldRequestId The request Id of the request to replace.
+     * @param discount The discount to apply to the new withdraw request in bps.
+     * @param secondsToDeadline The time in seconds the new withdraw request is valid for.
+     * @return oldRequest The request that was replaced.
+     * @return newRequestId The request Id of the new withdraw request.
+     */
     function replaceOnChainWithdrawUsingRequestId(bytes32 oldRequestId, uint16 discount, uint24 secondsToDeadline)
         external
         requiresAuth
@@ -331,6 +469,13 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     //============================== SOLVER FUNCTIONS ===============================
 
+    /**
+     * @notice Solve multiple on-chain withdraws.
+     * @dev If `solveData` is empty, this contract will skip the callback function.
+     * @param requests The requests to solve.
+     * @param solveData The data to use to solve the requests.
+     * @param solver The address of the solver.
+     */
     function solveOnChainWithdraws(OnChainWithdraw[] calldata requests, bytes calldata solveData, address solver)
         external
         requiresAuth
@@ -370,11 +515,21 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     //============================== VIEW FUNCTIONS ===============================
 
+    /**
+     * @notice Get all request Ids currently in the queue.
+     * @dev Includes requests that are not mature, matured, and expired. But does not include requests that have been solved.
+     * @return requestIds The request Ids.
+     */
     function getRequestIds() external view returns (bytes32[] memory) {
         return _withdrawRequests.values();
     }
 
-    // @notice does not verify nonce is zero, as you could have not been tracking withdraws for a period of time
+    /**
+     * @notice Get all withdraw requests.
+     * @dev Includes requests that are not mature, matured, and expired. But does not include requests that have been solved.
+     * @dev Does not verify nonce is zero, as you could have not been tracking withdraws for a period of time.
+     * @dev If withdraws are made when not tracking, they will show up as empty requests here.
+     */
     function getWithdrawRequests()
         external
         view
@@ -388,14 +543,36 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         }
     }
 
+    /**
+     * @notice Get a withdraw request.
+     * @dev Does verify nonce is non-zero.
+     * @param requestId The request Id.
+     * @return request The request.
+     */
     function getOnChainWithdraw(bytes32 requestId) public view returns (OnChainWithdraw memory) {
         OnChainWithdraw memory request = onChainWithdraws[requestId];
         if (request.nonce == 0) revert BoringOnChainQueue__ZeroNonce();
         return onChainWithdraws[requestId];
     }
 
+    /**
+     * @notice Get the request Id for a request.
+     * @param request The request.
+     * @return requestId The request Id.
+     */
+    function getRequestId(OnChainWithdraw calldata request) external pure returns (bytes32 requestId) {
+        return keccak256(abi.encode(request));
+    }
+
     //============================= INTERNAL FUNCTIONS ==============================
 
+    /**
+     * @notice Before a new request is made, validate the input.
+     * @param withdrawAsset The withdraw asset.
+     * @param amountOfShares The amount of shares to withdraw.
+     * @param discount The discount to apply to the withdraw in bps.
+     * @param secondsToDeadline The time in seconds the request is valid for.
+     */
     function _beforeNewRequest(
         WithdrawAsset memory withdrawAsset,
         uint128 amountOfShares,
@@ -412,18 +589,37 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         if (secondsToDeadline < withdrawAsset.minimumSecondsToDeadline) revert BoringOnChainQueue__BadDeadline();
     }
 
+    /**
+     * @notice Cancel an on-chain withdraw.
+     * @dev Sender must be the user that made the request.
+     * @param request The request to cancel.
+     * @return requestId The request Id.
+     */
     function _cancelOnChainWithdraw(OnChainWithdraw memory request) internal returns (bytes32 requestId) {
         if (request.user != msg.sender) revert BoringOnChainQueue__BadUser();
 
         requestId = _cancelUserOnChainWithdraw(request);
     }
 
+    /**
+     * @notice Cancel an on-chain withdraw.
+     * @param request The request to cancel.
+     * @return requestId The request Id.
+     */
     function _cancelUserOnChainWithdraw(OnChainWithdraw memory request) internal returns (bytes32 requestId) {
         requestId = _dequeueOnChainWithdraw(request);
         boringVault.safeTransfer(request.user, request.amountOfShares);
         emit OnChainWithdrawCancelled(requestId, request.user, block.timestamp);
     }
 
+    /**
+     * @notice Replace an on-chain withdraw.
+     * @param oldRequest The request to replace.
+     * @param discount The discount to apply to the new withdraw request in bps.
+     * @param secondsToDeadline The time in seconds the new withdraw request is valid for.
+     * @return oldRequestId The request Id of the old withdraw request.
+     * @return newRequestId The request Id of the new withdraw request.
+     */
     function _replaceOnChainWithdraw(OnChainWithdraw memory oldRequest, uint16 discount, uint24 secondsToDeadline)
         internal
         returns (bytes32 oldRequestId, bytes32 newRequestId)
@@ -449,6 +645,17 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         );
     }
 
+    /**
+     * @notice Queue an on-chain withdraw.
+     * @dev Reverts if the request is already in the queue. Though this should be impossible.
+     * @param user The user that made the request.
+     * @param assetOut The asset to withdraw.
+     * @param amountOfShares The amount of shares to withdraw.
+     * @param discount The discount to apply to the withdraw in bps.
+     * @param secondsToMaturity The time in seconds it takes for the asset to mature.
+     * @param secondsToDeadline The time in seconds the request is valid for.
+     * @return requestId The request Id.
+     */
     function _queueOnChainWithdraw(
         address user,
         address assetOut,
@@ -484,7 +691,6 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
         if (trackWithdrawsOnChain) {
             // Save withdraw request on chain.
-            // TODO does this actually work? Maybe cuz there are no dynamic types?
             onChainWithdraws[requestId] = req;
         }
 
@@ -505,14 +711,18 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         );
     }
 
+    /**
+     * @notice Dequeue an on-chain withdraw.
+     * @dev Reverts if the request is not in the queue.
+     * @dev Does not remove the request from the onChainWithdraws mapping, so that
+     *      it can be referenced later by off-chain systems if needed.
+     * @param request The request to dequeue.
+     * @return requestId The request Id.
+     */
     function _dequeueOnChainWithdraw(OnChainWithdraw memory request) internal returns (bytes32 requestId) {
         // Remove request from queue.
         requestId = keccak256(abi.encode(request));
         bool removedFromSet = _withdrawRequests.remove(requestId);
         if (!removedFromSet) revert BoringOnChainQueue__RequestNotFound();
-        // TODO see what is more gas efficient if you are not tracking requests, should it read the bool, and only delete it if we are tracking?
-        // TODO might be worth it to remove this, just so that you have the history stored on chain?
-        /// @dev so initial testing shows this costs more gas to delete? Maybe cuz we are loading in multiple cold storage slots?
-        delete onChainWithdraws[requestId];
     }
 }

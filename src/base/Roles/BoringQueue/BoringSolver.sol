@@ -69,8 +69,6 @@ contract BoringSolver is IBoringSolver, Auth {
     }
 
     //============================== USER SOLVE FUNCTIONS ===============================
-    // TODO these could be changed to add permit versions so the Solver can be approved to spend the assets need to solve the request.
-    // TODO could also add in the associated OnChainWithdraw input versions if we want to support queues that arent tracking withdrws in the contract.
     function boringRedeemSelfSolve(BoringOnChainQueue queue, bytes32 requestId, address teller) external requiresAuth {
         // Read request from queue.
         BoringOnChainQueue.OnChainWithdraw[] memory request = new BoringOnChainQueue.OnChainWithdraw[](1);
@@ -129,9 +127,6 @@ contract BoringSolver is IBoringSolver, Auth {
 
     //============================== INTERNAL SOLVE FUNCTIONS ===============================
 
-    // TODO these could be improved to withdraw the assets to this contract, then, transfer excess to either the solve, or the BoringVault.
-    // TODO could add comment about how extra assets are sent to sovlers to cover gas fees.
-    // TODO self solves go back to boring vault.
     function _boringRedeemSolve(
         address queue,
         bytes calldata solveData,
