@@ -8,6 +8,9 @@ import {EtherFiLiquidUsdDecoderAndSanitizer} from
 import {PancakeSwapV3FullDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/PancakeSwapV3FullDecoderAndSanitizer.sol";
 import {AerodromeDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/AerodromeDecoderAndSanitizer.sol";
+import {EtherFiLiquidEthDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
+import {OnlyKarakDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/OnlyKarakDecoderAndSanitizer.sol";
 import {Deployer} from "src/helper/Deployer.sol";
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 import {ContractNames} from "resources/ContractNames.sol";
@@ -26,7 +29,7 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
     uint256 public privateKey;
     Deployer public deployer = Deployer(deployerAddress);
 
-    address boringVault = 0xf8203A33027607D2C82dFd67b46986096257dFA5;
+    address boringVault = 0x5401b8620E5FB570064CA9114fd1e135fd77D57c;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
@@ -43,17 +46,13 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
         //     abi.encode(0xf0bb20865277aBd641a307eCe5Ee04E79073416C, 0x416b433906b1B72FA758e166e239c43d68dC6F29);
         // deployer.deployContract(EtherFiLiquidEthAerodromeDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
-        // creationCode = type(BoringDrone).creationCode;
-        // constructorArgs = abi.encode(0xf8203A33027607D2C82dFd67b46986096257dFA5, 0);
-        // deployer.deployContract("btv-drone V0.1-0", creationCode, constructorArgs, 0);
-
-        // creationCode = type(PancakeSwapV3FullDecoderAndSanitizer).creationCode;
-        // constructorArgs = abi.encode(boringVault, pancakeSwapV3NonFungiblePositionManager, pancakeSwapV3MasterChefV3);
-        // deployer.deployContract(EtherFiElixirUsdPancakeSwapDecoderAndSanitizerName, creationCode, constructorArgs, 0);
-
-        creationCode = type(PointFarmingDecoderAndSanitizer).creationCode;
+        creationCode = type(OnlyKarakDecoderAndSanitizer).creationCode;
         constructorArgs = abi.encode(boringVault);
-        deployer.deployContract(BridgingTestVaultEthDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+        deployer.deployContract(EtherFiLiquidEthDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+
+        creationCode = type(PancakeSwapV3FullDecoderAndSanitizer).creationCode;
+        constructorArgs = abi.encode(boringVault, pancakeSwapV3NonFungiblePositionManager, pancakeSwapV3MasterChefV3);
+        deployer.deployContract(LombardPancakeSwapDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
         vm.stopBroadcast();
     }

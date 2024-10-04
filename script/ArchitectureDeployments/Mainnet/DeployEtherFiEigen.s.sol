@@ -6,22 +6,22 @@ import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
-import {PumpBtcDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PumpBtcDecoderAndSanitizer.sol";
+import {EtherFiEigenDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/EtherFiEigenDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployPumpBtc.s.sol:DeployPumpBtcScript --with-gas-price 3000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployEtherFiEigen.s.sol:DeployEtherFiEigenScript --with-gas-price 10000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
+contract DeployEtherFiEigenScript is DeployArcticArchitecture, MainnetAddresses {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Pump BTC Vault";
-    string public boringVaultSymbol = "pumpBTCv";
-    uint8 public boringVaultDecimals = 8;
-    address public owner = dev0Address;
+    string public boringVaultName = "ether.fi EIGEN";
+    string public boringVaultSymbol = "eEIGEN";
+    uint8 public boringVaultDecimals = 18;
+    address public owner = dev1Address;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
@@ -45,22 +45,22 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
         deployer = Deployer(configureDeployment.deployerAddress);
 
         // Define names to determine where contracts are deployed.
-        names.rolesAuthority = PumpBtcRolesAuthorityName;
+        names.rolesAuthority = EtherFiEigenRolesAuthorityName;
         names.lens = ArcticArchitectureLensName;
-        names.boringVault = PumpBtcName;
-        names.manager = PumpBtcManagerName;
-        names.accountant = PumpBtcAccountantName;
-        names.teller = PumpBtcTellerName;
-        names.rawDataDecoderAndSanitizer = PumpBtcDecoderAndSanitizerName;
-        names.delayedWithdrawer = PumpBtcDelayedWithdrawer;
+        names.boringVault = EtherFiEigenName;
+        names.manager = EtherFiEigenManagerName;
+        names.accountant = EtherFiEigenAccountantName;
+        names.teller = EtherFiEigenTellerName;
+        names.rawDataDecoderAndSanitizer = EtherFiEigenDecoderAndSanitizerName;
+        names.delayedWithdrawer = EtherFiEigenDelayedWithdrawer;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = WBTC;
+        accountantParameters.base = EIGEN;
         // Decimals are in terms of `base`.
-        accountantParameters.startingExchangeRate = 1e8;
+        accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
-        accountantParameters.managementFee = 0.015e4;
+        accountantParameters.managementFee = 0.02e4;
         accountantParameters.performanceFee = 0;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;
@@ -68,36 +68,14 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
-        bytes memory creationCode = type(PumpBtcDecoderAndSanitizer).creationCode;
-        bytes memory constructorArgs =
-            abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
+        bytes memory creationCode = type(EtherFiEigenDecoderAndSanitizer).creationCode;
+        bytes memory constructorArgs = abi.encode(deployer.getAddress(names.boringVault));
 
         // Setup extra deposit assets.
-        depositAssets.push(
-            DepositAsset({
-                asset: pumpBTC,
-                isPeggedToBase: true,
-                rateProvider: address(0),
-                genericRateProviderName: "",
-                target: address(0),
-                selector: bytes4(0),
-                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
-            })
-        );
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: pumpBTC,
-                withdrawDelay: 3 days,
-                completionWindow: 7 days,
-                withdrawFee: 0,
-                maxLoss: 0.01e4
-            })
-        );
-
-        withdrawAssets.push(
-            WithdrawAsset({
-                asset: WBTC,
+                asset: EIGEN,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -106,14 +84,15 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
         );
 
         bool allowPublicDeposits = true;
-        bool allowPublicWithdraws = true;
+        bool allowPublicWithdraws = false;
         uint64 shareLockPeriod = 1 days;
         address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
+        // vm.startBroadcast();
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "PumpBtcDeployment.json",
+            "/Mainnet/EtherFiEigenDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
