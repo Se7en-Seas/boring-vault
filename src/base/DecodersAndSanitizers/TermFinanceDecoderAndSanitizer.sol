@@ -12,7 +12,7 @@ contract TermFinanceDecoderAndSanitizer is BaseDecoderAndSanitizer {
         for (uint256 i = 0; i < offerSubmissions.length; i++) {
             addressesFound = abi.encodePacked(
                 addressesFound,
-                offerSubmissions[i].offeror //TODO: Sanitize offeror as vault address?
+                offerSubmissions[i].offeror
             );
             addressesFound = abi.encodePacked(
                 addressesFound,
