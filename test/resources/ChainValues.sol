@@ -766,6 +766,11 @@ contract ChainValues {
         values[mainnet]["fraxtalPortal"] = 0x36cb65c1967A0Fb0EEE11569C51C2f2aA1Ca6f6D.toBytes32();
         values[mainnet]["fraxtalResolvedDelegate"] = 0x2a721cBE81a128be0F01040e3353c3805A5EA091.toBytes32(); // TODO update this
 
+        // Lido Base Standard Bridge.
+        values[mainnet]["lidoBaseStandardBridge"] = 0x9de443AdC5A411E83F1878Ef24C3F52C61571e72.toBytes32();
+        values[mainnet]["lidoBasePortal"] = 0x49048044D57e1C92A77f79988d21Fa8fAF74E97e.toBytes32();
+        values[mainnet]["lidoBaseResolvedDelegate"] = 0x866E82a600A1414e583f7F13623F1aC5d58b0Afa.toBytes32();
+
         // Layer Zero.
         values[mainnet]["EtherFiOFTAdapter"] = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D.toBytes32();
 
@@ -824,6 +829,9 @@ contract ChainValues {
         // Standard Bridge.
         values[base]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
         values[base]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
+
+        // Lido Standard Bridge.
+        values[base]["l2ERC20TokenBridge"] = 0xac9D11cD4D7eF6e54F14643a393F68Ca014287AB.toBytes32();
 
         values[base]["weETH_ETH_ExchangeRate"] = 0x35e9D7001819Ea3B39Da906aE6b06A62cfe2c181.toBytes32();
 
