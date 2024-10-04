@@ -870,7 +870,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 true,
                 "sendMessage(address,uint256,bytes,uint256)",
                 new address[](1),
-                string.concat("Bridge ETH from ", destination, " to ", sourceChain),
+                string.concat("Bridge ETH from ", sourceChain, " to ", mainnet),
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
             leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
@@ -941,10 +941,10 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             }
             leafs[leafIndex] = ManageLeaf(
                 getAddress(sourceChain, "scrollMessenger"),
-                false,
+                true,
                 "sendMessage(address,uint256,bytes,uint256)",
                 new address[](1),
-                string.concat("Bridge ETH from ", destination, " to ", sourceChain),
+                string.concat("Bridge ETH from ", sourceChain, " to ", destination),
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
             leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");

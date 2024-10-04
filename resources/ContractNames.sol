@@ -4,8 +4,8 @@ pragma solidity 0.8.21;
 contract ContractNames {
     string public constant SevenSeasRolesAuthorityName = "Seven Seas RolesAuthority Version 0.0";
     string public constant ArcticArchitectureLensName = "Arctic Architecture Lens V0.0";
-    string public constant AtomicQueueName = "Atomic Queue V0.1";
-    string public constant AtomicSolverName = "Atomic Solver V4.0";
+    string public constant AtomicQueueName = "Atomic Queue V0.11";
+    string public constant AtomicSolverName = "Atomic Solver V4.11";
     string public constant IncentiveDistributorName = "Incentive Distributor V0.1";
     string public constant PaymentSplitterName = "Payment Splitter V0.0";
     string public constant PaymentSplitterRolesAuthorityName = "Payment Splitter Roles Authority V0.0";
@@ -92,7 +92,7 @@ contract ContractNames {
     string public constant BridgingTestVaultEthTellerName =
         "Bridging Test ETH Vault Teller With Multi Asset Support V1.3";
     string public constant BridgingTestVaultEthDecoderAndSanitizerName =
-        "Bridging Test ETH Vault Decoder and Sanitizer V1.4";
+        "Bridging Test ETH Vault Decoder and Sanitizer V1.5"; // was 1.4
     string public constant BridgingTestVaultEthDelayedWithdrawer = "Bridging Test ETH Vault Delayed Withdrawer V1.3";
     string public constant BridgingTestVaultEthAerodromeDecoderAndSanitizerName =
         "Bridging Test ETH Vault Aerodrome Decoder and Sanitizer V0.0";

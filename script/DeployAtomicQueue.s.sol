@@ -14,7 +14,7 @@ import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 
 /**
- *  source .env && forge script script/DeployAtomicQueue.s.sol:DeployAtomicQueueScript --with-gas-price 70000000 --evm-version london --broadcast --etherscan-api-key $OPTIMISMSCAN_KEY --verify
+ *  source .env && forge script script/DeployAtomicQueue.s.sol:DeployAtomicQueueScript --with-gas-price 70000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployAtomicQueueScript is Script, ContractNames, MainnetAddresses {
@@ -29,7 +29,7 @@ contract DeployAtomicQueueScript is Script, ContractNames, MainnetAddresses {
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("optimism");
+        vm.createSelectFork("mainnet");
     }
 
     function run() external {
@@ -51,9 +51,9 @@ contract DeployAtomicQueueScript is Script, ContractNames, MainnetAddresses {
         constructorArgs = abi.encode(owner, rolesAuthority);
         atomicQueue = AtomicQueue(deployer.deployContract(AtomicQueueName, creationCode, constructorArgs, 0));
 
-        // creationCode = type(AtomicSolverV4).creationCode;
-        // constructorArgs = abi.encode(owner, rolesAuthority);
-        // atomicSolver = AtomicSolverV4(deployer.deployContract(AtomicSolverName, creationCode, constructorArgs, 0));
+        creationCode = type(AtomicSolverV4).creationCode;
+        constructorArgs = abi.encode(owner, rolesAuthority);
+        atomicSolver = AtomicSolverV4(deployer.deployContract(AtomicSolverName, creationCode, constructorArgs, 0));
 
         vm.stopBroadcast();
     }

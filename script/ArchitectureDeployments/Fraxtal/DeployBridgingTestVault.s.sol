@@ -10,7 +10,7 @@ import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
 import {PointFarmingDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Linea/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 70000000 --evm-version london --broadcast --etherscan-api-key $LINEASCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Fraxtal/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --evm-version london --broadcast --etherscan-api-key $FRAXSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHelper {
@@ -25,7 +25,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
 
     address internal owner;
     address internal testAddress;
-    ERC20 internal WETH;
+    ERC20 internal wfrxETH;
     address internal balancerVault;
     address internal deployerAddress;
     address internal uniswapV3NonFungiblePositionManager;
@@ -33,12 +33,12 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("linea");
-        setSourceChainName(linea);
+        vm.createSelectFork("fraxtal");
+        setSourceChainName(fraxtal);
 
         owner = getAddress(sourceChain, "dev0Address");
         testAddress = getAddress(sourceChain, "dev0Address");
-        WETH = getERC20(sourceChain, "WETH");
+        wfrxETH = getERC20(sourceChain, "wfrxETH");
         balancerVault = address(0);
         deployerAddress = getAddress(sourceChain, "deployerAddress");
         uniswapV3NonFungiblePositionManager = address(0);
@@ -49,7 +49,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
 
     function run() external {
         // Configure the deployment.
-        configureDeployment.deployContracts = true;
+        configureDeployment.deployContracts = false;
         configureDeployment.setupRoles = true;
         configureDeployment.setupDepositAssets = true;
         configureDeployment.setupWithdrawAssets = true;
@@ -58,7 +58,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
-        configureDeployment.WETH = address(WETH);
+        configureDeployment.WETH = address(wfrxETH);
 
         // Save deployer.
         deployer = Deployer(configureDeployment.deployerAddress);
@@ -76,7 +76,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = WETH;
+        accountantParameters.base = wfrxETH;
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
@@ -97,7 +97,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: WETH,
+                asset: wfrxETH,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -113,7 +113,7 @@ contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHe
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "Linea/BridgingTestVaultDeployment.json",
+            "Fraxtal/BridgingTestVaultDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,

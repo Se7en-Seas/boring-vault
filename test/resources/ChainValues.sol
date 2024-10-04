@@ -19,6 +19,7 @@ contract ChainValues {
     string public constant mantle = "mantle";
     string public constant linea = "linea";
     string public constant scroll = "scroll";
+    string public constant fraxtal = "fraxtal";
     string public constant holesky = "holesky";
 
     // Bridging constants.
@@ -28,6 +29,8 @@ contract ChainValues {
     uint32 public constant layerZeroMainnetEndpointId = 30101;
     uint32 public constant layerZeroOptimismEndpointId = 30111;
     uint32 public constant layerZeroArbitrumEndpointId = 30110;
+    uint32 public constant layerZeroLineaEndpointId = 30183;
+    uint32 public constant layerZeroScrollEndpointId = 30214;
 
     error ChainValues__ZeroAddress(string chainName, string valueName);
     error ChainValues__ZeroBytes32(string chainName, string valueName);
@@ -75,12 +78,14 @@ contract ChainValues {
         _addZircuitValues();
         _addLineaValues();
         _addScrollValues();
+        _addFraxtalValues();
 
         // Add testnet values
         _addHoleskyValues();
     }
 
     function _addMainnetValues() private {
+        values[mainnet]["boringDeployerContract"] = 0xFD65ADF7d2f9ea09287543520a703522E0a360C9.toBytes32();
         // Liquid Ecosystem
         values[mainnet]["deployerAddress"] = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d.toBytes32();
         values[mainnet]["dev0Address"] = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b.toBytes32();
@@ -756,6 +761,11 @@ contract ChainValues {
         values[mainnet]["zircuitPortal"] = 0x17bfAfA932d2e23Bd9B909Fd5B4D2e2a27043fb1.toBytes32();
         values[mainnet]["zircuitResolvedDelegate"] = 0x2a721cBE81a128be0F01040e3353c3805A5EA091.toBytes32();
 
+        // Fraxtal Standard Bridge.
+        values[mainnet]["fraxtalStandardBridge"] = 0x34C0bD5877A5Ee7099D0f5688D65F4bB9158BDE2.toBytes32();
+        values[mainnet]["fraxtalPortal"] = 0x36cb65c1967A0Fb0EEE11569C51C2f2aA1Ca6f6D.toBytes32();
+        values[mainnet]["fraxtalResolvedDelegate"] = 0x2a721cBE81a128be0F01040e3353c3805A5EA091.toBytes32(); // TODO update this
+
         // Layer Zero.
         values[mainnet]["EtherFiOFTAdapter"] = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D.toBytes32();
 
@@ -1056,6 +1066,12 @@ contract ChainValues {
     }
 
     function _addMantleValues() private {
+        values[mantle]["deployerAddress"] = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d.toBytes32();
+        values[mantle]["dev0Address"] = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b.toBytes32();
+        values[mantle]["dev1Address"] = 0xf8553c8552f906C19286F21711721E206EE4909E.toBytes32();
+        values[mantle]["liquidPayoutAddress"] = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A.toBytes32();
+        values[mantle]["balancerVault"] = address(1).toBytes32();
+
         // ERC20
         values[mantle]["WETH"] = 0xdEAddEaDdeadDEadDEADDEAddEADDEAddead1111.toBytes32();
         values[mantle]["USDC"] = 0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9.toBytes32();
@@ -1067,6 +1083,15 @@ contract ChainValues {
     }
 
     function _addZircuitValues() private {
+        values[zircuit]["deployerAddress"] = 0xFD65ADF7d2f9ea09287543520a703522E0a360C9.toBytes32();
+        values[zircuit]["dev0Address"] = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b.toBytes32();
+        values[zircuit]["dev1Address"] = 0xf8553c8552f906C19286F21711721E206EE4909E.toBytes32();
+        values[zircuit]["liquidPayoutAddress"] = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A.toBytes32();
+        values[zircuit]["balancerVault"] = address(1).toBytes32();
+
+        values[zircuit]["WETH"] = 0x4200000000000000000000000000000000000006.toBytes32();
+        values[zircuit]["METH"] = 0x91a0F6EBdCa0B4945FbF63ED4a95189d2b57163D.toBytes32();
+
         // Standard Bridge.
         values[zircuit]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
         values[zircuit]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
@@ -1081,6 +1106,7 @@ contract ChainValues {
         // ERC20
         values[linea]["DAI"] = 0x4AF15ec2A0BD43Db75dd04E62FAA3B8EF36b00d5.toBytes32();
         values[linea]["WETH"] = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f.toBytes32();
+        values[linea]["WEETH"] = 0x1Bf74C010E6320bab11e2e5A532b5AC15e0b8aA6.toBytes32();
 
         // Linea Bridge.
         values[linea]["tokenBridge"] = 0x353012dc4a9A6cF55c941bADC267f82004A8ceB9.toBytes32(); //approve, also bridge token
@@ -1088,12 +1114,33 @@ contract ChainValues {
     }
 
     function _addScrollValues() private {
+        values[scroll]["deployerAddress"] = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d.toBytes32();
+        values[scroll]["dev0Address"] = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b.toBytes32();
+        values[scroll]["dev1Address"] = 0xf8553c8552f906C19286F21711721E206EE4909E.toBytes32();
+        values[scroll]["liquidPayoutAddress"] = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A.toBytes32();
+        values[scroll]["balancerVault"] = address(1).toBytes32();
         // ERC20
         values[scroll]["DAI"] = 0xcA77eB3fEFe3725Dc33bccB54eDEFc3D9f764f97.toBytes32();
+        values[scroll]["WETH"] = 0x5300000000000000000000000000000000000004.toBytes32();
+        values[scroll]["WEETH"] = 0x01f0a31698C4d065659b9bdC21B3610292a1c506.toBytes32();
 
         // Scroll Bridge.
         values[scroll]["scrollGatewayRouter"] = 0x4C0926FF5252A435FD19e10ED15e5a249Ba19d79.toBytes32(); // withdrawERC20
         values[scroll]["scrollMessenger"] = 0x781e90f1c8Fc4611c9b7497C3B47F99Ef6969CbC.toBytes32(); // sendMessage
         values[scroll]["scrollCustomERC20Gateway"] = 0xaC78dff3A87b5b534e366A93E785a0ce8fA6Cc62.toBytes32(); // sendMessage
+    }
+
+    function _addFraxtalValues() private {
+        values[fraxtal]["deployerAddress"] = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d.toBytes32();
+        values[fraxtal]["dev0Address"] = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b.toBytes32();
+        values[fraxtal]["dev1Address"] = 0xf8553c8552f906C19286F21711721E206EE4909E.toBytes32();
+        values[fraxtal]["liquidPayoutAddress"] = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A.toBytes32();
+        values[fraxtal]["balancerVault"] = address(1).toBytes32();
+        // ERC20
+        values[fraxtal]["wfrxETH"] = 0xFC00000000000000000000000000000000000006.toBytes32();
+
+        // Standard Bridge.
+        // values[fraxtal]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
+        // values[fraxtal]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
     }
 }

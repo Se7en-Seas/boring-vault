@@ -10,7 +10,7 @@ import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 
 /**
- *  source .env && forge script script/DeployDeployer.s.sol:DeployDeployerScript --with-gas-price 30000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/DeployDeployer.s.sol:DeployDeployerScript --evm-version london --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployDeployerScript is Script, ContractNames, MainnetAddresses {
@@ -24,7 +24,7 @@ contract DeployDeployerScript is Script, ContractNames, MainnetAddresses {
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("mainnet");
+        vm.createSelectFork("fraxtal");
     }
 
     function run() external {
@@ -42,7 +42,7 @@ contract DeployDeployerScript is Script, ContractNames, MainnetAddresses {
 
         rolesAuthority.setRoleCapability(DEPLOYER_ROLE, address(deployer), Deployer.deployContract.selector, true);
         rolesAuthority.setUserRole(dev0Address, DEPLOYER_ROLE, true);
-        // rolesAuthority.setUserRole(dev1Address, DEPLOYER_ROLE, true);
+        rolesAuthority.setUserRole(dev1Address, DEPLOYER_ROLE, true);
 
         vm.stopBroadcast();
     }
