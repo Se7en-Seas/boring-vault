@@ -125,13 +125,13 @@ contract ContractNames {
 
     string public constant TestCCIPTellerName = "Test CCIP Teller V0.0";
 
-    string public constant PumpBtcRolesAuthorityName = "Pump BTC RolesAuthority Version 0.0";
-    string public constant PumpBtcName = "Pump BTC V0.0";
-    string public constant PumpBtcManagerName = "Pump BTC Manager With Merkle Verification V0.0";
-    string public constant PumpBtcAccountantName = "Pump BTC Accountant With Rate Providers V0.0";
-    string public constant PumpBtcTellerName = "Pump BTC Teller With Multi Asset Support V0.0";
-    string public constant PumpBtcDecoderAndSanitizerName = "Pump BTC Decoder and Sanitizer V0.0";
-    string public constant PumpBtcDelayedWithdrawer = "Pump BTC Delayed Withdrawer V0.0";
+    string public constant Btc_FiRolesAuthorityName = "BTC-Fi RolesAuthority Version 0.0";
+    string public constant Btc_FiName = "BTC-Fi V0.0";
+    string public constant Btc_FiManagerName = "BTC-Fi Manager With Merkle Verification V0.0";
+    string public constant Btc_FiAccountantName = "BTC-Fi Accountant With Rate Providers V0.0";
+    string public constant Btc_FiTellerName = "BTC-Fi Teller With Multi Asset Support V0.0";
+    string public constant Btc_FiDecoderAndSanitizerName = "BTC-Fi Decoder and Sanitizer V0.0";
+    string public constant Btc_FiDelayedWithdrawer = "BTC-Fi Delayed Withdrawer V0.0";
 
     string public constant SymbioticLRTVaultRolesAuthorityName = "Symbiotic LRT Vault RolesAuthority V0.0";
     string public constant SymbioticLRTVaultName = "Symbiotic LRT Vault V0.0";
