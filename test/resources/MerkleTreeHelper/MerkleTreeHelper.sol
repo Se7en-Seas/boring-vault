@@ -4795,13 +4795,14 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                     getAddress(sourceChain, "rawDataDecoderAndSanitizer")
                 );
             leafs[leafIndex].argumentAddresses[0] = termRepoLockers[i];
+            tokenToSpenderToApprovalInTree[address(purchaseTokens[i])][termRepoLockers[i]] = true;
             unchecked {
                 leafIndex++;
             }
             leafs[leafIndex] = ManageLeaf(
                     termAuctionOfferLockerAddresses[i],
                     false,
-                    "lockOffers(TermAuctionOfferSubmission[])",
+                    "lockOffers((bytes32,address,bytes32,uint256,address)[])",
                     new address[](2),
                     string.concat("Submit offer submission to offer locker ", vm.toString(termAuctionOfferLockerAddresses[i])),
                     getAddress(sourceChain, "rawDataDecoderAndSanitizer")

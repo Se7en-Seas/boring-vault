@@ -36,10 +36,96 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
 
     function setUp() external {
         setSourceChainName("mainnet");
+    }
+
+    function testTermFinanceIntegrationLockOffer() external {
+        _setupEnv(20684989);
+        address weth = getAddress(sourceChain, "WETH");
+        deal(weth, address(boringVault), 10000e18);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](2);
+        ERC20[] memory purchaseTokens = new ERC20[](1);
+        purchaseTokens[0] = ERC20(getAddress(sourceChain, "WETH"));
+        address[] memory termAuctionOfferLockers = new address[](1);
+        termAuctionOfferLockers[0] = getAddress(sourceChain, "termAuctionOfferLocker");
+        address[] memory termRepoLockers = new address[](1);
+        termRepoLockers[0] = getAddress(sourceChain, "termRepoLocker");
+        _addTermFinanceLockOfferLeafs(leafs, purchaseTokens, termAuctionOfferLockers, termRepoLockers);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+  
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](2);
+        targets[0] = weth;
+        targets[1] = getAddress(sourceChain, "termAuctionOfferLocker");
+        bytes[] memory targetData = new bytes[](2);
+        targetData[0] = abi.encodeWithSignature(
+            "approve(address,uint256)", getAddress(sourceChain, "termRepoLocker"), type(uint256).max
+        );
+        DecoderCustomTypes.TermAuctionOfferSubmission memory termAuctionOfferSubmission = DecoderCustomTypes.TermAuctionOfferSubmission(
+            keccak256(abi.encodePacked(uint256(block.timestamp), address(boringVault))),
+            address(boringVault),
+            keccak256(abi.encodePacked(uint256(10e17), uint256(1e18))),
+            2e18,
+            weth   
+        );
+        DecoderCustomTypes.TermAuctionOfferSubmission[] memory offerSubmissions = new DecoderCustomTypes.TermAuctionOfferSubmission[](1);
+        offerSubmissions[0] = termAuctionOfferSubmission;
+        targetData[1] = abi.encodeWithSignature("lockOffers((bytes32,address,bytes32,uint256,address)[])", offerSubmissions);
+
+        address[] memory decodersAndSanitizers = new address[](2);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](2)
+        );
+    }
+
+    function testTermFinanceIntegrationRedeemTermRepoTokens() external {
+        _setupEnv(20896059);
+        address termRepoToken = getAddress(sourceChain, "termRepoToken");
+        deal(termRepoToken, address(boringVault), 10e18);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](1);
+        address[] memory termRepoServicers = new address[](1);
+        termRepoServicers[0] = getAddress(sourceChain, "termRepoServicer");
+
+        _addTermFinanceRedeemTermRepoTokensLeafs(leafs, termRepoServicers);
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[0];
+  
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+ 
+        address[] memory targets = new address[](1);
+        targets[0] = getAddress(sourceChain, "termRepoServicer");
+
+        bytes[] memory targetData = new bytes[](1);
+        targetData[0] = abi.encodeWithSignature("redeemTermRepoTokens(address,uint256)", address(boringVault), 10e18);
+
+        address[] memory decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](1)
+        );
+    }
+
+    // ========================================= HELPER FUNCTIONS =========================================
+
+    function _setupEnv(uint256 blockNumber) internal {
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 20579659;
-
         _startFork(rpcKey, blockNumber);
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
@@ -107,89 +193,6 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
         rolesAuthority.setUserRole(getAddress(sourceChain, "vault"), BALANCER_VAULT_ROLE, true);
     }
-
-    function testTermFinanceIntegrationLockOffer() external {
-        address weth = getAddress(sourceChain, "WETH");
-        deal(getAddress(sourceChain, "WETH"), address(boringVault), 10000e18);
-
-        ManageLeaf[] memory leafs = new ManageLeaf[](2);
-        ERC20[] memory purchaseTokens = new ERC20[](1);
-        purchaseTokens[0] = ERC20(getAddress(sourceChain, "WETH"));
-        address[] memory termAuctionOfferLockers = new address[](1);
-        termAuctionOfferLockers[0] = getAddress(sourceChain, "termAuctionOfferLocker");
-        address[] memory termRepoLockers = new address[](1);
-        termRepoLockers[0] = getAddress(sourceChain, "termRepoLocker");
-        _addTermFinanceLockOfferLeafs(leafs, purchaseTokens, termAuctionOfferLockers, termRepoLockers);
-
-        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-
-        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
-
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
-        manageLeafs[0] = leafs[0];
-        manageLeafs[1] = leafs[1];
-  
-        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
-
-        address[] memory targets = new address[](2);
-        targets[0] = weth;
-        targets[1] = getAddress(sourceChain, "termAuctionOfferLocker");
-        bytes[] memory targetData = new bytes[](2);
-        targetData[0] = abi.encodeWithSignature(
-            "approve(address,uint256)", getAddress(sourceChain, "termRepoLocker"), type(uint256).max
-        );
-        DecoderCustomTypes.TermAuctionOfferSubmission memory termAuctionOfferSubmission = DecoderCustomTypes.TermAuctionOfferSubmission(
-            keccak256(abi.encodePacked(uint256(block.timestamp), address(boringVault))),
-            address(boringVault),
-            keccak256(abi.encodePacked(uint256(10e17), uint256(1e18))),
-            1000e6,
-            weth   
-        );
-        DecoderCustomTypes.TermAuctionOfferSubmission[] memory offerSubmissions = new DecoderCustomTypes.TermAuctionOfferSubmission[](1);
-        offerSubmissions[0] = termAuctionOfferSubmission;
-        targetData[1] = abi.encodeWithSignature("lockOffers((bytes32,address,bytes32,uint256,address)[])", offerSubmissions);
-
-        address[] memory decodersAndSanitizers = new address[](2);
-        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
-        manager.manageVaultWithMerkleVerification(
-            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](2)
-        );
-    }
-
-    function testTermFinanceIntegrationRedeemTermRepoTokens() external {
-        address termRepoToken = getAddress(sourceChain, "termRepoToken");
-        deal(termRepoToken, address(boringVault), 10000e18, true);
-
-        ManageLeaf[] memory leafs = new ManageLeaf[](1);
-        address[] memory termRepoServicers = new address[](1);
-        termRepoServicers[0] = getAddress(sourceChain, "termRepoServicer");
-
-        _addTermFinanceRedeemTermRepoTokensLeafs(leafs, termRepoServicers);
-
-        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
-
-        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
-
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
-        manageLeafs[0] = leafs[0];
-  
-        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
-
-        address[] memory targets = new address[](1);
-        targets[0] = getAddress(sourceChain, "termRepoServicer");
-
-        bytes[] memory targetData = new bytes[](1);
-        targetData[0] = abi.encodeWithSignature("redeemTermRepoTokens(address,uint256)", address(boringVault), 1000e6);
-
-        address[] memory decodersAndSanitizers = new address[](1);
-        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
-        manager.manageVaultWithMerkleVerification(
-            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](1)
-        );
-    }
-
-    // ========================================= HELPER FUNCTIONS =========================================
 
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
