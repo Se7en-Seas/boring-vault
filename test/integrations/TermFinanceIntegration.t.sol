@@ -89,11 +89,12 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
     }
 
     function testTermFinanceIntegrationRedeemTermRepoTokens() external {
-        _setupEnv(20896059);
+        _setupEnv(20896437);
+
         address termRepoToken = getAddress(sourceChain, "termRepoToken");
         deal(termRepoToken, address(boringVault), 10e18);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](1);
+        ManageLeaf[] memory leafs = new ManageLeaf[](2); // only need 1 leaf, but _generateMerkleTree needs at least 2.
         address[] memory termRepoServicers = new address[](1);
         termRepoServicers[0] = getAddress(sourceChain, "termRepoServicer");
 
