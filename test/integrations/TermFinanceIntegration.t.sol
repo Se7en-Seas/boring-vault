@@ -38,7 +38,7 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 19826676;
+        uint256 blockNumber = 20579659;
 
         _startFork(rpcKey, blockNumber);
 
@@ -109,12 +109,12 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
     }
 
     function testTermFinanceIntegrationLockOffer() external {
-        address usdc = getAddress(sourceChain, "USDC");
-        deal(getAddress(sourceChain, "USDC"), address(boringVault), 1000e6);
+        address weth = getAddress(sourceChain, "WETH");
+        deal(getAddress(sourceChain, "WETH"), address(boringVault), 10000e18);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](2);
         ERC20[] memory purchaseTokens = new ERC20[](1);
-        purchaseTokens[0] = ERC20(getAddress(sourceChain, "USDC"));
+        purchaseTokens[0] = ERC20(getAddress(sourceChain, "WETH"));
         address[] memory termAuctionOfferLockers = new address[](1);
         termAuctionOfferLockers[0] = getAddress(sourceChain, "termAuctionOfferLocker");
         address[] memory termRepoLockers = new address[](1);
@@ -125,13 +125,14 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
-        manageLeafs[0] = leafs[1];
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
   
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](2);
-        targets[0] = usdc;
+        targets[0] = weth;
         targets[1] = getAddress(sourceChain, "termAuctionOfferLocker");
         bytes[] memory targetData = new bytes[](2);
         targetData[0] = abi.encodeWithSignature(
@@ -142,11 +143,11 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
             address(boringVault),
             keccak256(abi.encodePacked(uint256(10e17), uint256(1e18))),
             1000e6,
-            usdc   
+            weth   
         );
         DecoderCustomTypes.TermAuctionOfferSubmission[] memory offerSubmissions = new DecoderCustomTypes.TermAuctionOfferSubmission[](1);
         offerSubmissions[0] = termAuctionOfferSubmission;
-        targetData[1] = abi.encodeWithSignature("lockOffers(TermAuctionOfferSubmission[])", offerSubmissions);
+        targetData[1] = abi.encodeWithSignature("lockOffers((bytes32,address,bytes32,uint256,address)[])", offerSubmissions);
 
         address[] memory decodersAndSanitizers = new address[](2);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
@@ -158,7 +159,7 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
 
     function testTermFinanceIntegrationRedeemTermRepoTokens() external {
         address termRepoToken = getAddress(sourceChain, "termRepoToken");
-        deal(termRepoToken, address(boringVault), 1000e6);
+        deal(termRepoToken, address(boringVault), 10000e18, true);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](1);
         address[] memory termRepoServicers = new address[](1);

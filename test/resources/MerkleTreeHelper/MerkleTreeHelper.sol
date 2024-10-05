@@ -4806,6 +4806,8 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                     string.concat("Submit offer submission to offer locker ", vm.toString(termAuctionOfferLockerAddresses[i])),
                     getAddress(sourceChain, "rawDataDecoderAndSanitizer")
                 );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = address(purchaseTokens[i]);
         }
     }
 
@@ -4824,7 +4826,8 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                     new address[](1),
                     string.concat("Redeem TermRepo Tokens from servicer ", vm.toString(termRepoServicers[i])),
                     getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-                );
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
         }
 
     }

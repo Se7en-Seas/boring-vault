@@ -774,6 +774,12 @@ contract ChainValues {
 
         // Syrup
         values[mainnet]["syrupRouter"] = 0x134cCaaA4F1e4552eC8aEcb9E4A2360dDcF8df76.toBytes32();
+
+        // Term Finance
+        values[mainnet]["termAuctionOfferLocker"] = 0xa557a6099d1a85d7569EA4B6d8ad59a94a8162CC.toBytes32();
+        values[mainnet]["termRepoLocker"] = 0xFD9033C9A97Bc3Ec8a44439Cb6512516c5053076.toBytes32();
+        values[mainnet]["termRepoServicer"] = 0xaD2401Dd7518Fac6C868c86442922E2236797e32.toBytes32();
+        values[mainnet]["termRepoToken"] = 0x3A1427da14F8A57CEe76a5E85fB465ed72De8EC7.toBytes32();
     }
 
     function _addBaseValues() private {
@@ -851,6 +857,7 @@ contract ChainValues {
         // Instadapp Fluid
         values[base]["fWETH"] = 0x9272D6153133175175Bc276512B2336BE3931CE9.toBytes32();
         values[base]["fWSTETH"] = 0x896E39f0E9af61ECA9dD2938E14543506ef2c2b5.toBytes32();
+        
     }
 
     function _addArbitrumValues() private {
