@@ -161,9 +161,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
 
         uint256 wETHDelta = WETH.balanceOf(address(this));
-        uint256 gas = gasleft();
         boringSolver.boringRedeemSolve(boringQueue, requests, liquidEth_teller);
-        console.log("Gas Used: ", gas - gasleft());
         wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
 
         assertEq(WETH.balanceOf(testUser), requests[0].amountOfAssets, "User should have received their wETH.");
@@ -289,9 +287,113 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         assertEq(startingShares - endingShares, amountOfShares, "User should have had shares removed..");
     }
 
-    // TODO test user makes multiple withdraws?
-    // TODO revert tests in queue and solver
-    // TODO admin functions in both
+    function testUserMakingMultipleWithdraws(uint128[4] memory amountOfShares, uint16[4] memory discount) external {
+        uint24 secondsToDeadline = 1 days;
+        bytes32[4] memory requestIds;
+        uint256 startingShares = ERC20(liquidEth).balanceOf(testUser);
+        uint256 shareSum;
+        uint256 assetSum;
+        for (uint256 i; i < 4; ++i) {
+            amountOfShares[i] = uint128(bound(amountOfShares[i], 0.01e18, 100e18));
+            shareSum += amountOfShares[i];
+            discount[i] = uint16(bound(discount[i], 1, 100));
+            // Make request.
+            requestIds[i] =
+                _haveUserCreateRequest(testUser, address(WETH), amountOfShares[i], discount[i], secondsToDeadline);
+        }
+
+        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+
+        for (uint256 i; i < 4; ++i) {
+            assetSum += requests[i].amountOfAssets;
+        }
+
+        // Fast forward 3 days so request is matured.
+        skip(3 days);
+
+        uint256 wETHDelta = WETH.balanceOf(address(this));
+        boringSolver.boringRedeemSolve(boringQueue, requests, liquidEth_teller);
+        wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
+        uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
+
+        assertEq(shareSum, startingShares - endingShares, "User should have had all requests solved.");
+        assertEq(WETH.balanceOf(testUser), assetSum, "User should have received all wETH.");
+    }
+
+    function testQueueAdminCalls() external {
+        // Check pause effects.
+        assertEq(boringQueue.isPaused(), false, "Queue should not be paused.");
+        boringQueue.pause();
+        assertEq(boringQueue.isPaused(), true, "Queue should be paused.");
+        boringQueue.unpause();
+        assertEq(boringQueue.isPaused(), false, "Queue should not be paused.");
+
+        // Check toggle track withdraw onchain effects.
+        assertEq(boringQueue.trackWithdrawsOnChain(), true, "Queue should be tracking onchain withdraws.");
+        boringQueue.toggleTrackWithdrawsOnChain();
+        assertEq(boringQueue.trackWithdrawsOnChain(), false, "Queue should not be tracking onchain withdraws.");
+        boringQueue.toggleTrackWithdrawsOnChain();
+        assertEq(boringQueue.trackWithdrawsOnChain(), true, "Queue should be tracking onchain withdraws.");
+
+        // Check setup withdraw asset effects.
+        boringQueue.setupWithdrawAsset(address(EETH), 1 days, 2 days, 3, 25, 0.03e18);
+        (
+            bool allowWithdraws,
+            uint24 secondsToMaturity,
+            uint24 minimumSecondsToDeadline,
+            uint16 minDiscount,
+            uint16 maxDiscount,
+            uint96 minimumShares
+        ) = boringQueue.withdrawAssets(address(EETH));
+        assertEq(allowWithdraws, true, "EETH should allow withdraws.");
+        assertEq(secondsToMaturity, 1 days, "EETH should have 1 day maturity.");
+        assertEq(minimumSecondsToDeadline, 2 days, "EETH should have 2 days minimum deadline.");
+        assertEq(minDiscount, 3, "EETH should have 3 bps min discount.");
+        assertEq(maxDiscount, 25, "EETH should have 25 bps max discount.");
+        assertEq(minimumShares, 0.03e18, "EETH should have 0.03e18 minimum shares.");
+
+        // Check update withdraw asset effects.
+        boringQueue.updateWithdrawAsset(address(EETH), 2 days, 3 days, 4, 50, 0.05e18);
+        (allowWithdraws, secondsToMaturity, minimumSecondsToDeadline, minDiscount, maxDiscount, minimumShares) =
+            boringQueue.withdrawAssets(address(EETH));
+        assertEq(allowWithdraws, true, "EETH should allow withdraws.");
+        assertEq(secondsToMaturity, 2 days, "EETH should have 2 day maturity.");
+        assertEq(minimumSecondsToDeadline, 3 days, "EETH should have 3 days minimum deadline.");
+        assertEq(minDiscount, 4, "EETH should have 4 bps min discount.");
+        assertEq(maxDiscount, 50, "EETH should have 50 bps max discount.");
+        assertEq(minimumShares, 0.05e18, "EETH should have 0.05e18 minimum shares.");
+
+        // Check stop withdraw in asset effects.
+        boringQueue.stopWithdrawsInAsset(address(EETH));
+        (allowWithdraws,,,,,) = boringQueue.withdrawAssets(address(EETH));
+        assertEq(allowWithdraws, false, "EETH should not allow withdraws.");
+
+        address userA = vm.addr(2);
+        address userB = vm.addr(3);
+        deal(address(liquidEth), userA, 1e18);
+        deal(address(liquidEth), userB, 1e18);
+        _haveUserCreateRequest(userA, address(WETH), 1e18, 100, 1 days);
+        _haveUserCreateRequest(userB, address(WETH), 1e18, 100, 1 days);
+        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+
+        boringQueue.cancelUserWithdraws(requests);
+
+        assertEq(WETH.balanceOf(userA), 0, "User A should not have received any wETH.");
+        assertEq(WETH.balanceOf(userB), 0, "User B should not have received any wETH.");
+        assertEq(ERC20(liquidEth).balanceOf(userA), 1e18, "User A should have their shares back.");
+        assertEq(ERC20(liquidEth).balanceOf(userB), 1e18, "User B should have their shares back.");
+    }
+
+    function testSolverAdminCalls() external {
+        // Check rescue tokens effects.
+        deal(address(WETH), address(boringSolver), 1e18);
+        boringSolver.rescueTokens(WETH, 1e18);
+        assertEq(WETH.balanceOf(address(boringSolver)), 0, "Solver should not have any wETH.");
+    }
+
+    function testQueueReverts() external {}
+    function testSolverReverts() external {}
+
     // TODO full function coverage in both
 
     // ========================================= HELPER FUNCTIONS =========================================

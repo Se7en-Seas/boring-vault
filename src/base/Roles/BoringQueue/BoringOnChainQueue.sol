@@ -128,6 +128,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     error BoringOnChainQueue__ZeroNonce();
     error BoringOnChainQueue__Overflow();
     error BoringOnChainQueue__MAXIMUM_SECONDS_TO_MATURITY();
+    error BoringOnChainQueue__BadInput();
 
     //============================== EVENTS ===============================
 
@@ -206,7 +207,41 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     //=============================== ADMIN FUNCTIONS ================================
 
     /**
-     * @notice Pause this contract, which prevents future calls to `manageVaultWithMerkleVerification`.
+     * @notice Allows the owner to rescue tokens from the contract.
+     * @dev The owner can only withdraw BoringVault shares if they are accidentally sent to this contract.
+     *      Shares from active withdraw requests are not withdrawable.
+     * @param token The token to rescue.
+     * @param amount The amount to rescue.
+     * @param activeRequests The active withdraw requests, query `getWithdrawRequests`, or read events to get them.
+     */
+    function rescueTokens(ERC20 token, uint256 amount, OnChainWithdraw[] calldata activeRequests)
+        external
+        requiresAuth
+    {
+        if (address(token) == address(boringVault)) {
+            bytes32[] memory requestIds = _withdrawRequests.values();
+            uint256 requestIdsLength = requestIds.length;
+            if (activeRequests.length != requestIdsLength) revert BoringOnChainQueue__BadInput();
+            // Iterate through provided activeRequests, and hash each one to compare to the requestIds.
+            // Also track the sum of shares to make sure it is less than or equal to the amount.
+            uint256 activeRequestShareSum;
+            for (uint256 i = 0; i < requestIdsLength; ++i) {
+                if (keccak256(abi.encode(activeRequests[i])) != requestIds[i]) revert BoringOnChainQueue__BadInput();
+                activeRequestShareSum += activeRequests[i].amountOfShares;
+            }
+            uint256 freeShares = boringVault.balanceOf(address(this)) - activeRequestShareSum;
+            if (amount == type(uint256).max) amount = freeShares;
+            else if (amount > freeShares) revert BoringOnChainQueue__BadInput();
+            else amount = freeShares;
+        } else {
+            if (amount == type(uint256).max) amount = token.balanceOf(address(this));
+        }
+        token.safeTransfer(msg.sender, amount);
+    }
+
+    /**
+     * @notice Pause this contract, which prevents future calls to any functions that
+     *         create new requests, or solve active requests.
      * @dev Callable by MULTISIG_ROLE.
      */
     function pause() external requiresAuth {
@@ -215,7 +250,8 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     }
 
     /**
-     * @notice Unpause this contract, which allows future calls to `manageVaultWithMerkleVerification`.
+     * @notice Unpause this contract, which allows future calls to any functions that
+     *         create new requests, or solve active requests.
      * @dev Callable by MULTISIG_ROLE.
      */
     function unpause() external requiresAuth {
@@ -236,6 +272,8 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     /**
      * @notice Setup a new withdraw asset.
      * @dev Callable by MULTISIG_ROLE.
+     * @dev Does not explicitly revert if asset is already setup, but other than possible event confusion
+     *      there is no harm in calling this function multiple times.
      * @param assetOut The asset to withdraw.
      * @param secondsToMaturity The time in seconds it takes for the withdraw to mature.
      * @param minimumSecondsToDeadline The minimum time in seconds a withdraw request must be valid for before it is expired.
