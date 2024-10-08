@@ -61,7 +61,7 @@ contract ContractNames {
     string public constant EtherFiBtcName = "ether.fi BTC V0.0";
     string public constant EtherFiBtcManagerName = "ether.fi BTC Manager With Merkle Verification V0.0";
     string public constant EtherFiBtcAccountantName = "ether.fi BTC Accountant With Rate Providers V0.0";
-    string public constant EtherFiBtcTellerName = "ether.fi BTC Teller With Multi Asset Support V0.0";
+    string public constant EtherFiBtcTellerName = "ether.fi BTC Teller With Multi Asset Support V0.1";
     string public constant EtherFiBtcDecoderAndSanitizerName = "ether.fi BTC Decoder and Sanitizer V0.0";
     string public constant EtherFiBtcDelayedWithdrawer = "ether.fi BTC Delayed Withdrawer V0.0";
 

@@ -9,6 +9,7 @@
       "rateProvider": "0x0000000000000000000000000000000000000000"
     }
   },
+  "Drones": "",
   "WithdrawAssets": {
     "WBTC": {
       "CompletionWindow": 604800,
@@ -41,7 +42,7 @@
     "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
     "ManagerWithMerkleVerification": "0x382d0106F308864D5462332D9D3bB54a60384B70",
     "RolesAuthority": "0x6889E57BcA038C28520C0B047a75e567502ea5F6",
-    "TellerWithMultiAssetSupport": "0xe19a43B1b8af6CeE71749Af2332627338B3242D1"
+    "TellerWithMultiAssetSupport": "0x458797A320e6313c980C2bC7D270466A6288A8bB"
   },
   "depositConfiguration": {
     "AllowPublicDeposits": true,
