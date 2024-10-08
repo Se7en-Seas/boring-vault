@@ -1685,6 +1685,101 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
     }
 
+    // ========================================= Frax =========================================
+
+    function _addFraxLeafs(ManageLeaf[] memory leafs) internal {
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "SFRXETH")));
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "FRXETH"),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve frxETH Redemption Ticket to spend frxETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "frxETHRedemptionTicket");
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "SFRXETH"),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            "Approve frxETH Redemption Ticket to spend sfrxETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "frxETHRedemptionTicket");
+
+        // Staking
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "frxETHMinter"),
+            true,
+            "submit()",
+            new address[](0),
+            "Stake ETH for frxETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Unstaking
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "frxETHRedemptionTicket"),
+            false,
+            "enterRedemptionQueue(address,uint120)",
+            new address[](1),
+            "Request withdrawal from frxETH using frxETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "frxETHRedemptionTicket"),
+            false,
+            "enterRedemptionQueueViaSfrxEth(address,uint120)",
+            new address[](1),
+            "Request withdrawal from frxETH using sfrxETH",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+        // Complete withdrawal
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "frxETHRedemptionTicket"),
+            false,
+            "burnRedemptionTicketNft(uint256,address)",
+            new address[](1),
+            "Claim frxETH withdrawal",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "frxETHRedemptionTicket"),
+            false,
+            "earlyBurnRedemptionTicketNft(address,uint256)",
+            new address[](1),
+            "Cancel frxETH withdrawal with penalty",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+    }
+
     // ========================================= Swell Staking =========================================
 
     function _addSwellStakingLeafs(ManageLeaf[] memory leafs) internal {
