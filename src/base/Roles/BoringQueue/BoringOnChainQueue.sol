@@ -129,6 +129,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     error BoringOnChainQueue__Overflow();
     error BoringOnChainQueue__MAXIMUM_SECONDS_TO_MATURITY();
     error BoringOnChainQueue__BadInput();
+    error BoringOnChainQueue__RescueCannotTakeSharesFromActiveRequests();
 
     //============================== EVENTS ===============================
 
@@ -212,9 +213,11 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
      *      Shares from active withdraw requests are not withdrawable.
      * @param token The token to rescue.
      * @param amount The amount to rescue.
+     * @param to The address to send the rescued tokens to.
      * @param activeRequests The active withdraw requests, query `getWithdrawRequests`, or read events to get them.
+     * @dev Provided activeRequests must match the order of active requests in the queue.
      */
-    function rescueTokens(ERC20 token, uint256 amount, OnChainWithdraw[] calldata activeRequests)
+    function rescueTokens(ERC20 token, uint256 amount, address to, OnChainWithdraw[] calldata activeRequests)
         external
         requiresAuth
     {
@@ -231,12 +234,11 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
             }
             uint256 freeShares = boringVault.balanceOf(address(this)) - activeRequestShareSum;
             if (amount == type(uint256).max) amount = freeShares;
-            else if (amount > freeShares) revert BoringOnChainQueue__BadInput();
-            else amount = freeShares;
+            else if (amount > freeShares) revert BoringOnChainQueue__RescueCannotTakeSharesFromActiveRequests();
         } else {
             if (amount == type(uint256).max) amount = token.balanceOf(address(this));
         }
-        token.safeTransfer(msg.sender, amount);
+        token.safeTransfer(to, amount);
     }
 
     /**

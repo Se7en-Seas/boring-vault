@@ -384,6 +384,49 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         assertEq(ERC20(liquidEth).balanceOf(userB), 1e18, "User B should have their shares back.");
     }
 
+    function testQueueRescueTokens() external {
+        // Remove the 1 wei of shares we sent the queue in the setup.
+        deal(address(liquidEth), address(boringQueue), 0);
+        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+        address userWhoMadeAnHonestMistake = vm.addr(34);
+
+        // Check rescue tokens effects.
+        deal(address(WETH), address(boringQueue), 1e18);
+        boringQueue.rescueTokens(WETH, 1e18, address(this), requests);
+        assertEq(WETH.balanceOf(address(boringQueue)), 0, "Queue should not have any wETH.");
+
+        // We can also rescue shares from the queue, if they are transferred to it.
+        address userA = vm.addr(2);
+        address userB = vm.addr(3);
+        deal(address(liquidEth), userA, 1e18);
+        deal(address(liquidEth), userB, 1e18);
+        _haveUserCreateRequest(userA, address(WETH), 1e18, 100, 1 days);
+        _haveUserCreateRequest(userB, address(WETH), 1e18, 100, 1 days);
+        deal(address(liquidEth), userWhoMadeAnHonestMistake, 1e18);
+        vm.prank(userWhoMadeAnHonestMistake);
+        ERC20(liquidEth).safeTransfer(address(boringQueue), 1e18);
+
+        (, requests) = boringQueue.getWithdrawRequests();
+
+        // Trying to rescue shares that are from active requests should revert.
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    BoringOnChainQueue.BoringOnChainQueue__RescueCannotTakeSharesFromActiveRequests.selector
+                )
+            )
+        );
+        boringQueue.rescueTokens(ERC20(liquidEth), 1.001e18, userWhoMadeAnHonestMistake, requests);
+
+        // But succeeds if a a valid amount is used.
+        boringQueue.rescueTokens(ERC20(liquidEth), 0.1e18, userWhoMadeAnHonestMistake, requests);
+        assertEq(ERC20(liquidEth).balanceOf(userWhoMadeAnHonestMistake), 0.1e18, "User should have 0.1 shares.");
+
+        // Or if type(uint256).max is passed.
+        boringQueue.rescueTokens(ERC20(liquidEth), type(uint256).max, userWhoMadeAnHonestMistake, requests);
+        assertEq(ERC20(liquidEth).balanceOf(userWhoMadeAnHonestMistake), 1e18, "User should have 1 share.");
+    }
+
     function testSolverAdminCalls() external {
         // Check rescue tokens effects.
         deal(address(WETH), address(boringSolver), 1e18);
