@@ -524,6 +524,109 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
     }
 
+    function _addLidoStandardBridgeLeafs(
+        ManageLeaf[] memory leafs,
+        string memory destination,
+        address destinationCrossDomainMessenger,
+        address sourceResolvedDelegate,
+        address sourceStandardBridge,
+        address sourcePortal
+    ) internal virtual {
+        ERC20 localToken = getERC20(sourceChain, "WSTETH");
+        ERC20 remoteToken = getERC20(destination, "WSTETH");
+        if (keccak256(abi.encode(sourceChain)) == keccak256(abi.encode(mainnet))) {
+            // Approvals
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(localToken),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve StandardBridge to spend ", localToken.symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = sourceStandardBridge;
+
+            // ERC20 bridge leafs.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                sourceStandardBridge,
+                false,
+                "depositERC20To(address,address,address,uint256,uint32,bytes)",
+                new address[](3),
+                string.concat("Bridge ", localToken.symbol(), " from ", sourceChain, " to ", destination),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(localToken);
+            leafs[leafIndex].argumentAddresses[1] = address(remoteToken);
+            leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
+
+            // Prove withdrawal transaction.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                sourcePortal,
+                false,
+                "proveWithdrawalTransaction((uint256,address,address,uint256,uint256,bytes),uint256,(bytes32,bytes32,bytes32,bytes32),bytes[])",
+                new address[](2),
+                string.concat("Prove withdrawal transaction from ", destination, " to ", sourceChain),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = destinationCrossDomainMessenger;
+            leafs[leafIndex].argumentAddresses[1] = sourceResolvedDelegate;
+
+            // Finalize withdrawal transaction.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                sourcePortal,
+                false,
+                "finalizeWithdrawalTransaction((uint256,address,address,uint256,uint256,bytes))",
+                new address[](2),
+                string.concat("Finalize withdrawal transaction from ", destination, " to ", sourceChain),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = destinationCrossDomainMessenger;
+            leafs[leafIndex].argumentAddresses[1] = sourceResolvedDelegate;
+        } else if (keccak256(abi.encode(destination)) == keccak256(abi.encode(mainnet))) {
+            // We are bridging back to mainnet.
+            // Approve L2 ERC20 Token Bridge to spent wstETH.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(localToken),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve L2 ERC20 Token Bridge to spend ", localToken.symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = sourceStandardBridge;
+
+            // call withdrawTo.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                sourceStandardBridge,
+                false,
+                "withdrawTo(address,address,uint256,uint32,bytes)",
+                new address[](2),
+                string.concat("Withdraw wstETH to ", destination),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(localToken);
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+        }
+    }
+
     // ========================================= Arbitrum Native Bridge =========================================
 
     /// @notice When sourceChain is arbitrum bridgeAssets MUST be mainnet addresses.
