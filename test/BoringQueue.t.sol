@@ -427,6 +427,211 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         assertEq(ERC20(liquidEth).balanceOf(userWhoMadeAnHonestMistake), 1e18, "User should have 1 share.");
     }
 
+    function testQueueRescueTokenReverts() external {
+        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+        address userWhoMadeAnHonestMistake = vm.addr(34);
+
+        address userA = vm.addr(2);
+        address userB = vm.addr(3);
+        deal(address(liquidEth), userA, 1e18);
+        deal(address(liquidEth), userB, 1e18);
+        _haveUserCreateRequest(userA, address(WETH), 1e18, 100, 1 days);
+        _haveUserCreateRequest(userB, address(WETH), 1e18, 100, 1 days);
+        deal(address(liquidEth), userWhoMadeAnHonestMistake, 1e18);
+        vm.prank(userWhoMadeAnHonestMistake);
+        ERC20(liquidEth).safeTransfer(address(boringQueue), 1e18);
+
+        (, requests) = boringQueue.getWithdrawRequests();
+
+        // Trying to rescue shares that are from active requests should revert.
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    BoringOnChainQueue.BoringOnChainQueue__RescueCannotTakeSharesFromActiveRequests.selector
+                )
+            )
+        );
+        boringQueue.rescueTokens(ERC20(liquidEth), 1.001e18, userWhoMadeAnHonestMistake, requests);
+
+        // Altering a request also reverts.
+        requests[0].amountOfShares = 0;
+
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadInput.selector)));
+        boringQueue.rescueTokens(ERC20(liquidEth), 1e18, userWhoMadeAnHonestMistake, requests);
+
+        // Making request array wrong length reverts.
+        requests = new BoringOnChainQueue.OnChainWithdraw[](3);
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadInput.selector)));
+        boringQueue.rescueTokens(ERC20(liquidEth), 1e18, userWhoMadeAnHonestMistake, requests);
+    }
+
+    function testQueueSetupWithdrawAssetReverts() external {
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__MAX_DISCOUNT.selector)));
+        boringQueue.setupWithdrawAsset(address(WETH), 1 days, 2 days, 3, 0.3001e4, 0.03e18);
+
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__MAXIMUM_SECONDS_TO_MATURITY.selector))
+        );
+        boringQueue.setupWithdrawAsset(address(WETH), 31 days, 2 days, 3, 25, 0.03e18);
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    BoringOnChainQueue.BoringOnChainQueue__MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE.selector
+                )
+            )
+        );
+        boringQueue.setupWithdrawAsset(address(WETH), 1 days, 31 days, 3, 25, 0.03e18);
+
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadDiscount.selector)));
+        boringQueue.setupWithdrawAsset(address(WETH), 1 days, 2 days, 30, 25, 0.03e18);
+    }
+
+    function testQueueUpdateWithdrawAssetReverts() external {
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__MAX_DISCOUNT.selector)));
+        boringQueue.updateWithdrawAsset(address(WETH), 1 days, 2 days, 3, 0.3001e4, 0.03e18);
+
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__MAXIMUM_SECONDS_TO_MATURITY.selector))
+        );
+        boringQueue.updateWithdrawAsset(address(WETH), 31 days, 2 days, 3, 25, 0.03e18);
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    BoringOnChainQueue.BoringOnChainQueue__MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE.selector
+                )
+            )
+        );
+        boringQueue.updateWithdrawAsset(address(WETH), 1 days, 31 days, 3, 25, 0.03e18);
+
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadDiscount.selector)));
+        boringQueue.updateWithdrawAsset(address(WETH), 1 days, 2 days, 30, 25, 0.03e18);
+
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__WithdrawsNotAllowedForAsset.selector))
+        );
+        boringQueue.updateWithdrawAsset(address(EETH), 1 days, 2 days, 3, 25, 0.03e18);
+    }
+
+    function testQueueRequestCreationReverts() external {
+        // Reverts if queue is paused.
+        boringQueue.pause();
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__Paused.selector)));
+        boringQueue.requestOnChainWithdraw(address(WETH), 0, 0, 0);
+
+        boringQueue.unpause();
+
+        // Reverts if withdraw asset is not allowed.
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__WithdrawsNotAllowedForAsset.selector))
+        );
+        boringQueue.requestOnChainWithdraw(address(EETH), 0, 0, 0);
+
+        // Reverts if discount is too high.
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadDiscount.selector)));
+        boringQueue.requestOnChainWithdraw(address(WETH), 0, 101, 0);
+
+        // Reverts if discount is too low.
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadDiscount.selector)));
+        boringQueue.requestOnChainWithdraw(address(WETH), 0, 0, 0);
+
+        // Reverts if amount of shares is too low.
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadShareAmount.selector)));
+        boringQueue.requestOnChainWithdraw(address(WETH), 0, 5, 0);
+
+        // Reverts if deadline is too low.
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadDeadline.selector)));
+        boringQueue.requestOnChainWithdraw(address(WETH), 0.1e18, 100, 0);
+
+        // Reverts if share transferFrom fails.
+        vm.expectRevert(bytes("TRANSFER_FROM_FAILED"));
+        boringQueue.requestOnChainWithdraw(address(WETH), 0.1e18, 100, 2 days);
+
+        // TODO Not really sure how to check for a keccak256 hash collision...
+    }
+
+    function testQueueRequestCancellationReverts() external {
+        // If one user tries to cancel another users withdraw it reverts.
+        bytes32 requestId = _haveUserCreateRequest(testUser, address(WETH), 1e18, 3, 2 days);
+
+        address evilUser = vm.addr(22);
+
+        vm.startPrank(evilUser);
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadUser.selector)));
+        boringQueue.cancelOnChainWithdrawUsingRequestId(requestId);
+        vm.stopPrank();
+
+        // If test user edits the request data it reverts.
+        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+        requests[0].amountOfShares = 100e18;
+        vm.startPrank(testUser);
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__RequestNotFound.selector)));
+        boringQueue.cancelOnChainWithdraw(requests[0]);
+        vm.stopPrank();
+    }
+
+    function testQueueRequestReplacingReverts() external {
+        // If one user tries to replace another users withdraw it reverts.
+        bytes32 requestId = _haveUserCreateRequest(testUser, address(WETH), 1e18, 3, 2 days);
+
+        address evilUser = vm.addr(22);
+
+        vm.startPrank(evilUser);
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadUser.selector)));
+        boringQueue.replaceOnChainWithdrawUsingRequestId(requestId, 3, 2 days);
+        vm.stopPrank();
+    }
+
+    function testQueueGetOnChainWithdrawRevert() external {
+        // If queue is not tracking withdraws onchain.
+        boringQueue.toggleTrackWithdrawsOnChain();
+
+        // And a user makes a request.
+        bytes32 requestId = _haveUserCreateRequest(testUser, address(WETH), 1e18, 3, 2 days);
+
+        // Then if they try to get the request it reverts.
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__ZeroNonce.selector)));
+        boringQueue.getOnChainWithdraw(requestId);
+    }
+
+    function testQueueSolveOnChainWithdrawsReverts() external {
+        boringQueue.setupWithdrawAsset(address(EETH), 2 days, 1 days, 1, 100, 0.01e18);
+
+        // Have test user make 2 requests, one for wETH and one for eETH.
+        _haveUserCreateRequest(testUser, address(WETH), 1e18, 3, 2 days);
+        _haveUserCreateRequest(testUser, address(EETH), 1e18, 3, 1 days);
+
+        // Read requests from queue.
+        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+
+        // Trying to solve when not all requests are matured reverts.
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__NotMatured.selector)));
+        boringQueue.solveOnChainWithdraws(requests, hex"", address(this));
+
+        skip(3 days + 1);
+
+        // Trying to solve both requests in same call reverts because the assetOut is different.
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__SolveAssetMismatch.selector))
+        );
+        boringQueue.solveOnChainWithdraws(requests, hex"", address(this));
+
+        // Trying to solve a request past its deadline reverts.
+        BoringOnChainQueue.OnChainWithdraw[] memory requestsWithDeadlinePassed =
+            new BoringOnChainQueue.OnChainWithdraw[](1);
+        requestsWithDeadlinePassed[0] = requests[1];
+
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__DeadlinePassed.selector)));
+        boringQueue.solveOnChainWithdraws(requestsWithDeadlinePassed, hex"", address(this));
+
+        // Trying to solve requests with madeup data reverts.
+        requests[0].amountOfAssets = 1;
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__RequestNotFound.selector)));
+        boringQueue.solveOnChainWithdraws(requests, hex"", address(this));
+    }
+
+    // TODO finish
     function testSolverAdminCalls() external {
         // Check rescue tokens effects.
         deal(address(WETH), address(boringSolver), 1e18);
