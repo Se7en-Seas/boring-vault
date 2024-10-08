@@ -547,8 +547,6 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         // Reverts if share transferFrom fails.
         vm.expectRevert(bytes("TRANSFER_FROM_FAILED"));
         boringQueue.requestOnChainWithdraw(address(WETH), 0.1e18, 100, 2 days);
-
-        // TODO Not really sure how to check for a keccak256 hash collision...
     }
 
     function testQueueRequestCancellationReverts() external {

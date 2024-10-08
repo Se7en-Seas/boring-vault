@@ -83,6 +83,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
      */
     EnumerableSet.Bytes32Set private _withdrawRequests;
 
+    // TODO map using nonce
     /**
      * @notice Mapping of request Ids to OnChainWithdraws.
      */
@@ -327,6 +328,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         emit WithdrawAssetStopped(assetOut);
     }
 
+    // TODO combine with setup function
     /**
      * @notice Update a withdraw asset.
      * @dev Callable by MULTISIG_ROLE.
