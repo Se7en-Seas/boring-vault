@@ -2,11 +2,8 @@
 pragma solidity 0.8.21;
 
 import {BoringOnChainQueue} from "src/base/Roles/BoringQueue/BoringOnChainQueue.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 contract BoringOnChainQueueWithTracking is BoringOnChainQueue {
-    using Address for address;
-
     // ========================================= GLOBAL STATE =========================================
 
     /**
@@ -22,8 +19,6 @@ contract BoringOnChainQueueWithTracking is BoringOnChainQueue {
     //============================== ERRORS ===============================
 
     error BoringOnChainQueue__ZeroNonce();
-
-    //============================== EVENTS ===============================
 
     //============================== IMMUTABLES ===============================
 
@@ -51,25 +46,34 @@ contract BoringOnChainQueueWithTracking is BoringOnChainQueue {
 
     //=============================== USER FUNCTIONS ================================
 
+    /**
+     * @notice Cancel an on-chain withdraw using the request Id.
+     */
     function cancelOnChainWithdrawUsingRequestId(bytes32 requestId)
         external
         requiresAuth
         returns (OnChainWithdraw memory request)
     {
         request = getOnChainWithdraw(requestId);
-        address(this).functionDelegateCall(abi.encodeWithSelector(this.cancelOnChainWithdraw.selector, request));
+        _cancelOnChainWithdrawWithUserCheck(request);
     }
 
+    /**
+     * @notice Replace an on-chain withdraw using the request Id.
+     * @dev Reverts if the request is not mature.
+     * @param oldRequestId The request Id to replace.
+     * @param discount The discount to apply to the withdraw in bps.
+     * @param secondsToDeadline The time in seconds the request is valid for.
+     * @return oldRequest The old request.
+     * @return newRequestId The new request Id.
+     */
     function replaceOnChainWithdrawUsingRequestId(bytes32 oldRequestId, uint16 discount, uint24 secondsToDeadline)
         external
         requiresAuth
         returns (OnChainWithdraw memory oldRequest, bytes32 newRequestId)
     {
         oldRequest = getOnChainWithdraw(oldRequestId);
-        bytes memory result = address(this).functionDelegateCall(
-            abi.encodeWithSelector(this.replaceOnChainWithdraw.selector, oldRequest, discount, secondsToDeadline)
-        );
-        (, newRequestId) = abi.decode(result, (bytes32, bytes32));
+        (, newRequestId) = _replaceOnChainWithdrawWithUserCheck(oldRequest, discount, secondsToDeadline);
     }
 
     //============================== VIEW FUNCTIONS ===============================
@@ -85,9 +89,7 @@ contract BoringOnChainQueueWithTracking is BoringOnChainQueue {
         view
         returns (bytes32[] memory requestIds, OnChainWithdraw[] memory requests)
     {
-        requestIds = abi.decode(
-            address(this).functionStaticCall(abi.encodeWithSelector(this.getRequestIds.selector)), (bytes32[])
-        );
+        requestIds = getRequestIds();
         uint256 requestsLength = requestIds.length;
         requests = new OnChainWithdraw[](requestsLength);
         for (uint256 i = 0; i < requestsLength; ++i) {
