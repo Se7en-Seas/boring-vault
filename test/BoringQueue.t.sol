@@ -115,10 +115,10 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         deal(address(WETH), address(this), 10_000e18);
 
         // Add wETH as a withdraw asset on the boringQueue.
-        boringQueue.setupWithdrawAsset(address(WETH), 3 days, 1 days, 1, 100, 0.01e18);
+        boringQueue.updateWithdrawAsset(address(WETH), 3 days, 1 days, 1, 100, 0.01e18);
 
         // Add weETHs as a withdraw asset on the boringQueue.
-        boringQueue.setupWithdrawAsset(weETHs, 0, 1 days, 1, 100, 0.01e18);
+        boringQueue.updateWithdrawAsset(weETHs, 0, 1 days, 1, 100, 0.01e18);
 
         deal(address(liquidEth), address(boringQueue), 1);
     }
@@ -336,7 +336,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         assertEq(boringQueue.trackWithdrawsOnChain(), true, "Queue should be tracking onchain withdraws.");
 
         // Check setup withdraw asset effects.
-        boringQueue.setupWithdrawAsset(address(EETH), 1 days, 2 days, 3, 25, 0.03e18);
+        boringQueue.updateWithdrawAsset(address(EETH), 1 days, 2 days, 3, 25, 0.03e18);
         (
             bool allowWithdraws,
             uint24 secondsToMaturity,
@@ -465,28 +465,6 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         boringQueue.rescueTokens(ERC20(liquidEth), 1e18, userWhoMadeAnHonestMistake, requests);
     }
 
-    function testQueueSetupWithdrawAssetReverts() external {
-        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__MAX_DISCOUNT.selector)));
-        boringQueue.setupWithdrawAsset(address(WETH), 1 days, 2 days, 3, 0.3001e4, 0.03e18);
-
-        vm.expectRevert(
-            bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__MAXIMUM_SECONDS_TO_MATURITY.selector))
-        );
-        boringQueue.setupWithdrawAsset(address(WETH), 31 days, 2 days, 3, 25, 0.03e18);
-
-        vm.expectRevert(
-            bytes(
-                abi.encodeWithSelector(
-                    BoringOnChainQueue.BoringOnChainQueue__MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE.selector
-                )
-            )
-        );
-        boringQueue.setupWithdrawAsset(address(WETH), 1 days, 31 days, 3, 25, 0.03e18);
-
-        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadDiscount.selector)));
-        boringQueue.setupWithdrawAsset(address(WETH), 1 days, 2 days, 30, 25, 0.03e18);
-    }
-
     function testQueueUpdateWithdrawAssetReverts() external {
         vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__MAX_DISCOUNT.selector)));
         boringQueue.updateWithdrawAsset(address(WETH), 1 days, 2 days, 3, 0.3001e4, 0.03e18);
@@ -507,11 +485,6 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
 
         vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadDiscount.selector)));
         boringQueue.updateWithdrawAsset(address(WETH), 1 days, 2 days, 30, 25, 0.03e18);
-
-        vm.expectRevert(
-            bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__WithdrawsNotAllowedForAsset.selector))
-        );
-        boringQueue.updateWithdrawAsset(address(EETH), 1 days, 2 days, 3, 25, 0.03e18);
     }
 
     function testQueueRequestCreationReverts() external {
@@ -594,7 +567,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
     }
 
     function testQueueSolveOnChainWithdrawsReverts() external {
-        boringQueue.setupWithdrawAsset(address(EETH), 2 days, 1 days, 1, 100, 0.01e18);
+        boringQueue.updateWithdrawAsset(address(EETH), 2 days, 1 days, 1, 100, 0.01e18);
 
         // Have test user make 2 requests, one for wETH and one for eETH.
         _haveUserCreateRequest(testUser, address(WETH), 1e18, 3, 2 days);
@@ -656,9 +629,11 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         uint16 discount,
         uint24 secondsToDeadline
     ) internal returns (bytes32 requestId) {
+        uint96 nonceBefore = boringQueue.nonce();
         vm.startPrank(user);
         ERC20(liquidEth).safeApprove(address(boringQueue), amountOfShares);
         requestId = boringQueue.requestOnChainWithdraw(assetOut, amountOfShares, discount, secondsToDeadline);
         vm.stopPrank();
+        assertEq(boringQueue.nonce(), nonceBefore + 1, "Nonce should have increased by 1.");
     }
 }

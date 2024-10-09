@@ -76,6 +76,16 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
      */
     uint24 internal constant MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE = 30 days;
 
+    // ========================================= MODIFIERS =========================================
+
+    /**
+     * @notice Ensure that the request user is the same as the message sender.
+     */
+    modifier onlyRequestUser(address requestUser, address msgSender) {
+        if (requestUser != msgSender) revert BoringOnChainQueue__BadUser();
+        _;
+    }
+
     // ========================================= GLOBAL STATE =========================================
 
     /**
@@ -83,7 +93,6 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
      */
     EnumerableSet.Bytes32Set private _withdrawRequests;
 
-    // TODO map using nonce
     /**
      * @notice Mapping of request Ids to OnChainWithdraws.
      */
@@ -96,7 +105,12 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     /**
      * @notice The nonce of the next request.
+     * @dev The purpose of this nonce is to prevent request Ids from being repeated.
      * @dev Start at 1, since 0 is considered invalid.
+     * @dev When incrementing the nonce, an unchecked block is used to save gas.
+     *      This is safe because you can not feasibly make a request, and then cause an overflow
+     *      in the same block such that you can make 2 requests with the same request Id.
+     *      And even if you did, the tx would revert with a keccak256 collision error.
      */
     uint96 public nonce = 1;
 
@@ -273,10 +287,8 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     }
 
     /**
-     * @notice Setup a new withdraw asset.
+     * @notice Update a new withdraw asset or existing.
      * @dev Callable by MULTISIG_ROLE.
-     * @dev Does not explicitly revert if asset is already setup, but other than possible event confusion
-     *      there is no harm in calling this function multiple times.
      * @param assetOut The asset to withdraw.
      * @param secondsToMaturity The time in seconds it takes for the withdraw to mature.
      * @param minimumSecondsToDeadline The minimum time in seconds a withdraw request must be valid for before it is expired.
@@ -284,7 +296,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
      * @param maxDiscount The maximum discount allowed for a withdraw request.
      * @param minimumShares The minimum amount of shares that can be withdrawn.
      */
-    function setupWithdrawAsset(
+    function updateWithdrawAsset(
         address assetOut,
         uint24 secondsToMaturity,
         uint24 minimumSecondsToDeadline,
@@ -313,7 +325,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
             minimumShares: minimumShares
         });
 
-        emit WithdrawAssetSetup(
+        emit WithdrawAssetUpdated(
             assetOut, secondsToMaturity, minimumSecondsToDeadline, minDiscount, maxDiscount, minimumShares
         );
     }
@@ -326,48 +338,6 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     function stopWithdrawsInAsset(address assetOut) external requiresAuth {
         withdrawAssets[assetOut].allowWithdraws = false;
         emit WithdrawAssetStopped(assetOut);
-    }
-
-    // TODO combine with setup function
-    /**
-     * @notice Update a withdraw asset.
-     * @dev Callable by MULTISIG_ROLE.
-     * @param assetOut Withdraw asset to update.
-     * @param secondsToMaturity The time in seconds it takes for the withdraw to mature.
-     * @param minimumSecondsToDeadline The minimum time in seconds a withdraw request must be valid for before it is expired.
-     * @param minDiscount The minimum discount allowed for a withdraw request.
-     * @param maxDiscount The maximum discount allowed for a withdraw request.
-     * @param minimumShares The minimum amount of shares that can be withdrawn.
-     */
-    function updateWithdrawAsset(
-        address assetOut,
-        uint24 secondsToMaturity,
-        uint24 minimumSecondsToDeadline,
-        uint16 minDiscount,
-        uint16 maxDiscount,
-        uint96 minimumShares
-    ) external requiresAuth {
-        // Validate input.
-        if (maxDiscount > MAX_DISCOUNT) revert BoringOnChainQueue__MAX_DISCOUNT();
-        if (secondsToMaturity > MAXIMUM_SECONDS_TO_MATURITY) {
-            revert BoringOnChainQueue__MAXIMUM_SECONDS_TO_MATURITY();
-        }
-        if (minimumSecondsToDeadline > MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE) {
-            revert BoringOnChainQueue__MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE();
-        }
-        if (minDiscount > maxDiscount) revert BoringOnChainQueue__BadDiscount();
-
-        WithdrawAsset storage withdrawAsset = withdrawAssets[assetOut];
-        if (!withdrawAsset.allowWithdraws) revert BoringOnChainQueue__WithdrawsNotAllowedForAsset();
-        withdrawAsset.secondsToMaturity = secondsToMaturity;
-        withdrawAsset.minimumSecondsToDeadline = minimumSecondsToDeadline;
-        withdrawAsset.minDiscount = minDiscount;
-        withdrawAsset.maxDiscount = maxDiscount;
-        withdrawAsset.minimumShares = minimumShares;
-
-        emit WithdrawAssetUpdated(
-            assetOut, secondsToMaturity, minimumSecondsToDeadline, minDiscount, maxDiscount, minimumShares
-        );
     }
 
     /**
@@ -459,7 +429,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         requiresAuth
         returns (bytes32 requestId)
     {
-        requestId = _cancelOnChainWithdraw(request);
+        requestId = _cancelMsgSenderOnChainWithdraw(request);
     }
 
     /**
@@ -473,7 +443,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         returns (OnChainWithdraw memory request)
     {
         request = getOnChainWithdraw(requestId);
-        _cancelOnChainWithdraw(request);
+        _cancelMsgSenderOnChainWithdraw(request);
     }
 
     /**
@@ -637,9 +607,11 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
      * @param request The request to cancel.
      * @return requestId The request Id.
      */
-    function _cancelOnChainWithdraw(OnChainWithdraw memory request) internal returns (bytes32 requestId) {
-        if (request.user != msg.sender) revert BoringOnChainQueue__BadUser();
-
+    function _cancelMsgSenderOnChainWithdraw(OnChainWithdraw memory request)
+        internal
+        onlyRequestUser(request.user, msg.sender)
+        returns (bytes32 requestId)
+    {
         requestId = _cancelUserOnChainWithdraw(request);
     }
 
@@ -664,10 +636,9 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
      */
     function _replaceOnChainWithdraw(OnChainWithdraw memory oldRequest, uint16 discount, uint24 secondsToDeadline)
         internal
+        onlyRequestUser(oldRequest.user, msg.sender)
         returns (bytes32 oldRequestId, bytes32 newRequestId)
     {
-        if (oldRequest.user != msg.sender) revert BoringOnChainQueue__BadUser();
-
         WithdrawAsset memory withdrawAsset = withdrawAssets[oldRequest.assetOut];
 
         _beforeNewRequest(withdrawAsset, oldRequest.amountOfShares, discount, secondsToDeadline);
@@ -707,8 +678,13 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         uint24 secondsToDeadline
     ) internal returns (bytes32 requestId) {
         // Create new request.
-        uint96 requestNonce = nonce;
-        nonce++;
+        uint96 requestNonce;
+        // See nonce definition for unchecked safety.
+        unchecked {
+            // Set request nonce as current nonce, then increment nonce.
+            requestNonce = nonce++;
+        }
+
         uint128 amountOfAssets128;
         {
             uint256 price = accountant.getRateInQuoteSafe(ERC20(assetOut));
