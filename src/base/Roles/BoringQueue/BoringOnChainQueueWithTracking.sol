@@ -18,7 +18,11 @@ contract BoringOnChainQueueWithTracking is BoringOnChainQueue {
 
     //============================== ERRORS ===============================
 
-    error BoringOnChainQueue__ZeroNonce();
+    error BoringOnChainQueueWithTracking__ZeroNonce();
+
+    //============================== EVENTS ===============================
+
+    event TrackWithdrawsOnChainToggled(bool newState);
 
     //============================== IMMUTABLES ===============================
 
@@ -105,7 +109,7 @@ contract BoringOnChainQueueWithTracking is BoringOnChainQueue {
      */
     function getOnChainWithdraw(bytes32 requestId) public view returns (OnChainWithdraw memory) {
         OnChainWithdraw memory request = onChainWithdraws[requestId];
-        if (request.nonce == 0) revert BoringOnChainQueue__ZeroNonce();
+        if (request.nonce == 0) revert BoringOnChainQueueWithTracking__ZeroNonce();
         return onChainWithdraws[requestId];
     }
 

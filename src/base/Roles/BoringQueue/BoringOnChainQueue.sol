@@ -177,8 +177,6 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     event Unpaused();
 
-    event TrackWithdrawsOnChainToggled(bool newState);
-
     //============================== IMMUTABLES ===============================
 
     /**
@@ -389,6 +387,9 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
                 revert BoringOnChainQueue__PermitFailedAndAllowanceTooLow();
             }
         }
+
+        boringVault.safeTransferFrom(msg.sender, address(this), amountOfShares);
+
         (requestId,) = _queueOnChainWithdraw(
             msg.sender, assetOut, amountOfShares, discount, withdrawAsset.secondsToMaturity, secondsToDeadline
         );
@@ -489,6 +490,21 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
      */
     function getRequestId(OnChainWithdraw calldata request) external pure returns (bytes32 requestId) {
         return keccak256(abi.encode(request));
+    }
+
+    /**
+     * @notice Preview assets out from a withdraw request.
+     */
+    function previewAssetsOut(address assetOut, uint128 amountOfShares, uint16 discount)
+        public
+        view
+        returns (uint128 amountOfAssets128)
+    {
+        uint256 price = accountant.getRateInQuoteSafe(ERC20(assetOut));
+        price = price.mulDivDown(1e4 - discount, 1e4);
+        uint256 amountOfAssets = uint256(amountOfShares).mulDivDown(price, ONE_SHARE);
+        if (amountOfAssets > type(uint128).max) revert BoringOnChainQueue__Overflow();
+        amountOfAssets128 = uint128(amountOfAssets);
     }
 
     //============================= INTERNAL FUNCTIONS ==============================
@@ -624,14 +640,8 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
             requestNonce = nonce++;
         }
 
-        uint128 amountOfAssets128;
-        {
-            uint256 price = accountant.getRateInQuoteSafe(ERC20(assetOut));
-            price = price.mulDivDown(1e4 - discount, 1e4);
-            uint256 amountOfAssets = uint256(amountOfShares).mulDivDown(price, ONE_SHARE);
-            if (amountOfAssets > type(uint128).max) revert BoringOnChainQueue__Overflow();
-            amountOfAssets128 = uint128(amountOfAssets);
-        }
+        uint128 amountOfAssets128 = previewAssetsOut(assetOut, amountOfShares, discount);
+
         uint40 timeNow = uint40(block.timestamp); // Safe to cast to uint40 as it won't overflow for 10s of thousands of years
         req = OnChainWithdraw({
             nonce: requestNonce,

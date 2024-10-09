@@ -14,8 +14,7 @@ import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {BoringOnChainQueue} from "src/base/Roles/BoringQueue/BoringOnChainQueue.sol";
 import {BoringSolver} from "src/base/Roles/BoringQueue/BoringSolver.sol";
-import {BoringOnChainQueueWithTracking} from "src/base/Roles/BoringQueue/BoringOnChainQueueWithTracking.sol";
-import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
+import {Test, stdStorage, StdStorage, stdError, console, Vm} from "@forge-std/Test.sol";
 
 contract BoringQueueTest is Test, MerkleTreeHelper {
     using SafeTransferLib for ERC20;
@@ -43,7 +42,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
 
     address public testUser = vm.addr(1);
 
-    BoringOnChainQueueWithTracking public boringQueue;
+    BoringOnChainQueue public boringQueue;
     BoringSolver public boringSolver;
     ERC20 internal WETH;
     ERC20 internal EETH;
@@ -64,8 +63,8 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         USDC = getERC20(sourceChain, "USDC");
         WEETH_RATE_PROVIDER = getAddress(sourceChain, "WEETH_RATE_PROVIDER");
 
-        boringQueue = new BoringOnChainQueueWithTracking(
-            address(this), address(liquidEth_roles_authority), payable(liquidEth), address(liquidEth_accountant), true
+        boringQueue = new BoringOnChainQueue(
+            address(this), address(liquidEth_roles_authority), payable(liquidEth), address(liquidEth_accountant)
         );
         boringSolver = new BoringSolver(address(this), address(liquidEth_roles_authority));
 
@@ -87,13 +86,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
             address(boringQueue), BoringOnChainQueue.cancelOnChainWithdraw.selector, true
         );
         liquidEth_roles_authority.setPublicCapability(
-            address(boringQueue), BoringOnChainQueueWithTracking.cancelOnChainWithdrawUsingRequestId.selector, true
-        );
-        liquidEth_roles_authority.setPublicCapability(
             address(boringQueue), BoringOnChainQueue.replaceOnChainWithdraw.selector, true
-        );
-        liquidEth_roles_authority.setPublicCapability(
-            address(boringQueue), BoringOnChainQueueWithTracking.replaceOnChainWithdrawUsingRequestId.selector, true
         );
         liquidEth_roles_authority.setPublicCapability(
             address(boringQueue), BoringOnChainQueue.solveOnChainWithdraws.selector, true
@@ -128,12 +121,12 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
         discount = uint16(bound(discount, 1, 100));
         uint24 secondsToDeadline = 1 days;
-        _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
+        (, requests[0]) = _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
 
         skip(3 days);
 
         // Solve users request using p2p solve.
-        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
 
         // Approve queue to spend wETH.
         WETH.safeApprove(address(boringQueue), type(uint256).max);
@@ -149,16 +142,93 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         assertEq(WETH.balanceOf(testUser), requests[0].amountOfAssets, "User should have received their wETH.");
     }
 
+    function testUsingPermitToCreateRequest(uint128 amountOfShares, uint16 discount) external {
+        amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
+        discount = uint16(bound(discount, 1, 100));
+        uint24 secondsToDeadline = 1 days;
+
+        uint256 userKey = 111;
+        address user = vm.addr(userKey);
+        deal(liquidEth, user, amountOfShares);
+
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                ERC20(liquidEth).DOMAIN_SEPARATOR(),
+                keccak256(
+                    abi.encode(
+                        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
+                        user,
+                        address(boringQueue),
+                        amountOfShares,
+                        ERC20(liquidEth).nonces(user),
+                        block.timestamp
+                    )
+                )
+            )
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userKey, digest);
+        vm.startPrank(user);
+        uint256 shareDelta = ERC20(liquidEth).balanceOf(user);
+        boringQueue.requestOnChainWithdrawWithPermit(
+            address(WETH), amountOfShares, discount, secondsToDeadline, block.timestamp, v, r, s
+        );
+        shareDelta = shareDelta - ERC20(liquidEth).balanceOf(user);
+        vm.stopPrank();
+
+        assertEq(shareDelta, amountOfShares, "User should have had their shares removed.");
+    }
+
+    function testUsingPermitToCreateRequestWithFrontRunning(uint128 amountOfShares, uint16 discount) external {
+        amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
+        discount = uint16(bound(discount, 1, 100));
+        uint24 secondsToDeadline = 1 days;
+
+        uint256 userKey = 111;
+        address user = vm.addr(userKey);
+        deal(liquidEth, user, amountOfShares);
+
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                ERC20(liquidEth).DOMAIN_SEPARATOR(),
+                keccak256(
+                    abi.encode(
+                        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
+                        user,
+                        address(boringQueue),
+                        amountOfShares,
+                        ERC20(liquidEth).nonces(user),
+                        block.timestamp
+                    )
+                )
+            )
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userKey, digest);
+
+        address attacker = vm.addr(0xDEAD);
+        vm.startPrank(attacker);
+        ERC20(liquidEth).permit(user, address(boringQueue), amountOfShares, block.timestamp, v, r, s);
+        vm.stopPrank();
+
+        // User TX is still successful.
+        vm.startPrank(user);
+        boringQueue.requestOnChainWithdrawWithPermit(
+            address(WETH), amountOfShares, discount, secondsToDeadline, block.timestamp, v, r, s
+        );
+        vm.stopPrank();
+    }
+
     function testRedeemSolve(uint128 amountOfShares, uint16 discount) external {
         amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
         discount = uint16(bound(discount, 1, 100));
         uint24 secondsToDeadline = 1 days;
-        _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
+        (, requests[0]) = _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
 
         skip(3 days);
 
         // Solve users request using p2p solve.
-        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
 
         uint256 wETHDelta = WETH.balanceOf(address(this));
         boringSolver.boringRedeemSolve(boringQueue, requests, liquidEth_teller);
@@ -172,12 +242,12 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
         discount = uint16(bound(discount, 1, 100));
         uint24 secondsToDeadline = 1 days;
-        _haveUserCreateRequest(testUser, weETHs, amountOfShares, discount, secondsToDeadline);
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
+        (, requests[0]) = _haveUserCreateRequest(testUser, weETHs, amountOfShares, discount, secondsToDeadline);
 
         // No need to skip since maturity is 0.
 
         // Solve users request using p2p solve.
-        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
 
         uint256 wETHDelta = WETH.balanceOf(address(this));
         boringSolver.boringRedeemMintSolve(boringQueue, requests, liquidEth_teller, weETHs_teller, address(WETH));
@@ -194,30 +264,12 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         discount = uint16(bound(discount, 1, 100));
         uint24 secondsToDeadline = 1 days;
         uint256 startingShares = ERC20(liquidEth).balanceOf(testUser);
-        _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
-
-        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
+        (, requests[0]) = _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
 
         // Cancel the request.
         vm.prank(testUser);
         boringQueue.cancelOnChainWithdraw(requests[0]);
-
-        uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
-
-        assertEq(WETH.balanceOf(testUser), 0, "User should not have received any wETH.");
-        assertEq(endingShares, startingShares, "User should have received their shares back.");
-    }
-
-    function testUserRequestsThenCancelsUsingRequestId(uint128 amountOfShares, uint16 discount) external {
-        amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
-        discount = uint16(bound(discount, 1, 100));
-        uint24 secondsToDeadline = 1 days;
-        uint256 startingShares = ERC20(liquidEth).balanceOf(testUser);
-        bytes32 requestId = _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
-
-        // Cancel the request.
-        vm.prank(testUser);
-        boringQueue.cancelOnChainWithdrawUsingRequestId(requestId);
 
         uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
 
@@ -230,34 +282,13 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         discount = uint16(bound(discount, 1, 100));
         newDiscount = uint16(bound(newDiscount, 1, 100));
         uint24 secondsToDeadline = 1 days;
-        _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
+        (, requests[0]) = _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
 
-        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
-
-        // Repalce the request.
+        // Replace the request.
         uint256 startingShares = ERC20(liquidEth).balanceOf(testUser);
         vm.prank(testUser);
         boringQueue.replaceOnChainWithdraw(requests[0], newDiscount, secondsToDeadline);
-
-        uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
-
-        assertEq(WETH.balanceOf(testUser), 0, "User should not have received any wETH.");
-        assertEq(endingShares, startingShares, "User should have not gotten any shares back.");
-    }
-
-    function testUserRequestsThenReplacesUsingRequestId(uint128 amountOfShares, uint16 discount, uint16 newDiscount)
-        external
-    {
-        amountOfShares = uint128(bound(amountOfShares, 0.01e18, 1_000e18));
-        discount = uint16(bound(discount, 1, 100));
-        newDiscount = uint16(bound(newDiscount, 1, 100));
-        uint24 secondsToDeadline = 1 days;
-        bytes32 requestId = _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
-
-        // Repalce the request.
-        uint256 startingShares = ERC20(liquidEth).balanceOf(testUser);
-        vm.prank(testUser);
-        boringQueue.replaceOnChainWithdrawUsingRequestId(requestId, newDiscount, secondsToDeadline);
 
         uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
 
@@ -270,9 +301,8 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         discount = uint16(bound(discount, 1, 100));
         uint24 secondsToDeadline = 1 days;
         uint256 startingShares = ERC20(liquidEth).balanceOf(testUser);
-        _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
-
-        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
+        (, requests[0]) = _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
 
         // Fast forward 3 days so request is matured.
         skip(3 days);
@@ -293,16 +323,15 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         uint256 startingShares = ERC20(liquidEth).balanceOf(testUser);
         uint256 shareSum;
         uint256 assetSum;
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](4);
         for (uint256 i; i < 4; ++i) {
             amountOfShares[i] = uint128(bound(amountOfShares[i], 0.01e18, 100e18));
             shareSum += amountOfShares[i];
             discount[i] = uint16(bound(discount[i], 1, 100));
             // Make request.
-            requestIds[i] =
+            (requestIds[i], requests[i]) =
                 _haveUserCreateRequest(testUser, address(WETH), amountOfShares[i], discount[i], secondsToDeadline);
         }
-
-        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
 
         for (uint256 i; i < 4; ++i) {
             assetSum += requests[i].amountOfAssets;
@@ -327,13 +356,6 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         assertEq(boringQueue.isPaused(), true, "Queue should be paused.");
         boringQueue.unpause();
         assertEq(boringQueue.isPaused(), false, "Queue should not be paused.");
-
-        // Check toggle track withdraw onchain effects.
-        assertEq(boringQueue.trackWithdrawsOnChain(), true, "Queue should be tracking onchain withdraws.");
-        boringQueue.toggleTrackWithdrawsOnChain();
-        assertEq(boringQueue.trackWithdrawsOnChain(), false, "Queue should not be tracking onchain withdraws.");
-        boringQueue.toggleTrackWithdrawsOnChain();
-        assertEq(boringQueue.trackWithdrawsOnChain(), true, "Queue should be tracking onchain withdraws.");
 
         // Check setup withdraw asset effects.
         boringQueue.updateWithdrawAsset(address(EETH), 1 days, 2 days, 3, 25, 0.03e18);
@@ -372,9 +394,9 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         address userB = vm.addr(3);
         deal(address(liquidEth), userA, 1e18);
         deal(address(liquidEth), userB, 1e18);
-        _haveUserCreateRequest(userA, address(WETH), 1e18, 100, 1 days);
-        _haveUserCreateRequest(userB, address(WETH), 1e18, 100, 1 days);
-        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](2);
+        (, requests[0]) = _haveUserCreateRequest(userA, address(WETH), 1e18, 100, 1 days);
+        (, requests[1]) = _haveUserCreateRequest(userB, address(WETH), 1e18, 100, 1 days);
 
         boringQueue.cancelUserWithdraws(requests);
 
@@ -387,7 +409,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
     function testQueueRescueTokens() external {
         // Remove the 1 wei of shares we sent the queue in the setup.
         deal(address(liquidEth), address(boringQueue), 0);
-        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](2);
         address userWhoMadeAnHonestMistake = vm.addr(34);
 
         // Check rescue tokens effects.
@@ -400,13 +422,11 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         address userB = vm.addr(3);
         deal(address(liquidEth), userA, 1e18);
         deal(address(liquidEth), userB, 1e18);
-        _haveUserCreateRequest(userA, address(WETH), 1e18, 100, 1 days);
-        _haveUserCreateRequest(userB, address(WETH), 1e18, 100, 1 days);
+        (, requests[0]) = _haveUserCreateRequest(userA, address(WETH), 1e18, 100, 1 days);
+        (, requests[1]) = _haveUserCreateRequest(userB, address(WETH), 1e18, 100, 1 days);
         deal(address(liquidEth), userWhoMadeAnHonestMistake, 1e18);
         vm.prank(userWhoMadeAnHonestMistake);
         ERC20(liquidEth).safeTransfer(address(boringQueue), 1e18);
-
-        (, requests) = boringQueue.getWithdrawRequests();
 
         // Trying to rescue shares that are from active requests should revert.
         vm.expectRevert(
@@ -428,20 +448,19 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
     }
 
     function testQueueRescueTokenReverts() external {
-        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](2);
+
         address userWhoMadeAnHonestMistake = vm.addr(34);
 
         address userA = vm.addr(2);
         address userB = vm.addr(3);
         deal(address(liquidEth), userA, 1e18);
         deal(address(liquidEth), userB, 1e18);
-        _haveUserCreateRequest(userA, address(WETH), 1e18, 100, 1 days);
-        _haveUserCreateRequest(userB, address(WETH), 1e18, 100, 1 days);
+        (, requests[0]) = _haveUserCreateRequest(userA, address(WETH), 1e18, 100, 1 days);
+        (, requests[1]) = _haveUserCreateRequest(userB, address(WETH), 1e18, 100, 1 days);
         deal(address(liquidEth), userWhoMadeAnHonestMistake, 1e18);
         vm.prank(userWhoMadeAnHonestMistake);
         ERC20(liquidEth).safeTransfer(address(boringQueue), 1e18);
-
-        (, requests) = boringQueue.getWithdrawRequests();
 
         // Trying to rescue shares that are from active requests should revert.
         vm.expectRevert(
@@ -520,63 +539,86 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         // Reverts if share transferFrom fails.
         vm.expectRevert(bytes("TRANSFER_FROM_FAILED"));
         boringQueue.requestOnChainWithdraw(address(WETH), 0.1e18, 100, 2 days);
+
+        // Reverts if permit fails and allowance is too low.
+        uint128 amountOfShares = 1e18;
+        uint16 discount = 3;
+        uint24 secondsToDeadline = 1 days;
+
+        uint256 userKey = 111;
+        address user = vm.addr(userKey);
+        deal(liquidEth, user, amountOfShares);
+
+        // Make malformed permit data.
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x02", // should be x01, not x02.
+                ERC20(liquidEth).DOMAIN_SEPARATOR(),
+                keccak256(
+                    abi.encode(
+                        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
+                        user,
+                        address(boringQueue),
+                        amountOfShares,
+                        ERC20(liquidEth).nonces(user),
+                        block.timestamp
+                    )
+                )
+            )
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userKey, digest);
+        vm.startPrank(user);
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__PermitFailedAndAllowanceTooLow.selector)
+            )
+        );
+        boringQueue.requestOnChainWithdrawWithPermit(
+            address(WETH), amountOfShares, discount, secondsToDeadline, block.timestamp, v, r, s
+        );
+        vm.stopPrank();
     }
 
     function testQueueRequestCancellationReverts() external {
         // If one user tries to cancel another users withdraw it reverts.
-        bytes32 requestId = _haveUserCreateRequest(testUser, address(WETH), 1e18, 3, 2 days);
+        (, BoringOnChainQueue.OnChainWithdraw memory req) =
+            _haveUserCreateRequest(testUser, address(WETH), 1e18, 3, 2 days);
 
         address evilUser = vm.addr(22);
 
         vm.startPrank(evilUser);
         vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadUser.selector)));
-        boringQueue.cancelOnChainWithdrawUsingRequestId(requestId);
+        boringQueue.cancelOnChainWithdraw(req);
         vm.stopPrank();
 
         // If test user edits the request data it reverts.
-        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
-        requests[0].amountOfShares = 100e18;
+        req.amountOfShares = 100e18;
         vm.startPrank(testUser);
         vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__RequestNotFound.selector)));
-        boringQueue.cancelOnChainWithdraw(requests[0]);
+        boringQueue.cancelOnChainWithdraw(req);
         vm.stopPrank();
     }
 
     function testQueueRequestReplacingReverts() external {
         // If one user tries to replace another users withdraw it reverts.
-        bytes32 requestId = _haveUserCreateRequest(testUser, address(WETH), 1e18, 3, 2 days);
+        (, BoringOnChainQueue.OnChainWithdraw memory req) =
+            _haveUserCreateRequest(testUser, address(WETH), 1e18, 3, 2 days);
 
         address evilUser = vm.addr(22);
 
         vm.startPrank(evilUser);
         vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__BadUser.selector)));
-        boringQueue.replaceOnChainWithdrawUsingRequestId(requestId, 3, 2 days);
+        boringQueue.replaceOnChainWithdraw(req, 3, 2 days);
         vm.stopPrank();
-    }
-
-    function testQueueGetOnChainWithdrawRevert() external {
-        // If queue is not tracking withdraws onchain.
-        boringQueue.toggleTrackWithdrawsOnChain();
-
-        // And a user makes a request.
-        bytes32 requestId = _haveUserCreateRequest(testUser, address(WETH), 1e18, 3, 2 days);
-
-        // Then if they try to get the request it reverts.
-        vm.expectRevert(
-            bytes(abi.encodeWithSelector(BoringOnChainQueueWithTracking.BoringOnChainQueue__ZeroNonce.selector))
-        );
-        boringQueue.getOnChainWithdraw(requestId);
     }
 
     function testQueueSolveOnChainWithdrawsReverts() external {
         boringQueue.updateWithdrawAsset(address(EETH), 2 days, 1 days, 1, 100, 0.01e18);
 
         // Have test user make 2 requests, one for wETH and one for eETH.
-        _haveUserCreateRequest(testUser, address(WETH), 1e18, 3, 2 days);
-        _haveUserCreateRequest(testUser, address(EETH), 1e18, 3, 1 days);
-
-        // Read requests from queue.
-        (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](2);
+        (, requests[0]) = _haveUserCreateRequest(testUser, address(WETH), 1e18, 3, 2 days);
+        (, requests[1]) = _haveUserCreateRequest(testUser, address(EETH), 1e18, 3, 1 days);
 
         // Trying to solve when not all requests are matured reverts.
         vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__NotMatured.selector)));
@@ -604,18 +646,103 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         boringQueue.solveOnChainWithdraws(requests, hex"", address(this));
     }
 
-    // TODO finish
     function testSolverAdminCalls() external {
         // Check rescue tokens effects.
         deal(address(WETH), address(boringSolver), 1e18);
         boringSolver.rescueTokens(WETH, 1e18);
         assertEq(WETH.balanceOf(address(boringSolver)), 0, "Solver should not have any wETH.");
+
+        // User makes redeem solve request for wETH.
+        address userA = vm.addr(2);
+        deal(address(liquidEth), userA, 1e18);
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
+        (, requests[0]) = _haveUserCreateRequest(userA, address(WETH), 1e18, 100, 1 days);
+
+        skip(3 days);
+
+        // Solve request using boringSolver.
+        boringSolver.boringRedeemSolve(boringQueue, requests, liquidEth_teller);
+
+        // User makes a redeem mint solve request for weETHs.
+        address userB = vm.addr(3);
+        deal(address(liquidEth), userB, 1e18);
+        (, requests[0]) = _haveUserCreateRequest(userB, weETHs, 1e18, 100, 1 days);
+
+        // Solve request using boringSolver.
+        boringSolver.boringRedeemMintSolve(boringQueue, requests, liquidEth_teller, weETHs_teller, address(WETH));
+
+        // User A and user B should not have any shares.
+        assertEq(ERC20(liquidEth).balanceOf(userA), 0, "User A should have had their shares solved.");
+        assertEq(ERC20(liquidEth).balanceOf(userB), 0, "User B should have had their shares solved.");
+        assertGt(WETH.balanceOf(userA), 0, "User A should have received some wETH.");
+        assertGt(ERC20(weETHs).balanceOf(userB), 0, "User B should have received some weETHs.");
     }
 
-    function testQueueReverts() external {}
-    function testSolverReverts() external {}
+    function testSolverReverts() external {
+        address evilUser = vm.addr(22);
+        vm.startPrank(address(boringQueue));
 
-    // TODO full function coverage in both
+        // Wrong initiator revert.
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringSolver.BoringSolver___WrongInitiator.selector)));
+        boringSolver.boringSolve(evilUser, address(0), address(0), 0, 0, hex"");
+
+        // Redeem Solve teller mismatch revert.
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    BoringSolver.BoringSolver___BoringVaultTellerMismatch.selector, liquidEth, weETHs_teller
+                )
+            )
+        );
+        boringSolver.boringSolve(
+            address(boringSolver), liquidEth, address(WETH), 0, 0, abi.encode(0, address(this), weETHs_teller, true)
+        );
+
+        // Redeem Mint Solve teller mismatch revert.
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    BoringSolver.BoringSolver___BoringVaultTellerMismatch.selector, liquidEth, weETHs_teller
+                )
+            )
+        );
+        boringSolver.boringSolve(
+            address(boringSolver),
+            liquidEth,
+            address(WETH),
+            0,
+            0,
+            abi.encode(1, address(this), weETHs_teller, liquidEth_teller, WETH, true)
+        );
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    BoringSolver.BoringSolver___BoringVaultTellerMismatch.selector, weETHs, liquidEth_teller
+                )
+            )
+        );
+        boringSolver.boringSolve(
+            address(boringSolver),
+            weETHs,
+            address(WETH),
+            0,
+            0,
+            abi.encode(1, address(this), liquidEth_teller, weETHs_teller, WETH, true)
+        );
+        vm.stopPrank();
+
+        // Calling self solve functions with a different user address reverts.
+        vm.startPrank(testUser);
+        BoringOnChainQueue.OnChainWithdraw memory request;
+        (, request) = _haveUserCreateRequest(testUser, address(WETH), 1e18, 100, 1 days);
+        vm.stopPrank();
+
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringSolver.BoringSolver___OnlySelf.selector)));
+        boringSolver.boringRedeemSelfSolve(boringQueue, request, liquidEth_teller);
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringSolver.BoringSolver___OnlySelf.selector)));
+        boringSolver.boringRedeemMintSelfSolve(boringQueue, request, liquidEth_teller, weETHs_teller, address(WETH));
+    }
 
     // ========================================= HELPER FUNCTIONS =========================================
 
@@ -630,12 +757,35 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         uint128 amountOfShares,
         uint16 discount,
         uint24 secondsToDeadline
-    ) internal returns (bytes32 requestId) {
+    ) internal returns (bytes32 requestId, BoringOnChainQueue.OnChainWithdraw memory request) {
         uint96 nonceBefore = boringQueue.nonce();
         vm.startPrank(user);
         ERC20(liquidEth).safeApprove(address(boringQueue), amountOfShares);
+        vm.recordLogs();
         requestId = boringQueue.requestOnChainWithdraw(assetOut, amountOfShares, discount, secondsToDeadline);
+        Vm.Log[] memory entries = vm.getRecordedLogs();
         vm.stopPrank();
         assertEq(boringQueue.nonce(), nonceBefore + 1, "Nonce should have increased by 1.");
+        // Iterate through logs unitl we find the one we want.
+        for (uint256 i; i < entries.length; ++i) {
+            if (
+                entries[i].topics[0]
+                    == keccak256(
+                        "OnChainWithdrawRequested(bytes32,address,address,uint96,uint128,uint128,uint40,uint24,uint24)"
+                    )
+            ) {
+                assertEq(requestId, entries[i].topics[1], "Request Id should match.");
+                request.user = address(bytes20(entries[i].topics[2] << 96));
+                request.assetOut = address(bytes20(entries[i].topics[3] << 96));
+                (
+                    request.nonce,
+                    request.amountOfShares,
+                    request.amountOfAssets,
+                    request.creationTime,
+                    request.secondsToMaturity,
+                    request.secondsToDeadline
+                ) = abi.decode(entries[i].data, (uint96, uint128, uint128, uint40, uint24, uint24));
+            }
+        }
     }
 }
