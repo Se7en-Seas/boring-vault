@@ -18,8 +18,7 @@ contract CreateSuperSymbioticLRTMerkleRootScript is Script, MerkleTreeHelper {
     address public boringVault = 0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88;
     address public managerAddress = 0xA24dD7B978Fbe36125cC4817192f7b8AA18d213c;
     address public accountantAddress = 0xbe16605B22a7faCEf247363312121670DFe5afBE;
-    address public rawDataDecoderAndSanitizer = 0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781;
-    address public stakingDecoderAndSanitizer = 0x8940DCA8e4e55C228B5060979f225e95E9249421;
+    address public rawDataDecoderAndSanitizer = 0x210c179758430646C83f5Da08C7b2bc73c9aAD55;
 
     function setUp() external {}
 
@@ -65,7 +64,7 @@ contract CreateSuperSymbioticLRTMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](1024);
+        ManageLeaf[] memory leafs = new ManageLeaf[](512);
 
         // ========================== Symbiotic ==========================
         address[] memory defaultCollaterals = new address[](8);
@@ -77,23 +76,8 @@ contract CreateSuperSymbioticLRTMerkleRootScript is Script, MerkleTreeHelper {
         defaultCollaterals[5] = getAddress(sourceChain, "swETHDefaultCollateral");
         defaultCollaterals[6] = getAddress(sourceChain, "sfrxETHDefaultCollateral");
         defaultCollaterals[7] = getAddress(sourceChain, "ETHxDefaultCollateral");
-        // defaultCollaterals[8] = uniETHDefaultCollateral;
-        _addSymbioticLeafs(leafs, defaultCollaterals);
 
-        // ========================== Aave V3 ==========================
-        ERC20[] memory supplyAssets = new ERC20[](5);
-        supplyAssets[0] = getERC20(sourceChain, "WETH");
-        supplyAssets[1] = getERC20(sourceChain, "WEETH");
-        supplyAssets[2] = getERC20(sourceChain, "WSTETH");
-        supplyAssets[3] = getERC20(sourceChain, "RETH");
-        supplyAssets[4] = getERC20(sourceChain, "cbETH");
-        ERC20[] memory borrowAssets = new ERC20[](5);
-        borrowAssets[0] = getERC20(sourceChain, "WETH");
-        borrowAssets[1] = getERC20(sourceChain, "WEETH");
-        borrowAssets[2] = getERC20(sourceChain, "WSTETH");
-        borrowAssets[3] = getERC20(sourceChain, "RETH");
-        borrowAssets[4] = getERC20(sourceChain, "cbETH");
-        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
+        _addSymbioticLeafs(leafs, defaultCollaterals);
 
         // ========================== Lido ==========================
         _addLidoLeafs(leafs);
@@ -103,6 +87,15 @@ contract CreateSuperSymbioticLRTMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== Native ==========================
         _addNativeLeafs(leafs);
+
+        // ========================== FrxEth ==========================
+        _addFraxLeafs(leafs);
+
+        // ========================== swETH ==========================
+        _addSwellStakingLeafs(leafs);
+
+        // ========================== mETH ==========================
+        _addMantleStakingLeafs(leafs);
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](55);
@@ -252,54 +245,9 @@ contract CreateSuperSymbioticLRTMerkleRootScript is Script, MerkleTreeHelper {
         kind[12] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
-        // _addLeafsFor1InchUniswapV3Swapping(leafs, wstETH_wETH_01);
-        // _addLeafsFor1InchUniswapV3Swapping(leafs, rETH_wETH_01);
-        // _addLeafsFor1InchUniswapV3Swapping(leafs, rETH_wETH_05);
-        // _addLeafsFor1InchUniswapV3Swapping(leafs, wstETH_rETH_05);
-        // _addLeafsFor1InchUniswapV3Swapping(leafs, PENDLE_wETH_30);
-        // _addLeafsFor1InchUniswapV3Swapping(leafs, wETH_weETH_05);
-        // _addLeafsFor1InchUniswapV3Swapping(leafs, GEAR_wETH_100);
+        _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
 
-        // ========================== Swell ==========================
-        _addSwellSimpleStakingLeafs(
-            leafs, getAddress(sourceChain, "WEETH"), getAddress(sourceChain, "swellSimpleStaking")
-        );
-        _addSwellSimpleStakingLeafs(
-            leafs, getAddress(sourceChain, "WSTETH"), getAddress(sourceChain, "swellSimpleStaking")
-        );
-        _addSwellSimpleStakingLeafs(
-            leafs, getAddress(sourceChain, "SFRXETH"), getAddress(sourceChain, "swellSimpleStaking")
-        );
-        _addSwellSimpleStakingLeafs(
-            leafs, getAddress(sourceChain, "SWETH"), getAddress(sourceChain, "swellSimpleStaking")
-        );
-
-        // ========================== Zircuit ==========================
-        _addZircuitLeafs(leafs, getAddress(sourceChain, "WEETH"), getAddress(sourceChain, "zircuitSimpleStaking"));
-        _addZircuitLeafs(leafs, getAddress(sourceChain, "WSTETH"), getAddress(sourceChain, "zircuitSimpleStaking"));
-        _addZircuitLeafs(leafs, getAddress(sourceChain, "SWETH"), getAddress(sourceChain, "zircuitSimpleStaking"));
-        _addZircuitLeafs(leafs, getAddress(sourceChain, "METH"), getAddress(sourceChain, "zircuitSimpleStaking"));
-
-        // ========================== Fluid fToken ==========================
-        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fWETH"));
-        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fWSTETH"));
-
-        // ========================== FrxEth ==========================
-        /**
-         * deposit, withdraw
-         */
-        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "SFRXETH")));
-
-        // ========================== Staking ==========================
-        setAddress(true, mainnet, "rawDataDecoderAndSanitizer", stakingDecoderAndSanitizer);
-
-        _addNativeLeafs(leafs);
-        _addEtherFiLeafs(leafs);
-        _addLidoLeafs(leafs);
-        _addSwellStakingLeafs(leafs);
-        _addMantleStakingLeafs(leafs);
-
-        string memory filePath = "./leafs/SuperSymbioticStrategistLeafs.json";
+        string memory filePath = "./leafs/Mainnet/SuperSymbioticStrategistLeafs.json";
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
