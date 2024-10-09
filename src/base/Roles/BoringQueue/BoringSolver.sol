@@ -44,6 +44,9 @@ contract BoringSolver is IBoringSolver, Auth {
 
     //============================== ADMIN SOLVE FUNCTIONS ===============================
 
+    /**
+     * @notice Solve multiple user requests to redeem Boring Vault shares.
+     */
     function boringRedeemSolve(
         BoringOnChainQueue queue,
         BoringOnChainQueue.OnChainWithdraw[] calldata requests,
@@ -54,7 +57,10 @@ contract BoringSolver is IBoringSolver, Auth {
         queue.solveOnChainWithdraws(requests, solveData, address(this));
     }
 
-    /// @dev in order for this to work, the fromAccountant must have the toBoringVaults rate provider setup.
+    /**
+     * @notice Solve multiple user requests to redeem Boring Vault shares and mint new Boring Vault shares.
+     * @dev In order for this to work, the fromAccountant must have the toBoringVaults rate provider setup.
+     */
     function boringRedeemMintSolve(
         BoringOnChainQueue queue,
         BoringOnChainQueue.OnChainWithdraw[] calldata requests,
@@ -69,39 +75,52 @@ contract BoringSolver is IBoringSolver, Auth {
     }
 
     //============================== USER SOLVE FUNCTIONS ===============================
-    function boringRedeemSelfSolve(BoringOnChainQueue queue, bytes32 requestId, address teller) external requiresAuth {
-        // Read request from queue.
-        BoringOnChainQueue.OnChainWithdraw[] memory request = new BoringOnChainQueue.OnChainWithdraw[](1);
-        request[0] = queue.getOnChainWithdraw(requestId);
 
-        if (request[0].user != msg.sender) revert BoringSolver___OnlySelf();
+    /**
+     * @notice Allows a user to solve their own request to redeem Boring Vault shares.
+     */
+    function boringRedeemSelfSolve(
+        BoringOnChainQueue queue,
+        BoringOnChainQueue.OnChainWithdraw calldata request,
+        address teller
+    ) external requiresAuth {
+        if (request.user != msg.sender) revert BoringSolver___OnlySelf();
+
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
+        requests[0] = request;
 
         bytes memory solveData = abi.encode(SolveType.BORING_REDEEM, msg.sender, teller, false);
 
-        queue.solveOnChainWithdraws(request, solveData, address(this));
+        queue.solveOnChainWithdraws(requests, solveData, address(this));
     }
 
+    /**
+     * @notice Allows a user to solve their own request to redeem Boring Vault shares and mint new Boring Vault shares.
+     * @dev In order for this to work, the fromAccountant must have the toBoringVaults rate provider setup.
+     */
     function boringRedeemMintSelfSolve(
         BoringOnChainQueue queue,
-        bytes32 requestId,
+        BoringOnChainQueue.OnChainWithdraw calldata request,
         address fromTeller,
         address toTeller,
         address intermediateAsset
     ) external requiresAuth {
-        // Read request from queue.
-        BoringOnChainQueue.OnChainWithdraw[] memory request = new BoringOnChainQueue.OnChainWithdraw[](1);
-        request[0] = queue.getOnChainWithdraw(requestId);
+        if (request.user != msg.sender) revert BoringSolver___OnlySelf();
 
-        if (request[0].user != msg.sender) revert BoringSolver___OnlySelf();
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
+        requests[0] = request;
 
         bytes memory solveData =
             abi.encode(SolveType.BORING_REDEEM_MINT, msg.sender, fromTeller, toTeller, intermediateAsset, false);
 
-        queue.solveOnChainWithdraws(request, solveData, address(this));
+        queue.solveOnChainWithdraws(requests, solveData, address(this));
     }
 
     //============================== IBORINGSOLVER FUNCTIONS ===============================
 
+    /**
+     * @notice Implementation of the IBoringSolver interface.
+     */
     function boringSolve(
         address initiator,
         address boringVault,
@@ -121,12 +140,17 @@ contract BoringSolver is IBoringSolver, Auth {
         } else if (solveType == SolveType.BORING_REDEEM_MINT) {
             _boringRedeemMintSolve(queue, solveData, boringVault, solveAsset, totalShares, requiredAssets);
         } else {
+            // Added for future protection, if another enum is added, txs with that enum will revert,
+            // if no changes are made here.
             revert BoringSolver___FailedToSolve();
         }
     }
 
     //============================== INTERNAL SOLVE FUNCTIONS ===============================
 
+    /**
+     * @notice Internal helper function to solve multiple user requests to redeem Boring Vault shares.
+     */
     function _boringRedeemSolve(
         address queue,
         bytes calldata solveData,
@@ -159,6 +183,9 @@ contract BoringSolver is IBoringSolver, Auth {
         asset.approve(queue, requiredAssets);
     }
 
+    /**
+     * @notice Internal helper function to solve multiple user requests to redeem Boring Vault shares and mint new Boring Vault shares.
+     */
     function _boringRedeemMintSolve(
         address queue,
         bytes calldata solveData,
