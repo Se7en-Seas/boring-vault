@@ -14,7 +14,7 @@ import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {BoringOnChainQueue} from "src/base/Roles/BoringQueue/BoringOnChainQueue.sol";
 import {BoringSolver} from "src/base/Roles/BoringQueue/BoringSolver.sol";
-
+import {BoringOnChainQueueWithTracking} from "src/base/Roles/BoringQueue/BoringOnChainQueueWithTracking.sol";
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
 contract BoringQueueTest is Test, MerkleTreeHelper {
@@ -43,7 +43,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
 
     address public testUser = vm.addr(1);
 
-    BoringOnChainQueue public boringQueue;
+    BoringOnChainQueueWithTracking public boringQueue;
     BoringSolver public boringSolver;
     ERC20 internal WETH;
     ERC20 internal EETH;
@@ -64,7 +64,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         USDC = getERC20(sourceChain, "USDC");
         WEETH_RATE_PROVIDER = getAddress(sourceChain, "WEETH_RATE_PROVIDER");
 
-        boringQueue = new BoringOnChainQueue(
+        boringQueue = new BoringOnChainQueueWithTracking(
             address(this), address(liquidEth_roles_authority), payable(liquidEth), address(liquidEth_accountant), true
         );
         boringSolver = new BoringSolver(address(this), address(liquidEth_roles_authority));
@@ -87,13 +87,13 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
             address(boringQueue), BoringOnChainQueue.cancelOnChainWithdraw.selector, true
         );
         liquidEth_roles_authority.setPublicCapability(
-            address(boringQueue), BoringOnChainQueue.cancelOnChainWithdrawUsingRequestId.selector, true
+            address(boringQueue), BoringOnChainQueueWithTracking.cancelOnChainWithdrawUsingRequestId.selector, true
         );
         liquidEth_roles_authority.setPublicCapability(
             address(boringQueue), BoringOnChainQueue.replaceOnChainWithdraw.selector, true
         );
         liquidEth_roles_authority.setPublicCapability(
-            address(boringQueue), BoringOnChainQueue.replaceOnChainWithdrawUsingRequestId.selector, true
+            address(boringQueue), BoringOnChainQueueWithTracking.replaceOnChainWithdrawUsingRequestId.selector, true
         );
         liquidEth_roles_authority.setPublicCapability(
             address(boringQueue), BoringOnChainQueue.solveOnChainWithdraws.selector, true
@@ -270,7 +270,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         discount = uint16(bound(discount, 1, 100));
         uint24 secondsToDeadline = 1 days;
         uint256 startingShares = ERC20(liquidEth).balanceOf(testUser);
-        bytes32 requestId = _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
+        _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
 
         (, BoringOnChainQueue.OnChainWithdraw[] memory requests) = boringQueue.getWithdrawRequests();
 
@@ -279,7 +279,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
 
         // Self Solve the request.
         vm.prank(testUser);
-        boringSolver.boringRedeemSelfSolve(boringQueue, requestId, liquidEth_teller);
+        boringSolver.boringRedeemSelfSolve(boringQueue, requests[0], liquidEth_teller);
 
         uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
 
@@ -562,7 +562,9 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         bytes32 requestId = _haveUserCreateRequest(testUser, address(WETH), 1e18, 3, 2 days);
 
         // Then if they try to get the request it reverts.
-        vm.expectRevert(bytes(abi.encodeWithSelector(BoringOnChainQueue.BoringOnChainQueue__ZeroNonce.selector)));
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(BoringOnChainQueueWithTracking.BoringOnChainQueue__ZeroNonce.selector))
+        );
         boringQueue.getOnChainWithdraw(requestId);
     }
 

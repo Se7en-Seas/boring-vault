@@ -69,35 +69,37 @@ contract BoringSolver is IBoringSolver, Auth {
     }
 
     //============================== USER SOLVE FUNCTIONS ===============================
-    function boringRedeemSelfSolve(BoringOnChainQueue queue, bytes32 requestId, address teller) external requiresAuth {
-        // Read request from queue.
-        BoringOnChainQueue.OnChainWithdraw[] memory request = new BoringOnChainQueue.OnChainWithdraw[](1);
-        request[0] = queue.getOnChainWithdraw(requestId);
+    function boringRedeemSelfSolve(
+        BoringOnChainQueue queue,
+        BoringOnChainQueue.OnChainWithdraw calldata request,
+        address teller
+    ) external requiresAuth {
+        if (request.user != msg.sender) revert BoringSolver___OnlySelf();
 
-        if (request[0].user != msg.sender) revert BoringSolver___OnlySelf();
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
+        requests[0] = request;
 
         bytes memory solveData = abi.encode(SolveType.BORING_REDEEM, msg.sender, teller, false);
 
-        queue.solveOnChainWithdraws(request, solveData, address(this));
+        queue.solveOnChainWithdraws(requests, solveData, address(this));
     }
 
     function boringRedeemMintSelfSolve(
         BoringOnChainQueue queue,
-        bytes32 requestId,
+        BoringOnChainQueue.OnChainWithdraw calldata request,
         address fromTeller,
         address toTeller,
         address intermediateAsset
     ) external requiresAuth {
-        // Read request from queue.
-        BoringOnChainQueue.OnChainWithdraw[] memory request = new BoringOnChainQueue.OnChainWithdraw[](1);
-        request[0] = queue.getOnChainWithdraw(requestId);
+        if (request.user != msg.sender) revert BoringSolver___OnlySelf();
 
-        if (request[0].user != msg.sender) revert BoringSolver___OnlySelf();
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
+        requests[0] = request;
 
         bytes memory solveData =
             abi.encode(SolveType.BORING_REDEEM_MINT, msg.sender, fromTeller, toTeller, intermediateAsset, false);
 
-        queue.solveOnChainWithdraws(request, solveData, address(this));
+        queue.solveOnChainWithdraws(requests, solveData, address(this));
     }
 
     //============================== IBORINGSOLVER FUNCTIONS ===============================

@@ -94,11 +94,6 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     EnumerableSet.Bytes32Set private _withdrawRequests;
 
     /**
-     * @notice Mapping of request Ids to OnChainWithdraws.
-     */
-    mapping(bytes32 => OnChainWithdraw) internal onChainWithdraws;
-
-    /**
      * @notice Mapping of asset addresses to WithdrawAssets.
      */
     mapping(address => WithdrawAsset) public withdrawAssets;
@@ -119,11 +114,6 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
      */
     bool public isPaused;
 
-    /**
-     * @notice Whether or not to track withdraws on chain.
-     */
-    bool public trackWithdrawsOnChain;
-
     //============================== ERRORS ===============================
 
     error BoringOnChainQueue__Paused();
@@ -140,7 +130,6 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     error BoringOnChainQueue__MAX_DISCOUNT();
     error BoringOnChainQueue__MAXIMUM_MINIMUM_SECONDS_TO_DEADLINE();
     error BoringOnChainQueue__SolveAssetMismatch();
-    error BoringOnChainQueue__ZeroNonce();
     error BoringOnChainQueue__Overflow();
     error BoringOnChainQueue__MAXIMUM_SECONDS_TO_MATURITY();
     error BoringOnChainQueue__BadInput();
@@ -207,17 +196,12 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
      */
     uint256 public immutable ONE_SHARE;
 
-    constructor(
-        address _owner,
-        address _auth,
-        address payable _boringVault,
-        address _accountant,
-        bool _trackWithdrawsOnChain
-    ) Auth(_owner, Authority(_auth)) {
+    constructor(address _owner, address _auth, address payable _boringVault, address _accountant)
+        Auth(_owner, Authority(_auth))
+    {
         boringVault = BoringVault(_boringVault);
         ONE_SHARE = 10 ** boringVault.decimals();
         accountant = AccountantWithRateProviders(_accountant);
-        trackWithdrawsOnChain = _trackWithdrawsOnChain;
     }
 
     //=============================== ADMIN FUNCTIONS ================================
@@ -274,16 +258,6 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     function unpause() external requiresAuth {
         isPaused = false;
         emit Unpaused();
-    }
-
-    /**
-     * @notice Toggle whether or not to track withdraws on chain.
-     * @dev Callable by MULTISIG_ROLE.
-     */
-    function toggleTrackWithdrawsOnChain() external requiresAuth {
-        bool oldState = trackWithdrawsOnChain;
-        trackWithdrawsOnChain = !oldState;
-        emit TrackWithdrawsOnChainToggled(!oldState);
     }
 
     /**
@@ -377,7 +351,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
         boringVault.safeTransferFrom(msg.sender, address(this), amountOfShares);
 
-        requestId = _queueOnChainWithdraw(
+        (requestId,) = _queueOnChainWithdraw(
             msg.sender, assetOut, amountOfShares, discount, withdrawAsset.secondsToMaturity, secondsToDeadline
         );
     }
@@ -414,7 +388,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
                 revert BoringOnChainQueue__PermitFailedAndAllowanceTooLow();
             }
         }
-        requestId = _queueOnChainWithdraw(
+        (requestId,) = _queueOnChainWithdraw(
             msg.sender, assetOut, amountOfShares, discount, withdrawAsset.secondsToMaturity, secondsToDeadline
         );
     }
@@ -427,23 +401,10 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     function cancelOnChainWithdraw(OnChainWithdraw calldata request)
         external
         requiresAuth
+        onlyRequestUser(request.user, msg.sender)
         returns (bytes32 requestId)
     {
-        requestId = _cancelMsgSenderOnChainWithdraw(request);
-    }
-
-    /**
-     * @notice Cancel an on-chain withdraw using the request Id.
-     * @param requestId The request Id to cancel.
-     * @return request The request that was canceled.
-     */
-    function cancelOnChainWithdrawUsingRequestId(bytes32 requestId)
-        external
-        requiresAuth
-        returns (OnChainWithdraw memory request)
-    {
-        request = getOnChainWithdraw(requestId);
-        _cancelMsgSenderOnChainWithdraw(request);
+        requestId = _cancelUserOnChainWithdraw(request);
     }
 
     /**
@@ -457,26 +418,10 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     function replaceOnChainWithdraw(OnChainWithdraw calldata oldRequest, uint16 discount, uint24 secondsToDeadline)
         external
         requiresAuth
+        onlyRequestUser(oldRequest.user, msg.sender)
         returns (bytes32 oldRequestId, bytes32 newRequestId)
     {
         (oldRequestId, newRequestId) = _replaceOnChainWithdraw(oldRequest, discount, secondsToDeadline);
-    }
-
-    /**
-     * @notice Replace an on-chain withdraw using the request Id.
-     * @param oldRequestId The request Id of the request to replace.
-     * @param discount The discount to apply to the new withdraw request in bps.
-     * @param secondsToDeadline The time in seconds the new withdraw request is valid for.
-     * @return oldRequest The request that was replaced.
-     * @return newRequestId The request Id of the new withdraw request.
-     */
-    function replaceOnChainWithdrawUsingRequestId(bytes32 oldRequestId, uint16 discount, uint24 secondsToDeadline)
-        external
-        requiresAuth
-        returns (OnChainWithdraw memory oldRequest, bytes32 newRequestId)
-    {
-        oldRequest = getOnChainWithdraw(oldRequestId);
-        (, newRequestId) = _replaceOnChainWithdraw(oldRequest, discount, secondsToDeadline);
     }
 
     //============================== SOLVER FUNCTIONS ===============================
@@ -537,37 +482,6 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
     }
 
     /**
-     * @notice Get all withdraw requests.
-     * @dev Includes requests that are not mature, matured, and expired. But does not include requests that have been solved.
-     * @dev Does not verify nonce is zero, as you could have not been tracking withdraws for a period of time.
-     * @dev If withdraws are made when not tracking, they will show up as empty requests here.
-     */
-    function getWithdrawRequests()
-        external
-        view
-        returns (bytes32[] memory requestIds, OnChainWithdraw[] memory requests)
-    {
-        requestIds = _withdrawRequests.values();
-        uint256 requestsLength = requestIds.length;
-        requests = new OnChainWithdraw[](requestsLength);
-        for (uint256 i = 0; i < requestsLength; ++i) {
-            requests[i] = onChainWithdraws[requestIds[i]];
-        }
-    }
-
-    /**
-     * @notice Get a withdraw request.
-     * @dev Does verify nonce is non-zero.
-     * @param requestId The request Id.
-     * @return request The request.
-     */
-    function getOnChainWithdraw(bytes32 requestId) public view returns (OnChainWithdraw memory) {
-        OnChainWithdraw memory request = onChainWithdraws[requestId];
-        if (request.nonce == 0) revert BoringOnChainQueue__ZeroNonce();
-        return onChainWithdraws[requestId];
-    }
-
-    /**
      * @notice Get the request Id for a request.
      * @param request The request.
      * @return requestId The request Id.
@@ -590,7 +504,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         uint128 amountOfShares,
         uint16 discount,
         uint24 secondsToDeadline
-    ) internal view {
+    ) internal view virtual {
         if (isPaused) revert BoringOnChainQueue__Paused();
 
         if (!withdrawAsset.allowWithdraws) revert BoringOnChainQueue__WithdrawsNotAllowedForAsset();
@@ -603,24 +517,14 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
 
     /**
      * @notice Cancel an on-chain withdraw.
-     * @dev Sender must be the user that made the request.
      * @param request The request to cancel.
      * @return requestId The request Id.
      */
-    function _cancelMsgSenderOnChainWithdraw(OnChainWithdraw memory request)
+    function _cancelUserOnChainWithdraw(OnChainWithdraw calldata request)
         internal
-        onlyRequestUser(request.user, msg.sender)
+        virtual
         returns (bytes32 requestId)
     {
-        requestId = _cancelUserOnChainWithdraw(request);
-    }
-
-    /**
-     * @notice Cancel an on-chain withdraw.
-     * @param request The request to cancel.
-     * @return requestId The request Id.
-     */
-    function _cancelUserOnChainWithdraw(OnChainWithdraw memory request) internal returns (bytes32 requestId) {
         requestId = _dequeueOnChainWithdraw(request);
         boringVault.safeTransfer(request.user, request.amountOfShares);
         emit OnChainWithdrawCancelled(requestId, request.user, block.timestamp);
@@ -634,9 +538,9 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
      * @return oldRequestId The request Id of the old withdraw request.
      * @return newRequestId The request Id of the new withdraw request.
      */
-    function _replaceOnChainWithdraw(OnChainWithdraw memory oldRequest, uint16 discount, uint24 secondsToDeadline)
+    function _replaceOnChainWithdraw(OnChainWithdraw calldata oldRequest, uint16 discount, uint24 secondsToDeadline)
         internal
-        onlyRequestUser(oldRequest.user, msg.sender)
+        virtual
         returns (bytes32 oldRequestId, bytes32 newRequestId)
     {
         WithdrawAsset memory withdrawAsset = withdrawAssets[oldRequest.assetOut];
@@ -648,7 +552,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         emit OnChainWithdrawCancelled(oldRequestId, oldRequest.user, block.timestamp);
 
         // Create new request.
-        newRequestId = _queueOnChainWithdraw(
+        (newRequestId,) = _queueOnChainWithdraw(
             oldRequest.user,
             oldRequest.assetOut,
             oldRequest.amountOfShares,
@@ -676,7 +580,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         uint16 discount,
         uint24 secondsToMaturity,
         uint24 secondsToDeadline
-    ) internal returns (bytes32 requestId) {
+    ) internal virtual returns (bytes32 requestId, OnChainWithdraw memory req) {
         // Create new request.
         uint96 requestNonce;
         // See nonce definition for unchecked safety.
@@ -694,7 +598,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
             amountOfAssets128 = uint128(amountOfAssets);
         }
         uint40 timeNow = uint40(block.timestamp); // Safe to cast to uint40 as it won't overflow for 10s of thousands of years
-        OnChainWithdraw memory req = OnChainWithdraw({
+        req = OnChainWithdraw({
             nonce: requestNonce,
             user: user,
             assetOut: assetOut,
@@ -706,11 +610,6 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
         });
 
         requestId = keccak256(abi.encode(req));
-
-        if (trackWithdrawsOnChain) {
-            // Save withdraw request on chain.
-            onChainWithdraws[requestId] = req;
-        }
 
         bool addedToSet = _withdrawRequests.add(requestId);
 
@@ -737,7 +636,7 @@ contract BoringOnChainQueue is Auth, ReentrancyGuard, IPausable {
      * @param request The request to dequeue.
      * @return requestId The request Id.
      */
-    function _dequeueOnChainWithdraw(OnChainWithdraw memory request) internal returns (bytes32 requestId) {
+    function _dequeueOnChainWithdraw(OnChainWithdraw calldata request) internal virtual returns (bytes32 requestId) {
         // Remove request from queue.
         requestId = keccak256(abi.encode(request));
         bool removedFromSet = _withdrawRequests.remove(requestId);
