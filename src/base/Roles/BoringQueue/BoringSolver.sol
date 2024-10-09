@@ -6,8 +6,9 @@ import {BoringOnChainQueue, ERC20, SafeTransferLib} from "src/base/Roles/BoringQ
 import {IBoringSolver} from "src/base/Roles/BoringQueue/IBoringSolver.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
+import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 
-contract BoringSolver is IBoringSolver, Auth {
+contract BoringSolver is IBoringSolver, Auth, Multicall {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
