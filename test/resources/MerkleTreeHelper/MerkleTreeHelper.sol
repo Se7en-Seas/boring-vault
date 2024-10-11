@@ -3775,6 +3775,45 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Elixir Withdraws =========================================
+
+    function _addElixirSdeUSDWithdrawLeafs(ManageLeaf[] memory leafs) internal {
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "sdeUSD"),
+            false,
+            "cooldownAssets(uint256)",
+            new address[](0),
+            "Withdraw from sdeUSD specifying asset amount.",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "sdeUSD"),
+            false,
+            "cooldownShares(uint256)",
+            new address[](0),
+            "Withdraw from sdeUSD specifying share amount.",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "sdeUSD"),
+            false,
+            "unstake(address)",
+            new address[](1),
+            "Complete withdraw from sdeUSD.",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+    }
+
     // ========================================= Fluid FToken =========================================
 
     function _addFluidFTokenLeafs(ManageLeaf[] memory leafs, address fToken) internal {
