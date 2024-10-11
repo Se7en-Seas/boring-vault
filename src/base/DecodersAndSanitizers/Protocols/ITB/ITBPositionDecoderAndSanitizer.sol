@@ -10,13 +10,19 @@ import {CurveAndConvexDecoderAndSanitizer} from
 import {GearboxDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/ITB/gearbox/GearboxDecoderAndSanitizer.sol";
 import {SyrupDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/ITB/syrup/SyrupDecoderAndSanitizer.sol";
+import {ReserveERC20WrappedDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/ITB/reserve/ReserveERC20WrappedDecoderAndSanitizer.sol";
+import {ReserveDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/ITB/reserve/ReserveDecoderAndSanitizer.sol";
 
 contract ITBPositionDecoderAndSanitizer is
     BaseDecoderAndSanitizer,
     AaveDecoderAndSanitizer,
     CurveAndConvexDecoderAndSanitizer,
     GearboxDecoderAndSanitizer,
-    SyrupDecoderAndSanitizer
+    SyrupDecoderAndSanitizer,
+    ReserveDecoderAndSanitizer,
+    ReserveERC20WrappedDecoderAndSanitizer
 {
     constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
 
