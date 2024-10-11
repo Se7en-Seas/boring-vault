@@ -14,8 +14,6 @@ import {
 } from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
-import {DroneLib} from "src/base/Drones/DroneLib.sol";
-import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
 
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
@@ -30,7 +28,6 @@ contract CornStakingIntegrationTest is Test, MerkleTreeHelper {
     BoringVault public boringVault;
     address public rawDataDecoderAndSanitizer;
     RolesAuthority public rolesAuthority;
-    BoringDrone public boringDrone;
 
     uint8 public constant MANAGER_ROLE = 1;
     uint8 public constant STRATEGIST_ROLE = 2;
@@ -48,8 +45,6 @@ contract CornStakingIntegrationTest is Test, MerkleTreeHelper {
         _startFork(rpcKey, blockNumber);
 
         boringVault = new BoringVault(address(this), "Boring Vault", "BV", 18);
-
-        boringDrone = new BoringDrone(address(boringVault), 0);
 
         manager =
             new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
