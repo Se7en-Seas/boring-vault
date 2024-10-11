@@ -3688,6 +3688,54 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
     }
 
+    // ========================================= Satlayer Staking =========================================
+
+    function _addSatlayerStakingLeafs(ManageLeaf[] memory leafs, ERC20[] memory assets) internal {
+        address satlayerPool = getAddress(sourceChain, "satlayerPool");
+        for (uint256 i; i < assets.length; ++i) {
+            // Approval
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(assets[i]),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Satlayer Pool to spend ", ERC20(assets[i]).symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = satlayerPool;
+            // deposit
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                satlayerPool,
+                false,
+                "depositFor(address,address,uint256)",
+                new address[](2),
+                string.concat("Deposit ", ERC20(assets[i]).symbol(), " into Satlayer Pool"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(assets[i]);
+            leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
+            // withdraw
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                satlayerPool,
+                false,
+                "withdraw(address,uint256)",
+                new address[](1),
+                string.concat("Withdraw ", ERC20(assets[i]).symbol(), " from Satlayer Pool"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(assets[i]);
+        }
+    }
+
     // ========================================= Zircuit Staking =========================================
 
     function _addZircuitLeafs(ManageLeaf[] memory leafs, address asset, address _zircuitSimpleStaking) internal {

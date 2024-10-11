@@ -18,6 +18,8 @@ import {StandardBridgeDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/StandardBridgeDecoderAndSanitizer.sol";
 import {KarakDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/KarakDecoderAndSanitizer.sol";
 import {OFTDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/OFTDecoderAndSanitizer.sol";
+import {SatlayerStakingDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/SatlayerStakingDecoderAndSanitizer.sol";
 
 contract PointFarmingDecoderAndSanitizer is
     EigenLayerLSTStakingDecoderAndSanitizer,
@@ -28,9 +30,28 @@ contract PointFarmingDecoderAndSanitizer is
     LineaBridgeDecoderAndSanitizer,
     MantleStandardBridgeDecoderAndSanitizer,
     ScrollBridgeDecoderAndSanitizer,
-    OFTDecoderAndSanitizer
+    OFTDecoderAndSanitizer,
+    SatlayerStakingDecoderAndSanitizer
 {
     constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
 
     //============================== HANDLE FUNCTION COLLISIONS ===============================
+
+    function withdraw(address _token, uint256 /*_amount*/ )
+        external
+        pure
+        override(ZircuitSimpleStakingDecoderAndSanitizer, SatlayerStakingDecoderAndSanitizer)
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(_token);
+    }
+
+    function depositFor(address _token, address _for, uint256 /*_amount*/ )
+        external
+        pure
+        override(ZircuitSimpleStakingDecoderAndSanitizer, SatlayerStakingDecoderAndSanitizer)
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(_token, _for);
+    }
 }
