@@ -795,6 +795,9 @@ contract ChainValues {
 
         // Syrup
         values[mainnet]["syrupRouter"] = 0x134cCaaA4F1e4552eC8aEcb9E4A2360dDcF8df76.toBytes32();
+
+        // corn
+        values[mainnet]["cornSilo"] = 0x8bc93498b861fd98277c3b51d240e7E56E48F23c.toBytes32();
     }
 
     function _addBaseValues() private {
