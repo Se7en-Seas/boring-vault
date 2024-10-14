@@ -376,6 +376,91 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
     }
 
+    // ========================================= Treehouse =========================================
+
+    function _addTreehouseLeafs(
+        ManageLeaf[] memory leafs,
+        ERC20[] memory routerTokensIn,
+        address router,
+        address redemptionContract,
+        ERC20 tAsset,
+        address poolAddress,
+        uint256 coinCount,
+        address gauge
+    ) internal {
+        for (uint256 i; i < routerTokensIn.length; ++i) {
+            // Approve Treehouse Router to spend tokens in.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(routerTokensIn[i]),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Treehouse Router to spend ", routerTokensIn[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = router;
+
+            // Deposit into Treehouse contract using router.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                router,
+                false,
+                "deposit(address,uint256)",
+                new address[](1),
+                string.concat("Deposit into Treehouse contract using router with ", routerTokensIn[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(routerTokensIn[i]);
+        }
+
+        // Approve redemption contract to spend tAsset.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(tAsset),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve redemption contract to spend ", tAsset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = redemptionContract;
+
+        // Redeem tAsset.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            redemptionContract,
+            false,
+            "redeem(uint96)",
+            new address[](0),
+            string.concat("Redeem ", tAsset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Finalize redeem.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            redemptionContract,
+            false,
+            "finalizeRedeem(uint256)",
+            new address[](0),
+            string.concat("Finalize redeem ", tAsset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        _addCurveLeafs(leafs, poolAddress, coinCount, gauge);
+    }
+
     // ========================================= StandardBridge =========================================
 
     error StandardBridge__LocalAndRemoteTokensLengthMismatch();
