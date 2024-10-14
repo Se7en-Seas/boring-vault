@@ -197,6 +197,7 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
     }
 
     // TODO test curve pool interactions
+    function testCurvePoolIntegration() external {}
 
     // ========================================= HELPER FUNCTIONS =========================================
 
