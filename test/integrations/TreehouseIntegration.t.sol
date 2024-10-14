@@ -168,14 +168,34 @@ contract SwellSimpleStakingIntegrationTest is Test, MerkleTreeHelper {
 
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
-        // assertEq(
-        //     getERC20(sourceChain, "WETH").balanceOf(address(boringVault)),
-        //     1_000e18,
-        //     "BoringVault should have received 1,000 WETH"
-        // );
+        // Wait 7 days.
+        skip(7 days);
+
+        manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[4];
+
+        manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        targets = new address[](1);
+        targets[0] = getAddress(sourceChain, "TreehouseRedemption");
+
+        targetData = new bytes[](1);
+        targetData[0] = abi.encodeWithSignature("finalizeRedeem(uint256)", 0);
+
+        decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+
+        values = new uint256[](1);
+
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+        assertEq(
+            getERC20(sourceChain, "WSTETH").balanceOf(address(boringVault)),
+            999.5e18,
+            "BoringVault should have received 1,000 WSTETH minus fee"
+        );
     }
 
-    // TODO test finalizing a redeem
     // TODO test curve pool interactions
 
     // ========================================= HELPER FUNCTIONS =========================================
