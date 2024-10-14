@@ -9,7 +9,7 @@ import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 import {SymbioticLRTDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/SymbioticLRTDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeploySymbioticLRTVault.s.sol:DeploySymbioticLRTVaultScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeploySymbioticLRTVault.s.sol:DeploySymbioticLRTVaultScript --with-gas-price 10000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddresses {
@@ -31,9 +31,9 @@ contract DeploySymbioticLRTVaultScript is DeployArcticArchitecture, MainnetAddre
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = true;
-        configureDeployment.setupDepositAssets = true;
-        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.setupRoles = false;
+        configureDeployment.setupDepositAssets = false;
+        configureDeployment.setupWithdrawAssets = false;
         configureDeployment.finishSetup = false;
         configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
