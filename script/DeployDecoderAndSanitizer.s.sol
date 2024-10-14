@@ -30,6 +30,7 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
     Deployer public deployer = Deployer(deployerAddress);
 
     address boringVault = 0x5401b8620E5FB570064CA9114fd1e135fd77D57c;
+    address eEigen = 0xE77076518A813616315EaAba6cA8e595E845EeE9;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
@@ -46,13 +47,19 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
         //     abi.encode(0xf0bb20865277aBd641a307eCe5Ee04E79073416C, 0x416b433906b1B72FA758e166e239c43d68dC6F29);
         // deployer.deployContract(EtherFiLiquidEthAerodromeDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
-        creationCode = type(OnlyKarakDecoderAndSanitizer).creationCode;
-        constructorArgs = abi.encode(boringVault);
-        deployer.deployContract(EtherFiLiquidEthDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+        // creationCode = type(OnlyKarakDecoderAndSanitizer).creationCode;
+        // constructorArgs = abi.encode(boringVault);
+        // deployer.deployContract(EtherFiLiquidEthDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
-        creationCode = type(PancakeSwapV3FullDecoderAndSanitizer).creationCode;
-        constructorArgs = abi.encode(boringVault, pancakeSwapV3NonFungiblePositionManager, pancakeSwapV3MasterChefV3);
-        deployer.deployContract(LombardPancakeSwapDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+        // creationCode = type(PancakeSwapV3FullDecoderAndSanitizer).creationCode;
+        // constructorArgs = abi.encode(boringVault, pancakeSwapV3NonFungiblePositionManager, pancakeSwapV3MasterChefV3);
+        // deployer.deployContract(LombardPancakeSwapDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+
+        creationCode = type(ITBPositionDecoderAndSanitizer).creationCode;
+        constructorArgs = abi.encode(eEigen);
+        deployer.deployContract(
+            "ITB Eigen Position Manager Decoder and Sanitizer V0.1", creationCode, constructorArgs, 0
+        );
 
         vm.stopBroadcast();
     }
