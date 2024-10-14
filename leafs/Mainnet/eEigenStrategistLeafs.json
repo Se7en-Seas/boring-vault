@@ -1,0 +1,143 @@
+{
+  "metadata": {
+    "AccountantAddress": "0x075e60550C6f77f430B284E76aF699bC31651f75",
+    "BoringVaultAddress": "0xE77076518A813616315EaAba6cA8e595E845EeE9",
+    "DecoderAndSanitizerAddress": "0x0De55435028D904e1af8Ec58C2f86DF2c4d32f2a",
+    "DigestComposition": [
+      "Bytes20(DECODER_AND_SANITIZER_ADDRESS)",
+      "Bytes20(TARGET_ADDRESS)",
+      "Bytes1(CAN_SEND_VALUE)",
+      "Bytes4(TARGET_FUNCTION_SELECTOR)",
+      "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)"
+    ],
+    "LeafCount": 6,
+    "ManageRoot": "0x4b4a4baadd036a43762825897671d35b8c0b80caddfc4c65ebd80e686e4f1b25",
+    "ManagerAddress": "0x354ade0382EEC1BF0a444339ABc82931457C2c0e",
+    "TreeCapacity": 8
+  },
+  "leafs": [
+    {
+      "AddressArguments": ["0x858646372CC42E1A627fcE94aa7A7033e7CF075A"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x0De55435028D904e1af8Ec58C2f86DF2c4d32f2a",
+      "Description": "Approve Eigen Layer Strategy Manager to spend EIGEN",
+      "FunctionSelector": "0x095ea7b3",
+      "FunctionSignature": "approve(address,uint256)",
+      "LeafDigest": "0x82b757d108baf99bcef437acc56768b8535e24aead5f036fd43b47166506d563",
+      "PackedArgumentAddresses": "0x858646372cc42e1a627fce94aa7a7033e7cf075a",
+      "TargetAddress": "0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83"
+    },
+    {
+      "AddressArguments": [
+        "0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7",
+        "0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83"
+      ],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x0De55435028D904e1af8Ec58C2f86DF2c4d32f2a",
+      "Description": "Deposit EIGEN into Eigen Layer Strategy Manager",
+      "FunctionSelector": "0xe7a050aa",
+      "FunctionSignature": "depositIntoStrategy(address,address,uint256)",
+      "LeafDigest": "0x4e50f3d0af4c7f94a5ed9bb299bbd9e7d816131327b9a82a48293c58ca744a5e",
+      "PackedArgumentAddresses": "0xacb55c530acdb2849e6d4f36992cd8c9d50ed8f7ec53bf9167f50cdeb3ae105f56099aaab9061f83",
+      "TargetAddress": "0x858646372CC42E1A627fcE94aa7A7033e7CF075A"
+    },
+    {
+      "AddressArguments": [
+        "0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7",
+        "0xE77076518A813616315EaAba6cA8e595E845EeE9"
+      ],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x0De55435028D904e1af8Ec58C2f86DF2c4d32f2a",
+      "Description": "Request withdraw of EIGEN from Eigen Layer Delegation Manager",
+      "FunctionSelector": "0x0dd8dd02",
+      "FunctionSignature": "queueWithdrawals((address[],uint256[],address)[])",
+      "LeafDigest": "0xe1f8dd9fa31399710038f763f2879185057b536ce5ed0a05490937eb1656fca7",
+      "PackedArgumentAddresses": "0xacb55c530acdb2849e6d4f36992cd8c9d50ed8f7e77076518a813616315eaaba6ca8e595e845eee9",
+      "TargetAddress": "0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A"
+    },
+    {
+      "AddressArguments": [
+        "0xE77076518A813616315EaAba6cA8e595E845EeE9",
+        "0x0000000000000000000000000000000000000000",
+        "0xE77076518A813616315EaAba6cA8e595E845EeE9",
+        "0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7",
+        "0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83"
+      ],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x0De55435028D904e1af8Ec58C2f86DF2c4d32f2a",
+      "Description": "Complete withdraw of EIGEN from Eigen Layer Delegation Manager",
+      "FunctionSelector": "0x33404396",
+      "FunctionSignature": "completeQueuedWithdrawals((address,address,address,uint256,uint32,address[],uint256[])[],address[][],uint256[],bool[])",
+      "LeafDigest": "0x522fa3f37eb533be560fa8bc09b5f50b8ff5c84849eaa3fae260f1df85320c30",
+      "PackedArgumentAddresses": "0xe77076518a813616315eaaba6ca8e595e845eee90000000000000000000000000000000000000000e77076518a813616315eaaba6ca8e595e845eee9acb55c530acdb2849e6d4f36992cd8c9d50ed8f7ec53bf9167f50cdeb3ae105f56099aaab9061f83",
+      "TargetAddress": "0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A"
+    },
+    {
+      "AddressArguments": ["0xDcAE4FAf7C7d0f4A78abe147244c6e9d60cFD202"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x0De55435028D904e1af8Ec58C2f86DF2c4d32f2a",
+      "Description": "Delegate to 0xDcAE4FAf7C7d0f4A78abe147244c6e9d60cFD202",
+      "FunctionSelector": "0xeea9064b",
+      "FunctionSignature": "delegateTo(address,(bytes,uint256),bytes32)",
+      "LeafDigest": "0x793af143882bf562b124d34242560a04104f4361456d977258877bd7e1528b88",
+      "PackedArgumentAddresses": "0xdcae4faf7c7d0f4a78abe147244c6e9d60cfd202",
+      "TargetAddress": "0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A"
+    },
+    {
+      "AddressArguments": ["0xE77076518A813616315EaAba6cA8e595E845EeE9"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x0De55435028D904e1af8Ec58C2f86DF2c4d32f2a",
+      "Description": "Undelegate from 0xDcAE4FAf7C7d0f4A78abe147244c6e9d60cFD202",
+      "FunctionSelector": "0xda8be864",
+      "FunctionSignature": "undelegate(address)",
+      "LeafDigest": "0x6f1ed27b8bcc75b0342c6d8c542f5e86feecc2dbad6845352f2aaab082fdd715",
+      "PackedArgumentAddresses": "0xe77076518a813616315eaaba6ca8e595e845eee9",
+      "TargetAddress": "0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A"
+    },
+    {
+      "AddressArguments": [],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
+      "Description": "",
+      "FunctionSelector": "0xc5d24601",
+      "FunctionSignature": "",
+      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+      "PackedArgumentAddresses": "0x",
+      "TargetAddress": "0x0000000000000000000000000000000000000000"
+    },
+    {
+      "AddressArguments": [],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
+      "Description": "",
+      "FunctionSelector": "0xc5d24601",
+      "FunctionSignature": "",
+      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+      "PackedArgumentAddresses": "0x",
+      "TargetAddress": "0x0000000000000000000000000000000000000000"
+    }
+  ],
+  "MerkleTree": {
+    "0": ["0x4b4a4baadd036a43762825897671d35b8c0b80caddfc4c65ebd80e686e4f1b25"],
+    "1": [
+      "0x5677b4bc7786ce650133cb5e8fab88088384d882f3309ce13db5469fc2d3b9b1",
+      "0x2650535148bbb0374c14cb44d07dabf6f95dd62846d5a4fecda111481bd3ce87"
+    ],
+    "2": [
+      "0x189276fb35894cb7057f6805f3e8a684c90af5e341f668ecc9508d2e96372f65",
+      "0xabab8c78d6dd5a695d02020ebb2bba30b9078329b3be5b87fb51f12e320f0eda",
+      "0x69a294f52e9f8763c68ed5ecdfb314ebc7d76265cf7530f709e509ece457ef7c",
+      "0xc5a36f3b7b955966d5ed3135dcc612f978306d73bce3697e230afae57fbaeeba"
+    ],
+    "3": [
+      "0x82b757d108baf99bcef437acc56768b8535e24aead5f036fd43b47166506d563",
+      "0x4e50f3d0af4c7f94a5ed9bb299bbd9e7d816131327b9a82a48293c58ca744a5e",
+      "0xe1f8dd9fa31399710038f763f2879185057b536ce5ed0a05490937eb1656fca7",
+      "0x522fa3f37eb533be560fa8bc09b5f50b8ff5c84849eaa3fae260f1df85320c30",
+      "0x793af143882bf562b124d34242560a04104f4361456d977258877bd7e1528b88",
+      "0x6f1ed27b8bcc75b0342c6d8c542f5e86feecc2dbad6845352f2aaab082fdd715",
+      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400"
+    ]
+  }
+}
