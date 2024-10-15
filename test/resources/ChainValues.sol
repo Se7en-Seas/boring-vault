@@ -803,6 +803,9 @@ contract ChainValues {
         // Syrup
         values[mainnet]["syrupRouter"] = 0x134cCaaA4F1e4552eC8aEcb9E4A2360dDcF8df76.toBytes32();
 
+        // corn
+        values[mainnet]["cornSilo"] = 0x8bc93498b861fd98277c3b51d240e7E56E48F23c.toBytes32();
+
         // Treehouse
         values[mainnet]["TreehouseRedemption"] = 0x0618DBdb3Be798346e6D9C08c3c84658f94aD09F.toBytes32();
         values[mainnet]["TreehouseRouter"] = 0xeFA3fa8e85D2b3CfdB250CdeA156c2c6C90628F5.toBytes32();

@@ -18,6 +18,8 @@ import {StandardBridgeDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/StandardBridgeDecoderAndSanitizer.sol";
 import {KarakDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/KarakDecoderAndSanitizer.sol";
 import {OFTDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/OFTDecoderAndSanitizer.sol";
+import {CornStakingDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/CornStakingDecoderAndSanitizer.sol";
 
 contract PointFarmingDecoderAndSanitizer is
     EigenLayerLSTStakingDecoderAndSanitizer,
@@ -28,7 +30,8 @@ contract PointFarmingDecoderAndSanitizer is
     LineaBridgeDecoderAndSanitizer,
     MantleStandardBridgeDecoderAndSanitizer,
     ScrollBridgeDecoderAndSanitizer,
-    OFTDecoderAndSanitizer
+    OFTDecoderAndSanitizer,
+    CornStakingDecoderAndSanitizer
 {
     constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
 

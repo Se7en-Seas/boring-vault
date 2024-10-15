@@ -3690,6 +3690,80 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Corn Staking =========================================
+
+    function _addLeafsForCornStaking(ManageLeaf[] memory leafs, ERC20[] memory assets) internal {
+        for (uint256 i; i < assets.length; ++i) {
+            // Approve cornSilo to spend asset.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(assets[i]),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Corn Silo to spend ", assets[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "cornSilo");
+
+            if (address(assets[i]) == getAddress(sourceChain, "WBTC")) {
+                // Need to add special bitcorn leafs.
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "cornSilo"),
+                    false,
+                    "mintAndDepositBitcorn(uint256)",
+                    new address[](0),
+                    string.concat("Deposit ", assets[i].symbol(), " into cornSilo for Bitcorn"),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "cornSilo"),
+                    false,
+                    "redeemBitcorn(uint256)",
+                    new address[](0),
+                    string.concat("Burn Bitcorn from cornSilo for ", assets[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+            } else {
+                // use generic deposit and withdraw
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "cornSilo"),
+                    false,
+                    "deposit(address,uint256)",
+                    new address[](1),
+                    string.concat("Deposit ", assets[i].symbol(), " into cornSilo"),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = address(assets[i]);
+
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "cornSilo"),
+                    false,
+                    "redeemToken(address,uint256)",
+                    new address[](1),
+                    string.concat("Withdraw ", assets[i].symbol(), " from cornSilo"),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = address(assets[i]);
+            }
+        }
+    }
+
     // ========================================= Pump Staking =========================================
 
     function _addLeafsForPumpStaking(ManageLeaf[] memory leafs, address pumpStaking, ERC20 asset) internal {
