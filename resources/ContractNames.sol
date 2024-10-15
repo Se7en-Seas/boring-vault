@@ -103,7 +103,7 @@ contract ContractNames {
     string public constant StakedETHFIManagerName = "Staked ETHFI Manager With Merkle Verification V0.0";
     string public constant StakedETHFIAccountantName = "Staked ETHFI Accountant With Rate Providers V0.0";
     string public constant StakedETHFITellerName = "Staked ETHFI Teller With Multi Asset Support V0.0";
-    string public constant StakedETHFIDecoderAndSanitizerName = "Staked ETHFI Decoder and Sanitizer V0.0";
+    string public constant StakedETHFIDecoderAndSanitizerName = "Staked ETHFI Decoder and Sanitizer V0.1";
     string public constant StakedETHFIDelayedWithdrawer = "Staked ETHFI Delayed Withdrawer V0.0";
 
     string public constant CanaryBtcRolesAuthorityName = "Lombard Earn RolesAuthority Version 0.0";
