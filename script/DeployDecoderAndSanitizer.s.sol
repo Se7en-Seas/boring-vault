@@ -32,6 +32,8 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
     address boringVault = 0x5401b8620E5FB570064CA9114fd1e135fd77D57c;
     address eEigen = 0xE77076518A813616315EaAba6cA8e595E845EeE9;
 
+    address liquidUsd = 0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C;
+
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
         vm.createSelectFork("mainnet");
@@ -60,6 +62,13 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
         deployer.deployContract(
             "ITB Eigen Position Manager Decoder and Sanitizer V0.1", creationCode, constructorArgs, 0
         );
+        // creationCode = type(ITBPositionDecoderAndSanitizer).creationCode;
+        // constructorArgs = abi.encode(liquidUsd);
+        // deployer.deployContract(ItbPositionDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+
+        creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
+        constructorArgs = abi.encode(liquidUsd, uniswapV3NonFungiblePositionManager);
+        deployer.deployContract(EtherFiLiquidUsdDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
         vm.stopBroadcast();
     }

@@ -20,7 +20,7 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
     address public managerAddress = 0x91A2482EA778F3C9AAE1d3768D9e558D6794b972;
     address public accountantAddress = 0x126af21dc55C300B7D0bBfC4F3898F558aE8156b;
     address public rawDataDecoderAndSanitizer = 0xcfa57ea1b1E138cf89050253CcF5d0836566C06D;
-    address public stakingDecoderAndSanitizer = 0x87992555db3BBA9499735380Da125720863528ad;
+    address public stakingDecoderAndSanitizer = 0x210c179758430646C83f5Da08C7b2bc73c9aAD55;
 
     address public itbDecoderAndSanitizer = 0xcfa57ea1b1E138cf89050253CcF5d0836566C06D;
 
@@ -283,11 +283,6 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
         kind[12] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
-        /**
-         * deposit, withdraw
-         */
-        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "SFRXETH")));
-
         // ========================== Staking ==========================
         setAddress(true, mainnet, "rawDataDecoderAndSanitizer", stakingDecoderAndSanitizer);
 
@@ -296,10 +291,11 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
         _addLidoLeafs(leafs);
         _addSwellStakingLeafs(leafs);
         _addMantleStakingLeafs(leafs);
+        _addFraxLeafs(leafs);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        string memory filePath = "./leafs/KarakVaultStrategistLeafs.json";
+        string memory filePath = "./leafs/Mainnet/KarakVaultStrategistLeafs.json";
 
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
