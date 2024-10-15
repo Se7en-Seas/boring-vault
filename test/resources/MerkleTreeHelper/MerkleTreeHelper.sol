@@ -376,6 +376,53 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
     }
 
+    // ========================================= Usual Money =========================================
+
+    function _addUsualMoneyLeafs(ManageLeaf[] memory leafs) internal {
+        ERC20 Usd0 = getERC20(sourceChain, "USD0");
+        ERC20 Usd0PP = getERC20(sourceChain, "USD0_plus");
+
+        // Approve Usd0PP to spend Usd0.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(Usd0),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve Usd0PP to spend ", Usd0.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = address(Usd0PP);
+
+        // Call mint on Usd0PP.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(Usd0PP),
+            false,
+            "mint(uint256)",
+            new address[](0),
+            string.concat("Mint Usd0PP"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Call unwrap on Usd0PP.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(Usd0PP),
+            false,
+            "unwrap()",
+            new address[](0),
+            string.concat("Unwrap Usd0PP"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+    }
+
     // ========================================= Treehouse =========================================
 
     function _addTreehouseLeafs(
