@@ -133,6 +133,14 @@ contract ContractNames {
     string public constant Btc_FiDecoderAndSanitizerName = "BTC-Fi Decoder and Sanitizer V0.0";
     string public constant Btc_FiDelayedWithdrawer = "BTC-Fi Delayed Withdrawer V0.0";
 
+    string public constant SolvBTCvRolesAuthorityName = "SolvBTC DeFi Vault RolesAuthority Version 0.0";
+    string public constant SolvBTCvName = "SolvBTC DeFi Vault V0.0";
+    string public constant SolvBTCvManagerName = "SolvBTC DeFi Vault Manager With Merkle Verification V0.0";
+    string public constant SolvBTCvAccountantName = "SolvBTC DeFi Vault Accountant With Rate Providers V0.0";
+    string public constant SolvBTCvTellerName = "SolvBTC DeFi Vault Teller With Multi Asset Support V0.0";
+    string public constant SolvBTCvDecoderAndSanitizerName = "SolvBTC DeFi Vault Decoder and Sanitizer V0.0";
+    string public constant SolvBTCvDelayedWithdrawer = "SolvBTC DeFi Vault Delayed Withdrawer V0.0";
+
     string public constant SymbioticLRTVaultRolesAuthorityName = "Symbiotic LRT Vault RolesAuthority V0.0";
     string public constant SymbioticLRTVaultName = "Symbiotic LRT Vault V0.0";
     string public constant SymbioticLRTVaultManagerName = "Symbiotic LRT Vault Manager With Merkle Verification V0.0";
