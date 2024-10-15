@@ -66,7 +66,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         boringQueue = new BoringOnChainQueue(
             address(this), address(liquidEth_roles_authority), payable(liquidEth), address(liquidEth_accountant)
         );
-        boringSolver = new BoringSolver(address(this), address(liquidEth_roles_authority));
+        boringSolver = new BoringSolver(address(this), address(liquidEth_roles_authority), address(boringQueue));
 
         // Grant BoringSolver SOLVER_ROLES for on both vaults.
         vm.startPrank(weETHs_roles_authority.owner());
@@ -231,7 +231,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         // Solve users request using p2p solve.
 
         uint256 wETHDelta = WETH.balanceOf(address(this));
-        boringSolver.boringRedeemSolve(boringQueue, requests, liquidEth_teller);
+        boringSolver.boringRedeemSolve(requests, liquidEth_teller);
         wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
 
         assertEq(WETH.balanceOf(testUser), requests[0].amountOfAssets, "User should have received their wETH.");
@@ -250,7 +250,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         // Solve users request using p2p solve.
 
         uint256 wETHDelta = WETH.balanceOf(address(this));
-        boringSolver.boringRedeemMintSolve(boringQueue, requests, liquidEth_teller, weETHs_teller, address(WETH));
+        boringSolver.boringRedeemMintSolve(requests, liquidEth_teller, weETHs_teller, address(WETH));
         wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
 
         assertEq(
@@ -309,7 +309,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
 
         // Self Solve the request.
         vm.prank(testUser);
-        boringSolver.boringRedeemSelfSolve(boringQueue, requests[0], liquidEth_teller);
+        boringSolver.boringRedeemSelfSolve(requests[0], liquidEth_teller);
 
         uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
 
@@ -341,7 +341,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         skip(3 days);
 
         uint256 wETHDelta = WETH.balanceOf(address(this));
-        boringSolver.boringRedeemSolve(boringQueue, requests, liquidEth_teller);
+        boringSolver.boringRedeemSolve(requests, liquidEth_teller);
         wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
         uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
 
@@ -661,7 +661,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         skip(3 days);
 
         // Solve request using boringSolver.
-        boringSolver.boringRedeemSolve(boringQueue, requests, liquidEth_teller);
+        boringSolver.boringRedeemSolve(requests, liquidEth_teller);
 
         // User makes a redeem mint solve request for weETHs.
         address userB = vm.addr(3);
@@ -669,7 +669,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         (, requests[0]) = _haveUserCreateRequest(userB, weETHs, 1e18, 100, 1 days);
 
         // Solve request using boringSolver.
-        boringSolver.boringRedeemMintSolve(boringQueue, requests, liquidEth_teller, weETHs_teller, address(WETH));
+        boringSolver.boringRedeemMintSolve(requests, liquidEth_teller, weETHs_teller, address(WETH));
 
         // User A and user B should not have any shares.
         assertEq(ERC20(liquidEth).balanceOf(userA), 0, "User A should have had their shares solved.");
@@ -680,6 +680,10 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
 
     function testSolverReverts() external {
         address evilUser = vm.addr(22);
+
+        vm.expectRevert(bytes(abi.encodeWithSelector(BoringSolver.BoringSolver___OnlyQueue.selector)));
+        boringSolver.boringSolve(address(0), address(0), address(0), 0, 0, hex"");
+
         vm.startPrank(address(boringQueue));
 
         // Wrong initiator revert.
@@ -739,9 +743,9 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         vm.stopPrank();
 
         vm.expectRevert(bytes(abi.encodeWithSelector(BoringSolver.BoringSolver___OnlySelf.selector)));
-        boringSolver.boringRedeemSelfSolve(boringQueue, request, liquidEth_teller);
+        boringSolver.boringRedeemSelfSolve(request, liquidEth_teller);
         vm.expectRevert(bytes(abi.encodeWithSelector(BoringSolver.BoringSolver___OnlySelf.selector)));
-        boringSolver.boringRedeemMintSelfSolve(boringQueue, request, liquidEth_teller, weETHs_teller, address(WETH));
+        boringSolver.boringRedeemMintSelfSolve(request, liquidEth_teller, weETHs_teller, address(WETH));
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

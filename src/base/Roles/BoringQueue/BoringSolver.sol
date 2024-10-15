@@ -24,10 +24,15 @@ contract BoringSolver is IBoringSolver, Auth, Multicall {
     error BoringSolver___BoringVaultTellerMismatch(address boringVault, address teller);
     error BoringSolver___OnlySelf();
     error BoringSolver___FailedToSolve();
+    error BoringSolver___OnlyQueue();
 
     //============================== IMMUTABLES ===============================
 
-    constructor(address _owner, address _auth) Auth(_owner, Authority(_auth)) {}
+    BoringOnChainQueue internal immutable queue;
+
+    constructor(address _owner, address _auth, address _queue) Auth(_owner, Authority(_auth)) {
+        queue = BoringOnChainQueue(_queue);
+    }
 
     //============================== ADMIN FUNCTIONS ===============================
 
@@ -48,11 +53,10 @@ contract BoringSolver is IBoringSolver, Auth, Multicall {
     /**
      * @notice Solve multiple user requests to redeem Boring Vault shares.
      */
-    function boringRedeemSolve(
-        BoringOnChainQueue queue,
-        BoringOnChainQueue.OnChainWithdraw[] calldata requests,
-        address teller
-    ) external requiresAuth {
+    function boringRedeemSolve(BoringOnChainQueue.OnChainWithdraw[] calldata requests, address teller)
+        external
+        requiresAuth
+    {
         bytes memory solveData = abi.encode(SolveType.BORING_REDEEM, msg.sender, teller, true);
 
         queue.solveOnChainWithdraws(requests, solveData, address(this));
@@ -63,7 +67,6 @@ contract BoringSolver is IBoringSolver, Auth, Multicall {
      * @dev In order for this to work, the fromAccountant must have the toBoringVaults rate provider setup.
      */
     function boringRedeemMintSolve(
-        BoringOnChainQueue queue,
         BoringOnChainQueue.OnChainWithdraw[] calldata requests,
         address fromTeller,
         address toTeller,
@@ -80,11 +83,10 @@ contract BoringSolver is IBoringSolver, Auth, Multicall {
     /**
      * @notice Allows a user to solve their own request to redeem Boring Vault shares.
      */
-    function boringRedeemSelfSolve(
-        BoringOnChainQueue queue,
-        BoringOnChainQueue.OnChainWithdraw calldata request,
-        address teller
-    ) external requiresAuth {
+    function boringRedeemSelfSolve(BoringOnChainQueue.OnChainWithdraw calldata request, address teller)
+        external
+        requiresAuth
+    {
         if (request.user != msg.sender) revert BoringSolver___OnlySelf();
 
         BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
@@ -100,7 +102,6 @@ contract BoringSolver is IBoringSolver, Auth, Multicall {
      * @dev In order for this to work, the fromAccountant must have the toBoringVaults rate provider setup.
      */
     function boringRedeemMintSelfSolve(
-        BoringOnChainQueue queue,
         BoringOnChainQueue.OnChainWithdraw calldata request,
         address fromTeller,
         address toTeller,
@@ -130,16 +131,15 @@ contract BoringSolver is IBoringSolver, Auth, Multicall {
         uint256 requiredAssets,
         bytes calldata solveData
     ) external requiresAuth {
+        if (msg.sender != address(queue)) revert BoringSolver___OnlyQueue();
         if (initiator != address(this)) revert BoringSolver___WrongInitiator();
-
-        address queue = msg.sender;
 
         SolveType solveType = abi.decode(solveData, (SolveType));
 
         if (solveType == SolveType.BORING_REDEEM) {
-            _boringRedeemSolve(queue, solveData, boringVault, solveAsset, totalShares, requiredAssets);
+            _boringRedeemSolve(solveData, boringVault, solveAsset, totalShares, requiredAssets);
         } else if (solveType == SolveType.BORING_REDEEM_MINT) {
-            _boringRedeemMintSolve(queue, solveData, boringVault, solveAsset, totalShares, requiredAssets);
+            _boringRedeemMintSolve(solveData, boringVault, solveAsset, totalShares, requiredAssets);
         } else {
             // Added for future protection, if another enum is added, txs with that enum will revert,
             // if no changes are made here.
@@ -153,7 +153,6 @@ contract BoringSolver is IBoringSolver, Auth, Multicall {
      * @notice Internal helper function to solve multiple user requests to redeem Boring Vault shares.
      */
     function _boringRedeemSolve(
-        address queue,
         bytes calldata solveData,
         address boringVault,
         address solveAsset,
@@ -181,14 +180,13 @@ contract BoringSolver is IBoringSolver, Auth, Multicall {
         }
 
         // Approve Boring Queue to spend the required assets.
-        asset.approve(queue, requiredAssets);
+        asset.approve(address(queue), requiredAssets);
     }
 
     /**
      * @notice Internal helper function to solve multiple user requests to redeem Boring Vault shares and mint new Boring Vault shares.
      */
     function _boringRedeemMintSolve(
-        address queue,
         bytes calldata solveData,
         address fromBoringVault,
         address toBoringVault,
@@ -243,6 +241,6 @@ contract BoringSolver is IBoringSolver, Auth, Multicall {
         }
 
         // Approve Boring Queue to spend the required assets.
-        ERC20(toBoringVault).approve(queue, requiredShares);
+        ERC20(toBoringVault).approve(address(queue), requiredShares);
     }
 }

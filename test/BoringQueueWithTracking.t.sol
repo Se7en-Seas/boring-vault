@@ -68,7 +68,7 @@ contract BoringQueueWithtrackingTest is Test, MerkleTreeHelper {
         boringQueue = new BoringOnChainQueueWithTracking(
             address(this), address(liquidEth_roles_authority), payable(liquidEth), address(liquidEth_accountant), true
         );
-        boringSolver = new BoringSolver(address(this), address(liquidEth_roles_authority));
+        boringSolver = new BoringSolver(address(this), address(liquidEth_roles_authority), address(boringQueue));
 
         // Grant BoringSolver SOLVER_ROLES for on both vaults.
         vm.startPrank(weETHs_roles_authority.owner());
@@ -188,7 +188,7 @@ contract BoringQueueWithtrackingTest is Test, MerkleTreeHelper {
         skip(3 days);
 
         uint256 wETHDelta = WETH.balanceOf(address(this));
-        boringSolver.boringRedeemSolve(boringQueue, requests, liquidEth_teller);
+        boringSolver.boringRedeemSolve(requests, liquidEth_teller);
         wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
         uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
 
