@@ -30,6 +30,7 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
     Deployer public deployer = Deployer(deployerAddress);
 
     address boringVault = 0x5401b8620E5FB570064CA9114fd1e135fd77D57c;
+    address eEigen = 0xE77076518A813616315EaAba6cA8e595E845EeE9;
 
     address liquidUsd = 0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C;
 
@@ -56,6 +57,11 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
         // constructorArgs = abi.encode(boringVault, pancakeSwapV3NonFungiblePositionManager, pancakeSwapV3MasterChefV3);
         // deployer.deployContract(LombardPancakeSwapDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
+        creationCode = type(ITBPositionDecoderAndSanitizer).creationCode;
+        constructorArgs = abi.encode(eEigen);
+        deployer.deployContract(
+            "ITB Eigen Position Manager Decoder and Sanitizer V0.1", creationCode, constructorArgs, 0
+        );
         // creationCode = type(ITBPositionDecoderAndSanitizer).creationCode;
         // constructorArgs = abi.encode(liquidUsd);
         // deployer.deployContract(ItbPositionDecoderAndSanitizerName, creationCode, constructorArgs, 0);
