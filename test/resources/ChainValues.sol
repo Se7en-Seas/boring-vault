@@ -1021,6 +1021,10 @@ contract ChainValues {
         values[arbitrum]["osETH_wETH_BPT"] = 0x42f7Cfc38DD1583fFdA2E4f047F4F6FA06CEFc7c.toBytes32();
         values[arbitrum]["osETH_wETH_Id"] = 0x42f7cfc38dd1583ffda2e4f047f4f6fa06cefc7c000000000000000000000553;
         values[arbitrum]["osETH_wETH_Gauge"] = 0x5DA32F4724373c91Fdc657E0AD7B1836c70A4E52.toBytes32();
+
+        // Karak
+        values[arbitrum]["vaultSupervisor"] = 0x399f22ae52a18382a67542b3De9BeD52b7B9A4ad.toBytes32();
+        values[arbitrum]["kETHFI"] = 0xc9A908402C7f0e343691cFB8c8Fc637449333ce0.toBytes32();
     }
 
     function _addOptimismValues() private {

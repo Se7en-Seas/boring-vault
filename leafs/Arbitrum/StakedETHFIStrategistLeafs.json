@@ -1,0 +1,139 @@
+{
+  "metadata": {
+    "AccountantAddress": "0x05A1552c5e18F5A0BB9571b5F2D6a4765ebdA32b",
+    "BoringVaultAddress": "0x86B5780b606940Eb59A062aA85a07959518c0161",
+    "DecoderAndSanitizerAddress": "0xb8bb22226d385Cf504f30176683FC395cB928633",
+    "DigestComposition": [
+      "Bytes20(DECODER_AND_SANITIZER_ADDRESS)",
+      "Bytes20(TARGET_ADDRESS)",
+      "Bytes1(CAN_SEND_VALUE)",
+      "Bytes4(TARGET_FUNCTION_SELECTOR)",
+      "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)"
+    ],
+    "LeafCount": 7,
+    "ManageRoot": "0x37d5e1a60a472a3f89e6fa8a12ebd30ce0093e9c6f6a9be46923d290394d8ad5",
+    "ManagerAddress": "0xb623FaF559b414A1C7EF2d15f3260CA0Fd239431",
+    "TreeCapacity": 8
+  },
+  "leafs": [
+    {
+      "AddressArguments": ["0xc9A908402C7f0e343691cFB8c8Fc637449333ce0"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xb8bb22226d385Cf504f30176683FC395cB928633",
+      "Description": "Approve Karak Vault to spend ETHFI",
+      "FunctionSelector": "0x095ea7b3",
+      "FunctionSignature": "approve(address,uint256)",
+      "LeafDigest": "0xc4245bc9113f0c9325523a765c6cae8ced76221543bcf1076c8748eb5e3a8224",
+      "PackedArgumentAddresses": "0xc9a908402c7f0e343691cfb8c8fc637449333ce0",
+      "TargetAddress": "0x7189fb5B6504bbfF6a852B13B7B82a3c118fDc27"
+    },
+    {
+      "AddressArguments": ["0x399f22ae52a18382a67542b3De9BeD52b7B9A4ad"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xb8bb22226d385Cf504f30176683FC395cB928633",
+      "Description": "Approve Vault Supervisor to spend KETHFI shares",
+      "FunctionSelector": "0x095ea7b3",
+      "FunctionSignature": "approve(address,uint256)",
+      "LeafDigest": "0x9dab0f94bc3697b41335e620a465892197cb6615359e0a8b8ae897f579ab8526",
+      "PackedArgumentAddresses": "0x399f22ae52a18382a67542b3de9bed52b7b9a4ad",
+      "TargetAddress": "0xc9A908402C7f0e343691cFB8c8Fc637449333ce0"
+    },
+    {
+      "AddressArguments": ["0xc9A908402C7f0e343691cFB8c8Fc637449333ce0"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xb8bb22226d385Cf504f30176683FC395cB928633",
+      "Description": "Deposit ETHFI into KETHFI",
+      "FunctionSelector": "0x0efe6a8b",
+      "FunctionSignature": "deposit(address,uint256,uint256)",
+      "LeafDigest": "0x9bbfab495d617ec18637b0d3ad34a5260d572464bfe3eca6c98a8c62f45d7800",
+      "PackedArgumentAddresses": "0xc9a908402c7f0e343691cfb8c8fc637449333ce0",
+      "TargetAddress": "0x399f22ae52a18382a67542b3De9BeD52b7B9A4ad"
+    },
+    {
+      "AddressArguments": ["0xc9A908402C7f0e343691cFB8c8Fc637449333ce0"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xb8bb22226d385Cf504f30176683FC395cB928633",
+      "Description": "Gimmie shares into KETHFI",
+      "FunctionSelector": "0x7fb2a0a1",
+      "FunctionSignature": "gimmieShares(address,uint256)",
+      "LeafDigest": "0x4e5bed7f07841bf3c9d50fa464b4bf72658c489ed9588a311b5936742654f46d",
+      "PackedArgumentAddresses": "0xc9a908402c7f0e343691cfb8c8fc637449333ce0",
+      "TargetAddress": "0x399f22ae52a18382a67542b3De9BeD52b7B9A4ad"
+    },
+    {
+      "AddressArguments": ["0xc9A908402C7f0e343691cFB8c8Fc637449333ce0"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xb8bb22226d385Cf504f30176683FC395cB928633",
+      "Description": "Return shares from KETHFI",
+      "FunctionSelector": "0x8b198025",
+      "FunctionSignature": "returnShares(address,uint256)",
+      "LeafDigest": "0xaeb6a8194f19a4a4c6043e3ee99c0bb60db0f2c5b6976f4565e6a55c4f52fd26",
+      "PackedArgumentAddresses": "0xc9a908402c7f0e343691cfb8c8fc637449333ce0",
+      "TargetAddress": "0x399f22ae52a18382a67542b3De9BeD52b7B9A4ad"
+    },
+    {
+      "AddressArguments": [
+        "0xc9A908402C7f0e343691cFB8c8Fc637449333ce0",
+        "0x86B5780b606940Eb59A062aA85a07959518c0161"
+      ],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xb8bb22226d385Cf504f30176683FC395cB928633",
+      "Description": "Start withdraw of ETHFI from KETHFI",
+      "FunctionSelector": "0x92dca407",
+      "FunctionSignature": "startWithdraw((address[],uint256[],address)[])",
+      "LeafDigest": "0x6002693182164a4923655e4fd3167922536e4c095a609145bb9ac3e4428a4c07",
+      "PackedArgumentAddresses": "0xc9a908402c7f0e343691cfb8c8fc637449333ce086b5780b606940eb59a062aa85a07959518c0161",
+      "TargetAddress": "0x48769803c0449532Bd23DB3A413152632753c8f0"
+    },
+    {
+      "AddressArguments": [
+        "0x86B5780b606940Eb59A062aA85a07959518c0161",
+        "0x0000000000000000000000000000000000000000",
+        "0xc9A908402C7f0e343691cFB8c8Fc637449333ce0",
+        "0x86B5780b606940Eb59A062aA85a07959518c0161"
+      ],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xb8bb22226d385Cf504f30176683FC395cB928633",
+      "Description": "Finish withdraw of ETHFI from KETHFI",
+      "FunctionSelector": "0x86e9a1f7",
+      "FunctionSignature": "finishWithdraw((address,address,uint256,uint256,(address[],uint256[],address))[])",
+      "LeafDigest": "0x0fe02f5ecde579651305b8f8c9ffc67fd9d0b003908c0fc928f0c9f68f901bc4",
+      "PackedArgumentAddresses": "0x86b5780b606940eb59a062aa85a07959518c01610000000000000000000000000000000000000000c9a908402c7f0e343691cfb8c8fc637449333ce086b5780b606940eb59a062aa85a07959518c0161",
+      "TargetAddress": "0x48769803c0449532Bd23DB3A413152632753c8f0"
+    },
+    {
+      "AddressArguments": [],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
+      "Description": "",
+      "FunctionSelector": "0xc5d24601",
+      "FunctionSignature": "",
+      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+      "PackedArgumentAddresses": "0x",
+      "TargetAddress": "0x0000000000000000000000000000000000000000"
+    }
+  ],
+  "MerkleTree": {
+    "0": ["0x37d5e1a60a472a3f89e6fa8a12ebd30ce0093e9c6f6a9be46923d290394d8ad5"],
+    "1": [
+      "0xa384eac9a0bd1cd347057ea4d7b2376bb099db28fd58bb7d4260aa5864ac89c7",
+      "0x76d8c5e73dceebb96b2c65a608dab731281f88612d91abe6b227f55e46aeca8e"
+    ],
+    "2": [
+      "0x8a06f89c119c3f681c8c0ca8c6b684fd65cd6b63f2cce99b44d4cb98ab5b35a4",
+      "0x7eb167f2926a907d942a6afebe441f40718508c096e334dff060cdda90ac9b21",
+      "0x2da59bfa97fc3159afed80bed9fd6f2b63cabc486f5e7543741ddd825adfe010",
+      "0xca1524183f2d53b3a80f0b23e8cc0b55e033cb12af071379d8badd9dba0018a9"
+    ],
+    "3": [
+      "0xc4245bc9113f0c9325523a765c6cae8ced76221543bcf1076c8748eb5e3a8224",
+      "0x9dab0f94bc3697b41335e620a465892197cb6615359e0a8b8ae897f579ab8526",
+      "0x9bbfab495d617ec18637b0d3ad34a5260d572464bfe3eca6c98a8c62f45d7800",
+      "0x4e5bed7f07841bf3c9d50fa464b4bf72658c489ed9588a311b5936742654f46d",
+      "0xaeb6a8194f19a4a4c6043e3ee99c0bb60db0f2c5b6976f4565e6a55c4f52fd26",
+      "0x6002693182164a4923655e4fd3167922536e4c095a609145bb9ac3e4428a4c07",
+      "0x0fe02f5ecde579651305b8f8c9ffc67fd9d0b003908c0fc928f0c9f68f901bc4",
+      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400"
+    ]
+  }
+}

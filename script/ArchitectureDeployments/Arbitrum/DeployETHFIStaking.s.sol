@@ -5,7 +5,7 @@ import {DeployArcticArchitecture, ERC20, Deployer} from "script/ArchitectureDepl
 import {BoringGovernance} from "src/base/Governance/BoringGovernance.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {ArbitrumAddresses} from "test/resources/ArbitrumAddresses.sol";
-
+import {OnlyKarakDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/OnlyKarakDecoderAndSanitizer.sol";
 // Import Decoder and Sanitizer to deploy.
 import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
@@ -33,11 +33,11 @@ contract DeployETHFIStakingScript is DeployArcticArchitecture, ArbitrumAddresses
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = true;
-        configureDeployment.setupDepositAssets = true;
-        configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = true;
-        configureDeployment.setupTestUser = true;
+        configureDeployment.setupRoles = false;
+        configureDeployment.setupDepositAssets = false;
+        configureDeployment.setupWithdrawAssets = false;
+        configureDeployment.finishSetup = false;
+        configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -73,9 +73,8 @@ contract DeployETHFIStakingScript is DeployArcticArchitecture, ArbitrumAddresses
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
-        bytes memory creationCode = type(EtherFiLiquidEthDecoderAndSanitizer).creationCode;
-        bytes memory constructorArgs =
-            abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
+        bytes memory creationCode = type(OnlyKarakDecoderAndSanitizer).creationCode;
+        bytes memory constructorArgs = abi.encode(deployer.getAddress(names.boringVault));
 
         // Setup withdraw assets.
         withdrawAssets.push(
@@ -96,7 +95,7 @@ contract DeployETHFIStakingScript is DeployArcticArchitecture, ArbitrumAddresses
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "ArbitrumStakedETHFIDeployment.json",
+            "Arbitrum/StakedETHFIDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
