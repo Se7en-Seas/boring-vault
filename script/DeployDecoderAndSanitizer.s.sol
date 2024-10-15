@@ -31,6 +31,8 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
 
     address boringVault = 0x5401b8620E5FB570064CA9114fd1e135fd77D57c;
 
+    address liquidUsd = 0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C;
+
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
         vm.createSelectFork("mainnet");
@@ -46,13 +48,21 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
         //     abi.encode(0xf0bb20865277aBd641a307eCe5Ee04E79073416C, 0x416b433906b1B72FA758e166e239c43d68dC6F29);
         // deployer.deployContract(EtherFiLiquidEthAerodromeDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
-        creationCode = type(OnlyKarakDecoderAndSanitizer).creationCode;
-        constructorArgs = abi.encode(boringVault);
-        deployer.deployContract(EtherFiLiquidEthDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+        // creationCode = type(OnlyKarakDecoderAndSanitizer).creationCode;
+        // constructorArgs = abi.encode(boringVault);
+        // deployer.deployContract(EtherFiLiquidEthDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
-        creationCode = type(PancakeSwapV3FullDecoderAndSanitizer).creationCode;
-        constructorArgs = abi.encode(boringVault, pancakeSwapV3NonFungiblePositionManager, pancakeSwapV3MasterChefV3);
-        deployer.deployContract(LombardPancakeSwapDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+        // creationCode = type(PancakeSwapV3FullDecoderAndSanitizer).creationCode;
+        // constructorArgs = abi.encode(boringVault, pancakeSwapV3NonFungiblePositionManager, pancakeSwapV3MasterChefV3);
+        // deployer.deployContract(LombardPancakeSwapDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+
+        // creationCode = type(ITBPositionDecoderAndSanitizer).creationCode;
+        // constructorArgs = abi.encode(liquidUsd);
+        // deployer.deployContract(ItbPositionDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+
+        creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
+        constructorArgs = abi.encode(liquidUsd, uniswapV3NonFungiblePositionManager);
+        deployer.deployContract(EtherFiLiquidUsdDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
         vm.stopBroadcast();
     }

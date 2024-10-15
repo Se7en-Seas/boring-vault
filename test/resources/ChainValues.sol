@@ -169,6 +169,7 @@ contract ChainValues {
         values[mainnet]["CAKE"] = 0x152649eA73beAb28c5b49B26eb48f7EAD6d4c898.toBytes32();
         values[mainnet]["cbBTC"] = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf.toBytes32();
         values[mainnet]["fBTC"] = 0xC96dE26018A54D51c097160568752c4E3BD6C364.toBytes32();
+        values[mainnet]["wcUSDCv3"] = 0x27F2f159Fe990Ba83D57f39Fd69661764BEbf37a.toBytes32();
 
         // Rate providers
         values[mainnet]["WEETH_RATE_PROVIDER"] = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee.toBytes32();
@@ -618,6 +619,10 @@ contract ChainValues {
         values[mainnet]["pendle_sUSDe_12_25_24"] = 0xa0ab94DeBB3cC9A7eA77f3205ba4AB23276feD08.toBytes32();
         values[mainnet]["pendle_USDe_08_23_24"] = 0x3d1E7312dE9b8fC246ddEd971EE7547B0a80592A.toBytes32();
         values[mainnet]["pendle_USDe_12_25_24"] = 0x8a49f2AC2730ba15AB7EA832EdaC7f6BA22289f8.toBytes32();
+        values[mainnet]["pendle_sUSDe_03_26_25"] = 0xcDd26Eb5EB2Ce0f203a84553853667aE69Ca29Ce.toBytes32();
+        values[mainnet]["pendle_sUSDe_karak_01_29_25"] = 0xDbE4D359D4E48087586Ec04b93809bA647343548.toBytes32();
+        values[mainnet]["pendle_USDe_karak_01_29_25"] = 0x6C06bBFa3B63eD344ceb3312Df795eDC8d29BDD5.toBytes32();
+        values[mainnet]["pendle_USDe_03_26_25"] = 0xB451A36c8B6b2EAc77AD0737BA732818143A0E25.toBytes32();
 
         values[mainnet]["pendle_weETHs_market_08_28_24"] = 0xcAa8ABB72A75C623BECe1f4D5c218F425d47A0D0.toBytes32();
         values[mainnet]["pendle_weETHs_sy_08_28_24"] = 0x9e8f10574ACc2c62C6e5d19500CEd39163Da37A9.toBytes32();
@@ -729,6 +734,8 @@ contract ChainValues {
         values[mainnet]["krswETH"] = 0x1B4d88f5f38988BEA334C79f48aa69BEEeFE2e1e.toBytes32();
         values[mainnet]["krsETH"] = 0x9a23e79a8E6D77F940F2C30eb3d9282Af2E4036c.toBytes32();
         values[mainnet]["kETHFI"] = 0xB26bD8D1FD5415eED4C99f9fB6A278A42E7d1BA8.toBytes32();
+        values[mainnet]["ksUSDe"] = 0xDe5Bff0755F192C333B126A449FF944Ee2B69681.toBytes32();
+        values[mainnet]["kUSDe"] = 0xBE3cA34D0E877A1Fc889BD5231D65477779AFf4e.toBytes32();
 
         // CCIP token transfers.
         values[mainnet]["ccipRouter"] = 0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D.toBytes32();
@@ -798,6 +805,12 @@ contract ChainValues {
 
         // corn
         values[mainnet]["cornSilo"] = 0x8bc93498b861fd98277c3b51d240e7E56E48F23c.toBytes32();
+
+        // Treehouse
+        values[mainnet]["TreehouseRedemption"] = 0x0618DBdb3Be798346e6D9C08c3c84658f94aD09F.toBytes32();
+        values[mainnet]["TreehouseRouter"] = 0xeFA3fa8e85D2b3CfdB250CdeA156c2c6C90628F5.toBytes32();
+        values[mainnet]["tETH"] = 0xD11c452fc99cF405034ee446803b6F6c1F6d5ED8.toBytes32();
+        values[mainnet]["tETH_wstETH_curve_pool"] = 0xA10d15538E09479186b4D3278BA5c979110dDdB1.toBytes32();
     }
 
     function _addBaseValues() private {
