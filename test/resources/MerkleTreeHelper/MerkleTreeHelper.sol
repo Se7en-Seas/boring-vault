@@ -376,6 +376,90 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
     }
 
+    function _addLeafsForCurveSwapping3Pool(ManageLeaf[] memory leafs, address curvePool) internal {
+        CurvePool pool = CurvePool(curvePool);
+        ERC20 coins0 = ERC20(pool.coins(0));
+        ERC20 coins1 = ERC20(pool.coins(1));
+        ERC20 coins2 = ERC20(pool.coins(2));
+        // Approvals.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(coins0),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat(
+                "Approve Curve ",
+                coins0.symbol(),
+                "/",
+                coins1.symbol(),
+                "/",
+                coins2.symbol(),
+                " pool to spend ",
+                coins0.symbol()
+            ),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = curvePool;
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(coins1),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat(
+                "Approve Curve ",
+                coins0.symbol(),
+                "/",
+                coins1.symbol(),
+                "/",
+                coins2.symbol(),
+                " pool to spend ",
+                coins1.symbol()
+            ),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = curvePool;
+
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(coins2),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat(
+                "Approve Curve ",
+                coins0.symbol(),
+                "/",
+                coins1.symbol(),
+                "/",
+                coins2.symbol(),
+                " pool to spend ",
+                coins2.symbol()
+            ),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = curvePool;
+        // Swapping.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            curvePool,
+            false,
+            "exchange(int128,int128,uint256,uint256)",
+            new address[](0),
+            string.concat("Swap using Curve ", coins0.symbol(), "/", coins1.symbol(), "/", coins2.symbol(), " pool"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+    }
+
     // ========================================= Treehouse =========================================
 
     function _addTreehouseLeafs(
