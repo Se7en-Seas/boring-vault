@@ -61,11 +61,13 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
         _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWBTCV3")), getAddress(sourceChain, "sdWBTCV3"));
 
         // ========================== UniswapV3 ==========================
-        address[] memory token0 = new address[](1);
+        address[] memory token0 = new address[](2);
         token0[0] = getAddress(sourceChain, "WBTC");
+        token0[1] = getAddress(sourceChain, "WBTC");
 
-        address[] memory token1 = new address[](1);
+        address[] memory token1 = new address[](2);
         token1[0] = getAddress(sourceChain, "LBTC");
+        token1[1] = getAddress(sourceChain, "cbBTC");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
@@ -73,14 +75,15 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
         /**
          * Claim fees in USDC, DAI, USDT and USDE
          */
-        ERC20[] memory feeAssets = new ERC20[](2);
+        ERC20[] memory feeAssets = new ERC20[](3);
         feeAssets[0] = getERC20(sourceChain, "WBTC");
         feeAssets[1] = getERC20(sourceChain, "LBTC");
+        feeAssets[2] = getERC20(sourceChain, "cbBTC");
         _addLeafsForFeeClaiming(leafs, feeAssets);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](10);
-        SwapKind[] memory kind = new SwapKind[](10);
+        address[] memory assets = new address[](11);
+        SwapKind[] memory kind = new SwapKind[](11);
         assets[0] = getAddress(sourceChain, "WBTC");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "LBTC");
@@ -101,6 +104,8 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
         kind[8] = SwapKind.Sell;
         assets[9] = getAddress(sourceChain, "RSR");
         kind[9] = SwapKind.Sell;
+        assets[10] = getAddress(sourceChain, "cbBTC");
+        kind[10] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         // ========================== Flashloans ==========================
@@ -114,12 +119,15 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== BoringVaults ==========================
         {
-            ERC20[] memory tellerAssets = new ERC20[](2);
+            ERC20[] memory tellerAssets = new ERC20[](3);
             tellerAssets[0] = getERC20(sourceChain, "WBTC");
             tellerAssets[1] = getERC20(sourceChain, "LBTC");
+            tellerAssets[2] = getERC20(sourceChain, "cbBTC");
             address eBTCTeller = 0xe19a43B1b8af6CeE71749Af2332627338B3242D1;
-
             _addTellerLeafs(leafs, eBTCTeller, tellerAssets);
+
+            address newEBTCTeller = 0x458797A320e6313c980C2bC7D270466A6288A8bB;
+            _addTellerLeafs(leafs, newEBTCTeller, tellerAssets);
         }
 
         // ========================== Pendle ==========================

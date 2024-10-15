@@ -376,6 +376,91 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
     }
 
+    // ========================================= Treehouse =========================================
+
+    function _addTreehouseLeafs(
+        ManageLeaf[] memory leafs,
+        ERC20[] memory routerTokensIn,
+        address router,
+        address redemptionContract,
+        ERC20 tAsset,
+        address poolAddress,
+        uint256 coinCount,
+        address gauge
+    ) internal {
+        for (uint256 i; i < routerTokensIn.length; ++i) {
+            // Approve Treehouse Router to spend tokens in.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(routerTokensIn[i]),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Treehouse Router to spend ", routerTokensIn[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = router;
+
+            // Deposit into Treehouse contract using router.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                router,
+                false,
+                "deposit(address,uint256)",
+                new address[](1),
+                string.concat("Deposit into Treehouse contract using router with ", routerTokensIn[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(routerTokensIn[i]);
+        }
+
+        // Approve redemption contract to spend tAsset.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(tAsset),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve redemption contract to spend ", tAsset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = redemptionContract;
+
+        // Redeem tAsset.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            redemptionContract,
+            false,
+            "redeem(uint96)",
+            new address[](0),
+            string.concat("Redeem ", tAsset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        // Finalize redeem.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            redemptionContract,
+            false,
+            "finalizeRedeem(uint256)",
+            new address[](0),
+            string.concat("Finalize redeem ", tAsset.symbol()),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+
+        _addCurveLeafs(leafs, poolAddress, coinCount, gauge);
+    }
+
     // ========================================= StandardBridge =========================================
 
     error StandardBridge__LocalAndRemoteTokensLengthMismatch();
@@ -3605,6 +3690,80 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Corn Staking =========================================
+
+    function _addLeafsForCornStaking(ManageLeaf[] memory leafs, ERC20[] memory assets) internal {
+        for (uint256 i; i < assets.length; ++i) {
+            // Approve cornSilo to spend asset.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(assets[i]),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Corn Silo to spend ", assets[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "cornSilo");
+
+            if (address(assets[i]) == getAddress(sourceChain, "WBTC")) {
+                // Need to add special bitcorn leafs.
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "cornSilo"),
+                    false,
+                    "mintAndDepositBitcorn(uint256)",
+                    new address[](0),
+                    string.concat("Deposit ", assets[i].symbol(), " into cornSilo for Bitcorn"),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "cornSilo"),
+                    false,
+                    "redeemBitcorn(uint256)",
+                    new address[](0),
+                    string.concat("Burn Bitcorn from cornSilo for ", assets[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+            } else {
+                // use generic deposit and withdraw
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "cornSilo"),
+                    false,
+                    "deposit(address,uint256)",
+                    new address[](1),
+                    string.concat("Deposit ", assets[i].symbol(), " into cornSilo"),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = address(assets[i]);
+
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    getAddress(sourceChain, "cornSilo"),
+                    false,
+                    "redeemToken(address,uint256)",
+                    new address[](1),
+                    string.concat("Withdraw ", assets[i].symbol(), " from cornSilo"),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = address(assets[i]);
+            }
+        }
+    }
+
     // ========================================= Pump Staking =========================================
 
     function _addLeafsForPumpStaking(ManageLeaf[] memory leafs, address pumpStaking, ERC20 asset) internal {
@@ -3818,6 +3977,45 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             "unstake(address)",
             new address[](1),
             "Complete withdraw from sUSDe.",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+    }
+
+    // ========================================= Elixir Withdraws =========================================
+
+    function _addElixirSdeUSDWithdrawLeafs(ManageLeaf[] memory leafs) internal {
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "sdeUSD"),
+            false,
+            "cooldownAssets(uint256)",
+            new address[](0),
+            "Withdraw from sdeUSD specifying asset amount.",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "sdeUSD"),
+            false,
+            "cooldownShares(uint256)",
+            new address[](0),
+            "Withdraw from sdeUSD specifying share amount.",
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "sdeUSD"),
+            false,
+            "unstake(address)",
+            new address[](1),
+            "Complete withdraw from sdeUSD.",
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
