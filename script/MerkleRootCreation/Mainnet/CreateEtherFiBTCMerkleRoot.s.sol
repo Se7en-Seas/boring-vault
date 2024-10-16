@@ -18,7 +18,7 @@ contract CreateEtherFiBTCMerkleRootScript is Script, MerkleTreeHelper {
     address public boringVault = 0x657e8C867D8B37dCC18fA4Caead9C45EB088C642;
     address public managerAddress = 0x382d0106F308864D5462332D9D3bB54a60384B70;
     address public accountantAddress = 0x1b293DC39F94157fA0D1D36d7e0090C8B8B8c13F;
-    address public rawDataDecoderAndSanitizer = 0xa2Da7A948254692d7B261bBd27b3Cd1E2C7B033c;
+    address public rawDataDecoderAndSanitizer = 0xee29a7EdBe61149D051E031342a530815037b31f;
 
     function setUp() external {}
 
@@ -57,7 +57,7 @@ contract CreateEtherFiBTCMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](64);
+        ManageLeaf[] memory leafs = new ManageLeaf[](128);
 
         // ========================== Symbiotic ==========================
         address[] memory defaultCollaterals = new address[](3);
@@ -80,15 +80,38 @@ contract CreateEtherFiBTCMerkleRootScript is Script, MerkleTreeHelper {
         _addUniswapV3Leafs(leafs, token0, token1);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](3);
-        SwapKind[] memory kind = new SwapKind[](3);
+        address[] memory assets = new address[](5);
+        SwapKind[] memory kind = new SwapKind[](5);
         assets[0] = getAddress(sourceChain, "WBTC");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "TBTC");
         kind[1] = SwapKind.BuyAndSell;
         assets[2] = getAddress(sourceChain, "LBTC");
         kind[2] = SwapKind.BuyAndSell;
+        assets[3] = getAddress(sourceChain, "fBTC");
+        kind[3] = SwapKind.BuyAndSell;
+        assets[4] = getAddress(sourceChain, "cbBTC");
+        kind[4] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
+
+        // ========================== Karak ==========================
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kWBTC"));
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kFBTC"));
+
+        // ========================== Satlayer ==========================
+        ERC20[] memory stakingTokens = new ERC20[](3);
+        stakingTokens[0] = ERC20(getAddress(sourceChain, "WBTC"));
+        stakingTokens[1] = ERC20(getAddress(sourceChain, "fBTC"));
+        stakingTokens[2] = ERC20(getAddress(sourceChain, "LBTC"));
+        _addSatlayerStakingLeafs(leafs, stakingTokens);
+
+        // ========================== Corn ==========================
+        stakingTokens = new ERC20[](2);
+        stakingTokens[0] = ERC20(getAddress(sourceChain, "WBTC"));
+        stakingTokens[1] = ERC20(getAddress(sourceChain, "LBTC"));
+        _addLeafsForCornStaking(leafs, stakingTokens);
+
+        _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
 
         string memory filePath = "./leafs/Mainnet/EtherFiBtcStrategistLeafs.json";
 
