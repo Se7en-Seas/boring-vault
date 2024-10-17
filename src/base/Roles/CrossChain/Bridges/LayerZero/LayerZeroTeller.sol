@@ -4,13 +4,10 @@ pragma solidity 0.8.21;
 import {
     CrossChainTellerWithGenericBridge, ERC20
 } from "src/base/Roles/CrossChain/CrossChainTellerWithGenericBridge.sol";
-import {CCIPReceiver} from "@ccip/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
-import {Client} from "@ccip/contracts/src/v0.8/ccip/libraries/Client.sol";
-import {IRouterClient} from "@ccip/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {OApp} from "lib/LayerZero-v2/packages/layerzero-v2/evm/oapp/contracts/oapp/OApp.sol";
+import {OAppAuth, Origin} from "@opapp-auth/OAppAuth.sol";
 
-contract LayerZeroTeller is CrossChainTellerWithGenericBridge, CCIPReceiver {
+contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     using SafeTransferLib for ERC20;
 
     // ========================================= STRUCTS =========================================
@@ -63,7 +60,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, CCIPReceiver {
 
     constructor(address _owner, address _vault, address _accountant, address _weth, address _router)
         CrossChainTellerWithGenericBridge(_owner, _vault, _accountant, _weth)
-        CCIPReceiver(_router)
+        OAppAuth(address(0), address(0), address(0), address(0))
     {}
 
     // ========================================= ADMIN FUNCTIONS =========================================
@@ -169,21 +166,16 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, CCIPReceiver {
     }
     // ========================================= CCIP RECEIVER =========================================
 
-    /**
-     * @notice Implement the CCIPReceiver interface to receive messages from the CCIP router.
-     */
-    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
-        Chain memory source = selectorToChains[any2EvmMessage.sourceChainSelector];
-        if (!source.allowMessagesFrom) {
-            revert LayerZeroTeller__MessagesNotAllowedFrom(any2EvmMessage.sourceChainSelector);
-        }
-        address sender = abi.decode(any2EvmMessage.sender, (address));
-        if (source.targetTeller != sender) {
-            revert LayerZeroTeller__MessagesNotAllowedFromSender(any2EvmMessage.sourceChainSelector, sender);
-        }
-        uint256 message = abi.decode(any2EvmMessage.data, (uint256));
+    function _lzReceive(
+        Origin calldata _origin,
+        bytes32 _guid,
+        bytes calldata _message,
+        address _executor,
+        bytes calldata _extraData
+    ) internal override {}
 
-        _completeMessageReceive(any2EvmMessage.messageId, message);
+    function composeMsgSender() external view returns (address sender) {
+        sender = msg.sender;
     }
 
     // ========================================= INTERNAL BRIDGE FUNCTIONS =========================================
@@ -204,28 +196,28 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, CCIPReceiver {
         override
         returns (bytes32 messageId)
     {
-        uint64 destinationSelector = abi.decode(bridgeWildCard, (uint64));
-        Chain memory chain = selectorToChains[destinationSelector];
-        if (!chain.allowMessagesTo) {
-            revert LayerZeroTeller__MessagesNotAllowedTo(destinationSelector);
-        }
+        // uint64 destinationSelector = abi.decode(bridgeWildCard, (uint64));
+        // Chain memory chain = selectorToChains[destinationSelector];
+        // if (!chain.allowMessagesTo) {
+        //     revert LayerZeroTeller__MessagesNotAllowedTo(destinationSelector);
+        // }
 
-        // Build the message.
-        Client.EVM2AnyMessage memory m =
-            _buildMessage(message, chain.targetTeller, address(feeToken), chain.messageGasLimit);
+        // // Build the message.
+        // Client.EVM2AnyMessage memory m =
+        //     _buildMessage(message, chain.targetTeller, address(feeToken), chain.messageGasLimit);
 
-        IRouterClient router = IRouterClient(this.getRouter());
+        // IRouterClient router = IRouterClient(this.getRouter());
 
-        uint256 fee = router.getFee(destinationSelector, m);
+        // uint256 fee = router.getFee(destinationSelector, m);
 
-        if (fee > maxFee) {
-            revert LayerZeroTeller__FeeExceedsMax(destinationSelector, fee, maxFee);
-        }
+        // if (fee > maxFee) {
+        //     revert LayerZeroTeller__FeeExceedsMax(destinationSelector, fee, maxFee);
+        // }
 
-        feeToken.safeTransferFrom(msg.sender, address(this), fee);
-        feeToken.safeApprove(address(router), fee);
+        // feeToken.safeTransferFrom(msg.sender, address(this), fee);
+        // feeToken.safeApprove(address(router), fee);
 
-        messageId = router.ccipSend(destinationSelector, m);
+        // messageId = router.ccipSend(destinationSelector, m);
     }
 
     /**
@@ -240,33 +232,33 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, CCIPReceiver {
         override
         returns (uint256 fee)
     {
-        uint64 destinationSelector = abi.decode(bridgeWildCard, (uint64));
-        Chain memory chain = selectorToChains[destinationSelector];
-        Client.EVM2AnyMessage memory m =
-            _buildMessage(message, chain.targetTeller, address(feeToken), chain.messageGasLimit);
+        // uint64 destinationSelector = abi.decode(bridgeWildCard, (uint64));
+        // Chain memory chain = selectorToChains[destinationSelector];
+        // Client.EVM2AnyMessage memory m =
+        //     _buildMessage(message, chain.targetTeller, address(feeToken), chain.messageGasLimit);
 
-        IRouterClient router = IRouterClient(this.getRouter());
+        // IRouterClient router = IRouterClient(this.getRouter());
 
-        fee = router.getFee(destinationSelector, m);
+        // fee = router.getFee(destinationSelector, m);
     }
 
-    /**
-     * @notice Helper function to build a message.
-     */
-    function _buildMessage(uint256 message, address to, address feeToken, uint64 gasLimit)
-        internal
-        pure
-        returns (Client.EVM2AnyMessage memory m)
-    {
-        m = Client.EVM2AnyMessage({
-            receiver: abi.encode(to),
-            data: abi.encode(message),
-            tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: Client._argsToBytes(
-                // Additional arguments, setting gas limit and non-strict sequencing mode
-                Client.EVMExtraArgsV1({gasLimit: gasLimit /*, strict: false*/ })
-            ),
-            feeToken: feeToken
-        });
-    }
+    // /**
+    //  * @notice Helper function to build a message.
+    //  */
+    // function _buildMessage(uint256 message, address to, address feeToken, uint64 gasLimit)
+    //     internal
+    //     pure
+    //     returns (Client.EVM2AnyMessage memory m)
+    // {
+    //     m = Client.EVM2AnyMessage({
+    //         receiver: abi.encode(to),
+    //         data: abi.encode(message),
+    //         tokenAmounts: new Client.EVMTokenAmount[](0),
+    //         extraArgs: Client._argsToBytes(
+    //             // Additional arguments, setting gas limit and non-strict sequencing mode
+    //             Client.EVMExtraArgsV1({gasLimit: gasLimit /*, strict: false*/ })
+    //         ),
+    //         feeToken: feeToken
+    //     });
+    // }
 }
