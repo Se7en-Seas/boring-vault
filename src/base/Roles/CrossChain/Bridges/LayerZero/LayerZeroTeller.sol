@@ -5,10 +5,13 @@ import {
     CrossChainTellerWithGenericBridge, ERC20
 } from "src/base/Roles/CrossChain/CrossChainTellerWithGenericBridge.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {OAppAuth, Origin} from "@opapp-auth/OAppAuth.sol";
+import {OAppAuth, Origin, MessagingFee, MessagingReceipt} from "@opapp-auth/OAppAuth.sol";
+import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 
 contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     using SafeTransferLib for ERC20;
+    using AddressToBytes32Lib for address;
+    using AddressToBytes32Lib for bytes32;
 
     // ========================================= STRUCTS =========================================
 
@@ -16,13 +19,11 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
      * @notice Stores information about a chain.
      * @param allowMessagesFrom Whether to allow messages from this chain.
      * @param allowMessagesTo Whether to allow messages to this chain.
-     * @param targetTeller The address of the target teller on the other chain.
      * @param messageGasLimit The gas limit for messages to this chain.
      */
     struct Chain {
         bool allowMessagesFrom;
         bool allowMessagesTo;
-        address targetTeller;
         uint64 messageGasLimit;
     }
     // ========================================= STATE =========================================
@@ -30,7 +31,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     /**
      * @notice Maps chain selector to chain information.
      */
-    mapping(uint64 => Chain) public selectorToChains;
+    mapping(uint32 => Chain) public idToChains;
 
     //============================== ERRORS ===============================
 
@@ -67,14 +68,14 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     /**
      * @notice Add a chain to the teller.
      * @dev Callable by OWNER_ROLE.
-     * @param chainSelector The CCIP chain selector to add.
+     * @param chainId The LayerZero chain id to add.
      * @param allowMessagesFrom Whether to allow messages from this chain.
      * @param allowMessagesTo Whether to allow messages to this chain.
      * @param targetTeller The address of the target teller on the other chain.
      * @param messageGasLimit The gas limit for messages to this chain.
      */
     function addChain(
-        uint64 chainSelector,
+        uint32 chainId,
         bool allowMessagesFrom,
         bool allowMessagesTo,
         address targetTeller,
@@ -83,96 +84,117 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
         if (allowMessagesTo && messageGasLimit == 0) {
             revert LayerZeroTeller__ZeroMessageGasLimit();
         }
-        selectorToChains[chainSelector] = Chain(allowMessagesFrom, allowMessagesTo, targetTeller, messageGasLimit);
+        idToChains[chainId] = Chain(allowMessagesFrom, allowMessagesTo, messageGasLimit);
+        _setPeer(chainId, targetTeller.toBytes32());
 
-        emit ChainAdded(chainSelector, allowMessagesFrom, allowMessagesTo, targetTeller, messageGasLimit);
+        emit ChainAdded(chainId, allowMessagesFrom, allowMessagesTo, targetTeller, messageGasLimit);
     }
 
     /**
      * @notice Remove a chain from the teller.
      * @dev Callable by MULTISIG_ROLE.
      */
-    function removeChain(uint64 chainSelector) external requiresAuth {
-        delete selectorToChains[chainSelector];
+    function removeChain(uint32 chainId) external requiresAuth {
+        delete idToChains[chainId];
+        _setPeer(chainId, bytes32(0));
 
-        emit ChainRemoved(chainSelector);
+        emit ChainRemoved(chainId);
     }
 
     /**
      * @notice Allow messages from a chain.
      * @dev Callable by OWNER_ROLE.
      */
-    function allowMessagesFromChain(uint64 chainSelector, address targetTeller) external requiresAuth {
-        Chain storage chain = selectorToChains[chainSelector];
+    function allowMessagesFromChain(uint32 chainId, address targetTeller) external requiresAuth {
+        Chain storage chain = idToChains[chainId];
         chain.allowMessagesFrom = true;
-        chain.targetTeller = targetTeller;
+        _setPeer(chainId, targetTeller.toBytes32());
 
-        emit ChainAllowMessagesFrom(chainSelector, targetTeller);
+        emit ChainAllowMessagesFrom(chainId, targetTeller);
     }
 
     /**
      * @notice Allow messages to a chain.
      * @dev Callable by OWNER_ROLE.
      */
-    function allowMessagesToChain(uint64 chainSelector, address targetTeller, uint64 messageGasLimit)
-        external
-        requiresAuth
-    {
+    function allowMessagesToChain(uint32 chainId, address targetTeller, uint64 messageGasLimit) external requiresAuth {
         if (messageGasLimit == 0) {
             revert LayerZeroTeller__ZeroMessageGasLimit();
         }
-        Chain storage chain = selectorToChains[chainSelector];
+        Chain storage chain = idToChains[chainId];
         chain.allowMessagesTo = true;
-        chain.targetTeller = targetTeller;
+        _setPeer(chainId, targetTeller.toBytes32());
         chain.messageGasLimit = messageGasLimit;
 
-        emit ChainAllowMessagesTo(chainSelector, targetTeller);
+        emit ChainAllowMessagesTo(chainId, targetTeller);
     }
 
     /**
      * @notice Stop messages from a chain.
      * @dev Callable by MULTISIG_ROLE.
      */
-    function stopMessagesFromChain(uint64 chainSelector) external requiresAuth {
-        Chain storage chain = selectorToChains[chainSelector];
+    function stopMessagesFromChain(uint32 chainId) external requiresAuth {
+        Chain storage chain = idToChains[chainId];
         chain.allowMessagesFrom = false;
 
-        emit ChainStopMessagesFrom(chainSelector);
+        emit ChainStopMessagesFrom(chainId);
     }
 
     /**
      * @notice Stop messages to a chain.
      * @dev Callable by MULTISIG_ROLE.
      */
-    function stopMessagesToChain(uint64 chainSelector) external requiresAuth {
-        Chain storage chain = selectorToChains[chainSelector];
+    function stopMessagesToChain(uint32 chainId) external requiresAuth {
+        Chain storage chain = idToChains[chainId];
         chain.allowMessagesTo = false;
 
-        emit ChainStopMessagesTo(chainSelector);
+        emit ChainStopMessagesTo(chainId);
     }
 
     /**
      * @notice Set the gas limit for messages to a chain.
      * @dev Callable by OWNER_ROLE.
      */
-    function setChainGasLimit(uint64 chainSelector, uint64 messageGasLimit) external requiresAuth {
+    function setChainGasLimit(uint32 chainId, uint64 messageGasLimit) external requiresAuth {
         if (messageGasLimit == 0) {
             revert LayerZeroTeller__ZeroMessageGasLimit();
         }
-        Chain storage chain = selectorToChains[chainSelector];
+        Chain storage chain = idToChains[chainId];
         chain.messageGasLimit = messageGasLimit;
 
-        emit ChainSetGasLimit(chainSelector, messageGasLimit);
+        emit ChainSetGasLimit(chainId, messageGasLimit);
     }
-    // ========================================= CCIP RECEIVER =========================================
+    // ========================================= OAppAuthReceiver =========================================
 
-    function _lzReceive(
+    function lzReceive(
         Origin calldata _origin,
         bytes32 _guid,
         bytes calldata _message,
         address _executor,
         bytes calldata _extraData
-    ) internal override {}
+    ) public payable override {
+        // Ensures that only the endpoint can attempt to lzReceive() messages to this OApp.
+        if (address(endpoint) != msg.sender) revert OnlyEndpoint(msg.sender);
+
+        // Ensure that the sender matches the expected peer for the source endpoint.
+        Chain memory source = idToChains[_origin.srcEid];
+        if (!source.allowMessagesFrom) revert LayerZeroTeller__MessagesNotAllowedFrom(_origin.srcEid);
+        if (_getPeerOrRevert(_origin.srcEid) != _origin.sender) revert OnlyPeer(_origin.srcEid, _origin.sender);
+
+        // Call the internal OApp implementation of lzReceive.
+        _lzReceive(_origin, _guid, _message, _executor, _extraData);
+    }
+
+    function _lzReceive(
+        Origin calldata, /*_origin*/
+        bytes32 _guid,
+        bytes calldata _message,
+        address, /*_executor*/
+        bytes calldata /*_extraData*/
+    ) internal override {
+        uint256 message = abi.decode(_message, (uint256));
+        _completeMessageReceive(_guid, message);
+    }
 
     // ========================================= INTERNAL BRIDGE FUNCTIONS =========================================
 
@@ -192,28 +214,25 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
         override
         returns (bytes32 messageId)
     {
-        // uint64 destinationSelector = abi.decode(bridgeWildCard, (uint64));
-        // Chain memory chain = selectorToChains[destinationSelector];
-        // if (!chain.allowMessagesTo) {
-        //     revert LayerZeroTeller__MessagesNotAllowedTo(destinationSelector);
-        // }
+        uint32 destinationId = abi.decode(bridgeWildCard, (uint32));
+        Chain memory chain = idToChains[destinationId];
+        if (!chain.allowMessagesTo) {
+            revert LayerZeroTeller__MessagesNotAllowedTo(destinationId);
+        }
+        bytes memory m = abi.encode(message);
+        MessagingFee memory fee = _quote(destinationId, m, hex"", address(feeToken) != NATIVE);
+        if (address(feeToken) == NATIVE) {
+            if (fee.nativeFee > maxFee) {
+                revert LayerZeroTeller__FeeExceedsMax(destinationId, fee.nativeFee, maxFee);
+            }
+        } else {
+            if (fee.lzTokenFee > maxFee) {
+                revert LayerZeroTeller__FeeExceedsMax(destinationId, fee.lzTokenFee, maxFee);
+            }
+        }
+        MessagingReceipt memory receipt = _lzSend(destinationId, m, hex"", fee, msg.sender);
 
-        // // Build the message.
-        // Client.EVM2AnyMessage memory m =
-        //     _buildMessage(message, chain.targetTeller, address(feeToken), chain.messageGasLimit);
-
-        // IRouterClient router = IRouterClient(this.getRouter());
-
-        // uint256 fee = router.getFee(destinationSelector, m);
-
-        // if (fee > maxFee) {
-        //     revert LayerZeroTeller__FeeExceedsMax(destinationSelector, fee, maxFee);
-        // }
-
-        // feeToken.safeTransferFrom(msg.sender, address(this), fee);
-        // feeToken.safeApprove(address(router), fee);
-
-        // messageId = router.ccipSend(destinationSelector, m);
+        messageId = receipt.guid;
     }
 
     /**
@@ -228,8 +247,9 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
         override
         returns (uint256 fee)
     {
+        // TODO use _quote
         // uint64 destinationSelector = abi.decode(bridgeWildCard, (uint64));
-        // Chain memory chain = selectorToChains[destinationSelector];
+        // Chain memory chain = idToChains[destinationSelector];
         // Client.EVM2AnyMessage memory m =
         //     _buildMessage(message, chain.targetTeller, address(feeToken), chain.messageGasLimit);
 

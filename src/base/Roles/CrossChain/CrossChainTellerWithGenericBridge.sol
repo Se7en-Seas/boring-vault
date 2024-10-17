@@ -11,6 +11,7 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
     //============================== ERRORS ===============================
 
     error CrossChainTellerWithGenericBridge__UnsafeCastToUint96();
+    error CrossChainTellerWithGenericBridge__CannotDepositWithNativeAndPayBridgeFeeInNative();
 
     //============================== EVENTS ===============================
 
@@ -39,7 +40,11 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
         ERC20 feeToken,
         uint256 maxFee
     ) external payable requiresAuth nonReentrant returns (uint256 sharesBridged) {
+        if (address(depositAsset) == NATIVE) {
+            revert CrossChainTellerWithGenericBridge__CannotDepositWithNativeAndPayBridgeFeeInNative();
+        }
         sharesBridged = deposit(depositAsset, depositAmount, minimumMint);
+
         if (sharesBridged > type(uint96).max) revert CrossChainTellerWithGenericBridge__UnsafeCastToUint96();
         bridge(uint96(sharesBridged), msg.sender, bridgeWildCard, feeToken, maxFee);
     }
@@ -77,6 +82,7 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
      */
     function bridge(uint96 shareAmount, address to, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
         public
+        payable
         requiresAuth
         nonReentrant
     {
