@@ -8,6 +8,10 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
     using MessageLib for uint256;
     using MessageLib for MessageLib.Message;
 
+    //============================== ERRORS ===============================
+
+    error CrossChainTellerWithGenericBridge__UnsafeCastToUint96();
+
     //============================== EVENTS ===============================
 
     event MessageSent(bytes32 indexed messageId, uint256 shareAmount, address indexed to);
@@ -22,6 +26,48 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
     // ========================================= PUBLIC FUNCTIONS =========================================
 
     /**
+     * @notice Deposit an asset and bridge the shares to another chain.
+     * @dev This function will REVERT if `beforeTransfer` hook reverts from:
+     *     - shares being locked
+     *     - allow list
+     */
+    function depositAndBridge(
+        ERC20 depositAsset,
+        uint256 depositAmount,
+        uint256 minimumMint,
+        bytes calldata bridgeWildCard,
+        ERC20 feeToken,
+        uint256 maxFee
+    ) external payable requiresAuth nonReentrant returns (uint256 sharesBridged) {
+        sharesBridged = deposit(depositAsset, depositAmount, minimumMint);
+        if (sharesBridged > type(uint96).max) revert CrossChainTellerWithGenericBridge__UnsafeCastToUint96();
+        bridge(uint96(sharesBridged), msg.sender, bridgeWildCard, feeToken, maxFee);
+    }
+
+    /**
+     * @notice Deposit an asset and bridge the shares to another chain using a permit.
+     * @dev This function will REVERT if `beforeTransfer` hook reverts from:
+     *     - shares being locked
+     *     - allow list
+     */
+    function depositAndBridgeWithPermit(
+        ERC20 depositAsset,
+        uint256 depositAmount,
+        uint256 minimumMint,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        bytes calldata bridgeWildCard,
+        ERC20 feeToken,
+        uint256 maxFee
+    ) external payable requiresAuth nonReentrant returns (uint256 sharesBridged) {
+        sharesBridged = depositWithPermit(depositAsset, depositAmount, minimumMint, deadline, v, r, s);
+        if (sharesBridged > type(uint96).max) revert CrossChainTellerWithGenericBridge__UnsafeCastToUint96();
+        bridge(uint96(sharesBridged), msg.sender, bridgeWildCard, feeToken, maxFee);
+    }
+
+    /**
      * @notice Bridge shares to another chain.
      * @param shareAmount The amount of shares to bridge.
      * @param to The address to send the shares to on the other chain.
@@ -30,7 +76,7 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
      * @param maxFee The maximum fee to pay the bridge.
      */
     function bridge(uint96 shareAmount, address to, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
-        external
+        public
         requiresAuth
         nonReentrant
     {
