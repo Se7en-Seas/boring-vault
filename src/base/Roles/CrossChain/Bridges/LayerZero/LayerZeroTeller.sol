@@ -174,10 +174,6 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
         bytes calldata _extraData
     ) internal override {}
 
-    function composeMsgSender() external view returns (address sender) {
-        sender = msg.sender;
-    }
-
     // ========================================= INTERNAL BRIDGE FUNCTIONS =========================================
 
     /**
