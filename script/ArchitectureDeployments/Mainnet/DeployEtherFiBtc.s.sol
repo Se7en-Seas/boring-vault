@@ -21,7 +21,7 @@ contract DeployEtherFiBtcScript is DeployArcticArchitecture, MainnetAddresses {
     string public boringVaultName = "ether.fi BTC";
     string public boringVaultSymbol = "eBTC";
     uint8 public boringVaultDecimals = 8;
-    address public owner = dev1Address;
+    address public owner = dev0Address;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
@@ -30,10 +30,10 @@ contract DeployEtherFiBtcScript is DeployArcticArchitecture, MainnetAddresses {
 
     function run() external {
         // Configure the deployment.
-        configureDeployment.deployContracts = false;
+        configureDeployment.deployContracts = true;
         configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = true;
-        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.setupDepositAssets = false;
+        configureDeployment.setupWithdrawAssets = false;
         configureDeployment.finishSetup = false;
         configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
@@ -110,7 +110,7 @@ contract DeployEtherFiBtcScript is DeployArcticArchitecture, MainnetAddresses {
         uint64 shareLockPeriod = 1 days;
         address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
-        vm.startBroadcast();
+        vm.startBroadcast(privateKey);
 
         _deploy(
             "EtherFiBtcDeployment.json",
