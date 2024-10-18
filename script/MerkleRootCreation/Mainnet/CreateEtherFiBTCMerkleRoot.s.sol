@@ -98,19 +98,6 @@ contract CreateEtherFiBTCMerkleRootScript is Script, MerkleTreeHelper {
         _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kWBTC"));
         _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kFBTC"));
 
-        // ========================== Satlayer ==========================
-        ERC20[] memory stakingTokens = new ERC20[](3);
-        stakingTokens[0] = ERC20(getAddress(sourceChain, "WBTC"));
-        stakingTokens[1] = ERC20(getAddress(sourceChain, "fBTC"));
-        stakingTokens[2] = ERC20(getAddress(sourceChain, "LBTC"));
-        _addSatlayerStakingLeafs(leafs, stakingTokens);
-
-        // ========================== Corn ==========================
-        stakingTokens = new ERC20[](2);
-        stakingTokens[0] = ERC20(getAddress(sourceChain, "WBTC"));
-        stakingTokens[1] = ERC20(getAddress(sourceChain, "LBTC"));
-        _addLeafsForCornStaking(leafs, stakingTokens);
-
         _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
 
         string memory filePath = "./leafs/Mainnet/EtherFiBtcStrategistLeafs.json";
