@@ -4813,6 +4813,45 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
     }
 
     // TODO need to use this in the test suite.
+    function _addTermFinanceUnlockOfferLeafs(ManageLeaf[] memory leafs, address[] memory termAuctionOfferLockerAddresses)
+        internal
+    {
+        for (uint256 i; i < termAuctionOfferLockerAddresses.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+        
+            leafs[leafIndex] = ManageLeaf(
+                    termAuctionOfferLockerAddresses[i],
+                    false,
+                    "unlockOffers(bytes32[])",
+                    new address[](0),
+                    string.concat("Unlock existing offer from offer locker ", vm.toString(termAuctionOfferLockerAddresses[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+        }
+    }
+
+    // TODO need to use this in the test suite.
+    function _addTermFinanceRevealOfferLeafs(ManageLeaf[] memory leafs, address[] memory termAuctionOfferLockerAddresses)
+        internal
+    {
+        for (uint256 i; i < termAuctionOfferLockerAddresses.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                    termAuctionOfferLockerAddresses[i],
+                    false,
+                    "revealOffers(bytes32[],uint256[],uint256[])",
+                    new address[](0),
+                    string.concat("Unlock existing offer from offer locker ", vm.toString(termAuctionOfferLockerAddresses[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+        }
+    }
+
+    // TODO need to use this in the test suite.
     function _addTermFinanceRedeemTermRepoTokensLeafs(ManageLeaf[] memory leafs, address[] memory termRepoServicers)
         internal
     {

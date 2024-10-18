@@ -38,7 +38,7 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         setSourceChainName("mainnet");
     }
 
-    function testTermFinanceIntegrationLockOffer() external {
+    function testTermFinanceIntegrationLockOffer() public {
         _setupEnv(20684989);
         address weth = getAddress(sourceChain, "WETH");
         deal(weth, address(boringVault), 10000e18);
@@ -72,7 +72,7 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         DecoderCustomTypes.TermAuctionOfferSubmission memory termAuctionOfferSubmission = DecoderCustomTypes.TermAuctionOfferSubmission(
             keccak256(abi.encodePacked(uint256(block.timestamp), address(boringVault))),
             address(boringVault),
-            keccak256(abi.encodePacked(uint256(10e17), uint256(1e18))),
+            keccak256(abi.encode(uint256(10e17), uint256(1e18))),
             2e18,
             weth   
         );
@@ -85,6 +85,87 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
         manager.manageVaultWithMerkleVerification(
             manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](2)
+        );
+    }
+
+    function testTermFinanceIntegrationUnlockOffer() external {
+        testTermFinanceIntegrationLockOffer();
+        leafIndex = type(uint256).max;
+        ManageLeaf[] memory leafs = new ManageLeaf[](2); // only need 1 leaf, but _generateMerkleTree needs at least 2.
+        address[] memory termAuctionOfferLockers = new address[](1);
+        termAuctionOfferLockers[0] = getAddress(sourceChain, "termAuctionOfferLocker");
+        _addTermFinanceUnlockOfferLeafs(leafs, termAuctionOfferLockers);
+
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[0];
+  
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](1);
+        targets[0] = getAddress(sourceChain, "termAuctionOfferLocker");
+
+        bytes[] memory targetData = new bytes[](1);
+        bytes32[] memory offerIds = new bytes32[](1);
+        bytes32 idHash =  keccak256(abi.encodePacked(uint256(block.timestamp), address(boringVault)));
+        offerIds[0] = keccak256(
+            abi.encodePacked(idHash, address(boringVault), termAuctionOfferLockers[0])
+        );
+        targetData[0] = abi.encodeWithSignature("unlockOffers(bytes32[])", offerIds);
+        
+        address[] memory decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](1)
+        );
+    }
+
+    function testTermFinanceIntegrationRevealOffer() external {
+        testTermFinanceIntegrationLockOffer();
+        bytes32 idHash =  keccak256(abi.encodePacked(uint256(block.timestamp), address(boringVault)));
+
+        vm.warp(1725555601);
+        leafIndex = type(uint256).max;
+        ManageLeaf[] memory leafs = new ManageLeaf[](2); // only need 1 leaf, but _generateMerkleTree needs at least 2.
+        address[] memory termAuctionOfferLockers = new address[](1);
+        termAuctionOfferLockers[0] = getAddress(sourceChain, "termAuctionOfferLocker");
+        _addTermFinanceRevealOfferLeafs(leafs, termAuctionOfferLockers);
+
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
+        manageLeafs[0] = leafs[0];
+  
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](1);
+        targets[0] = getAddress(sourceChain, "termAuctionOfferLocker");
+
+        bytes[] memory targetData = new bytes[](1);
+        bytes32[] memory offerIds = new bytes32[](1);
+        offerIds[0] = keccak256(
+            abi.encodePacked(idHash, address(boringVault), termAuctionOfferLockers[0])
+        );
+
+        uint256[] memory prices = new uint256[](1);
+        prices[0] = uint256(10e17);
+
+        uint256[] memory nonces = new uint256[](1);
+        nonces[0] = uint256(1e18);
+
+        targetData[0] = abi.encodeWithSignature("revealOffers(bytes32[],uint256[],uint256[])", offerIds, prices, nonces);
+        
+        address[] memory decodersAndSanitizers = new address[](1);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        manager.manageVaultWithMerkleVerification(
+            manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](1)
         );
     }
 

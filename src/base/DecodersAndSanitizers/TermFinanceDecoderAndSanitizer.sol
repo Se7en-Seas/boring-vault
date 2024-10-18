@@ -21,7 +21,17 @@ contract TermFinanceDecoderAndSanitizer is BaseDecoderAndSanitizer {
         }
     }
 
-    function redeemTermRepoTokens(address redeemer, uint256 ) pure virtual external returns (bytes memory addressesFound) {
+    function unlockOffers(bytes32[] calldata offerIds) pure virtual external returns (bytes memory addressesFound) {
+        
+    }
+
+    function revealOffers(bytes32[] calldata ids,
+        uint256[] calldata prices,
+        uint256[] calldata nonces) pure virtual external returns (bytes memory addressesFound) {
+        
+    }
+
+    function redeemTermRepoTokens(address redeemer, uint256) pure virtual external returns (bytes memory addressesFound) {
         addressesFound = abi.encodePacked(redeemer);
     }
 }
