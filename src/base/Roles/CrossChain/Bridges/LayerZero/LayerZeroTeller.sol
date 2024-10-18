@@ -17,6 +17,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
 
     /**
      * @notice Stores information about a chain.
+     * @dev Sender is stored in OAppAuthCore `peers` mapping.
      * @param allowMessagesFrom Whether to allow messages from this chain.
      * @param allowMessagesTo Whether to allow messages to this chain.
      * @param messageGasLimit The gas limit for messages to this chain.
@@ -40,6 +41,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     error LayerZeroTeller__MessagesNotAllowedTo(uint256 chainSelector);
     error LayerZeroTeller__FeeExceedsMax(uint256 chainSelector, uint256 fee, uint256 maxFee);
     error LayerZeroTeller__ZeroMessageGasLimit();
+    error LayerZeroTeller__BadFeeToken();
 
     //============================== EVENTS ===============================
 
@@ -59,10 +61,19 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
 
     //============================== IMMUTABLES ===============================
 
-    constructor(address _owner, address _vault, address _accountant, address _weth, address _router)
-        CrossChainTellerWithGenericBridge(_owner, _vault, _accountant, _weth)
-        OAppAuth(address(0), address(0), address(0), address(0))
-    {}
+    address internal immutable lzToken;
+
+    constructor(
+        address _owner,
+        address _vault,
+        address _accountant,
+        address _weth,
+        address _lzEndPoint,
+        address _delegate,
+        address _lzToken
+    ) CrossChainTellerWithGenericBridge(_owner, _vault, _accountant, _weth) OAppAuth(_lzEndPoint, _delegate) {
+        lzToken = _lzToken;
+    }
 
     // ========================================= ADMIN FUNCTIONS =========================================
     /**
@@ -166,25 +177,11 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     }
     // ========================================= OAppAuthReceiver =========================================
 
-    function lzReceive(
-        Origin calldata _origin,
-        bytes32 _guid,
-        bytes calldata _message,
-        address _executor,
-        bytes calldata _extraData
-    ) public payable override {
-        // Ensures that only the endpoint can attempt to lzReceive() messages to this OApp.
-        if (address(endpoint) != msg.sender) revert OnlyEndpoint(msg.sender);
-
-        // Ensure that the sender matches the expected peer for the source endpoint.
-        Chain memory source = idToChains[_origin.srcEid];
-        if (!source.allowMessagesFrom) revert LayerZeroTeller__MessagesNotAllowedFrom(_origin.srcEid);
-        if (_getPeerOrRevert(_origin.srcEid) != _origin.sender) revert OnlyPeer(_origin.srcEid, _origin.sender);
-
-        // Call the internal OApp implementation of lzReceive.
-        _lzReceive(_origin, _guid, _message, _executor, _extraData);
-    }
-
+    /**
+     * @notice Receive messages from the LayerZero endpoint.
+     * @dev `lzReceive` only sanitizes the message sender, but we also need to make sure we are allowing messages
+     *      from the source chain.
+     */
     function _lzReceive(
         Origin calldata, /*_origin*/
         bytes32 _guid,
@@ -192,6 +189,8 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
         address, /*_executor*/
         bytes calldata /*_extraData*/
     ) internal override {
+        Chain memory source = idToChains[_origin.srcEid];
+        if (!source.allowMessagesFrom) revert LayerZeroTeller__MessagesNotAllowedFrom(_origin.srcEid);
         uint256 message = abi.decode(_message, (uint256));
         _completeMessageReceive(_guid, message);
     }
@@ -225,10 +224,12 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
             if (fee.nativeFee > maxFee) {
                 revert LayerZeroTeller__FeeExceedsMax(destinationId, fee.nativeFee, maxFee);
             }
-        } else {
+        } else if (address(feeToken) == lzToken) {
             if (fee.lzTokenFee > maxFee) {
                 revert LayerZeroTeller__FeeExceedsMax(destinationId, fee.lzTokenFee, maxFee);
             }
+        } else {
+            revert LayerZeroTeller__BadFeeToken();
         }
         MessagingReceipt memory receipt = _lzSend(destinationId, m, hex"", fee, msg.sender);
 
@@ -247,34 +248,18 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
         override
         returns (uint256 fee)
     {
-        // TODO use _quote
-        // uint64 destinationSelector = abi.decode(bridgeWildCard, (uint64));
-        // Chain memory chain = idToChains[destinationSelector];
-        // Client.EVM2AnyMessage memory m =
-        //     _buildMessage(message, chain.targetTeller, address(feeToken), chain.messageGasLimit);
+        // Make sure feeToken is either NATIVE or lzToken.
+        if (address(feeToken) != NATIVE && address(feeToken) != lzToken) {
+            revert LayerZeroTeller__BadFeeToken();
+        }
+        uint32 destinationId = abi.decode(bridgeWildCard, (uint32));
+        Chain memory chain = idToChains[destinationId];
+        if (!chain.allowMessagesTo) {
+            revert LayerZeroTeller__MessagesNotAllowedTo(destinationId);
+        }
+        bytes memory m = abi.encode(message);
+        MessagingFee memory messageFee = _quote(destinationId, m, hex"", address(feeToken) != NATIVE);
 
-        // IRouterClient router = IRouterClient(this.getRouter());
-
-        // fee = router.getFee(destinationSelector, m);
+        fee = address(feeToken) == NATIVE ? messageFee.nativeFee : messageFee.lzTokenFee;
     }
-
-    // /**
-    //  * @notice Helper function to build a message.
-    //  */
-    // function _buildMessage(uint256 message, address to, address feeToken, uint64 gasLimit)
-    //     internal
-    //     pure
-    //     returns (Client.EVM2AnyMessage memory m)
-    // {
-    //     m = Client.EVM2AnyMessage({
-    //         receiver: abi.encode(to),
-    //         data: abi.encode(message),
-    //         tokenAmounts: new Client.EVMTokenAmount[](0),
-    //         extraArgs: Client._argsToBytes(
-    //             // Additional arguments, setting gas limit and non-strict sequencing mode
-    //             Client.EVMExtraArgsV1({gasLimit: gasLimit /*, strict: false*/ })
-    //         ),
-    //         feeToken: feeToken
-    //     });
-    // }
 }
