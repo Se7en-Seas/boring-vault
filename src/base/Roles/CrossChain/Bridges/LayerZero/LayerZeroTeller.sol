@@ -204,7 +204,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
      * @dev This function will revert if maxFee is exceeded.
      * @dev This function will revert if destination chain does not allow messages.
      * @param message The message to send.
-     * @param bridgeWildCard An abi encoded uint64 containing the destination chain selector.
+     * @param bridgeWildCard An abi encoded uint32 containing the destination chain id.
      * @param feeToken The token to pay the bridge fee in.
      * @param maxFee The maximum fee to pay the bridge.
      */
@@ -239,7 +239,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     /**
      * @notice Preview fee required to bridge shares in a given feeToken.
      * @param message The message to send.
-     * @param bridgeWildCard An abi encoded uint64 containing the destination chain selector.
+     * @param bridgeWildCard An abi encoded uint32 containing the destination chain id.
      * @param feeToken The token to pay the bridge fee in.
      */
     function _previewFee(uint256 message, bytes calldata bridgeWildCard, ERC20 feeToken)
