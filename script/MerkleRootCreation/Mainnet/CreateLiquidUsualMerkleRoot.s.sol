@@ -15,7 +15,7 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0xeDa663610638E6557c27e2f4e973D3393e844E70;
-    address public rawDataDecoderAndSanitizer = 0x8cDeD215E8fa36E1367Eeda41d24B4C87d17ABCB;
+    address public rawDataDecoderAndSanitizer = 0xA8633d10B828f80383D57a63914Fd23D6F71B157;
     address public managerAddress = 0x5F2Ecb56Ed33c86219840A2F89316285A1D9ee0F;
     address public accountantAddress = 0x1D4F0F05e50312d3E7B65659Ef7d06aa74651e0C;
 
@@ -35,7 +35,7 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](256);
+        ManageLeaf[] memory leafs = new ManageLeaf[](512);
 
         // ========================== Aave V3 ==========================
         ERC20[] memory supplyAssets = new ERC20[](4);
@@ -77,6 +77,8 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== Pendle ==========================
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleUSD0PlusMarketOctober"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleUSD0PlusMarketOctober"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_USD0Plus_market_03_26_2025"), true);
 
         // ========================== UniswapV3 ==========================
         /**
@@ -196,6 +198,11 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
             2,
             getAddress(sourceChain, "USD0_USD0++_CurveGauge")
         );
+
+        // ========================== Usual ==========================
+        _addUsualMoneyLeafs(leafs);
+
+        _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
