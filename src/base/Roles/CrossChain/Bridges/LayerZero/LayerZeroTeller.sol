@@ -183,7 +183,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
      *      from the source chain.
      */
     function _lzReceive(
-        Origin calldata, /*_origin*/
+        Origin calldata _origin,
         bytes32 _guid,
         bytes calldata _message,
         address, /*_executor*/
