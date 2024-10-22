@@ -83,5 +83,9 @@ contract MockLayerZeroEndPoint {
         receipt.guid = guid;
         receipt.nonce = 0;
         receipt.fee = quote(_params, msg.sender);
+
+        lastMessageId = guid;
     }
+
+    function setDelegate(address _delegate) external pure {}
 }

@@ -20,12 +20,10 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
      * @dev Sender is stored in OAppAuthCore `peers` mapping.
      * @param allowMessagesFrom Whether to allow messages from this chain.
      * @param allowMessagesTo Whether to allow messages to this chain.
-     * @param messageGasLimit The gas limit for messages to this chain.
      */
     struct Chain {
         bool allowMessagesFrom;
         bool allowMessagesTo;
-        uint64 messageGasLimit;
     }
     // ========================================= STATE =========================================
 
@@ -40,24 +38,16 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     error LayerZeroTeller__MessagesNotAllowedFromSender(uint256 chainSelector, address sender);
     error LayerZeroTeller__MessagesNotAllowedTo(uint256 chainSelector);
     error LayerZeroTeller__FeeExceedsMax(uint256 chainSelector, uint256 fee, uint256 maxFee);
-    error LayerZeroTeller__ZeroMessageGasLimit();
     error LayerZeroTeller__BadFeeToken();
 
     //============================== EVENTS ===============================
 
-    event ChainAdded(
-        uint256 chainSelector,
-        bool allowMessagesFrom,
-        bool allowMessagesTo,
-        address targetTeller,
-        uint64 messageGasLimit
-    );
+    event ChainAdded(uint256 chainSelector, bool allowMessagesFrom, bool allowMessagesTo, address targetTeller);
     event ChainRemoved(uint256 chainSelector);
     event ChainAllowMessagesFrom(uint256 chainSelector, address targetTeller);
     event ChainAllowMessagesTo(uint256 chainSelector, address targetTeller);
     event ChainStopMessagesFrom(uint256 chainSelector);
     event ChainStopMessagesTo(uint256 chainSelector);
-    event ChainSetGasLimit(uint256 chainSelector, uint64 messageGasLimit);
 
     //============================== IMMUTABLES ===============================
 
@@ -83,22 +73,15 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
      * @param allowMessagesFrom Whether to allow messages from this chain.
      * @param allowMessagesTo Whether to allow messages to this chain.
      * @param targetTeller The address of the target teller on the other chain.
-     * @param messageGasLimit The gas limit for messages to this chain.
      */
-    function addChain(
-        uint32 chainId,
-        bool allowMessagesFrom,
-        bool allowMessagesTo,
-        address targetTeller,
-        uint64 messageGasLimit
-    ) external requiresAuth {
-        if (allowMessagesTo && messageGasLimit == 0) {
-            revert LayerZeroTeller__ZeroMessageGasLimit();
-        }
-        idToChains[chainId] = Chain(allowMessagesFrom, allowMessagesTo, messageGasLimit);
+    function addChain(uint32 chainId, bool allowMessagesFrom, bool allowMessagesTo, address targetTeller)
+        external
+        requiresAuth
+    {
+        idToChains[chainId] = Chain(allowMessagesFrom, allowMessagesTo);
         _setPeer(chainId, targetTeller.toBytes32());
 
-        emit ChainAdded(chainId, allowMessagesFrom, allowMessagesTo, targetTeller, messageGasLimit);
+        emit ChainAdded(chainId, allowMessagesFrom, allowMessagesTo, targetTeller);
     }
 
     /**
@@ -128,14 +111,10 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
      * @notice Allow messages to a chain.
      * @dev Callable by OWNER_ROLE.
      */
-    function allowMessagesToChain(uint32 chainId, address targetTeller, uint64 messageGasLimit) external requiresAuth {
-        if (messageGasLimit == 0) {
-            revert LayerZeroTeller__ZeroMessageGasLimit();
-        }
+    function allowMessagesToChain(uint32 chainId, address targetTeller) external requiresAuth {
         Chain storage chain = idToChains[chainId];
         chain.allowMessagesTo = true;
         _setPeer(chainId, targetTeller.toBytes32());
-        chain.messageGasLimit = messageGasLimit;
 
         emit ChainAllowMessagesTo(chainId, targetTeller);
     }
@@ -162,19 +141,6 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
         emit ChainStopMessagesTo(chainId);
     }
 
-    /**
-     * @notice Set the gas limit for messages to a chain.
-     * @dev Callable by OWNER_ROLE.
-     */
-    function setChainGasLimit(uint32 chainId, uint64 messageGasLimit) external requiresAuth {
-        if (messageGasLimit == 0) {
-            revert LayerZeroTeller__ZeroMessageGasLimit();
-        }
-        Chain storage chain = idToChains[chainId];
-        chain.messageGasLimit = messageGasLimit;
-
-        emit ChainSetGasLimit(chainId, messageGasLimit);
-    }
     // ========================================= OAppAuthReceiver =========================================
 
     /**

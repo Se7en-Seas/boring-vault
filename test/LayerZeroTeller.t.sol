@@ -10,7 +10,6 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {IRateProvider} from "src/interfaces/IRateProvider.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {MockLayerZeroEndPoint} from "src/helper/MockLayerZeroEndPoint.sol";
-import {Client} from "@ccip/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
@@ -54,7 +53,7 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
         setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 19363419;
+        uint256 blockNumber = 21023546;
         _startFork(rpcKey, blockNumber);
 
         WETH = getERC20(sourceChain, "WETH");
@@ -117,7 +116,7 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
         destinationTeller.updateAssetData(WEETH, true, true, 0);
 
         endPoint.setFee(NATIVE_ERC20, 0.001e18);
-        endPoint.setFee(ZRO, 1e18);
+        endPoint.setFee(ZRO, 0);
 
         accountant.setRateProviderData(EETH, true, address(0));
         accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
@@ -128,14 +127,15 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
         // Give BoringVault some WETH, and this address some shares.
         deal(address(WETH), address(boringVault), 1_000e18);
         deal(address(boringVault), address(this), 1_000e18, true);
+
+        // Setup chains on bridge.
+        sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller));
+        destinationTeller.addChain(SOURCE_ID, true, true, address(sourceTeller));
     }
 
     function testBridgingShares(uint96 sharesToBridge) external {
         sharesToBridge = uint96(bound(sharesToBridge, 1, 1_000e18));
         // uint256 startingShareBalance = boringVault.balanceOf(address(this));
-        // Setup chains on bridge.
-        sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller), 100_000);
-        destinationTeller.addChain(SOURCE_ID, true, true, address(sourceTeller), 100_000);
 
         // Bridge 100 shares.
         address to = vm.addr(1);
@@ -143,6 +143,7 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
         sourceTeller.bridge{value: 0.001e18}(sharesToBridge, to, abi.encode(DESTINATION_ID), NATIVE_ERC20, expectedFee);
 
         MockLayerZeroEndPoint.Packet memory m = endPoint.getLastMessage();
+        console.log(m._executor);
 
         // Send message to destination.
         vm.prank(address(endPoint));
@@ -151,183 +152,161 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
         assertEq(boringVault.balanceOf(to), sharesToBridge, "To address should have received shares.");
     }
 
-    // function testPreviewFee(uint256 fee) external {
-    //     router.setFee(WETH, fee);
+    function testPreviewFee(uint256 fee) external {
+        endPoint.setFee(NATIVE_ERC20, fee);
 
-    //     uint256 previewedFee = sourceTeller.previewFee(1e18, address(0), abi.encode(DESTINATION_ID), WETH);
+        uint256 previewedFee = sourceTeller.previewFee(1e18, address(0), abi.encode(DESTINATION_ID), NATIVE_ERC20);
 
-    //     assertEq(previewedFee, fee, "Previewed fee should match set fee.");
-    // }
+        assertEq(previewedFee, fee, "Previewed fee should match set fee.");
+    }
 
-    // function testAdminFunctions() external {
-    //     uint64 newSelector = 3;
-    //     address targetTeller = vm.addr(1);
-    //     uint64 messageGasLimit = 100_000;
+    function testAdminFunctions() external {
+        uint32 newSelector = 3;
+        address targetTeller = vm.addr(1);
 
-    //     sourceTeller.addChain(newSelector, true, true, targetTeller, messageGasLimit);
+        sourceTeller.addChain(newSelector, true, true, targetTeller);
 
-    //     (bool allowMessagesFrom, bool allowMessagesTo, address target, uint64 gasLimit) =
-    //         sourceTeller.selectorToChains(newSelector);
+        (bool allowMessagesFrom, bool allowMessagesTo) = sourceTeller.idToChains(newSelector);
 
-    //     assertEq(allowMessagesFrom, true, "Should allow messages from new chain.");
-    //     assertEq(allowMessagesTo, true, "Should allow messages to new chain.");
-    //     assertEq(target, targetTeller, "Target should be set to targetTeller.");
-    //     assertEq(gasLimit, messageGasLimit, "Gas limit should be set to messageGasLimit.");
+        assertEq(allowMessagesFrom, true, "Should allow messages from new chain.");
+        assertEq(allowMessagesTo, true, "Should allow messages to new chain.");
 
-    //     sourceTeller.stopMessagesFromChain(newSelector);
+        sourceTeller.stopMessagesFromChain(newSelector);
 
-    //     (allowMessagesFrom, allowMessagesTo, target, gasLimit) = sourceTeller.selectorToChains(newSelector);
-    //     assertEq(allowMessagesFrom, false, "Should not allow messages from destination chain.");
-    //     assertEq(allowMessagesTo, true, "Should still allow messages to destination chain.");
-    //     assertEq(target, targetTeller, "Target should be set to destinationTeller.");
-    //     assertEq(gasLimit, messageGasLimit, "Gas limit should be set to messageGasLimit.");
+        (allowMessagesFrom, allowMessagesTo) = sourceTeller.idToChains(newSelector);
+        assertEq(allowMessagesFrom, false, "Should not allow messages from destination chain.");
+        assertEq(allowMessagesTo, true, "Should still allow messages to destination chain.");
 
-    //     sourceTeller.stopMessagesToChain(newSelector);
-    //     (allowMessagesFrom, allowMessagesTo, target, gasLimit) = sourceTeller.selectorToChains(newSelector);
-    //     assertEq(allowMessagesFrom, false, "Should not allow messages from destination chain.");
-    //     assertEq(allowMessagesTo, false, "Should not allow messages to destination chain.");
-    //     assertEq(target, targetTeller, "Target should be set to destinationTeller.");
-    //     assertEq(gasLimit, messageGasLimit, "Gas limit should be set to messageGasLimit.");
+        sourceTeller.stopMessagesToChain(newSelector);
+        (allowMessagesFrom, allowMessagesTo) = sourceTeller.idToChains(newSelector);
+        assertEq(allowMessagesFrom, false, "Should not allow messages from destination chain.");
+        assertEq(allowMessagesTo, false, "Should not allow messages to destination chain.");
 
-    //     sourceTeller.setChainGasLimit(newSelector, 90_000);
-    //     (allowMessagesFrom, allowMessagesTo, target, gasLimit) = sourceTeller.selectorToChains(newSelector);
-    //     assertEq(allowMessagesFrom, false, "Should not allow messages from destination chain.");
-    //     assertEq(allowMessagesTo, false, "Should not allow messages to destination chain.");
-    //     assertEq(target, targetTeller, "Target should be set to destinationTeller.");
-    //     assertEq(gasLimit, 90_000, "Gas limit should be set to 90_000.");
+        address newTargetTeller = vm.addr(2);
+        sourceTeller.allowMessagesToChain(newSelector, newTargetTeller);
+        (allowMessagesFrom, allowMessagesTo) = sourceTeller.idToChains(newSelector);
+        assertEq(allowMessagesFrom, false, "Should allow messages from new chain.");
+        assertEq(allowMessagesTo, true, "Should not allow messages to new chain.");
 
-    //     address newTargetTeller = vm.addr(2);
-    //     uint64 newMessageGasLimit = 80_000;
-    //     sourceTeller.allowMessagesToChain(newSelector, newTargetTeller, newMessageGasLimit);
-    //     (allowMessagesFrom, allowMessagesTo, target, gasLimit) = sourceTeller.selectorToChains(newSelector);
-    //     assertEq(allowMessagesFrom, false, "Should allow messages from new chain.");
-    //     assertEq(allowMessagesTo, true, "Should not allow messages to new chain.");
-    //     assertEq(target, newTargetTeller, "Target should be set to newTargetTeller.");
-    //     assertEq(gasLimit, newMessageGasLimit, "Gas limit should be set to newMessageGasLimit.");
+        address anotherNewTargetTeller = vm.addr(3);
+        sourceTeller.allowMessagesFromChain(newSelector, anotherNewTargetTeller);
+        (allowMessagesFrom, allowMessagesTo) = sourceTeller.idToChains(newSelector);
+        assertEq(allowMessagesFrom, true, "Should allow messages from new chain.");
+        assertEq(allowMessagesTo, true, "Should allow messages to new chain.");
 
-    //     address anotherNewTargetTeller = vm.addr(3);
-    //     sourceTeller.allowMessagesFromChain(newSelector, anotherNewTargetTeller);
-    //     (allowMessagesFrom, allowMessagesTo, target, gasLimit) = sourceTeller.selectorToChains(newSelector);
-    //     assertEq(allowMessagesFrom, true, "Should allow messages from new chain.");
-    //     assertEq(allowMessagesTo, true, "Should allow messages to new chain.");
-    //     assertEq(target, anotherNewTargetTeller, "Target should be set to anotherNewTargetTeller.");
-    //     assertEq(gasLimit, newMessageGasLimit, "Gas limit should be set to newMessageGasLimit.");
+        sourceTeller.removeChain(newSelector);
+        (allowMessagesFrom, allowMessagesTo) = sourceTeller.idToChains(newSelector);
+        assertEq(allowMessagesFrom, false, "Should not allow messages from new chain.");
+        assertEq(allowMessagesTo, false, "Should not allow messages to new chain.");
+    }
 
-    //     sourceTeller.removeChain(newSelector);
-    //     (allowMessagesFrom, allowMessagesTo, target, gasLimit) = sourceTeller.selectorToChains(newSelector);
-    //     assertEq(allowMessagesFrom, false, "Should not allow messages from new chain.");
-    //     assertEq(allowMessagesTo, false, "Should not allow messages to new chain.");
-    //     assertEq(target, address(0), "Target should be set to 0.");
-    //     assertEq(gasLimit, 0, "Gas limit should be set to 0.");
-    // }
+    function testReverts() external {
+        //     // Adding a chain with a zero message gas limit should revert.
+        //     vm.expectRevert(
+        //         bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector))
+        //     );
+        //     sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller), 0);
 
-    // function testReverts() external {
-    //     // Adding a chain with a zero message gas limit should revert.
-    //     vm.expectRevert(
-    //         bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector))
-    //     );
-    //     sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller), 0);
+        //     // Allowing messages to a chain with a zero message gas limit should revert.
+        //     vm.expectRevert(
+        //         bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector))
+        //     );
+        //     sourceTeller.allowMessagesToChain(DESTINATION_ID, address(destinationTeller), 0);
 
-    //     // Allowing messages to a chain with a zero message gas limit should revert.
-    //     vm.expectRevert(
-    //         bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector))
-    //     );
-    //     sourceTeller.allowMessagesToChain(DESTINATION_ID, address(destinationTeller), 0);
+        //     // Changing the gas limit to zero should revert.
+        //     vm.expectRevert(
+        //         bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector))
+        //     );
+        //     sourceTeller.setChainGasLimit(DESTINATION_ID, 0);
 
-    //     // Changing the gas limit to zero should revert.
-    //     vm.expectRevert(
-    //         bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector))
-    //     );
-    //     sourceTeller.setChainGasLimit(DESTINATION_ID, 0);
+        //     // But you can add a chain with a non-zero message gas limit, if messages to are not supported.
+        //     uint64 newChainSelector = 3;
+        //     sourceTeller.addChain(newChainSelector, true, false, address(destinationTeller), 0);
 
-    //     // But you can add a chain with a non-zero message gas limit, if messages to are not supported.
-    //     uint64 newChainSelector = 3;
-    //     sourceTeller.addChain(newChainSelector, true, false, address(destinationTeller), 0);
+        //     // If teller is paused bridging is not allowed.
+        //     sourceTeller.pause();
+        //     vm.expectRevert(
+        //         bytes(abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__Paused.selector))
+        //     );
+        //     sourceTeller.bridge(0, address(0), hex"", LINK, 0);
 
-    //     // If teller is paused bridging is not allowed.
-    //     sourceTeller.pause();
-    //     vm.expectRevert(
-    //         bytes(abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__Paused.selector))
-    //     );
-    //     sourceTeller.bridge(0, address(0), hex"", LINK, 0);
+        //     sourceTeller.unpause();
 
-    //     sourceTeller.unpause();
+        //     // Trying to send messages to a chain that is not supported should revert.
+        //     uint256 expectedFee = 1e18;
+        //     vm.expectRevert(
+        //         bytes(
+        //             abi.encodeWithSelector(
+        //                 LayerZeroTeller.LayerZeroTeller__MessagesNotAllowedTo.selector, DESTINATION_ID
+        //             )
+        //         )
+        //     );
+        //     sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), LINK, expectedFee);
 
-    //     // Trying to send messages to a chain that is not supported should revert.
-    //     uint256 expectedFee = 1e18;
-    //     vm.expectRevert(
-    //         bytes(
-    //             abi.encodeWithSelector(
-    //                 LayerZeroTeller.LayerZeroTeller__MessagesNotAllowedTo.selector, DESTINATION_ID
-    //             )
-    //         )
-    //     );
-    //     sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), LINK, expectedFee);
+        //     // setup chains.
+        //     sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller), 100_000);
+        //     destinationTeller.addChain(SOURCE_ID, true, true, address(sourceTeller), 100_000);
 
-    //     // setup chains.
-    //     sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller), 100_000);
-    //     destinationTeller.addChain(SOURCE_ID, true, true, address(sourceTeller), 100_000);
+        //     // If the max fee is exceeded the transaction should revert.
+        //     uint256 newFee = 1.01e18;
+        //     router.setFee(LINK, newFee);
 
-    //     // If the max fee is exceeded the transaction should revert.
-    //     uint256 newFee = 1.01e18;
-    //     router.setFee(LINK, newFee);
+        //     vm.expectRevert(
+        //         bytes(
+        //             abi.encodeWithSelector(
+        //                 LayerZeroTeller.LayerZeroTeller__FeeExceedsMax.selector, DESTINATION_ID, newFee, expectedFee
+        //             )
+        //         )
+        //     );
+        //     sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), LINK, expectedFee);
 
-    //     vm.expectRevert(
-    //         bytes(
-    //             abi.encodeWithSelector(
-    //                 LayerZeroTeller.LayerZeroTeller__FeeExceedsMax.selector, DESTINATION_ID, newFee, expectedFee
-    //             )
-    //         )
-    //     );
-    //     sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), LINK, expectedFee);
+        //     router.setFee(LINK, expectedFee);
 
-    //     router.setFee(LINK, expectedFee);
+        //     // If user forgets approval call reverts too.
+        //     vm.expectRevert(bytes("TRANSFER_FROM_FAILED"));
+        //     sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), LINK, expectedFee);
 
-    //     // If user forgets approval call reverts too.
-    //     vm.expectRevert(bytes("TRANSFER_FROM_FAILED"));
-    //     sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), LINK, expectedFee);
+        //     // Call now succeeds.
+        //     LINK.safeApprove(address(sourceTeller), expectedFee);
+        //     sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), LINK, expectedFee);
 
-    //     // Call now succeeds.
-    //     LINK.safeApprove(address(sourceTeller), expectedFee);
-    //     sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), LINK, expectedFee);
+        //     Client.Any2EVMMessage memory m = router.getLastMessage();
 
-    //     Client.Any2EVMMessage memory m = router.getLastMessage();
+        //     // Send message to destination.
+        //     vm.startPrank(address(router));
 
-    //     // Send message to destination.
-    //     vm.startPrank(address(router));
+        //     // If source chain selector is wrong messages revert.
+        //     m.sourceChainSelector = 7;
+        //     vm.expectRevert(
+        //         bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__MessagesNotAllowedFrom.selector, 7))
+        //     );
+        //     destinationTeller.ccipReceive(m);
 
-    //     // If source chain selector is wrong messages revert.
-    //     m.sourceChainSelector = 7;
-    //     vm.expectRevert(
-    //         bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__MessagesNotAllowedFrom.selector, 7))
-    //     );
-    //     destinationTeller.ccipReceive(m);
+        //     m.sourceChainSelector = SOURCE_ID;
 
-    //     m.sourceChainSelector = SOURCE_ID;
+        //     // If messages come from the wrong sender they should revert.
+        //     m.sender = abi.encode(vm.addr(1));
 
-    //     // If messages come from the wrong sender they should revert.
-    //     m.sender = abi.encode(vm.addr(1));
+        //     vm.expectRevert(
+        //         bytes(
+        //             abi.encodeWithSelector(
+        //                 LayerZeroTeller.LayerZeroTeller__MessagesNotAllowedFromSender.selector,
+        //                 SOURCE_ID,
+        //                 vm.addr(1)
+        //             )
+        //         )
+        //     );
+        //     destinationTeller.ccipReceive(m);
 
-    //     vm.expectRevert(
-    //         bytes(
-    //             abi.encodeWithSelector(
-    //                 LayerZeroTeller.LayerZeroTeller__MessagesNotAllowedFromSender.selector,
-    //                 SOURCE_ID,
-    //                 vm.addr(1)
-    //             )
-    //         )
-    //     );
-    //     destinationTeller.ccipReceive(m);
+        //     m.sender = abi.encode(address(sourceTeller));
+        //     vm.stopPrank();
 
-    //     m.sender = abi.encode(address(sourceTeller));
-    //     vm.stopPrank();
+        //     // Even if destination teller is paused messages still go through.
+        //     destinationTeller.pause();
 
-    //     // Even if destination teller is paused messages still go through.
-    //     destinationTeller.pause();
-
-    //     vm.prank(address(router));
-    //     destinationTeller.ccipReceive(m);
-    // }
+        //     vm.prank(address(router));
+        //     destinationTeller.ccipReceive(m);
+    }
 
     // ========================================= HELPER FUNCTIONS =========================================
 
