@@ -10,14 +10,16 @@
       "Bytes4(TARGET_FUNCTION_SELECTOR)",
       "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)"
     ],
-    "LeafCount": 69,
-    "ManageRoot": "0xed72394b3e551b9d784525bec28a33c7ba3731488c2e395ab99d08071bec83c8",
+    "LeafCount": 76,
+    "ManageRoot": "0x5138f662e1edadb24848257951509d4f23629304438762d8ebab9ed4ef8f1423",
     "ManagerAddress": "0x382d0106F308864D5462332D9D3bB54a60384B70",
     "TreeCapacity": 128
   },
   "leafs": [
     {
-      "AddressArguments": ["0x971e5b5D4baa5607863f3748FeBf287C7bf82618"],
+      "AddressArguments": [
+        "0x971e5b5D4baa5607863f3748FeBf287C7bf82618"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve Symbiotic DefaultCollateral_Wrapped BTC to spend WBTC",
@@ -28,7 +30,9 @@
       "TargetAddress": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
     },
     {
-      "AddressArguments": ["0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"],
+      "AddressArguments": [
+        "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Deposit WBTC into Symbiotic DefaultCollateral_Wrapped BTC",
@@ -39,7 +43,9 @@
       "TargetAddress": "0x971e5b5D4baa5607863f3748FeBf287C7bf82618"
     },
     {
-      "AddressArguments": ["0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"],
+      "AddressArguments": [
+        "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Withdraw DC_WBTC from Symbiotic DefaultCollateral_Wrapped BTC",
@@ -50,7 +56,9 @@
       "TargetAddress": "0x971e5b5D4baa5607863f3748FeBf287C7bf82618"
     },
     {
-      "AddressArguments": ["0x0C969ceC0729487d264716e55F232B404299032c"],
+      "AddressArguments": [
+        "0x0C969ceC0729487d264716e55F232B404299032c"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve Symbiotic DefaultCollateral_tBTC v2 to spend tBTC",
@@ -61,7 +69,9 @@
       "TargetAddress": "0x18084fbA666a33d37592fA2633fD49a74DD93a88"
     },
     {
-      "AddressArguments": ["0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"],
+      "AddressArguments": [
+        "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Deposit tBTC into Symbiotic DefaultCollateral_tBTC v2",
@@ -72,7 +82,9 @@
       "TargetAddress": "0x0C969ceC0729487d264716e55F232B404299032c"
     },
     {
-      "AddressArguments": ["0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"],
+      "AddressArguments": [
+        "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Withdraw DC_tBTC from Symbiotic DefaultCollateral_tBTC v2",
@@ -83,7 +95,9 @@
       "TargetAddress": "0x0C969ceC0729487d264716e55F232B404299032c"
     },
     {
-      "AddressArguments": ["0x9C0823D3A1172F9DdF672d438dec79c39a64f448"],
+      "AddressArguments": [
+        "0x9C0823D3A1172F9DdF672d438dec79c39a64f448"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve Symbiotic DefaultCollateral_Lombard Staked Bitcoin to spend LBTC",
@@ -94,7 +108,9 @@
       "TargetAddress": "0x8236a87084f8B84306f72007F36F2618A5634494"
     },
     {
-      "AddressArguments": ["0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"],
+      "AddressArguments": [
+        "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Deposit LBTC into Symbiotic DefaultCollateral_Lombard Staked Bitcoin",
@@ -105,7 +121,9 @@
       "TargetAddress": "0x9C0823D3A1172F9DdF672d438dec79c39a64f448"
     },
     {
-      "AddressArguments": ["0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"],
+      "AddressArguments": [
+        "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Withdraw DC_LBTC from Symbiotic DefaultCollateral_Lombard Staked Bitcoin",
@@ -116,7 +134,9 @@
       "TargetAddress": "0x9C0823D3A1172F9DdF672d438dec79c39a64f448"
     },
     {
-      "AddressArguments": ["0xC36442b4a4522E871399CD717aBDD847Ab11FE88"],
+      "AddressArguments": [
+        "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve UniswapV3 NonFungible Position Manager to spend tBTC",
@@ -127,7 +147,9 @@
       "TargetAddress": "0x18084fbA666a33d37592fA2633fD49a74DD93a88"
     },
     {
-      "AddressArguments": ["0xC36442b4a4522E871399CD717aBDD847Ab11FE88"],
+      "AddressArguments": [
+        "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve UniswapV3 NonFungible Position Manager to spend WBTC",
@@ -138,7 +160,9 @@
       "TargetAddress": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
     },
     {
-      "AddressArguments": ["0xE592427A0AEce92De3Edee1F18E0157C05861564"],
+      "AddressArguments": [
+        "0xE592427A0AEce92De3Edee1F18E0157C05861564"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve UniswapV3 Router to spend tBTC",
@@ -149,7 +173,9 @@
       "TargetAddress": "0x18084fbA666a33d37592fA2633fD49a74DD93a88"
     },
     {
-      "AddressArguments": ["0xE592427A0AEce92De3Edee1F18E0157C05861564"],
+      "AddressArguments": [
+        "0xE592427A0AEce92De3Edee1F18E0157C05861564"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve UniswapV3 Router to spend WBTC",
@@ -220,7 +246,9 @@
       "TargetAddress": "0xE592427A0AEce92De3Edee1F18E0157C05861564"
     },
     {
-      "AddressArguments": ["0xC36442b4a4522E871399CD717aBDD847Ab11FE88"],
+      "AddressArguments": [
+        "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve UniswapV3 NonFungible Position Manager to spend LBTC",
@@ -231,7 +259,9 @@
       "TargetAddress": "0x8236a87084f8B84306f72007F36F2618A5634494"
     },
     {
-      "AddressArguments": ["0xE592427A0AEce92De3Edee1F18E0157C05861564"],
+      "AddressArguments": [
+        "0xE592427A0AEce92De3Edee1F18E0157C05861564"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve UniswapV3 Router to spend LBTC",
@@ -373,7 +403,9 @@
       "TargetAddress": "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
     },
     {
-      "AddressArguments": ["0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"],
+      "AddressArguments": [
+        "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Collect fees from UniswapV3 position",
@@ -395,7 +427,9 @@
       "TargetAddress": "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
     },
     {
-      "AddressArguments": ["0x1111111254EEB25477B68fb85Ed929f73A960582"],
+      "AddressArguments": [
+        "0x1111111254EEB25477B68fb85Ed929f73A960582"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve 1Inch router to spend WBTC",
@@ -542,7 +576,9 @@
       "TargetAddress": "0x1111111254EEB25477B68fb85Ed929f73A960582"
     },
     {
-      "AddressArguments": ["0x1111111254EEB25477B68fb85Ed929f73A960582"],
+      "AddressArguments": [
+        "0x1111111254EEB25477B68fb85Ed929f73A960582"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve 1Inch router to spend tBTC",
@@ -655,7 +691,9 @@
       "TargetAddress": "0x1111111254EEB25477B68fb85Ed929f73A960582"
     },
     {
-      "AddressArguments": ["0x1111111254EEB25477B68fb85Ed929f73A960582"],
+      "AddressArguments": [
+        "0x1111111254EEB25477B68fb85Ed929f73A960582"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve 1Inch router to spend LBTC",
@@ -734,7 +772,9 @@
       "TargetAddress": "0x1111111254EEB25477B68fb85Ed929f73A960582"
     },
     {
-      "AddressArguments": ["0x1111111254EEB25477B68fb85Ed929f73A960582"],
+      "AddressArguments": [
+        "0x1111111254EEB25477B68fb85Ed929f73A960582"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve 1Inch router to spend FBTC",
@@ -779,7 +819,9 @@
       "TargetAddress": "0x1111111254EEB25477B68fb85Ed929f73A960582"
     },
     {
-      "AddressArguments": ["0x1111111254EEB25477B68fb85Ed929f73A960582"],
+      "AddressArguments": [
+        "0x1111111254EEB25477B68fb85Ed929f73A960582"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve 1Inch router to spend cbBTC",
@@ -790,7 +832,9 @@
       "TargetAddress": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
     },
     {
-      "AddressArguments": ["0x126d4dBf752AaF61f3eAaDa24Ab0dB84FEcf6891"],
+      "AddressArguments": [
+        "0x126d4dBf752AaF61f3eAaDa24Ab0dB84FEcf6891"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve Karak Vault to spend WBTC",
@@ -801,7 +845,9 @@
       "TargetAddress": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
     },
     {
-      "AddressArguments": ["0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC"],
+      "AddressArguments": [
+        "0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve Vault Supervisor to spend KwBTC shares",
@@ -812,7 +858,9 @@
       "TargetAddress": "0x126d4dBf752AaF61f3eAaDa24Ab0dB84FEcf6891"
     },
     {
-      "AddressArguments": ["0x126d4dBf752AaF61f3eAaDa24Ab0dB84FEcf6891"],
+      "AddressArguments": [
+        "0x126d4dBf752AaF61f3eAaDa24Ab0dB84FEcf6891"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Deposit WBTC into KwBTC",
@@ -823,7 +871,9 @@
       "TargetAddress": "0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC"
     },
     {
-      "AddressArguments": ["0x126d4dBf752AaF61f3eAaDa24Ab0dB84FEcf6891"],
+      "AddressArguments": [
+        "0x126d4dBf752AaF61f3eAaDa24Ab0dB84FEcf6891"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Gimmie shares into KwBTC",
@@ -834,7 +884,9 @@
       "TargetAddress": "0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC"
     },
     {
-      "AddressArguments": ["0x126d4dBf752AaF61f3eAaDa24Ab0dB84FEcf6891"],
+      "AddressArguments": [
+        "0x126d4dBf752AaF61f3eAaDa24Ab0dB84FEcf6891"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Return shares from KwBTC",
@@ -875,7 +927,9 @@
       "TargetAddress": "0xAfa904152E04aBFf56701223118Be2832A4449E0"
     },
     {
-      "AddressArguments": ["0x40328669Bc9e3780dFa0141dBC87450a4af6EA11"],
+      "AddressArguments": [
+        "0x40328669Bc9e3780dFa0141dBC87450a4af6EA11"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve Karak Vault to spend FBTC",
@@ -886,7 +940,9 @@
       "TargetAddress": "0xC96dE26018A54D51c097160568752c4E3BD6C364"
     },
     {
-      "AddressArguments": ["0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC"],
+      "AddressArguments": [
+        "0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Approve Vault Supervisor to spend KFBTC shares",
@@ -897,7 +953,9 @@
       "TargetAddress": "0x40328669Bc9e3780dFa0141dBC87450a4af6EA11"
     },
     {
-      "AddressArguments": ["0x40328669Bc9e3780dFa0141dBC87450a4af6EA11"],
+      "AddressArguments": [
+        "0x40328669Bc9e3780dFa0141dBC87450a4af6EA11"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Deposit FBTC into KFBTC",
@@ -908,7 +966,9 @@
       "TargetAddress": "0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC"
     },
     {
-      "AddressArguments": ["0x40328669Bc9e3780dFa0141dBC87450a4af6EA11"],
+      "AddressArguments": [
+        "0x40328669Bc9e3780dFa0141dBC87450a4af6EA11"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Gimmie shares into KFBTC",
@@ -919,7 +979,9 @@
       "TargetAddress": "0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC"
     },
     {
-      "AddressArguments": ["0x40328669Bc9e3780dFa0141dBC87450a4af6EA11"],
+      "AddressArguments": [
+        "0x40328669Bc9e3780dFa0141dBC87450a4af6EA11"
+      ],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
       "Description": "Return shares from KFBTC",
@@ -960,81 +1022,99 @@
       "TargetAddress": "0xAfa904152E04aBFf56701223118Be2832A4449E0"
     },
     {
-      "AddressArguments": [],
+      "AddressArguments": [
+        "0x468c34703F6c648CCf39DBaB11305D17C70ba011"
+      ],
       "CanSendValue": false,
-      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
-      "Description": "",
-      "FunctionSelector": "0xc5d24601",
-      "FunctionSignature": "",
-      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
-      "PackedArgumentAddresses": "0x",
-      "TargetAddress": "0x0000000000000000000000000000000000000000"
+      "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
+      "Description": "Approve Karak Vault to spend LBTC",
+      "FunctionSelector": "0x095ea7b3",
+      "FunctionSignature": "approve(address,uint256)",
+      "LeafDigest": "0xb561e228bd2ae3e8f332f8f9e40d4ddfcf68ad1cdc3418cf3e86cf9a0a5a179e",
+      "PackedArgumentAddresses": "0x468c34703f6c648ccf39dbab11305d17c70ba011",
+      "TargetAddress": "0x8236a87084f8B84306f72007F36F2618A5634494"
     },
     {
-      "AddressArguments": [],
+      "AddressArguments": [
+        "0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC"
+      ],
       "CanSendValue": false,
-      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
-      "Description": "",
-      "FunctionSelector": "0xc5d24601",
-      "FunctionSignature": "",
-      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
-      "PackedArgumentAddresses": "0x",
-      "TargetAddress": "0x0000000000000000000000000000000000000000"
+      "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
+      "Description": "Approve Vault Supervisor to spend KLBTC shares",
+      "FunctionSelector": "0x095ea7b3",
+      "FunctionSignature": "approve(address,uint256)",
+      "LeafDigest": "0x37ef9e5842088519477c39f0c69cfcfc9ec0f72697fe67847802fcd2813450b2",
+      "PackedArgumentAddresses": "0x54e44dbb92dba848ace27f44c0cb4268981ef1cc",
+      "TargetAddress": "0x468c34703F6c648CCf39DBaB11305D17C70ba011"
     },
     {
-      "AddressArguments": [],
+      "AddressArguments": [
+        "0x468c34703F6c648CCf39DBaB11305D17C70ba011"
+      ],
       "CanSendValue": false,
-      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
-      "Description": "",
-      "FunctionSelector": "0xc5d24601",
-      "FunctionSignature": "",
-      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
-      "PackedArgumentAddresses": "0x",
-      "TargetAddress": "0x0000000000000000000000000000000000000000"
+      "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
+      "Description": "Deposit LBTC into KLBTC",
+      "FunctionSelector": "0x0efe6a8b",
+      "FunctionSignature": "deposit(address,uint256,uint256)",
+      "LeafDigest": "0x17b0657603c4beb1ccc1ae3b58f29e6454524ec56f0d1bd9499e513c66275084",
+      "PackedArgumentAddresses": "0x468c34703f6c648ccf39dbab11305d17c70ba011",
+      "TargetAddress": "0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC"
     },
     {
-      "AddressArguments": [],
+      "AddressArguments": [
+        "0x468c34703F6c648CCf39DBaB11305D17C70ba011"
+      ],
       "CanSendValue": false,
-      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
-      "Description": "",
-      "FunctionSelector": "0xc5d24601",
-      "FunctionSignature": "",
-      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
-      "PackedArgumentAddresses": "0x",
-      "TargetAddress": "0x0000000000000000000000000000000000000000"
+      "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
+      "Description": "Gimmie shares into KLBTC",
+      "FunctionSelector": "0x7fb2a0a1",
+      "FunctionSignature": "gimmieShares(address,uint256)",
+      "LeafDigest": "0x9dfd42317e87a2780d3c3f729f3247838dc7e9f902798ac99805265ddfc39939",
+      "PackedArgumentAddresses": "0x468c34703f6c648ccf39dbab11305d17c70ba011",
+      "TargetAddress": "0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC"
     },
     {
-      "AddressArguments": [],
+      "AddressArguments": [
+        "0x468c34703F6c648CCf39DBaB11305D17C70ba011"
+      ],
       "CanSendValue": false,
-      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
-      "Description": "",
-      "FunctionSelector": "0xc5d24601",
-      "FunctionSignature": "",
-      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
-      "PackedArgumentAddresses": "0x",
-      "TargetAddress": "0x0000000000000000000000000000000000000000"
+      "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
+      "Description": "Return shares from KLBTC",
+      "FunctionSelector": "0x8b198025",
+      "FunctionSignature": "returnShares(address,uint256)",
+      "LeafDigest": "0x082bfa70d5e3cdf6f7b01d36c8359a5d0b1509784700f8578596da2f0083b986",
+      "PackedArgumentAddresses": "0x468c34703f6c648ccf39dbab11305d17c70ba011",
+      "TargetAddress": "0x54e44DbB92dBA848ACe27F44c0CB4268981eF1CC"
     },
     {
-      "AddressArguments": [],
+      "AddressArguments": [
+        "0x468c34703F6c648CCf39DBaB11305D17C70ba011",
+        "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"
+      ],
       "CanSendValue": false,
-      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
-      "Description": "",
-      "FunctionSelector": "0xc5d24601",
-      "FunctionSignature": "",
-      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
-      "PackedArgumentAddresses": "0x",
-      "TargetAddress": "0x0000000000000000000000000000000000000000"
+      "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
+      "Description": "Start withdraw of LBTC from KLBTC",
+      "FunctionSelector": "0x92dca407",
+      "FunctionSignature": "startWithdraw((address[],uint256[],address)[])",
+      "LeafDigest": "0xc372306ab42f21aeba11aa8195305b6c383ff4acc0380282a08fee76ce0c2bfb",
+      "PackedArgumentAddresses": "0x468c34703f6c648ccf39dbab11305d17c70ba011657e8c867d8b37dcc18fa4caead9c45eb088c642",
+      "TargetAddress": "0xAfa904152E04aBFf56701223118Be2832A4449E0"
     },
     {
-      "AddressArguments": [],
+      "AddressArguments": [
+        "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642",
+        "0x0000000000000000000000000000000000000000",
+        "0x468c34703F6c648CCf39DBaB11305D17C70ba011",
+        "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642"
+      ],
       "CanSendValue": false,
-      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
-      "Description": "",
-      "FunctionSelector": "0xc5d24601",
-      "FunctionSignature": "",
-      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
-      "PackedArgumentAddresses": "0x",
-      "TargetAddress": "0x0000000000000000000000000000000000000000"
+      "DecoderAndSanitizerAddress": "0xee29a7EdBe61149D051E031342a530815037b31f",
+      "Description": "Finish withdraw of LBTC from KLBTC",
+      "FunctionSelector": "0x86e9a1f7",
+      "FunctionSignature": "finishWithdraw((address,address,uint256,uint256,(address[],uint256[],address))[])",
+      "LeafDigest": "0xf806d7fbea6013fcc7b28318200b09287bf1c70089fbf7667114b4e3c370ac7a",
+      "PackedArgumentAddresses": "0x657e8c867d8b37dcc18fa4caead9c45eb088c6420000000000000000000000000000000000000000468c34703f6c648ccf39dbab11305d17c70ba011657e8c867d8b37dcc18fa4caead9c45eb088c642",
+      "TargetAddress": "0xAfa904152E04aBFf56701223118Be2832A4449E0"
     },
     {
       "AddressArguments": [],
@@ -1610,15 +1690,17 @@
     }
   ],
   "MerkleTree": {
-    "0": ["0xed72394b3e551b9d784525bec28a33c7ba3731488c2e395ab99d08071bec83c8"],
+    "0": [
+      "0x5138f662e1edadb24848257951509d4f23629304438762d8ebab9ed4ef8f1423"
+    ],
     "1": [
       "0xc9f6330df0a087e8a3c8c6110979e804e2ee53e31d913ebfbd1148e3679a5594",
-      "0x1e7674bc7ad89539cab5b06fbe8d7b4a5b624bfec39e72226cff692b5f2d6f54"
+      "0xa5e3ea324324d6b1540b1b6482eb330436f28b00cfeb3ce1701c1428842fa100"
     ],
     "2": [
       "0xaa63642d85802dc9fa371be73054b03b73114277198f5865b268f7f21ddf1bcd",
       "0xafa336a3c82cc351d34b66420eefa9d13ae4572e5586d8fedb8ce7496f5d910c",
-      "0x13a0e0d5163278d1dcf86778e2e681cf90def9e9c50d21d1b6f1355b0fbd6b75",
+      "0x2f4b70f98ef043b65952af0e2b30939e7b37a5ef0b29da2f4d9ce10754453cb3",
       "0xec36dbe395dc9c97e82d5ef9325fb13a264faf4bc614c184837bb3dfc0c6a31a"
     ],
     "3": [
@@ -1626,7 +1708,7 @@
       "0xa1ce49f1a997b845e41eea6a2e8d6569696cab13797783d533e60c818dc21cdb",
       "0x532445c6f87cd05fe49e97b3fd2a22bb2fee4dc9429c3fb4a35415a584a8deb1",
       "0x4b742b6d51a1a740ff7d36d83c47d45ce7385c74e95212b3aff1d4e74e230a48",
-      "0xa73012763d374bba50ee76c2f8dcdf7eb7bda722f2462132d3e4446523c95d12",
+      "0x10d69c0395cdbbf62b11674f65bbb92e8e4a084e5730aaa50a52c897662a6aad",
       "0xc8e2d8c65f68c2edf703a349b0189c66520f43472e76097f69a501107adf656c",
       "0xc8e2d8c65f68c2edf703a349b0189c66520f43472e76097f69a501107adf656c",
       "0xc8e2d8c65f68c2edf703a349b0189c66520f43472e76097f69a501107adf656c"
@@ -1640,8 +1722,8 @@
       "0x6bedc55bf13bceb7c634a70364e5be7a390e028e7b8bd533c2546e89cad94930",
       "0x07b2b1ddf28de80a2f34806f05fe3b5cca4532dbcd18fff7474a50a28de0e911",
       "0x32199f29ee11be8e18ec134f2816619a6ae23685206b2d87d5fc7e040cc7739a",
-      "0x1e83b5b806f392534a6be0cd15793a7e54b7ae9f185cc980db705f2cb5fb3f5b",
-      "0x41fbd3a0cfdfcee05cf3eb16d95ed1c81f50c3c6268bb806b406ec06ee93e704",
+      "0xd15c81ad7f98cdc48c18058a20e159f171cdf5f0273cba65b6e7fd475632a167",
+      "0x62e6b3fb109b103d75eb15ed52c4279c0e88f36c52510128caf75997c8dfa029",
       "0x41fbd3a0cfdfcee05cf3eb16d95ed1c81f50c3c6268bb806b406ec06ee93e704",
       "0x41fbd3a0cfdfcee05cf3eb16d95ed1c81f50c3c6268bb806b406ec06ee93e704",
       "0x41fbd3a0cfdfcee05cf3eb16d95ed1c81f50c3c6268bb806b406ec06ee93e704",
@@ -1667,8 +1749,8 @@
       "0xd3d14dbf207863c6750f161ccc4d517889fb809412b5fd7279103118d460f7c4",
       "0x70078b68ecd37d5df1e0be39db9ceea0112a2d865a8e2a5945860d6b7eacd206",
       "0xed9bfcc0661e96bef52e3e24b94e51347433991e8d590a57d83b2a8d0006de8f",
-      "0x0b014386d98ed834d9e7b0835c8a42cb8b8053dde315e3cc00d8a557c5d9eba3",
-      "0x849eda7a295b642e5ddaf49a30eec4470cf507efa83b4104c0752d069c7638fe",
+      "0xa111cb9ac1e7ba85f13d24a3eb60f8b1d64ee451ef40889cf2f039662cb9a518",
+      "0x205d986ec108003e74be26b02a228a22bc0577967961d9691740567d32840274",
       "0x849eda7a295b642e5ddaf49a30eec4470cf507efa83b4104c0752d069c7638fe",
       "0x849eda7a295b642e5ddaf49a30eec4470cf507efa83b4104c0752d069c7638fe",
       "0x849eda7a295b642e5ddaf49a30eec4470cf507efa83b4104c0752d069c7638fe",
@@ -1718,10 +1800,10 @@
       "0x5fd706e98bbd97bcf8e40e909a0b2d97fb2306b7f1405119853b74b42070a134",
       "0x68e0c4e93a1f07d6db5e01e6659c2a961231e60bd8720b1c5527c96331023121",
       "0x33e5bbacb6d3c4851f404127950296b0d3ec976810bb1a61852be7d2f26c5971",
-      "0x0063654bb5b1ba78cb6a32cd76f3bee571e2b42be87b0ae3578e597fdfc2b268",
-      "0xc5a36f3b7b955966d5ed3135dcc612f978306d73bce3697e230afae57fbaeeba",
-      "0xc5a36f3b7b955966d5ed3135dcc612f978306d73bce3697e230afae57fbaeeba",
-      "0xc5a36f3b7b955966d5ed3135dcc612f978306d73bce3697e230afae57fbaeeba",
+      "0x224d7a5354f03e76872976374762b78dc393104c8b3ca6a4ef5a2dd4fcd1259e",
+      "0xce5fc829489b221c680e8b3d0811630693958efa12161a73fb531d74757f5e53",
+      "0x19635ddde13ac559056498b6367f822ea5b464ab311be1f86e22fb958503ab2f",
+      "0x89c8f617fad1847671d7e23abe0faeac1ba02196341d0309fd1e0534c600e57a",
       "0xc5a36f3b7b955966d5ed3135dcc612f978306d73bce3697e230afae57fbaeeba",
       "0xc5a36f3b7b955966d5ed3135dcc612f978306d73bce3697e230afae57fbaeeba",
       "0xc5a36f3b7b955966d5ed3135dcc612f978306d73bce3697e230afae57fbaeeba",
@@ -1819,13 +1901,13 @@
       "0x8c2568310392f4b5b3a88a5b0a23f2e90764308b9a2f6c590865a481708ca155",
       "0x7c9174eb74e4131bdbb91ad526c560a1a9c887168ca9834b5483feab27382f5b",
       "0x50533376ca2835db47baadda36ba34d2d29314d7ed07b53fa2a078e42e2d0183",
-      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
-      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
-      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
-      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
-      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
-      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
-      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+      "0xb561e228bd2ae3e8f332f8f9e40d4ddfcf68ad1cdc3418cf3e86cf9a0a5a179e",
+      "0x37ef9e5842088519477c39f0c69cfcfc9ec0f72697fe67847802fcd2813450b2",
+      "0x17b0657603c4beb1ccc1ae3b58f29e6454524ec56f0d1bd9499e513c66275084",
+      "0x9dfd42317e87a2780d3c3f729f3247838dc7e9f902798ac99805265ddfc39939",
+      "0x082bfa70d5e3cdf6f7b01d36c8359a5d0b1509784700f8578596da2f0083b986",
+      "0xc372306ab42f21aeba11aa8195305b6c383ff4acc0380282a08fee76ce0c2bfb",
+      "0xf806d7fbea6013fcc7b28318200b09287bf1c70089fbf7667114b4e3c370ac7a",
       "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
       "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
       "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",

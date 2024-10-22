@@ -97,6 +97,7 @@ contract CreateEtherFiBTCMerkleRootScript is Script, MerkleTreeHelper {
         // ========================== Karak ==========================
         _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kWBTC"));
         _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kFBTC"));
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kLBTC"));
 
         _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
 
