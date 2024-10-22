@@ -9,6 +9,7 @@ contract ContractNames {
     string public constant IncentiveDistributorName = "Incentive Distributor V0.1";
     string public constant PaymentSplitterName = "Payment Splitter V0.0";
     string public constant PaymentSplitterRolesAuthorityName = "Payment Splitter Roles Authority V0.0";
+    string public constant BoringOnChainQueuesRolesAuthorityName = "Boring OnChain Queues Roles Authority V0.0";
 
     // Migration
     string public constant CellarMigrationAdaptorName = "Cellar Migration Adaptor V0.1";
@@ -40,6 +41,8 @@ contract ContractNames {
         "EtherFi Liquid ETH Camelot Decoder and Sanitizer V0.0";
     string public constant EtherFiLiquidEthAerodromeDecoderAndSanitizerName =
         "EtherFi Liquid ETH Aerodrome Decoder and Sanitizer V0.0";
+    string public constant EtherFiLiquidEthQueueName = "EtherFi Liquid ETH Queue V0.0";
+    string public constant EtherFiLiquidEthQueueSolverName = "EtherFi Liquid ETH Queue Solver V0.0";
 
     string public constant TestVaultEthRolesAuthorityName = "Test ETH Vault RolesAuthority Version 0.0";
     string public constant TestVaultEthName = "Test ETH Vault V0.0";
