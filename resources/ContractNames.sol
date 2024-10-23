@@ -32,7 +32,7 @@ contract ContractNames {
     string public constant EtherFiLiquidEthManagerName = "EtherFi Liquid ETH Manager With Merkle Verification V0.1";
     string public constant EtherFiLiquidEthAccountantName = "EtherFi Liquid ETH Accountant With Rate Providers V0.1";
     string public constant EtherFiLiquidEthTellerName = "EtherFi Liquid ETH Teller With Multi Asset Support V0.1";
-    string public constant EtherFiLiquidEthDecoderAndSanitizerName = "EtherFi Liquid ETH Decoder and Sanitizer V0.9";
+    string public constant EtherFiLiquidEthDecoderAndSanitizerName = "EtherFi Liquid ETH Decoder and Sanitizer V0.10";
     string public constant EtherFiLiquidEthDelayedWithdrawer = "EtherFi Liquid ETH Delayed Withdrawer V0.0";
     string public constant EtherFiLiquidEthPancakeSwapDecoderAndSanitizerName =
         "EtherFi Liquid ETH PancakeSwap Decoder and Sanitizer V0.0";
@@ -70,7 +70,7 @@ contract ContractNames {
     string public constant EtherFiLiquidUsualManagerName = "EtherFi Liquid Usual Manager With Merkle Verification V0.0";
     string public constant EtherFiLiquidUsualAccountantName = "EtherFi Liquid Usual Accountant With Rate Providers V0.0";
     string public constant EtherFiLiquidUsualTellerName = "EtherFi Liquid Usual Teller With Multi Asset Support V0.0";
-    string public constant EtherFiLiquidUsualDecoderAndSanitizerName = "EtherFi Liquid Usual Decoder and Sanitizer V0.4";
+    string public constant EtherFiLiquidUsualDecoderAndSanitizerName = "EtherFi Liquid Usual Decoder and Sanitizer V0.5";
     string public constant EtherFiLiquidUsualDelayedWithdrawer = "EtherFi Liquid Usual Delayed Withdrawer V0.0";
     string public constant EtherFiLiquidUsualPancakeSwapDecoderAndSanitizerName =
         "EtherFi Liquid Usual PancakeSwap Decoder and Sanitizer V0.0";
@@ -103,7 +103,7 @@ contract ContractNames {
     string public constant StakedETHFIManagerName = "Staked ETHFI Manager With Merkle Verification V0.0";
     string public constant StakedETHFIAccountantName = "Staked ETHFI Accountant With Rate Providers V0.0";
     string public constant StakedETHFITellerName = "Staked ETHFI Teller With Multi Asset Support V0.0";
-    string public constant StakedETHFIDecoderAndSanitizerName = "Staked ETHFI Decoder and Sanitizer V0.0";
+    string public constant StakedETHFIDecoderAndSanitizerName = "Staked ETHFI Decoder and Sanitizer V0.1";
     string public constant StakedETHFIDelayedWithdrawer = "Staked ETHFI Delayed Withdrawer V0.0";
 
     string public constant CanaryBtcRolesAuthorityName = "Lombard Earn RolesAuthority Version 0.0";
