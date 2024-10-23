@@ -169,6 +169,7 @@ contract ChainValues {
         values[mainnet]["CAKE"] = 0x152649eA73beAb28c5b49B26eb48f7EAD6d4c898.toBytes32();
         values[mainnet]["cbBTC"] = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf.toBytes32();
         values[mainnet]["fBTC"] = 0xC96dE26018A54D51c097160568752c4E3BD6C364.toBytes32();
+        values[mainnet]["EIGEN"] = 0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83.toBytes32();
         values[mainnet]["wcUSDCv3"] = 0x27F2f159Fe990Ba83D57f39Fd69661764BEbf37a.toBytes32();
         values[mainnet]["eBTC"] = 0x657e8C867D8B37dCC18fA4Caead9C45EB088C642.toBytes32();
 
@@ -683,6 +684,8 @@ contract ChainValues {
         values[mainnet]["mETHStrategy"] = 0x298aFB19A105D59E74658C4C334Ff360BadE6dd2.toBytes32();
         values[mainnet]["USDeStrategy"] = 0x298aFB19A105D59E74658C4C334Ff360BadE6dd2.toBytes32();
         values[mainnet]["testOperator"] = 0xDbEd88D83176316fc46797B43aDeE927Dc2ff2F5.toBytes32();
+        values[mainnet]["eigenStrategy"] = 0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7.toBytes32();
+        values[mainnet]["eEigenOperator"] = 0xDcAE4FAf7C7d0f4A78abe147244c6e9d60cFD202.toBytes32();
 
         // Swell
         values[mainnet]["swellSimpleStaking"] = 0x38D43a6Cb8DA0E855A42fB6b0733A0498531d774.toBytes32();
@@ -807,6 +810,12 @@ contract ChainValues {
 
         // Syrup
         values[mainnet]["syrupRouter"] = 0x134cCaaA4F1e4552eC8aEcb9E4A2360dDcF8df76.toBytes32();
+
+        // Satlayer
+        values[mainnet]["satlayerPool"] = 0x42a856dbEBB97AbC1269EAB32f3bb40C15102819.toBytes32();
+
+        // corn
+        values[mainnet]["cornSilo"] = 0x8bc93498b861fd98277c3b51d240e7E56E48F23c.toBytes32();
 
         // Treehouse
         values[mainnet]["TreehouseRedemption"] = 0x0618DBdb3Be798346e6D9C08c3c84658f94aD09F.toBytes32();
