@@ -1,0 +1,11 @@
+{
+  "Drones": {
+    "drone-0": "0xFdC94b15819cc12a010c65A713563B65cDc060E4"
+  },
+  "core": {
+    "BoringVault": "0x84Fd06FaA5a6B6b2386d84e42152d1A1147De558",
+    "DecoderAndSanitizer": "0x25e3c378219809666e0C1DCe2f88f5c2476527f7",
+    "ManagerWithMerkleVerification": "0xf5e84A22B5aadf31D4675baD0BB694FCb35A6D09",
+    "RolesAuthority": "0x7e30B3B30cE72Bc2028D7D0F5B78c36E697CEa67"
+  }
+}

@@ -98,6 +98,15 @@ contract ContractNames {
         "Bridging Test ETH Vault Aerodrome Decoder and Sanitizer V0.0";
     string public constant BridgingTestVaultDroneName = "btv-drone V0.1";
 
+    string public constant SkyFallVaultRolesAuthorityName = "SkyFall Vault RolesAuthority V0.1";
+    string public constant SkyFallVaultName = "SkyFall Vault V0.1";
+    string public constant SkyFallVaultManagerName = "SkyFall Vault Manager With Merkle Verification V0.1";
+    string public constant SkyFallVaultAccountantName = "SkyFall Vault Accountant With Rate Providers V0.1";
+    string public constant SkyFallVaultTellerName = "SkyFall Vault Teller With Multi Asset Support V0.1";
+    string public constant SkyFallVaultDecoderAndSanitizerName = "SkyFall Vault Decoder and Sanitizer V0.1";
+    string public constant SkyFallVaultDelayedWithdrawer = "SkyFall Vault Delayed Withdrawer V0.1";
+    string public constant SkyFallVaultDroneName = "btv-drone V0.1";
+
     string public constant StakedETHFIRolesAuthorityName = "Staked ETHFI RolesAuthority Version 0.0";
     string public constant StakedETHFIName = "Staked ETHFI V0.1";
     string public constant StakedETHFIManagerName = "Staked ETHFI Manager With Merkle Verification V0.0";
