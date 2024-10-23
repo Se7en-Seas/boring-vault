@@ -17,7 +17,7 @@ import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 
 /**
- *  source .env && forge script script/DeployBoringQueues.s.sol:DeployBoringQueuesScript --with-gas-price 30000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/DeployBoringQueues.s.sol:DeployBoringQueuesScript --with-gas-price 3000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
@@ -25,11 +25,11 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
 
     uint256 public privateKey;
 
-    address public devOwner = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b;
+    address public devOwner = 0xf8553c8552f906C19286F21711721E206EE4909E;
     address public canSolve = 0xf8553c8552f906C19286F21711721E206EE4909E;
     address public admin = 0x41DFc53B13932a2690C9790527C1967d8579a6ae;
-    address public superAdmin = 0xCEA8039076E35a825854c5C2f85659430b06ec96;
-    address public globalOwner = 0xCEA8039076E35a825854c5C2f85659430b06ec96;
+    address public superAdmin = 0xf8553c8552f906C19286F21711721E206EE4909E;
+    address public globalOwner = 0xf8553c8552f906C19286F21711721E206EE4909E;
 
     // Contracts to deploy
     Deployer public deployer;
@@ -61,40 +61,40 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
 
         address[] memory assets = new address[](3);
         //============================== LiquidEth ===============================
-        assets[0] = getAddress(sourceChain, "WETH");
-        assets[1] = getAddress(sourceChain, "EETH");
-        assets[2] = getAddress(sourceChain, "WEETH");
+        assets[0] = getAddress(sourceChain, "EETH");
+        assets[1] = getAddress(sourceChain, "WEETH");
+        assets[2] = getAddress(sourceChain, "WSTETH");
         BoringOnChainQueue.WithdrawAsset[] memory assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
         assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 3 days,
-            minimumSecondsToDeadline: 2 days,
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
             minDiscount: 1,
             maxDiscount: 10,
-            minimumShares: 0.001e18
+            minimumShares: 0.0001e18
         });
         assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 3 days,
-            minimumSecondsToDeadline: 2 days,
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
             minDiscount: 1,
             maxDiscount: 10,
-            minimumShares: 0.001e18
+            minimumShares: 0.0001e18
         });
         assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 3 days,
-            minimumSecondsToDeadline: 2 days,
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
             minDiscount: 1,
             maxDiscount: 10,
-            minimumShares: 0.001e18
+            minimumShares: 0.0001e18
         });
 
         _deployContracts(
-            EtherFiLiquidEthName,
-            EtherFiLiquidEthAccountantName,
-            EtherFiLiquidEthQueueName,
-            EtherFiLiquidEthQueueSolverName,
+            SymbioticLRTVaultName,
+            SymbioticLRTVaultAccountantName,
+            SymbioticLRTVaultQueueName,
+            SymbioticLRTVaultQueueSolverName,
             rolesAuthority,
             assets,
             assetsToSetup
