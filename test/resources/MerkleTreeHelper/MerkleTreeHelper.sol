@@ -5268,6 +5268,101 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         setAddress(true, sourceChain, "boringVault", boringVault);
     }
 
+    // ========================================= Term Finance =========================================
+    // TODO need to use this in the test suite.
+    function _addTermFinanceLockOfferLeafs(ManageLeaf[] memory leafs, ERC20[] memory purchaseTokens, address[] memory termAuctionOfferLockerAddresses, address[] memory termRepoLockers)
+        internal
+    {
+        for (uint256 i; i < purchaseTokens.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                    address(purchaseTokens[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Term Repo Locker to spend ", purchaseTokens[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+            leafs[leafIndex].argumentAddresses[0] = termRepoLockers[i];
+            tokenToSpenderToApprovalInTree[address(purchaseTokens[i])][termRepoLockers[i]] = true;
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                    termAuctionOfferLockerAddresses[i],
+                    false,
+                    "lockOffers((bytes32,address,bytes32,uint256,address)[])",
+                    new address[](2),
+                    string.concat("Submit offer submission to offer locker ", vm.toString(termAuctionOfferLockerAddresses[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = address(purchaseTokens[i]);
+        }
+    }
+
+    // TODO need to use this in the test suite.
+    function _addTermFinanceUnlockOfferLeafs(ManageLeaf[] memory leafs, address[] memory termAuctionOfferLockerAddresses)
+        internal
+    {
+        for (uint256 i; i < termAuctionOfferLockerAddresses.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+        
+            leafs[leafIndex] = ManageLeaf(
+                    termAuctionOfferLockerAddresses[i],
+                    false,
+                    "unlockOffers(bytes32[])",
+                    new address[](0),
+                    string.concat("Unlock existing offer from offer locker ", vm.toString(termAuctionOfferLockerAddresses[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+        }
+    }
+
+    // TODO need to use this in the test suite.
+    function _addTermFinanceRevealOfferLeafs(ManageLeaf[] memory leafs, address[] memory termAuctionOfferLockerAddresses)
+        internal
+    {
+        for (uint256 i; i < termAuctionOfferLockerAddresses.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                    termAuctionOfferLockerAddresses[i],
+                    false,
+                    "revealOffers(bytes32[],uint256[],uint256[])",
+                    new address[](0),
+                    string.concat("Unlock existing offer from offer locker ", vm.toString(termAuctionOfferLockerAddresses[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+        }
+    }
+
+    // TODO need to use this in the test suite.
+    function _addTermFinanceRedeemTermRepoTokensLeafs(ManageLeaf[] memory leafs, address[] memory termRepoServicers)
+        internal
+    {
+        for (uint256 i; i < termRepoServicers.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                    termRepoServicers[i],
+                    false,
+                    "redeemTermRepoTokens(address,uint256)",
+                    new address[](1),
+                    string.concat("Redeem TermRepo Tokens from servicer ", vm.toString(termRepoServicers[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        }
+
+    }
+
     // ========================================= BoringVault Teller =========================================
 
     function _addTellerLeafs(ManageLeaf[] memory leafs, address teller, ERC20[] memory assets) internal {
