@@ -48,23 +48,66 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
     }
 
     function run() external {
-        bytes memory creationCode;
-        bytes memory constructorArgs;
+        // bytes memory creationCode;
+        // bytes memory constructorArgs;
 
         vm.startBroadcast(privateKey);
 
-        creationCode = type(RolesAuthority).creationCode;
-        constructorArgs = abi.encode(devOwner, Authority(address(0)));
-        RolesAuthority rolesAuthority = RolesAuthority(
-            deployer.deployContract(BoringOnChainQueuesRolesAuthorityName, creationCode, constructorArgs, 0)
-        );
+        // creationCode = type(RolesAuthority).creationCode;
+        // constructorArgs = abi.encode(devOwner, Authority(address(0)));
+        // RolesAuthority rolesAuthority = RolesAuthority(
+        //     deployer.deployContract(BoringOnChainQueuesRolesAuthorityName, creationCode, constructorArgs, 0)
+        // );
+        RolesAuthority rolesAuthority = RolesAuthority(0xF3086883Ec44E1393aD4d4ACb32C48aE849Ef376);
 
-        address[] memory assets = new address[](3);
+        address[] memory assets;
+        BoringOnChainQueue.WithdrawAsset[] memory assetsToSetup;
+        //============================== Super Symbiotic ===============================
+        // assets = new address[](3);
+        // assets[0] = getAddress(sourceChain, "EETH");
+        // assets[1] = getAddress(sourceChain, "WEETH");
+        // assets[2] = getAddress(sourceChain, "WSTETH");
+        // assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        // assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
+        //     allowWithdraws: true, // not used in script.
+        //     secondsToMaturity: 7 days,
+        //     minimumSecondsToDeadline: 3 days,
+        //     minDiscount: 1,
+        //     maxDiscount: 10,
+        //     minimumShares: 0.0001e18
+        // });
+        // assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
+        //     allowWithdraws: true, // not used in script.
+        //     secondsToMaturity: 7 days,
+        //     minimumSecondsToDeadline: 3 days,
+        //     minDiscount: 1,
+        //     maxDiscount: 10,
+        //     minimumShares: 0.0001e18
+        // });
+        // assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
+        //     allowWithdraws: true, // not used in script.
+        //     secondsToMaturity: 7 days,
+        //     minimumSecondsToDeadline: 3 days,
+        //     minDiscount: 1,
+        //     maxDiscount: 10,
+        //     minimumShares: 0.0001e18
+        // });
+
+        // _deployContracts(
+        //     SymbioticLRTVaultName,
+        //     SymbioticLRTVaultAccountantName,
+        //     SymbioticLRTVaultQueueName,
+        //     SymbioticLRTVaultQueueSolverName,
+        //     rolesAuthority,
+        //     assets,
+        //     assetsToSetup
+        // );
         //============================== LiquidEth ===============================
+        assets = new address[](3);
         assets[0] = getAddress(sourceChain, "EETH");
         assets[1] = getAddress(sourceChain, "WEETH");
         assets[2] = getAddress(sourceChain, "WSTETH");
-        BoringOnChainQueue.WithdrawAsset[] memory assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
         assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
             secondsToMaturity: 7 days,
@@ -91,17 +134,307 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
         });
 
         _deployContracts(
-            SymbioticLRTVaultName,
-            SymbioticLRTVaultAccountantName,
-            SymbioticLRTVaultQueueName,
-            SymbioticLRTVaultQueueSolverName,
+            EtherFiLiquidEthName,
+            EtherFiLiquidEthAccountantName,
+            EtherFiLiquidEthQueueName,
+            EtherFiLiquidEthQueueSolverName,
             rolesAuthority,
             assets,
             assetsToSetup
         );
 
-        //============================== LiquidBtc ===============================
-        // TODO
+        //============================== King Karak ===============================
+        assets = new address[](3);
+        assets[0] = getAddress(sourceChain, "EETH");
+        assets[1] = getAddress(sourceChain, "WEETH");
+        assets[2] = getAddress(sourceChain, "WSTETH");
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.0001e18
+        });
+        assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.0001e18
+        });
+        assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.0001e18
+        });
+
+        _deployContracts(
+            KarakVaultName,
+            KarakVaultAccountantName,
+            KingKarakVaultQueueName,
+            KingKarakVaultQueueSolverName,
+            rolesAuthority,
+            assets,
+            assetsToSetup
+        );
+
+        //============================== EtherFi BTC ===============================
+        assets = new address[](3);
+        assets[0] = getAddress(sourceChain, "WBTC");
+        assets[1] = getAddress(sourceChain, "fBTC");
+        assets[2] = getAddress(sourceChain, "LBTC");
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.0001e8
+        });
+        assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.0001e8
+        });
+        assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.0001e8
+        });
+
+        _deployContracts(
+            EtherFiBtcName,
+            EtherFiBtcAccountantName,
+            EtherFiBtcQueueName,
+            EtherFiBtcQueueSolverName,
+            rolesAuthority,
+            assets,
+            assetsToSetup
+        );
+
+        //============================== Liquid Usd ===============================
+        assets = new address[](3);
+        assets[0] = getAddress(sourceChain, "USDC");
+        assets[1] = getAddress(sourceChain, "USDT");
+        assets[2] = getAddress(sourceChain, "DAI");
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e6
+        });
+        assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e6
+        });
+        assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e6
+        });
+
+        _deployContracts(
+            EtherFiLiquidUsdName,
+            EtherFiLiquidUsdAccountantName,
+            EtherFiLiquidUsdQueueName,
+            EtherFiLiquidUsdQueueSolverName,
+            rolesAuthority,
+            assets,
+            assetsToSetup
+        );
+
+        //============================== Liquid Usual ===============================
+        assets = new address[](3);
+        assets[0] = getAddress(sourceChain, "USDC");
+        assets[1] = getAddress(sourceChain, "USDT");
+        assets[2] = getAddress(sourceChain, "DAI");
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e18
+        });
+        assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e18
+        });
+        assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e18
+        });
+
+        _deployContracts(
+            EtherFiLiquidUsualName,
+            EtherFiLiquidUsualAccountantName,
+            EtherFiLiquidUsualQueueName,
+            EtherFiLiquidUsualQueueSolverName,
+            rolesAuthority,
+            assets,
+            assetsToSetup
+        );
+
+        //============================== Liquid Elixir ===============================
+        assets = new address[](3);
+        assets[0] = getAddress(sourceChain, "USDC");
+        assets[1] = getAddress(sourceChain, "USDT");
+        assets[2] = getAddress(sourceChain, "DAI");
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e18
+        });
+        assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e18
+        });
+        assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e18
+        });
+
+        _deployContracts(
+            EtherFiElixirUsdName,
+            EtherFiElixirUsdAccountantName,
+            EtherFiLiquidElixirQueueName,
+            EtherFiLiquidElixirQueueSolverName,
+            rolesAuthority,
+            assets,
+            assetsToSetup
+        );
+
+        //============================== EtherFi Usd ===============================
+        assets = new address[](3);
+        assets[0] = getAddress(sourceChain, "USDC");
+        assets[1] = getAddress(sourceChain, "USDT");
+        assets[2] = getAddress(sourceChain, "DAI");
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 1 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e18
+        });
+        assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 1 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e18
+        });
+        assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 1 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e18
+        });
+
+        _deployContracts(
+            EtherFiUsdName,
+            EtherFiUsdAccountantName,
+            EtherFiUsdQueueName,
+            EtherFiUsdQueueSolverName,
+            rolesAuthority,
+            assets,
+            assetsToSetup
+        );
+
+        //============================== EtherFiEigen ===============================
+        assets = new address[](1);
+        assets[0] = getAddress(sourceChain, "EIGEN");
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](1);
+        assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 1 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.0001e18
+        });
+
+        _deployContracts(
+            EtherFiEigenName,
+            EtherFiEigenAccountantName,
+            EtherFiEigenQueueName,
+            EtherFiEigenQueueSolverName,
+            rolesAuthority,
+            assets,
+            assetsToSetup
+        );
+
+        //============================== Staked ETHFI ===============================
+        assets = new address[](1);
+        assets[0] = getAddress(sourceChain, "ETHFI");
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](1);
+        assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 7 days,
+            minimumSecondsToDeadline: 1 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.0001e18
+        });
+
+        _deployContracts(
+            StakedETHFIName,
+            StakedETHFIAccountantName,
+            StakedETHFIQueueName,
+            StakedETHFIQueueSolverName,
+            rolesAuthority,
+            assets,
+            assetsToSetup
+        );
+
         rolesAuthority.setUserRole(canSolve, CAN_SOLVE_ROLE, true);
         rolesAuthority.setUserRole(admin, ADMIN_ROLE, true);
         rolesAuthority.setUserRole(superAdmin, SUPER_ADMIN_ROLE, true);

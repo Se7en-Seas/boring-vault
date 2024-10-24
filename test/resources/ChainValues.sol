@@ -172,6 +172,7 @@ contract ChainValues {
         values[mainnet]["EIGEN"] = 0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83.toBytes32();
         values[mainnet]["wcUSDCv3"] = 0x27F2f159Fe990Ba83D57f39Fd69661764BEbf37a.toBytes32();
         values[mainnet]["eBTC"] = 0x657e8C867D8B37dCC18fA4Caead9C45EB088C642.toBytes32();
+        values[mainnet]["ETHFI"] = 0xFe0c30065B384F05761f15d0CC899D4F9F9Cc0eB.toBytes32();
 
         // Rate providers
         values[mainnet]["WEETH_RATE_PROVIDER"] = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee.toBytes32();

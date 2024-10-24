@@ -232,4 +232,25 @@ contract ContractNames {
     string public constant SFRXETHRateProviderName = "SFRXETH Generic Rate Provider V0.0";
     string public constant WEETHRateProviderName = "weETH Generic Rate Provider V0.0";
     string public constant sdeUSDRateProviderName = "sdeUSD Generic Rate Provider V0.0";
+
+    // Queues
+    // Create names for Liquid Usd, Liquid Btc, Liquid Usual, Liquid Elixir, King Karak, EtherFi Eigen, Staked ETHFI, EtherFiBtc, EtherFi Usd
+    string public constant EtherFiLiquidUsdQueueName = "EtherFi Liquid USD Queue V0.0";
+    string public constant EtherFiLiquidUsdQueueSolverName = "EtherFi Liquid USD Queue Solver V0.0";
+    string public constant EtherFiLiquidBtcQueueName = "EtherFi Liquid BTC Queue V0.0";
+    string public constant EtherFiLiquidBtcQueueSolverName = "EtherFi Liquid BTC Queue Solver V0.0";
+    string public constant EtherFiLiquidUsualQueueName = "EtherFi Liquid Usual Queue V0.0";
+    string public constant EtherFiLiquidUsualQueueSolverName = "EtherFi Liquid Usual Queue Solver V0.0";
+    string public constant EtherFiLiquidElixirQueueName = "EtherFi Liquid Elixir USD Queue V0.0";
+    string public constant EtherFiLiquidElixirQueueSolverName = "EtherFi Liquid Elixir USD Queue Solver V0.0";
+    string public constant KingKarakVaultQueueName = "King Karak Vault Queue V0.0";
+    string public constant KingKarakVaultQueueSolverName = "King Karak Vault Queue Solver V0.0";
+    string public constant EtherFiEigenQueueName = "EtherFi Eigen Queue V0.0";
+    string public constant EtherFiEigenQueueSolverName = "EtherFi Eigen Queue Solver V0.0";
+    string public constant StakedETHFIQueueName = "Staked ETHFI Queue V0.0";
+    string public constant StakedETHFIQueueSolverName = "Staked ETHFI Queue Solver V0.0";
+    string public constant EtherFiBtcQueueName = "EtherFi BTC Queue V0.0";
+    string public constant EtherFiBtcQueueSolverName = "EtherFi BTC Queue Solver V0.0";
+    string public constant EtherFiUsdQueueName = "EtherFi USD Queue V0.0";
+    string public constant EtherFiUsdQueueSolverName = "EtherFi USD Queue Solver V0.0";
 }
