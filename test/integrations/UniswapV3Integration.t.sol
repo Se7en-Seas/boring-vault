@@ -408,7 +408,14 @@ contract UniswapV3IntegrationTest is Test, MerkleTreeHelper {
         );
         targetData[7] = abi.encodeWithSignature("collect((uint256,address,uint128,uint128))", collectParams);
 
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__FailedToVerifyManageProof.selector, 
+                getAddress(sourceChain, "uniswapV3NonFungiblePositionManager"),
+                targetData[7],
+                0
+            )
+        );
         manager.manageVaultWithMerkleVerification(
             manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
         );
