@@ -7,6 +7,7 @@ import {
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {OAppAuth, Origin, MessagingFee, MessagingReceipt} from "@opapp-auth/OAppAuth.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
+// import {OptionsBuilder} from "lib/LayerZero-v2/packages/layerzero-v2/evm/oapp/contracts/oapp/libs/OptionsBuilder.sol";
 
 contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     using SafeTransferLib for ERC20;
@@ -224,7 +225,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
             revert LayerZeroTeller__MessagesNotAllowedTo(destinationId);
         }
         bytes memory m = abi.encode(message);
-        MessagingFee memory messageFee = _quote(destinationId, m, hex"", address(feeToken) != NATIVE);
+        MessagingFee memory messageFee = _quote(destinationId, m, abi.encode(hex"", hex""), address(feeToken) != NATIVE);
 
         fee = address(feeToken) == NATIVE ? messageFee.nativeFee : messageFee.lzTokenFee;
     }

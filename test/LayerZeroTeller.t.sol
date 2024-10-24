@@ -12,6 +12,7 @@ import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthorit
 import {MockLayerZeroEndPoint} from "src/helper/MockLayerZeroEndPoint.sol";
 import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
+import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
@@ -19,6 +20,7 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
+    using AddressToBytes32Lib for address;
 
     BoringVault public boringVault;
 
@@ -143,7 +145,6 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
         sourceTeller.bridge{value: 0.001e18}(sharesToBridge, to, abi.encode(DESTINATION_ID), NATIVE_ERC20, expectedFee);
 
         MockLayerZeroEndPoint.Packet memory m = endPoint.getLastMessage();
-        console.log(m._executor);
 
         // Send message to destination.
         vm.prank(address(endPoint));
@@ -201,111 +202,72 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
     }
 
     function testReverts() external {
-        //     // Adding a chain with a zero message gas limit should revert.
-        //     vm.expectRevert(
-        //         bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector))
-        //     );
-        //     sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller), 0);
+        // If teller is paused bridging is not allowed.
+        sourceTeller.pause();
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__Paused.selector))
+        );
+        sourceTeller.bridge(0, address(0), hex"", NATIVE_ERC20, 0);
 
-        //     // Allowing messages to a chain with a zero message gas limit should revert.
-        //     vm.expectRevert(
-        //         bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector))
-        //     );
-        //     sourceTeller.allowMessagesToChain(DESTINATION_ID, address(destinationTeller), 0);
+        sourceTeller.unpause();
+        sourceTeller.removeChain(DESTINATION_ID);
 
-        //     // Changing the gas limit to zero should revert.
-        //     vm.expectRevert(
-        //         bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector))
-        //     );
-        //     sourceTeller.setChainGasLimit(DESTINATION_ID, 0);
+        // Trying to send messages to a chain that is not supported should revert.
+        uint256 expectedFee = 1e18;
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__MessagesNotAllowedTo.selector, DESTINATION_ID)
+            )
+        );
+        sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), NATIVE_ERC20, expectedFee);
 
-        //     // But you can add a chain with a non-zero message gas limit, if messages to are not supported.
-        //     uint64 newChainSelector = 3;
-        //     sourceTeller.addChain(newChainSelector, true, false, address(destinationTeller), 0);
+        // setup chains.
+        sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller));
+        destinationTeller.addChain(SOURCE_ID, true, true, address(sourceTeller));
 
-        //     // If teller is paused bridging is not allowed.
-        //     sourceTeller.pause();
-        //     vm.expectRevert(
-        //         bytes(abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__Paused.selector))
-        //     );
-        //     sourceTeller.bridge(0, address(0), hex"", LINK, 0);
+        // If the max fee is exceeded the transaction should revert.
+        uint256 newFee = 1.01e18;
+        endPoint.setFee(NATIVE_ERC20, newFee);
 
-        //     sourceTeller.unpause();
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    LayerZeroTeller.LayerZeroTeller__FeeExceedsMax.selector, DESTINATION_ID, newFee, expectedFee
+                )
+            )
+        );
+        sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), NATIVE_ERC20, expectedFee);
 
-        //     // Trying to send messages to a chain that is not supported should revert.
-        //     uint256 expectedFee = 1e18;
-        //     vm.expectRevert(
-        //         bytes(
-        //             abi.encodeWithSelector(
-        //                 LayerZeroTeller.LayerZeroTeller__MessagesNotAllowedTo.selector, DESTINATION_ID
-        //             )
-        //         )
-        //     );
-        //     sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), LINK, expectedFee);
+        endPoint.setFee(NATIVE_ERC20, 0.001e18);
 
-        //     // setup chains.
-        //     sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller), 100_000);
-        //     destinationTeller.addChain(SOURCE_ID, true, true, address(sourceTeller), 100_000);
+        sourceTeller.bridge{value: 0.001e18}(1e18, address(this), abi.encode(DESTINATION_ID), NATIVE_ERC20, 1e18);
 
-        //     // If the max fee is exceeded the transaction should revert.
-        //     uint256 newFee = 1.01e18;
-        //     router.setFee(LINK, newFee);
+        MockLayerZeroEndPoint.Packet memory m = endPoint.getLastMessage();
 
-        //     vm.expectRevert(
-        //         bytes(
-        //             abi.encodeWithSelector(
-        //                 LayerZeroTeller.LayerZeroTeller__FeeExceedsMax.selector, DESTINATION_ID, newFee, expectedFee
-        //             )
-        //         )
-        //     );
-        //     sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), LINK, expectedFee);
+        // Send message to destination.
+        vm.startPrank(address(endPoint));
 
-        //     router.setFee(LINK, expectedFee);
+        // If source chain selector is wrong messages revert.
+        m._origin.srcEid = 7;
+        vm.expectRevert();
+        LayerZeroTeller(m.to).lzReceive(m._origin, m._guid, m._message, m._executor, m._extraData);
 
-        //     // If user forgets approval call reverts too.
-        //     vm.expectRevert(bytes("TRANSFER_FROM_FAILED"));
-        //     sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), LINK, expectedFee);
+        m._origin.srcEid = SOURCE_ID;
 
-        //     // Call now succeeds.
-        //     LINK.safeApprove(address(sourceTeller), expectedFee);
-        //     sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), LINK, expectedFee);
+        // If messages come from the wrong sender they should revert.
+        m._origin.sender = vm.addr(100).toBytes32();
 
-        //     Client.Any2EVMMessage memory m = router.getLastMessage();
+        vm.expectRevert();
+        LayerZeroTeller(m.to).lzReceive(m._origin, m._guid, m._message, m._executor, m._extraData);
 
-        //     // Send message to destination.
-        //     vm.startPrank(address(router));
+        m._origin.sender = address(sourceTeller).toBytes32();
+        vm.stopPrank();
 
-        //     // If source chain selector is wrong messages revert.
-        //     m.sourceChainSelector = 7;
-        //     vm.expectRevert(
-        //         bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__MessagesNotAllowedFrom.selector, 7))
-        //     );
-        //     destinationTeller.ccipReceive(m);
+        // Even if destination teller is paused messages still go through.
+        destinationTeller.pause();
 
-        //     m.sourceChainSelector = SOURCE_ID;
-
-        //     // If messages come from the wrong sender they should revert.
-        //     m.sender = abi.encode(vm.addr(1));
-
-        //     vm.expectRevert(
-        //         bytes(
-        //             abi.encodeWithSelector(
-        //                 LayerZeroTeller.LayerZeroTeller__MessagesNotAllowedFromSender.selector,
-        //                 SOURCE_ID,
-        //                 vm.addr(1)
-        //             )
-        //         )
-        //     );
-        //     destinationTeller.ccipReceive(m);
-
-        //     m.sender = abi.encode(address(sourceTeller));
-        //     vm.stopPrank();
-
-        //     // Even if destination teller is paused messages still go through.
-        //     destinationTeller.pause();
-
-        //     vm.prank(address(router));
-        //     destinationTeller.ccipReceive(m);
+        vm.prank(address(endPoint));
+        LayerZeroTeller(m.to).lzReceive(m._origin, m._guid, m._message, m._executor, m._extraData);
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

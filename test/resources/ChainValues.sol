@@ -787,6 +787,7 @@ contract ChainValues {
         values[mainnet]["lidoBaseResolvedDelegate"] = 0x866E82a600A1414e583f7F13623F1aC5d58b0Afa.toBytes32();
 
         // Layer Zero.
+        values[mainnet]["LayerZeroEndPoint"] = 0x1a44076050125825900e736c501f859c50fE728c.toBytes32();
         values[mainnet]["EtherFiOFTAdapter"] = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D.toBytes32();
 
         // Merkl
