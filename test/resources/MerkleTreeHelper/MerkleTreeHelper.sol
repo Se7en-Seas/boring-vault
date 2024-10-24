@@ -2349,7 +2349,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 getAddress(sourceChain, "uniswapV3NonFungiblePositionManager"),
                 false,
                 "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))",
-                new address[](3),
+                new address[](4),
                 string.concat(
                     "Add liquidity to UniswapV3 ",
                     ERC20(token0[i]).symbol(),
@@ -2362,6 +2362,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             leafs[leafIndex].argumentAddresses[0] = address(0);
             leafs[leafIndex].argumentAddresses[1] = token0[i];
             leafs[leafIndex].argumentAddresses[2] = token1[i];
+            leafs[leafIndex].argumentAddresses[3] = getAddress(sourceChain, "boringVault"); 
 
             // Swapping to move tick in pool.
             unchecked {
@@ -2405,10 +2406,12 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             getAddress(sourceChain, "uniswapV3NonFungiblePositionManager"),
             false,
             "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))",
-            new address[](0),
+            new address[](1),
             "Remove liquidity from UniswapV3 position",
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault"); 
+
         unchecked {
             leafIndex++;
         }
@@ -2416,11 +2419,12 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             getAddress(sourceChain, "uniswapV3NonFungiblePositionManager"),
             false,
             "collect((uint256,address,uint128,uint128))",
-            new address[](1),
+            new address[](2),
             "Collect fees from UniswapV3 position",
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault"); //two params returns, so two of these?
 
         // burn
         unchecked {
@@ -2606,6 +2610,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");  //do we need this twice if two params?  
 
         // burn
         unchecked {

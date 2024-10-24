@@ -360,8 +360,13 @@ contract UniswapV3IntegrationTest is Test, MerkleTreeHelper {
         );
 
         vm.expectRevert(
-            abi.encodeWithSelector(UniswapV3DecoderAndSanitizer.UniswapV3DecoderAndSanitizer__BadTokenId.selector)
-        );
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__FailedToVerifyManageProof.selector, 
+                getAddress(sourceChain, "uniswapV3NonFungiblePositionManager"), //address target
+                targetData[5], //bytes32 targetData
+                0 //uint256 value
+            )
+        ); 
         manager.manageVaultWithMerkleVerification(
             manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
         );
@@ -378,10 +383,15 @@ contract UniswapV3IntegrationTest is Test, MerkleTreeHelper {
         targetData[6] = abi.encodeWithSignature(
             "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))", decreaseLiquidityParams
         );
-
+        
         vm.expectRevert(
-            abi.encodeWithSelector(UniswapV3DecoderAndSanitizer.UniswapV3DecoderAndSanitizer__BadTokenId.selector)
-        );
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__FailedToVerifyManageProof.selector, 
+                getAddress(sourceChain, "uniswapV3NonFungiblePositionManager"),
+                targetData[6],
+                0
+            )
+        ); 
         manager.manageVaultWithMerkleVerification(
             manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
         );
@@ -399,7 +409,12 @@ contract UniswapV3IntegrationTest is Test, MerkleTreeHelper {
         targetData[7] = abi.encodeWithSignature("collect((uint256,address,uint128,uint128))", collectParams);
 
         vm.expectRevert(
-            abi.encodeWithSelector(UniswapV3DecoderAndSanitizer.UniswapV3DecoderAndSanitizer__BadTokenId.selector)
+            abi.encodeWithSelector(
+                ManagerWithMerkleVerification.ManagerWithMerkleVerification__FailedToVerifyManageProof.selector, 
+                getAddress(sourceChain, "uniswapV3NonFungiblePositionManager"),
+                targetData[7],
+                0
+            )
         );
         manager.manageVaultWithMerkleVerification(
             manageProofs, decodersAndSanitizers, targets, targetData, new uint256[](8)
