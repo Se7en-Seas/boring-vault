@@ -19,3 +19,6 @@
 [submodule "lib/OAppAuth"]
 	path = lib/OAppAuth
 	url = https://github.com/Se7en-Seas/OAppAuth
+[submodule "lib/devtools"]
+	path = lib/devtools
+	url = https://github.com/LayerZero-Labs/devtools
