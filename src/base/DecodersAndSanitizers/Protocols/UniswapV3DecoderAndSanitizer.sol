@@ -61,14 +61,11 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         virtual
         returns (bytes memory addressesFound)
     {
-        // Sanitize raw data
-        if (uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
-            revert UniswapV3DecoderAndSanitizer__BadTokenId();
-        }
         // Extract addresses from uniswapV3NonFungiblePositionManager.positions(params.tokenId).
+        address ownerOfTokenId = uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId); 
         (, address operator, address token0, address token1,,,,,,,,) =
             uniswapV3NonFungiblePositionManager.positions(params.tokenId);
-        addressesFound = abi.encodePacked(operator, token0, token1);
+        addressesFound = abi.encodePacked(operator, token0, token1, ownerOfTokenId);
     }
 
     function decreaseLiquidity(DecoderCustomTypes.DecreaseLiquidityParams calldata params)
@@ -80,12 +77,9 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         // Sanitize raw data
         // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
         // just for completeness.
-        if (uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
-            revert UniswapV3DecoderAndSanitizer__BadTokenId();
-        }
-
+        address ownerOfTokenId = uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId); 
         // No addresses in data
-        return addressesFound;
+        addressesFound = abi.encodePacked(ownerOfTokenId); 
     }
 
     function collect(DecoderCustomTypes.CollectParams calldata params)
@@ -97,12 +91,9 @@ abstract contract UniswapV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         // Sanitize raw data
         // NOTE ownerOf check is done in PositionManager contract as well, but it is added here
         // just for completeness.
-        if (uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId) != boringVault) {
-            revert UniswapV3DecoderAndSanitizer__BadTokenId();
-        }
-
+        address ownerOfTokenId = uniswapV3NonFungiblePositionManager.ownerOf(params.tokenId); 
         // Return addresses found
-        addressesFound = abi.encodePacked(params.recipient);
+        addressesFound = abi.encodePacked(params.recipient, ownerOfTokenId);
     }
 
     function burn(uint256 /*tokenId*/ ) external pure virtual returns (bytes memory addressesFound) {
