@@ -108,6 +108,8 @@ contract ContractNames {
     string public constant SkyFallVaultTellerName = "SkyFall Vault Teller With Multi Asset Support V0.1";
     string public constant SkyFallVaultDecoderAndSanitizerName = "SkyFall Vault Decoder and Sanitizer V0.1";
     string public constant SkyFallVaultDelayedWithdrawer = "SkyFall Vault Delayed Withdrawer V0.1";
+    string public constant SkyFallVaultBoringQueueName = "SkyFall Vault Boring Queue V0.1";
+    string public constant SkyFallVaultBoringSolverName = "SkyFall Vault Boring Solver V0.1";
     string public constant SkyFallVaultDroneName = "btv-drone V0.1";
 
     string public constant StakedETHFIRolesAuthorityName = "Staked ETHFI RolesAuthority Version 0.0";

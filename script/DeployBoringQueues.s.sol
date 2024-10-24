@@ -25,7 +25,7 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
 
     uint256 public privateKey;
 
-    address public devOwner = 0xf8553c8552f906C19286F21711721E206EE4909E;
+    address public devOwner = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b;
     address public canSolve = 0xf8553c8552f906C19286F21711721E206EE4909E;
     address public admin = 0x41DFc53B13932a2690C9790527C1967d8579a6ae;
     address public superAdmin = 0xf8553c8552f906C19286F21711721E206EE4909E;
@@ -37,37 +37,78 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
     // Roles
     uint8 public constant CAN_SOLVE_ROLE = 31;
     uint8 public constant ONLY_QUEUE_ROLE = 32;
-    uint8 public constant ADMIN_ROLE = 33;
-    uint8 public constant SUPER_ADMIN_ROLE = 34;
+    uint8 public constant ADMIN_ROLE = 9;
+    uint8 public constant SUPER_ADMIN_ROLE = 8;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
         vm.createSelectFork("mainnet");
         setSourceChainName(mainnet);
-        deployer = Deployer(getAddress(sourceChain, "deployerAddress"));
+        deployer = Deployer(getAddress(sourceChain, "boringDeployerContract"));
     }
 
     function run() external {
-        bytes memory creationCode;
-        bytes memory constructorArgs;
+        // bytes memory creationCode;
+        // bytes memory constructorArgs;
 
         vm.startBroadcast(privateKey);
 
-        creationCode = type(RolesAuthority).creationCode;
-        constructorArgs = abi.encode(devOwner, Authority(address(0)));
-        RolesAuthority rolesAuthority = RolesAuthority(
-            deployer.deployContract(BoringOnChainQueuesRolesAuthorityName, creationCode, constructorArgs, 0)
-        );
+        // creationCode = type(RolesAuthority).creationCode;
+        // constructorArgs = abi.encode(devOwner, Authority(address(0)));
+        // RolesAuthority rolesAuthority = RolesAuthority(
+        //     deployer.deployContract(BoringOnChainQueuesRolesAuthorityName, creationCode, constructorArgs, 0)
+        // );
+        RolesAuthority rolesAuthority = RolesAuthority(0x7e30B3B30cE72Bc2028D7D0F5B78c36E697CEa67);
 
         address[] memory assets = new address[](3);
         //============================== LiquidEth ===============================
+        // assets[0] = getAddress(sourceChain, "EETH");
+        // assets[1] = getAddress(sourceChain, "WEETH");
+        // assets[2] = getAddress(sourceChain, "WSTETH");
+        // BoringOnChainQueue.WithdrawAsset[] memory assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        // assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
+        //     allowWithdraws: true, // not used in script.
+        //     secondsToMaturity: 7 days,
+        //     minimumSecondsToDeadline: 3 days,
+        //     minDiscount: 1,
+        //     maxDiscount: 10,
+        //     minimumShares: 0.0001e18
+        // });
+        // assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
+        //     allowWithdraws: true, // not used in script.
+        //     secondsToMaturity: 7 days,
+        //     minimumSecondsToDeadline: 3 days,
+        //     minDiscount: 1,
+        //     maxDiscount: 10,
+        //     minimumShares: 0.0001e18
+        // });
+        // assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
+        //     allowWithdraws: true, // not used in script.
+        //     secondsToMaturity: 7 days,
+        //     minimumSecondsToDeadline: 3 days,
+        //     minDiscount: 1,
+        //     maxDiscount: 10,
+        //     minimumShares: 0.0001e18
+        // });
+
+        // _deployContracts(
+        //     SymbioticLRTVaultName,
+        //     SymbioticLRTVaultAccountantName,
+        //     SymbioticLRTVaultQueueName,
+        //     SymbioticLRTVaultQueueSolverName,
+        //     rolesAuthority,
+        //     assets,
+        //     assetsToSetup
+        // );
+
+        //============================== SkyFall ===============================
         assets[0] = getAddress(sourceChain, "EETH");
         assets[1] = getAddress(sourceChain, "WEETH");
-        assets[2] = getAddress(sourceChain, "WSTETH");
+        assets[2] = getAddress(sourceChain, "WETH");
         BoringOnChainQueue.WithdrawAsset[] memory assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
         assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
+            secondsToMaturity: 300,
             minimumSecondsToDeadline: 3 days,
             minDiscount: 1,
             maxDiscount: 10,
@@ -75,7 +116,7 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
         });
         assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
+            secondsToMaturity: 300,
             minimumSecondsToDeadline: 3 days,
             minDiscount: 1,
             maxDiscount: 10,
@@ -83,7 +124,7 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
         });
         assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
+            secondsToMaturity: 300,
             minimumSecondsToDeadline: 3 days,
             minDiscount: 1,
             maxDiscount: 10,
@@ -91,21 +132,19 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
         });
 
         _deployContracts(
-            SymbioticLRTVaultName,
-            SymbioticLRTVaultAccountantName,
-            SymbioticLRTVaultQueueName,
-            SymbioticLRTVaultQueueSolverName,
+            SkyFallVaultName,
+            SkyFallVaultAccountantName,
+            SkyFallVaultBoringQueueName,
+            SkyFallVaultBoringSolverName,
             rolesAuthority,
             assets,
             assetsToSetup
         );
 
-        //============================== LiquidBtc ===============================
-        // TODO
         rolesAuthority.setUserRole(canSolve, CAN_SOLVE_ROLE, true);
-        rolesAuthority.setUserRole(admin, ADMIN_ROLE, true);
-        rolesAuthority.setUserRole(superAdmin, SUPER_ADMIN_ROLE, true);
-        rolesAuthority.transferOwnership(globalOwner);
+        // rolesAuthority.setUserRole(admin, ADMIN_ROLE, true);
+        // rolesAuthority.setUserRole(superAdmin, SUPER_ADMIN_ROLE, true);
+        // rolesAuthority.transferOwnership(globalOwner);
 
         vm.stopBroadcast();
     }
