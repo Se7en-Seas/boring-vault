@@ -5,8 +5,9 @@ import {
     CrossChainTellerWithGenericBridge, ERC20
 } from "src/base/Roles/CrossChain/CrossChainTellerWithGenericBridge.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {OAppAuth, Origin, MessagingFee, MessagingReceipt, OptionsBuilder} from "@opapp-auth/OAppAuth.sol";
+import {OAppAuth, Origin, MessagingFee, MessagingReceipt} from "@oapp-auth/OAppAuth.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
+import {OptionsBuilder} from "@oapp-auth/OptionsBuilder.sol";
 
 contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     using SafeTransferLib for ERC20;
