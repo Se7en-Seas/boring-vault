@@ -745,6 +745,9 @@ contract ChainValues {
         values[mainnet]["kETHFI"] = 0xB26bD8D1FD5415eED4C99f9fB6A278A42E7d1BA8.toBytes32();
         values[mainnet]["ksUSDe"] = 0xDe5Bff0755F192C333B126A449FF944Ee2B69681.toBytes32();
         values[mainnet]["kUSDe"] = 0xBE3cA34D0E877A1Fc889BD5231D65477779AFf4e.toBytes32();
+        values[mainnet]["kWBTC"] = 0x126d4dBf752AaF61f3eAaDa24Ab0dB84FEcf6891.toBytes32();
+        values[mainnet]["kFBTC"] = 0x40328669Bc9e3780dFa0141dBC87450a4af6EA11.toBytes32();
+        values[mainnet]["kLBTC"] = 0x468c34703F6c648CCf39DBaB11305D17C70ba011.toBytes32();
 
         // CCIP token transfers.
         values[mainnet]["ccipRouter"] = 0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D.toBytes32();
