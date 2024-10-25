@@ -13,6 +13,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     using SafeTransferLib for ERC20;
     using AddressToBytes32Lib for address;
     using AddressToBytes32Lib for bytes32;
+    using OptionsBuilder for bytes;
 
     // ========================================= STRUCTS =========================================
 
@@ -186,7 +187,8 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
             revert LayerZeroTeller__MessagesNotAllowedTo(destinationId);
         }
         bytes memory m = abi.encode(message);
-        MessagingFee memory fee = _quote(destinationId, m, hex"", address(feeToken) != NATIVE);
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(1_000_000, 0);
+        MessagingFee memory fee = _quote(destinationId, m, options, address(feeToken) != NATIVE);
         if (address(feeToken) == NATIVE) {
             if (fee.nativeFee > maxFee) {
                 revert LayerZeroTeller__FeeExceedsMax(destinationId, fee.nativeFee, maxFee);
@@ -198,7 +200,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
         } else {
             revert LayerZeroTeller__BadFeeToken();
         }
-        MessagingReceipt memory receipt = _lzSend(destinationId, m, hex"", fee, msg.sender);
+        MessagingReceipt memory receipt = _lzSend(destinationId, m, options, fee, msg.sender);
 
         messageId = receipt.guid;
     }
@@ -225,7 +227,8 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
             revert LayerZeroTeller__MessagesNotAllowedTo(destinationId);
         }
         bytes memory m = abi.encode(message);
-        MessagingFee memory messageFee = _quote(destinationId, m, abi.encode(hex"", hex""), address(feeToken) != NATIVE);
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(1_000_000, 0);
+        MessagingFee memory messageFee = _quote(destinationId, m, options, address(feeToken) != NATIVE);
 
         fee = address(feeToken) == NATIVE ? messageFee.nativeFee : messageFee.lzTokenFee;
     }

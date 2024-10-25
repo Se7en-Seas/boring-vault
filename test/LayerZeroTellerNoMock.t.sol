@@ -114,16 +114,18 @@ contract LayerZeroTellerNoMockTest is Test, MerkleTreeHelper {
         // Get fee.
         address to = vm.addr(1);
         uint256 fee = sourceTeller.previewFee(sharesToBridge, to, abi.encode(layerZeroArbitrumEndpointId), NATIVE_ERC20);
+        console.log("Fee: ", fee);
         uint256 expectedFee = 1e18;
         sourceTeller.bridge{value: fee}(
             sharesToBridge, to, abi.encode(layerZeroArbitrumEndpointId), NATIVE_ERC20, expectedFee
         );
     }
 
-    function testPreviewFee(uint256 fee) external {
-        // uint256 previewedFee = sourceTeller.previewFee(1e18, address(0), abi.encode(DESTINATION_ID), NATIVE_ERC20);
+    function testPreviewFee() external {
+        uint256 previewedFee =
+            sourceTeller.previewFee(1e18, address(0), abi.encode(layerZeroArbitrumEndpointId), NATIVE_ERC20);
 
-        // assertEq(previewedFee, fee, "Previewed fee should match set fee.");
+        assertGt(previewedFee, 0, "Previewed fee should match set fee.");
     }
 
     // ========================================= HELPER FUNCTIONS =========================================
