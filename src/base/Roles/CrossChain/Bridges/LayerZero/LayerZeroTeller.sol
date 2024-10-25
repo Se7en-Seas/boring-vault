@@ -187,6 +187,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
             revert LayerZeroTeller__MessagesNotAllowedTo(destinationId);
         }
         bytes memory m = abi.encode(message);
+        // TODO need to add in the gaslimit as a saved value in the Chain struct.
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(1_000_000, 0);
         MessagingFee memory fee = _quote(destinationId, m, options, address(feeToken) != NATIVE);
         if (address(feeToken) == NATIVE) {
