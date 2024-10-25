@@ -185,31 +185,40 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
         );
 
         //============================== EtherFi BTC ===============================
-        assets = new address[](3);
+        assets = new address[](4);
         assets[0] = getAddress(sourceChain, "WBTC");
         assets[1] = getAddress(sourceChain, "fBTC");
         assets[2] = getAddress(sourceChain, "LBTC");
-        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        assets[3] = getAddress(sourceChain, "cbBTC");
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](4);
         assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
-            minimumSecondsToDeadline: 3 days,
+            secondsToMaturity: 3 days,
+            minimumSecondsToDeadline: 5 days,
             minDiscount: 1,
             maxDiscount: 10,
             minimumShares: 0.0001e8
         });
         assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
-            minimumSecondsToDeadline: 3 days,
+            secondsToMaturity: 3 days,
+            minimumSecondsToDeadline: 5 days,
             minDiscount: 1,
             maxDiscount: 10,
             minimumShares: 0.0001e8
         });
         assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
-            minimumSecondsToDeadline: 3 days,
+            secondsToMaturity: 3 days,
+            minimumSecondsToDeadline: 5 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.0001e8
+        });
+        assetsToSetup[3] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 3 days,
+            minimumSecondsToDeadline: 5 days,
             minDiscount: 1,
             maxDiscount: 10,
             minimumShares: 0.0001e8
@@ -226,14 +235,17 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
         );
 
         //============================== Liquid Usd ===============================
-        assets = new address[](3);
+        assets = new address[](6);
         assets[0] = getAddress(sourceChain, "USDC");
         assets[1] = getAddress(sourceChain, "USDT");
         assets[2] = getAddress(sourceChain, "DAI");
-        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        assets[3] = getAddress(sourceChain, "USDE");
+        assets[4] = getAddress(sourceChain, "deUSD");
+        assets[5] = getAddress(sourceChain, "sdeUSD");
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](6);
         assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
+            secondsToMaturity: 3 days,
             minimumSecondsToDeadline: 3 days,
             minDiscount: 1,
             maxDiscount: 10,
@@ -241,7 +253,7 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
         });
         assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
+            secondsToMaturity: 3 days,
             minimumSecondsToDeadline: 3 days,
             minDiscount: 1,
             maxDiscount: 10,
@@ -249,7 +261,31 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
         });
         assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
+            secondsToMaturity: 3 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e6
+        });
+        assetsToSetup[3] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 3 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e6
+        });
+        assetsToSetup[4] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 3 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e6
+        });
+        assetsToSetup[5] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 3 days,
             minimumSecondsToDeadline: 3 days,
             minDiscount: 1,
             maxDiscount: 10,
@@ -267,30 +303,12 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
         );
 
         //============================== Liquid Usual ===============================
-        assets = new address[](3);
-        assets[0] = getAddress(sourceChain, "USDC");
-        assets[1] = getAddress(sourceChain, "USDT");
-        assets[2] = getAddress(sourceChain, "DAI");
-        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        assets = new address[](1);
+        assets[0] = getAddress(sourceChain, "USD0_plus");
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](1);
         assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
-            minimumSecondsToDeadline: 3 days,
-            minDiscount: 1,
-            maxDiscount: 10,
-            minimumShares: 0.01e18
-        });
-        assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
-            allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
-            minimumSecondsToDeadline: 3 days,
-            minDiscount: 1,
-            maxDiscount: 10,
-            minimumShares: 0.01e18
-        });
-        assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
-            allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
+            secondsToMaturity: 3 days,
             minimumSecondsToDeadline: 3 days,
             minDiscount: 1,
             maxDiscount: 10,
@@ -308,14 +326,16 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
         );
 
         //============================== Liquid Elixir ===============================
-        assets = new address[](3);
+        assets = new address[](5);
         assets[0] = getAddress(sourceChain, "USDC");
         assets[1] = getAddress(sourceChain, "USDT");
         assets[2] = getAddress(sourceChain, "DAI");
-        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        assets[3] = getAddress(sourceChain, "deUSD");
+        assets[4] = getAddress(sourceChain, "sdeUSD");
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](5);
         assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
+            secondsToMaturity: 3 days,
             minimumSecondsToDeadline: 3 days,
             minDiscount: 1,
             maxDiscount: 10,
@@ -323,7 +343,7 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
         });
         assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
+            secondsToMaturity: 3 days,
             minimumSecondsToDeadline: 3 days,
             minDiscount: 1,
             maxDiscount: 10,
@@ -331,7 +351,23 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
         });
         assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
+            secondsToMaturity: 3 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e18
+        });
+        assetsToSetup[3] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 3 days,
+            minimumSecondsToDeadline: 3 days,
+            minDiscount: 1,
+            maxDiscount: 10,
+            minimumShares: 0.01e18
+        });
+        assetsToSetup[4] = BoringOnChainQueue.WithdrawAsset({
+            allowWithdraws: true, // not used in script.
+            secondsToMaturity: 3 days,
             minimumSecondsToDeadline: 3 days,
             minDiscount: 1,
             maxDiscount: 10,
@@ -349,28 +385,10 @@ contract DeployBoringQueuesScript is Script, ContractNames, MerkleTreeHelper {
         );
 
         //============================== EtherFi Usd ===============================
-        assets = new address[](3);
-        assets[0] = getAddress(sourceChain, "USDC");
-        assets[1] = getAddress(sourceChain, "USDT");
-        assets[2] = getAddress(sourceChain, "DAI");
-        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](3);
+        assets = new address[](1);
+        assets[0] = getAddress(sourceChain, "USDE");
+        assetsToSetup = new BoringOnChainQueue.WithdrawAsset[](1);
         assetsToSetup[0] = BoringOnChainQueue.WithdrawAsset({
-            allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
-            minimumSecondsToDeadline: 1 days,
-            minDiscount: 1,
-            maxDiscount: 10,
-            minimumShares: 0.01e18
-        });
-        assetsToSetup[1] = BoringOnChainQueue.WithdrawAsset({
-            allowWithdraws: true, // not used in script.
-            secondsToMaturity: 7 days,
-            minimumSecondsToDeadline: 1 days,
-            minDiscount: 1,
-            maxDiscount: 10,
-            minimumShares: 0.01e18
-        });
-        assetsToSetup[2] = BoringOnChainQueue.WithdrawAsset({
             allowWithdraws: true, // not used in script.
             secondsToMaturity: 7 days,
             minimumSecondsToDeadline: 1 days,
