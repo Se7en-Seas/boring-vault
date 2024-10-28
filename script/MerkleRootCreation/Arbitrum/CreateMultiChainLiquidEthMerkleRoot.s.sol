@@ -243,6 +243,13 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
             "ITB wETH Gearbox"
         );
 
+        // ========================== Reclamation ==========================
+        {
+            address reclamationDecoder = 0xd7335170816912F9D06e23d23479589ed63b3c33;
+            address target = 0xad5dB17b44506785931dbc49c8857482c3b4F622;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+        }
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/ArbitrumMultiChainLiquidEthStrategistLeafs.json";

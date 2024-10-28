@@ -5232,6 +5232,49 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[3] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Reclamation =========================================
+
+    function _addReclamationLeafs(ManageLeaf[] memory leafs, address target, address reclamationDecoder) internal {
+        /// @notice These leafs are generic, in that they are allowing any execturo address to be removed, and any asset to be withdrawn
+        /// BACK to the boring vault.
+        // Add in generic `removeExecutor(address executor)` leaf.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            target,
+            false,
+            "removeExecutor(address)",
+            new address[](0),
+            string.concat("Remove any executor from ", vm.toString(target)),
+            reclamationDecoder
+        );
+        // Add in generic `withdraw(address asset, uint256 amount)` and generic `withdrawAll(address asset)` leafs.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            target,
+            false,
+            "withdraw(address,uint256)",
+            new address[](0),
+            string.concat("Withdraw any asset from ", vm.toString(target)),
+            reclamationDecoder
+        );
+
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            target,
+            false,
+            "withdrawAll(address)",
+            new address[](0),
+            string.concat("Withdraw all of any asset from ", vm.toString(target)),
+            reclamationDecoder
+        );
+    }
+
     // ========================================= Puppet =========================================
 
     function _createPuppetLeafs(ManageLeaf[] memory leafs, address puppet)
