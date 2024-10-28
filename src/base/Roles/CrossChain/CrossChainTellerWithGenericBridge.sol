@@ -11,7 +11,7 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
     //============================== ERRORS ===============================
 
     error CrossChainTellerWithGenericBridge__UnsafeCastToUint96();
-    error CrossChainTellerWithGenericBridge__CannotDepositWithNativeAndPayBridgeFeeInNative();
+    error CrossChainTellerWithGenericBridge__CannotDepositWithNativeAndBridge();
 
     //============================== EVENTS ===============================
 
@@ -31,6 +31,8 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
      * @dev This function will REVERT if `beforeTransfer` hook reverts from:
      *     - shares being locked
      *     - allow list
+     * @dev Since call to `bridge` is public, msg.sig is not updated which means any role capabilities regarding this function
+     *      are also granted to the `bridge` function.
      */
     function depositAndBridge(
         ERC20 depositAsset,
@@ -39,11 +41,15 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
         bytes calldata bridgeWildCard,
         ERC20 feeToken,
         uint256 maxFee
-    ) external payable requiresAuth nonReentrant returns (uint256 sharesBridged) {
-        if (address(depositAsset) == NATIVE && address(feeToken) == NATIVE) {
-            revert CrossChainTellerWithGenericBridge__CannotDepositWithNativeAndPayBridgeFeeInNative();
+    ) external payable requiresAuth returns (uint256 sharesBridged) {
+        if (isPaused) revert TellerWithMultiAssetSupport__Paused();
+        Asset memory asset = assetData[depositAsset];
+        if (!asset.allowDeposits) revert TellerWithMultiAssetSupport__AssetNotSupported();
+        if (address(depositAsset) == NATIVE) {
+            revert CrossChainTellerWithGenericBridge__CannotDepositWithNativeAndBridge();
         }
-        sharesBridged = deposit(depositAsset, depositAmount, minimumMint);
+        sharesBridged = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender, asset);
+        _afterPublicDeposit(msg.sender, depositAsset, depositAmount, sharesBridged, shareLockPeriod);
 
         if (sharesBridged > type(uint96).max) revert CrossChainTellerWithGenericBridge__UnsafeCastToUint96();
         bridge(uint96(sharesBridged), msg.sender, bridgeWildCard, feeToken, maxFee);
@@ -54,6 +60,8 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
      * @dev This function will REVERT if `beforeTransfer` hook reverts from:
      *     - shares being locked
      *     - allow list
+     * @dev Since calls to `depositWithPermit` and `bridge` are public, msg.sig is not updated which means any role capabilities regarding this function
+     *      are also granted to the `depositWithPermit` and `bridge` function.
      */
     function depositAndBridgeWithPermit(
         ERC20 depositAsset,
@@ -66,7 +74,7 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
         bytes calldata bridgeWildCard,
         ERC20 feeToken,
         uint256 maxFee
-    ) external payable requiresAuth nonReentrant returns (uint256 sharesBridged) {
+    ) external payable requiresAuth returns (uint256 sharesBridged) {
         sharesBridged = depositWithPermit(depositAsset, depositAmount, minimumMint, deadline, v, r, s);
         if (sharesBridged > type(uint96).max) revert CrossChainTellerWithGenericBridge__UnsafeCastToUint96();
         bridge(uint96(sharesBridged), msg.sender, bridgeWildCard, feeToken, maxFee);
