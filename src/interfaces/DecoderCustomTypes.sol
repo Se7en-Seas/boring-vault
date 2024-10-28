@@ -231,6 +231,26 @@ contract DecoderCustomTypes {
         uint256 expiry;
     }
 
+    struct EarnerTreeMerkleLeaf {
+        address earner;
+        bytes32 earnerTokenRoot;
+    }
+
+    struct TokenTreeMerkleLeaf {
+        address token;
+        uint256 cumulativeEarnings;
+    }
+
+    struct RewardsMerkleClaim {
+        uint32 rootIndex;
+        uint32 earnerIndex;
+        bytes earnerTreeProof;
+        EarnerTreeMerkleLeaf earnerLeaf;
+        uint32[] tokenIndices;
+        bytes[] tokenTreeProofs;
+        TokenTreeMerkleLeaf[] tokenLeaves;
+    }
+
     // ========================================= CCIP =========================================
 
     // If extraArgs is empty bytes, the default is 200k gas limit.

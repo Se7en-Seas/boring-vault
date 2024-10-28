@@ -3679,7 +3679,9 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         address strategy,
         address _strategyManager,
         address _delegationManager,
-        address operator
+        address operator,
+        address rewardsContract,
+        address claimerFor
     ) internal {
         // Approvals.
         unchecked {
@@ -3765,6 +3767,37 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             "undelegate(address)",
             new address[](1),
             string.concat("Undelegate from ", vm.toString(operator)),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+        // Handle reward claiming.
+        if (claimerFor != address(0)) {
+            // Add setClaimerFor leaf.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                rewardsContract,
+                false,
+                "setClaimerFor(address)",
+                new address[](1),
+                string.concat("Set claimer for ", ERC20(lst).symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = claimerFor;
+        }
+
+        // Add processClaim leaf.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            rewardsContract,
+            false,
+            "processClaim((uint32,uint32,bytes,(address,bytes32),uint32[],bytes[],(address,uint256)[]),address)",
+            new address[](1),
+            string.concat("Process claim for ", ERC20(lst).symbol()),
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");

@@ -49,7 +49,9 @@ contract CreateEtherFiEigenMerkleRootScript is Script, MerkleTreeHelper {
             getAddress(sourceChain, "eigenStrategy"),
             getAddress(sourceChain, "strategyManager"),
             getAddress(sourceChain, "delegationManager"),
-            getAddress(sourceChain, "eEigenOperator")
+            getAddress(sourceChain, "eEigenOperator"),
+            getAddress(sourceChain, "eigenRewards"),
+            address(0)
         );
 
         // ========================== ITB Eigen ==========================
