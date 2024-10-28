@@ -37,7 +37,7 @@ jobs:
 
       - name: Run Forge build
         run: |
-          forge --version
+          forge install
           forge build
         id: build
 
