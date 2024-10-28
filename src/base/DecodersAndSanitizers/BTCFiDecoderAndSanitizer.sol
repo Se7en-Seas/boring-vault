@@ -8,12 +8,15 @@ import {PendleRouterDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/PendleRouterDecoderAndSanitizer.sol";
 import {PumpStakingDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/PumpStakingDecoderAndSanitizer.sol";
+import {CornStakingDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/CornStakingDecoderAndSanitizer.sol";
 
 contract BTCFiDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
     OneInchDecoderAndSanitizer,
     PendleRouterDecoderAndSanitizer,
-    PumpStakingDecoderAndSanitizer
+    PumpStakingDecoderAndSanitizer,
+    CornStakingDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)

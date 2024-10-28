@@ -554,7 +554,7 @@ contract ChainValues {
 
         // 1Inch
         values[mainnet]["aggregationRouterV5"] = 0x1111111254EEB25477B68fb85Ed929f73A960582.toBytes32();
-        values[mainnet]["oneInchExecutor"] = 0xE37e799D5077682FA0a244D46E5649F71457BD09.toBytes32();
+        values[mainnet]["oneInchExecutor"] = 0x3451B6b219478037a1AC572706627FC2BDa1e812.toBytes32();
         values[mainnet]["wETHweETH5bps"] = 0x7A415B19932c0105c82FDB6b720bb01B0CC2CAe3.toBytes32();
 
         // Gearbox
@@ -642,6 +642,9 @@ contract ChainValues {
         values[mainnet]["pendle_eBTC_market_12_26_24"] = 0x36d3ca43ae7939645C306E26603ce16e39A89192.toBytes32();
         values[mainnet]["pendle_LBTC_corn_market_12_26_24"] = 0xCaE62858DB831272A03768f5844cbe1B40bB381f.toBytes32();
         values[mainnet]["pendle_LBTC_market_03_26_25"] = 0x70B70Ac0445C3eF04E314DFdA6caafd825428221.toBytes32();
+
+        values[mainnet]["pendle_pumpBTC_market_03_26_25"] = 0x8098B48a1c4e4080b30A43a7eBc0c87b52F17222.toBytes32();
+        values[mainnet]["pendle_corn_pumpBTC_market_12_25_24"] = 0xf8208fB52BA80075aF09840A683143C22DC5B4dd.toBytes32();
 
         // Aave V3
         values[mainnet]["v3Pool"] = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2.toBytes32();
