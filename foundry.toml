@@ -16,7 +16,7 @@ remappings = [
     "ds-test/=lib/forge-std/lib/ds-test/src/",
     "@openzeppelin/=lib/openzeppelin-contracts/",
     "@ccip=lib/ccip/",
-    "@oapp-auth=lib/OappAuth/src/",
+    "@oapp-auth=lib/OAppAuth/src/",
 ]
 
 
