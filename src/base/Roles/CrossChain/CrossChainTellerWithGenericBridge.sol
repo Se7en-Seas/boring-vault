@@ -40,7 +40,7 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
         ERC20 feeToken,
         uint256 maxFee
     ) external payable requiresAuth nonReentrant returns (uint256 sharesBridged) {
-        if (address(depositAsset) == NATIVE) {
+        if (address(depositAsset) == NATIVE && address(feeToken) == NATIVE) {
             revert CrossChainTellerWithGenericBridge__CannotDepositWithNativeAndPayBridgeFeeInNative();
         }
         sharesBridged = deposit(depositAsset, depositAmount, minimumMint);

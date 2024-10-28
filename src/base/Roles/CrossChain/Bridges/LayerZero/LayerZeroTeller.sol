@@ -22,10 +22,12 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
      * @dev Sender is stored in OAppAuthCore `peers` mapping.
      * @param allowMessagesFrom Whether to allow messages from this chain.
      * @param allowMessagesTo Whether to allow messages to this chain.
+     * @param messageGasLimit The gas limit for messages to this chain.
      */
     struct Chain {
         bool allowMessagesFrom;
         bool allowMessagesTo;
+        uint128 messageGasLimit;
     }
     // ========================================= STATE =========================================
 
@@ -41,18 +43,23 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     error LayerZeroTeller__MessagesNotAllowedTo(uint256 chainSelector);
     error LayerZeroTeller__FeeExceedsMax(uint256 chainSelector, uint256 fee, uint256 maxFee);
     error LayerZeroTeller__BadFeeToken();
+    error LayerZeroTeller__ZeroMessageGasLimit();
 
     //============================== EVENTS ===============================
 
-    event ChainAdded(uint256 chainSelector, bool allowMessagesFrom, bool allowMessagesTo, address targetTeller);
-    event ChainRemoved(uint256 chainSelector);
-    event ChainAllowMessagesFrom(uint256 chainSelector, address targetTeller);
-    event ChainAllowMessagesTo(uint256 chainSelector, address targetTeller);
-    event ChainStopMessagesFrom(uint256 chainSelector);
-    event ChainStopMessagesTo(uint256 chainSelector);
+    event ChainAdded(uint256 chainId, bool allowMessagesFrom, bool allowMessagesTo, address targetTeller);
+    event ChainRemoved(uint256 chainId);
+    event ChainAllowMessagesFrom(uint256 chainId, address targetTeller);
+    event ChainAllowMessagesTo(uint256 chainId, address targetTeller);
+    event ChainStopMessagesFrom(uint256 chainId);
+    event ChainStopMessagesTo(uint256 chainId);
+    event ChainSetGasLimit(uint256 chainId, uint128 messageGasLimit);
 
     //============================== IMMUTABLES ===============================
 
+    /**
+     * @notice The LayerZero token.
+     */
     address internal immutable lzToken;
 
     constructor(
@@ -75,12 +82,19 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
      * @param allowMessagesFrom Whether to allow messages from this chain.
      * @param allowMessagesTo Whether to allow messages to this chain.
      * @param targetTeller The address of the target teller on the other chain.
+     * @param messageGasLimit The gas limit for messages to this chain.
      */
-    function addChain(uint32 chainId, bool allowMessagesFrom, bool allowMessagesTo, address targetTeller)
-        external
-        requiresAuth
-    {
-        idToChains[chainId] = Chain(allowMessagesFrom, allowMessagesTo);
+    function addChain(
+        uint32 chainId,
+        bool allowMessagesFrom,
+        bool allowMessagesTo,
+        address targetTeller,
+        uint128 messageGasLimit
+    ) external requiresAuth {
+        if (allowMessagesTo && messageGasLimit == 0) {
+            revert LayerZeroTeller__ZeroMessageGasLimit();
+        }
+        idToChains[chainId] = Chain(allowMessagesFrom, allowMessagesTo, messageGasLimit);
         _setPeer(chainId, targetTeller.toBytes32());
 
         emit ChainAdded(chainId, allowMessagesFrom, allowMessagesTo, targetTeller);
@@ -113,9 +127,16 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
      * @notice Allow messages to a chain.
      * @dev Callable by OWNER_ROLE.
      */
-    function allowMessagesToChain(uint32 chainId, address targetTeller) external requiresAuth {
+    function allowMessagesToChain(uint32 chainId, address targetTeller, uint128 messageGasLimit)
+        external
+        requiresAuth
+    {
+        if (messageGasLimit == 0) {
+            revert LayerZeroTeller__ZeroMessageGasLimit();
+        }
         Chain storage chain = idToChains[chainId];
         chain.allowMessagesTo = true;
+        chain.messageGasLimit = messageGasLimit;
         _setPeer(chainId, targetTeller.toBytes32());
 
         emit ChainAllowMessagesTo(chainId, targetTeller);
@@ -143,6 +164,20 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
         emit ChainStopMessagesTo(chainId);
     }
 
+    /**
+     * @notice Set the gas limit for messages to a chain.
+     * @dev Callable by OWNER_ROLE.
+     */
+    function setChainGasLimit(uint32 chainId, uint128 messageGasLimit) external requiresAuth {
+        if (messageGasLimit == 0) {
+            revert LayerZeroTeller__ZeroMessageGasLimit();
+        }
+        Chain storage chain = idToChains[chainId];
+        chain.messageGasLimit = messageGasLimit;
+
+        emit ChainSetGasLimit(chainId, messageGasLimit);
+    }
+
     // ========================================= OAppAuthReceiver =========================================
 
     /**
@@ -166,9 +201,9 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     // ========================================= INTERNAL BRIDGE FUNCTIONS =========================================
 
     /**
-     * @notice Sends messages using CCIP router.
+     * @notice Sends messages using Layer Zero end point.
      * @dev This function does NOT revert if the `feeToken` is invalid,
-     *      rather the CCIP bridge will revert.
+     *      rather the Layer Zero end point will revert.
      * @dev This function will revert if maxFee is exceeded.
      * @dev This function will revert if destination chain does not allow messages.
      * @param message The message to send.
@@ -187,8 +222,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
             revert LayerZeroTeller__MessagesNotAllowedTo(destinationId);
         }
         bytes memory m = abi.encode(message);
-        // TODO need to add in the gaslimit as a saved value in the Chain struct.
-        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(1_000_000, 0);
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(chain.messageGasLimit, 0);
         MessagingFee memory fee = _quote(destinationId, m, options, address(feeToken) != NATIVE);
         if (address(feeToken) == NATIVE) {
             if (fee.nativeFee > maxFee) {
@@ -228,7 +262,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
             revert LayerZeroTeller__MessagesNotAllowedTo(destinationId);
         }
         bytes memory m = abi.encode(message);
-        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(1_000_000, 0);
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(chain.messageGasLimit, 0);
         MessagingFee memory messageFee = _quote(destinationId, m, options, address(feeToken) != NATIVE);
 
         fee = address(feeToken) == NATIVE ? messageFee.nativeFee : messageFee.lzTokenFee;

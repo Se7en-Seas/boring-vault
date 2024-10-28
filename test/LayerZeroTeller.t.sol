@@ -131,8 +131,8 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
         deal(address(boringVault), address(this), 1_000e18, true);
 
         // Setup chains on bridge.
-        sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller));
-        destinationTeller.addChain(SOURCE_ID, true, true, address(sourceTeller));
+        sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller), 1_000_000);
+        destinationTeller.addChain(SOURCE_ID, true, true, address(sourceTeller), 1_000_000);
     }
 
     function testBridgingShares(uint96 sharesToBridge) external {
@@ -161,47 +161,73 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
         assertEq(previewedFee, fee, "Previewed fee should match set fee.");
     }
 
-    function testAdminFunctions() external {
+    function testAdminFunctions(uint128 msgGas) external {
         uint32 newSelector = 3;
         address targetTeller = vm.addr(1);
+        msgGas = uint128(bound(msgGas, 1, 1_000_000));
 
-        sourceTeller.addChain(newSelector, true, true, targetTeller);
+        sourceTeller.addChain(newSelector, true, true, targetTeller, msgGas);
 
-        (bool allowMessagesFrom, bool allowMessagesTo) = sourceTeller.idToChains(newSelector);
+        (bool allowMessagesFrom, bool allowMessagesTo, uint128 messageGasLimit) = sourceTeller.idToChains(newSelector);
 
         assertEq(allowMessagesFrom, true, "Should allow messages from new chain.");
         assertEq(allowMessagesTo, true, "Should allow messages to new chain.");
+        assertEq(messageGasLimit, msgGas, "Should have set message gas limit.");
 
         sourceTeller.stopMessagesFromChain(newSelector);
 
-        (allowMessagesFrom, allowMessagesTo) = sourceTeller.idToChains(newSelector);
+        (allowMessagesFrom, allowMessagesTo, messageGasLimit) = sourceTeller.idToChains(newSelector);
         assertEq(allowMessagesFrom, false, "Should not allow messages from destination chain.");
         assertEq(allowMessagesTo, true, "Should still allow messages to destination chain.");
+        assertEq(messageGasLimit, msgGas, "Should have not changed message gas limit.");
 
         sourceTeller.stopMessagesToChain(newSelector);
-        (allowMessagesFrom, allowMessagesTo) = sourceTeller.idToChains(newSelector);
+        (allowMessagesFrom, allowMessagesTo, messageGasLimit) = sourceTeller.idToChains(newSelector);
         assertEq(allowMessagesFrom, false, "Should not allow messages from destination chain.");
         assertEq(allowMessagesTo, false, "Should not allow messages to destination chain.");
+        assertEq(messageGasLimit, msgGas, "Should have not changed message gas limit.");
 
         address newTargetTeller = vm.addr(2);
-        sourceTeller.allowMessagesToChain(newSelector, newTargetTeller);
-        (allowMessagesFrom, allowMessagesTo) = sourceTeller.idToChains(newSelector);
+        msgGas += 2;
+        sourceTeller.allowMessagesToChain(newSelector, newTargetTeller, msgGas);
+        (allowMessagesFrom, allowMessagesTo, messageGasLimit) = sourceTeller.idToChains(newSelector);
         assertEq(allowMessagesFrom, false, "Should allow messages from new chain.");
         assertEq(allowMessagesTo, true, "Should not allow messages to new chain.");
+        assertEq(messageGasLimit, msgGas, "Should have changed message gas limit.");
 
         address anotherNewTargetTeller = vm.addr(3);
         sourceTeller.allowMessagesFromChain(newSelector, anotherNewTargetTeller);
-        (allowMessagesFrom, allowMessagesTo) = sourceTeller.idToChains(newSelector);
+        (allowMessagesFrom, allowMessagesTo, messageGasLimit) = sourceTeller.idToChains(newSelector);
         assertEq(allowMessagesFrom, true, "Should allow messages from new chain.");
         assertEq(allowMessagesTo, true, "Should allow messages to new chain.");
+        assertEq(messageGasLimit, msgGas, "Should have not changed message gas limit.");
 
         sourceTeller.removeChain(newSelector);
-        (allowMessagesFrom, allowMessagesTo) = sourceTeller.idToChains(newSelector);
+        (allowMessagesFrom, allowMessagesTo, messageGasLimit) = sourceTeller.idToChains(newSelector);
         assertEq(allowMessagesFrom, false, "Should not allow messages from new chain.");
         assertEq(allowMessagesTo, false, "Should not allow messages to new chain.");
+        assertEq(messageGasLimit, 0, "Should have zeroed message gas limit.");
+
+        sourceTeller.setChainGasLimit(newSelector, msgGas + 1);
+        (allowMessagesFrom, allowMessagesTo, messageGasLimit) = sourceTeller.idToChains(newSelector);
+        assertEq(allowMessagesFrom, false, "Should not allow messages from new chain.");
+        assertEq(allowMessagesTo, false, "Should not allow messages to new chain.");
+        assertEq(messageGasLimit, msgGas + 1, "Should have changed message gas limit.");
     }
 
     function testReverts() external {
+        // Adding a chain with a zero message gas limit should revert.
+        vm.expectRevert(bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector)));
+        sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller), 0);
+
+        // Allowing messages to a chain with a zero message gas limit should revert.
+        vm.expectRevert(bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector)));
+        sourceTeller.allowMessagesToChain(DESTINATION_ID, address(destinationTeller), 0);
+
+        // Changing the gas limit to zero should revert.
+        vm.expectRevert(bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector)));
+        sourceTeller.setChainGasLimit(DESTINATION_ID, 0);
+
         // If teller is paused bridging is not allowed.
         sourceTeller.pause();
         vm.expectRevert(
@@ -222,8 +248,8 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
         sourceTeller.bridge(1e18, address(this), abi.encode(DESTINATION_ID), NATIVE_ERC20, expectedFee);
 
         // setup chains.
-        sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller));
-        destinationTeller.addChain(SOURCE_ID, true, true, address(sourceTeller));
+        sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller), 1_000_000);
+        destinationTeller.addChain(SOURCE_ID, true, true, address(sourceTeller), 1_000_000);
 
         // If the max fee is exceeded the transaction should revert.
         uint256 newFee = 1.01e18;

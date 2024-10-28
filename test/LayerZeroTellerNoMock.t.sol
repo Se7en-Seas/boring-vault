@@ -105,7 +105,7 @@ contract LayerZeroTellerNoMockTest is Test, MerkleTreeHelper {
         deal(address(boringVault), address(this), 1_000e18, true);
 
         // Setup chains on bridge.
-        sourceTeller.addChain(layerZeroArbitrumEndpointId, true, true, address(sourceTeller));
+        sourceTeller.addChain(layerZeroArbitrumEndpointId, true, true, address(sourceTeller), 1_000_000);
     }
 
     function testBridgingShares(uint96 sharesToBridge) external {
@@ -114,7 +114,6 @@ contract LayerZeroTellerNoMockTest is Test, MerkleTreeHelper {
         // Get fee.
         address to = vm.addr(1);
         uint256 fee = sourceTeller.previewFee(sharesToBridge, to, abi.encode(layerZeroArbitrumEndpointId), NATIVE_ERC20);
-        console.log("Fee: ", fee);
         uint256 expectedFee = 1e18;
         sourceTeller.bridge{value: fee}(
             sharesToBridge, to, abi.encode(layerZeroArbitrumEndpointId), NATIVE_ERC20, expectedFee
