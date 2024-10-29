@@ -296,11 +296,20 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
             _calculateFeesOwed(state, newExchangeRate, currentExchangeRate, currentTotalShares, currentTime);
         }
 
-        state.exchangeRate = newExchangeRate;
+        newExchangeRate = _updateExchangeRate(newExchangeRate, state);
         state.totalSharesLastUpdate = uint128(currentTotalShares);
         state.lastUpdateTimestamp = currentTime;
 
         emit ExchangeRateUpdated(uint96(currentExchangeRate), newExchangeRate, currentTime);
+    }
+
+    function _updateExchangeRate(uint96 newExchangeRate, AccountantState storage state)
+        internal
+        virtual
+        returns (uint96)
+    {
+        state.exchangeRate = newExchangeRate;
+        return newExchangeRate;
     }
 
     /**
@@ -405,6 +414,28 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         }
     }
 
+    function _handleManagementFee(
+        AccountantState storage state,
+        uint96 newExchangeRate,
+        uint256 currentExchangeRate,
+        uint256 currentTotalShares,
+        uint64 currentTime
+    ) internal view returns (uint256 shareSupplyToUse, uint256 newFeesOwedInBase) {
+        shareSupplyToUse = currentTotalShares;
+        // Use the minimum between current total supply and total supply for last update.
+        if (state.totalSharesLastUpdate < shareSupplyToUse) {
+            shareSupplyToUse = state.totalSharesLastUpdate;
+        }
+
+        // Determine management fees owned.
+        uint256 timeDelta = currentTime - state.lastUpdateTimestamp;
+        uint256 minimumAssets = newExchangeRate > currentExchangeRate
+            ? shareSupplyToUse.mulDivDown(currentExchangeRate, ONE_SHARE)
+            : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
+        uint256 managementFeesAnnual = minimumAssets.mulDivDown(state.managementFee, 1e4);
+        newFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
+    }
+
     /**
      * @notice Calculate fees owed in base.
      * @dev This function will update the highwater mark if the new exchange rate is higher.
@@ -418,19 +449,8 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     ) internal virtual {
         // Only update fees if we are not paused.
         // Update fee accounting.
-        uint256 shareSupplyToUse = currentTotalShares;
-        // Use the minimum between current total supply and total supply for last update.
-        if (state.totalSharesLastUpdate < shareSupplyToUse) {
-            shareSupplyToUse = state.totalSharesLastUpdate;
-        }
-
-        // Determine management fees owned.
-        uint256 timeDelta = currentTime - state.lastUpdateTimestamp;
-        uint256 minimumAssets = newExchangeRate > currentExchangeRate
-            ? shareSupplyToUse.mulDivDown(currentExchangeRate, ONE_SHARE)
-            : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
-        uint256 managementFeesAnnual = minimumAssets.mulDivDown(state.managementFee, 1e4);
-        uint256 newFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
+        (uint256 shareSupplyToUse, uint256 newFeesOwedInBase) =
+            _handleManagementFee(state, newExchangeRate, currentExchangeRate, currentTotalShares, currentTime);
 
         // Account for performance fees.
         if (newExchangeRate > state.highwaterMark) {

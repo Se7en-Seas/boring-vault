@@ -86,41 +86,18 @@ contract AccountantWithFixedRate is AccountantWithRateProviders {
 
     // ========================================= UPDATE EXCHANGE RATE/FEES/YIELD FUNCTIONS =========================================
 
-    /**
-     * @notice Updates this contract exchangeRate.
-     * @dev If new exchange rate is outside of accepted bounds, or if not enough time has passed, this
-     *      will pause the contract, and this function will NOT calculate fees owed.
-     * @dev Callable by UPDATE_EXCHANGE_RATE_ROLE.
-     */
-    function updateExchangeRate(uint96 newExchangeRate) external override requiresAuth {
-        AccountantState storage state = accountantState;
-        if (state.isPaused) revert AccountantWithRateProviders__Paused();
-        uint64 currentTime = uint64(block.timestamp);
-        uint256 currentExchangeRate = state.exchangeRate;
-        uint256 currentTotalShares = vault.totalSupply();
-        if (
-            currentTime < state.lastUpdateTimestamp + state.minimumUpdateDelayInSeconds
-                || newExchangeRate > currentExchangeRate.mulDivDown(state.allowedExchangeRateChangeUpper, 1e4)
-                || newExchangeRate < currentExchangeRate.mulDivDown(state.allowedExchangeRateChangeLower, 1e4)
-        ) {
-            // Instead of reverting, pause the contract. This way the exchange rate updater is able to update the exchange rate
-            // to a better value, and pause it.
-            state.isPaused = true;
-        } else {
-            _calculateFeesOwed(state, newExchangeRate, currentExchangeRate, currentTotalShares, currentTime);
-        }
-
-        // Exchange rate can not go above fixed exchange rate.
+    function _updateExchangeRate(uint96 newExchangeRate, AccountantState storage state)
+        internal
+        override
+        returns (uint96)
+    {
         if (newExchangeRate < fixedExchangeRate) {
             state.exchangeRate = newExchangeRate;
         } else {
-            // state.exchangeRate = fixedExchangeRate; // TODO does this bork tests
+            state.exchangeRate = fixedExchangeRate;
             newExchangeRate = fixedExchangeRate;
         }
-        state.totalSharesLastUpdate = uint128(currentTotalShares);
-        state.lastUpdateTimestamp = currentTime;
-
-        emit ExchangeRateUpdated(uint96(currentExchangeRate), newExchangeRate, currentTime);
+        return newExchangeRate;
     }
 
     /**
@@ -173,19 +150,8 @@ contract AccountantWithFixedRate is AccountantWithRateProviders {
     ) internal override {
         // Only update fees if we are above the fixed rate.
         if (newExchangeRate > fixedExchangeRate) {
-            uint256 shareSupplyToUse = currentTotalShares;
-            // Use the minimum between current total supply and total supply for last update.
-            if (state.totalSharesLastUpdate < shareSupplyToUse) {
-                shareSupplyToUse = state.totalSharesLastUpdate;
-            }
-
-            // Determine management fees owned.
-            uint256 timeDelta = currentTime - state.lastUpdateTimestamp;
-            uint256 minimumAssets = newExchangeRate > currentExchangeRate
-                ? shareSupplyToUse.mulDivDown(currentExchangeRate, ONE_SHARE)
-                : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
-            uint256 managementFeesAnnual = minimumAssets.mulDivDown(state.managementFee, 1e4);
-            uint256 newFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
+            (uint256 shareSupplyToUse, uint256 newFeesOwedInBase) =
+                _handleManagementFee(state, newExchangeRate, currentExchangeRate, currentTotalShares, currentTime);
 
             // Account for performance fees.
             uint256 changeInExchangeRate = newExchangeRate - fixedExchangeRate;
@@ -193,11 +159,11 @@ contract AccountantWithFixedRate is AccountantWithRateProviders {
             if (state.performanceFee > 0) {
                 uint256 performanceFeesOwedInBase = yieldEarnedInBase.mulDivDown(state.performanceFee, 1e4);
                 newFeesOwedInBase += performanceFeesOwedInBase;
-                if (yieldEarnedInBase < newFeesOwedInBase) {
-                    revert AccountantWithFixedRate__FeesResultInRateBelowFixed();
-                }
-                yieldEarnedInBase -= newFeesOwedInBase;
             }
+            if (yieldEarnedInBase < newFeesOwedInBase) {
+                revert AccountantWithFixedRate__FeesResultInRateBelowFixed();
+            }
+            yieldEarnedInBase -= newFeesOwedInBase;
             // We intentionally do not update highwater mark since this is a fixed rate accountant.
             // state.highwaterMark = newExchangeRate;
 
