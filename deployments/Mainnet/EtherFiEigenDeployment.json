@@ -27,7 +27,7 @@
   "core": {
     "AccountantWithRateProviders": "0x075e60550C6f77f430B284E76aF699bC31651f75",
     "BoringVault": "0xE77076518A813616315EaAba6cA8e595E845EeE9",
-    "DecoderAndSanitizer": "0x0De55435028D904e1af8Ec58C2f86DF2c4d32f2a",
+    "DecoderAndSanitizer": "0xb7Dd199ABE801cC4985B60B8B1365264Eb31ad26",
     "DelayedWithdraw": "0xc552Eb7b5892521f55C2a430083B1E5dd63C839a",
     "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
     "ManagerWithMerkleVerification": "0x354ade0382EEC1BF0a444339ABc82931457C2c0e",
