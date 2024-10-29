@@ -238,7 +238,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         // ========================== Fluid fToken ==========================
         _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fUSDC"));
         _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fUSDT"));
-        // _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fGHO"));
+        _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fGHO"));
 
         // ========================== Compound V3 ==========================
         ERC20[] memory collateralAssets = new ERC20[](0);
