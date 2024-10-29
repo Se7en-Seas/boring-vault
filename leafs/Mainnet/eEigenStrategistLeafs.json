@@ -98,7 +98,7 @@
       "AddressArguments": ["0xE77076518A813616315EaAba6cA8e595E845EeE9"],
       "CanSendValue": false,
       "DecoderAndSanitizerAddress": "0xb7Dd199ABE801cC4985B60B8B1365264Eb31ad26",
-      "Description": "Process claim for EIGEN",
+      "Description": "Process claim for EIGEN Rewards",
       "FunctionSelector": "0x3ccc861d",
       "FunctionSignature": "processClaim((uint32,uint32,bytes,(address,bytes32),uint32[],bytes[],(address,uint256)[]),address)",
       "LeafDigest": "0x58c61bd1b2d6417627c58d61344f9933b0642ffc6343d205e81438a1d137bea3",

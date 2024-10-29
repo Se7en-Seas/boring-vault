@@ -1,0 +1,49 @@
+{
+  "metadata": {
+    "AccountantAddress": "0x075e60550C6f77f430B284E76aF699bC31651f75",
+    "BoringVaultAddress": "0xE77076518A813616315EaAba6cA8e595E845EeE9",
+    "DecoderAndSanitizerAddress": "0xb7Dd199ABE801cC4985B60B8B1365264Eb31ad26",
+    "DigestComposition": [
+      "Bytes20(DECODER_AND_SANITIZER_ADDRESS)",
+      "Bytes20(TARGET_ADDRESS)",
+      "Bytes1(CAN_SEND_VALUE)",
+      "Bytes4(TARGET_FUNCTION_SELECTOR)",
+      "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)"
+    ],
+    "LeafCount": 1,
+    "ManageRoot": "0x4cab2cd57f7cbefc26efbe57eadbd570032ba4b319911397eede80b39e893d3a",
+    "ManagerAddress": "0x354ade0382EEC1BF0a444339ABc82931457C2c0e",
+    "TreeCapacity": 2
+  },
+  "leafs": [
+    {
+      "AddressArguments": ["0x7750d328b314EfFa365A0402CcfD489B80B0adda"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0xb7Dd199ABE801cC4985B60B8B1365264Eb31ad26",
+      "Description": "Execute generic call from ITB Position Manager",
+      "FunctionSelector": "0xb61d27f6",
+      "FunctionSignature": "execute(address,uint256,bytes)",
+      "LeafDigest": "0xf2e827e1dbba717d588d8d837e46252982329c58fd384f1baea462a4a9040eac",
+      "PackedArgumentAddresses": "0x7750d328b314effa365a0402ccfd489b80b0adda",
+      "TargetAddress": "0xb814C334748dc8D12145b009020e2783624c0775"
+    },
+    {
+      "AddressArguments": [],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
+      "Description": "",
+      "FunctionSelector": "0xc5d24601",
+      "FunctionSignature": "",
+      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+      "PackedArgumentAddresses": "0x",
+      "TargetAddress": "0x0000000000000000000000000000000000000000"
+    }
+  ],
+  "MerkleTree": {
+    "0": ["0x4cab2cd57f7cbefc26efbe57eadbd570032ba4b319911397eede80b39e893d3a"],
+    "1": [
+      "0xf2e827e1dbba717d588d8d837e46252982329c58fd384f1baea462a4a9040eac",
+      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400"
+    ]
+  }
+}

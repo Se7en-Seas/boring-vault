@@ -46,6 +46,15 @@ contract BoringDroneTest is Test, MerkleTreeHelper {
         // assertEq(address(this).balance, 1 ether, "Test contract should have received 1 ETH.");
     }
 
+    function testHunch() external view {
+        bytes memory setClaimerForData =
+            abi.encodeWithSignature("setClaimerFor(address)", 0xE77076518A813616315EaAba6cA8e595E845EeE9);
+        bytes memory callData = abi.encodeWithSignature(
+            "execute(address,uint256,bytes)", 0x7750d328b314EfFa365A0402CcfD489B80B0adda, 0, setClaimerForData
+        );
+        console.logBytes(callData);
+    }
+
     // ========================================= HELPER FUNCTIONS =========================================
 
     receive() external payable {}
