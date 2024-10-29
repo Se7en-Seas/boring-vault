@@ -624,6 +624,25 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
 
         _addPancakeSwapV3Leafs(leafs, token0, token1);
 
+        // ========================== Reclamation ==========================
+        {
+            address reclamationDecoder = 0xd7335170816912F9D06e23d23479589ed63b3c33;
+            address target = 0x9c62cB41eACe893E5cc72C0C933E14B299C520A8;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0xa6c9A887F5Ae28A70E457178AABDd153859B572b;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0x9e7f6dC1d0Ec371a1e5d918f1f8f120f1B1DD00c;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0x5036E6D1019BF07589574446C2b3f57B8FeB895F;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0xb9df565c8456d7F40f61c7E83aF9F9B31F25b30c;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0x1bc7694b92AE221E7d3d775BaDe5C4e1C996d69B;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0x78Dbb5495044779562A584F133C2eca0B8e349ba;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+        }
+
         _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
