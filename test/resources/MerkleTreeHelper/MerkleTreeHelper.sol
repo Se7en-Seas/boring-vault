@@ -376,6 +376,90 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
     }
 
+    function _addLeafsForCurveSwapping3Pool(ManageLeaf[] memory leafs, address curvePool) internal {
+        CurvePool pool = CurvePool(curvePool);
+        ERC20 coins0 = ERC20(pool.coins(0));
+        ERC20 coins1 = ERC20(pool.coins(1));
+        ERC20 coins2 = ERC20(pool.coins(2));
+        // Approvals.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(coins0),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat(
+                "Approve Curve ",
+                coins0.symbol(),
+                "/",
+                coins1.symbol(),
+                "/",
+                coins2.symbol(),
+                " pool to spend ",
+                coins0.symbol()
+            ),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = curvePool;
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(coins1),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat(
+                "Approve Curve ",
+                coins0.symbol(),
+                "/",
+                coins1.symbol(),
+                "/",
+                coins2.symbol(),
+                " pool to spend ",
+                coins1.symbol()
+            ),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = curvePool;
+
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(coins2),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat(
+                "Approve Curve ",
+                coins0.symbol(),
+                "/",
+                coins1.symbol(),
+                "/",
+                coins2.symbol(),
+                " pool to spend ",
+                coins2.symbol()
+            ),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = curvePool;
+        // Swapping.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            curvePool,
+            false,
+            "exchange(int128,int128,uint256,uint256)",
+            new address[](0),
+            string.concat("Swap using Curve ", coins0.symbol(), "/", coins1.symbol(), "/", coins2.symbol(), " pool"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+    }
+
     // ========================================= Usual Money =========================================
 
     function _addUsualMoneyLeafs(ManageLeaf[] memory leafs) internal {
@@ -3595,7 +3679,9 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         address strategy,
         address _strategyManager,
         address _delegationManager,
-        address operator
+        address operator,
+        address rewardsContract,
+        address claimerFor
     ) internal {
         // Approvals.
         unchecked {
@@ -3681,6 +3767,37 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             "undelegate(address)",
             new address[](1),
             string.concat("Undelegate from ", vm.toString(operator)),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+
+        // Handle reward claiming.
+        if (claimerFor != address(0)) {
+            // Add setClaimerFor leaf.
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                rewardsContract,
+                false,
+                "setClaimerFor(address)",
+                new address[](1),
+                string.concat("Set rewards claimer to ", vm.toString(claimerFor)),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = claimerFor;
+        }
+
+        // Add processClaim leaf.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            rewardsContract,
+            false,
+            "processClaim((uint32,uint32,bytes,(address,bytes32),uint32[],bytes[],(address,uint256)[]),address)",
+            new address[](1),
+            string.concat("Process claim for ", ERC20(lst).symbol()),
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
@@ -5148,6 +5265,49 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[3] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Reclamation =========================================
+
+    function _addReclamationLeafs(ManageLeaf[] memory leafs, address target, address reclamationDecoder) internal {
+        /// @notice These leafs are generic, in that they are allowing any execturo address to be removed, and any asset to be withdrawn
+        /// BACK to the boring vault.
+        // Add in generic `removeExecutor(address executor)` leaf.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            target,
+            false,
+            "removeExecutor(address)",
+            new address[](0),
+            string.concat("Remove any executor from ", vm.toString(target)),
+            reclamationDecoder
+        );
+        // Add in generic `withdraw(address asset, uint256 amount)` and generic `withdrawAll(address asset)` leafs.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            target,
+            false,
+            "withdraw(address,uint256)",
+            new address[](0),
+            string.concat("Withdraw any asset from ", vm.toString(target)),
+            reclamationDecoder
+        );
+
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            target,
+            false,
+            "withdrawAll(address)",
+            new address[](0),
+            string.concat("Withdraw all of any asset from ", vm.toString(target)),
+            reclamationDecoder
+        );
+    }
+
     // ========================================= Puppet =========================================
 
     function _createPuppetLeafs(ManageLeaf[] memory leafs, address puppet)
@@ -5266,6 +5426,101 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
 
         // Change boringVault address back to original.
         setAddress(true, sourceChain, "boringVault", boringVault);
+    }
+
+    // ========================================= Term Finance =========================================
+    // TODO need to use this in the test suite.
+    function _addTermFinanceLockOfferLeafs(ManageLeaf[] memory leafs, ERC20[] memory purchaseTokens, address[] memory termAuctionOfferLockerAddresses, address[] memory termRepoLockers)
+        internal
+    {
+        for (uint256 i; i < purchaseTokens.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                    address(purchaseTokens[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Term Repo Locker to spend ", purchaseTokens[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+            leafs[leafIndex].argumentAddresses[0] = termRepoLockers[i];
+            tokenToSpenderToApprovalInTree[address(purchaseTokens[i])][termRepoLockers[i]] = true;
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                    termAuctionOfferLockerAddresses[i],
+                    false,
+                    "lockOffers((bytes32,address,bytes32,uint256,address)[])",
+                    new address[](2),
+                    string.concat("Submit offer submission to offer locker ", vm.toString(termAuctionOfferLockerAddresses[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[1] = address(purchaseTokens[i]);
+        }
+    }
+
+    // TODO need to use this in the test suite.
+    function _addTermFinanceUnlockOfferLeafs(ManageLeaf[] memory leafs, address[] memory termAuctionOfferLockerAddresses)
+        internal
+    {
+        for (uint256 i; i < termAuctionOfferLockerAddresses.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+        
+            leafs[leafIndex] = ManageLeaf(
+                    termAuctionOfferLockerAddresses[i],
+                    false,
+                    "unlockOffers(bytes32[])",
+                    new address[](0),
+                    string.concat("Unlock existing offer from offer locker ", vm.toString(termAuctionOfferLockerAddresses[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+        }
+    }
+
+    // TODO need to use this in the test suite.
+    function _addTermFinanceRevealOfferLeafs(ManageLeaf[] memory leafs, address[] memory termAuctionOfferLockerAddresses)
+        internal
+    {
+        for (uint256 i; i < termAuctionOfferLockerAddresses.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                    termAuctionOfferLockerAddresses[i],
+                    false,
+                    "revealOffers(bytes32[],uint256[],uint256[])",
+                    new address[](0),
+                    string.concat("Unlock existing offer from offer locker ", vm.toString(termAuctionOfferLockerAddresses[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+        }
+    }
+
+    // TODO need to use this in the test suite.
+    function _addTermFinanceRedeemTermRepoTokensLeafs(ManageLeaf[] memory leafs, address[] memory termRepoServicers)
+        internal
+    {
+        for (uint256 i; i < termRepoServicers.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                    termRepoServicers[i],
+                    false,
+                    "redeemTermRepoTokens(address,uint256)",
+                    new address[](1),
+                    string.concat("Redeem TermRepo Tokens from servicer ", vm.toString(termRepoServicers[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        }
+
     }
 
     // ========================================= BoringVault Teller =========================================

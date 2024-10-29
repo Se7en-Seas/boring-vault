@@ -49,13 +49,22 @@ contract CreateEtherFiEigenMerkleRootScript is Script, MerkleTreeHelper {
             getAddress(sourceChain, "eigenStrategy"),
             getAddress(sourceChain, "strategyManager"),
             getAddress(sourceChain, "delegationManager"),
-            getAddress(sourceChain, "eEigenOperator")
+            getAddress(sourceChain, "eEigenOperator"),
+            getAddress(sourceChain, "eigenRewards"),
+            address(0)
         );
 
         // ========================== ITB Eigen ==========================
         _addLeafsForITBEigenLayerPositionManager(
             leafs, itbEigenPositionManager, getERC20(sourceChain, "EIGEN"), getAddress(sourceChain, "strategyManager")
         );
+
+        // ========================== Reclamation ==========================
+        {
+            address reclamationDecoder = 0xd7335170816912F9D06e23d23479589ed63b3c33;
+            address target = 0xb814C334748dc8D12145b009020e2783624c0775;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+        }
 
         _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
 

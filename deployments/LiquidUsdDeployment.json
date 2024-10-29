@@ -5,6 +5,7 @@
       "rateProvider": "0x0000000000000000000000000000000000000000"
     }
   },
+  "Drones": "",
   "WithdrawAssets": {
     "DAI": {
       "CompletionWindow": 604800,
@@ -44,7 +45,7 @@
   "core": {
     "AccountantWithRateProviders": "0xc315D6e14DDCDC7407784e2Caf815d131Bc1D3E7",
     "BoringVault": "0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C",
-    "DecoderAndSanitizer": "0x96B0d32c5F8C15Ee7B4aaF19a7F92809a8c9eDeD",
+    "DecoderAndSanitizer": "0xF8e9517e7e98D7134E306aD3747A50AC8dC1dbc9",
     "DelayedWithdraw": "0x8C09C81736d7630E91F4c630aF63C7f6CC8c1e40",
     "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
     "ManagerWithMerkleVerification": "0xcFF411d5C54FE0583A984beE1eF43a4776854B9A",

@@ -16,7 +16,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
 
     address public boringVault = 0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C;
     // address public rawDataDecoderAndSanitizer = 0x96B0d32c5F8C15Ee7B4aaF19a7F92809a8c9eDeD;
-    address public rawDataDecoderAndSanitizer = 0xDfe6f90a5b4936a5e15255837B66fd4B4F246286;
+    address public rawDataDecoderAndSanitizer = 0xF8e9517e7e98D7134E306aD3747A50AC8dC1dbc9;
     address public symbioticDecoderAndSanitizer = 0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781;
     address public pancakeSwapDataDecoderAndSanitizer = 0x47F62174e7A8EF939d8525C9670025d19DeFd821;
     address public managerAddress = 0xcFF411d5C54FE0583A984beE1eF43a4776854B9A;
@@ -600,6 +600,17 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "ksUSDe"));
         _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kUSDe"));
 
+        // ========================== Term ==========================
+        {
+            ERC20[] memory purchaseTokens = new ERC20[](1);
+            purchaseTokens[0] = getERC20(sourceChain, "USDC");
+            address[] memory termAuctionOfferLockerAddresses = new address[](1);
+            termAuctionOfferLockerAddresses[0] = 0x1C43Fd40211b1f7B6E6F5CE9ffe8a75f647e7cFf;
+            address[] memory termRepoLockers = new address[](1);
+            termRepoLockers[0] = 0x7021471b9d32904D71Fa1E5011E323c4065946e2;
+            _addTermFinanceLockOfferLeafs(leafs, purchaseTokens, termAuctionOfferLockerAddresses, termRepoLockers);
+        }
+
         // ========================== SYMBIOTIC ==========================
         setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", symbioticDecoderAndSanitizer);
         address[] memory defaultCollaterals = new address[](1);
@@ -637,6 +648,25 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         token1[9] = getAddress(sourceChain, "SUSDE");
 
         _addPancakeSwapV3Leafs(leafs, token0, token1);
+
+        // ========================== Reclamation ==========================
+        {
+            address reclamationDecoder = 0xd7335170816912F9D06e23d23479589ed63b3c33;
+            address target = 0x9c62cB41eACe893E5cc72C0C933E14B299C520A8;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0xa6c9A887F5Ae28A70E457178AABDd153859B572b;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0x9e7f6dC1d0Ec371a1e5d918f1f8f120f1B1DD00c;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0x5036E6D1019BF07589574446C2b3f57B8FeB895F;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0xb9df565c8456d7F40f61c7E83aF9F9B31F25b30c;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0x1bc7694b92AE221E7d3d775BaDe5C4e1C996d69B;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0x78Dbb5495044779562A584F133C2eca0B8e349ba;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+        }
 
         _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
 

@@ -37,9 +37,9 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        leafIndex = 0;
+        leafIndex = type(uint256).max;
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](256);
+        ManageLeaf[] memory leafs = new ManageLeaf[](512);
 
         // ========================== Aave V3 ==========================
         ERC20[] memory supplyAssets = new ERC20[](1);
@@ -61,13 +61,19 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
         _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWBTCV3")), getAddress(sourceChain, "sdWBTCV3"));
 
         // ========================== UniswapV3 ==========================
-        address[] memory token0 = new address[](2);
+        address[] memory token0 = new address[](5);
         token0[0] = getAddress(sourceChain, "WBTC");
         token0[1] = getAddress(sourceChain, "WBTC");
+        token0[2] = getAddress(sourceChain, "WBTC");
+        token0[3] = getAddress(sourceChain, "WBTC");
+        token0[4] = getAddress(sourceChain, "eBTC");
 
-        address[] memory token1 = new address[](2);
+        address[] memory token1 = new address[](5);
         token1[0] = getAddress(sourceChain, "LBTC");
         token1[1] = getAddress(sourceChain, "cbBTC");
+        token1[2] = getAddress(sourceChain, "eBTC");
+        token1[3] = getAddress(sourceChain, "LBTC");
+        token1[4] = getAddress(sourceChain, "LBTC");
 
         _addUniswapV3Leafs(leafs, token0, token1);
 
@@ -113,6 +119,13 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== Curve ==========================
         _addCurveLeafs(leafs, getAddress(sourceChain, "lBTC_wBTC_Curve_Pool"), 2, address(0));
+        _addCurveLeafs(
+            leafs,
+            getAddress(sourceChain, "eBTC_LBTC_WBTC_Curve_Pool"),
+            3,
+            getAddress(sourceChain, "eBTC_LBTC_WBTC_Curve_Gauge")
+        );
+        _addLeafsForCurveSwapping3Pool(leafs, getAddress(sourceChain, "eBTC_LBTC_WBTC_Curve_Pool"));
 
         // ========================== Convex ==========================
         // _addConvexLeafs(leafs, getERC20(sourceChain, "lBTC_wBTC_Curve_Pool"), CONVEX_REWARDS_CONTRACT);
@@ -142,6 +155,9 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "Re7WBTC")));
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "gauntletWBTCcore")));
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "MCwBTC")));
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "Re7cbBTC")));
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "gauntletCbBTCcore")));
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "MCcbBTC")));
 
         // ========================== Gearbox ==========================
         _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWBTCV3")), getAddress(sourceChain, "sdWBTCV3"));
