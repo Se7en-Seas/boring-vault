@@ -58,7 +58,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     /**
      * @notice The deposit nonce used to map to a deposit hash.
      */
-    uint96 public depositNonce = 1;
+    uint96 public depositNonce;
 
     /**
      * @notice After deposits, shares are locked to the msg.sender's address
@@ -114,6 +114,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     error TellerWithMultiAssetSupport__Paused();
     error TellerWithMultiAssetSupport__TransferDenied(address from, address to, address operator);
     error TellerWithMultiAssetSupport__SharePremiumTooLarge();
+    error TellerWithMultiAssetSupport__CannotDepositNative();
 
     //============================== EVENTS ===============================
 
@@ -138,6 +139,16 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     event AllowFrom(address indexed user);
     event AllowTo(address indexed user);
     event AllowOperator(address indexed user);
+
+    // =============================== MODIFIERS ===============================
+
+    /**
+     * @notice Reverts if the deposit asset is the native asset.
+     */
+    modifier revertOnNativeDeposit(address depositAsset) {
+        if (depositAsset == NATIVE) revert TellerWithMultiAssetSupport__CannotDepositNative();
+        _;
+    }
 
     //============================== IMMUTABLES ===============================
 
@@ -367,25 +378,25 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         nonReentrant
         returns (uint256 shares)
     {
-        if (isPaused) revert TellerWithMultiAssetSupport__Paused();
-        Asset memory asset = assetData[depositAsset];
-        if (!asset.allowDeposits) revert TellerWithMultiAssetSupport__AssetNotSupported();
+        Asset memory asset = _beforeDeposit(depositAsset);
 
+        address from;
         if (address(depositAsset) == NATIVE) {
             if (msg.value == 0) revert TellerWithMultiAssetSupport__ZeroAssets();
             nativeWrapper.deposit{value: msg.value}();
+            // Set depositAmount to msg.value.
             depositAmount = msg.value;
-            shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(nativeWrapper));
-            shares = asset.sharePremium > 0 ? shares.mulDivDown(1e4 - asset.sharePremium, 1e4) : shares;
-            if (shares < minimumMint) revert TellerWithMultiAssetSupport__MinimumMintNotMet();
-            // `from` is address(this) since user already sent value.
             nativeWrapper.safeApprove(address(vault), depositAmount);
-            vault.enter(address(this), nativeWrapper, depositAmount, msg.sender, shares);
+            // Update depositAsset to nativeWrapper.
+            depositAsset = nativeWrapper;
+            // Set from to this address since user transferred value.
+            from = address(this);
         } else {
             if (msg.value > 0) revert TellerWithMultiAssetSupport__DualDeposit();
-            shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender, asset);
+            from = msg.sender;
         }
 
+        shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, from, msg.sender, asset);
         _afterPublicDeposit(msg.sender, depositAsset, depositAmount, shares, shareLockPeriod);
     }
 
@@ -401,19 +412,12 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public requiresAuth nonReentrant returns (uint256 shares) {
-        if (isPaused) revert TellerWithMultiAssetSupport__Paused();
-        Asset memory asset = assetData[depositAsset];
-        if (!asset.allowDeposits) revert TellerWithMultiAssetSupport__AssetNotSupported();
+    ) public requiresAuth nonReentrant revertOnNativeDeposit(address(depositAsset)) returns (uint256 shares) {
+        Asset memory asset = _beforeDeposit(depositAsset);
 
-        try depositAsset.permit(msg.sender, address(vault), depositAmount, deadline, v, r, s) {}
-        catch {
-            if (depositAsset.allowance(msg.sender, address(vault)) < depositAmount) {
-                revert TellerWithMultiAssetSupport__PermitFailedAndAllowanceTooLow();
-            }
-        }
-        shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender, asset);
+        _handlePermit(depositAsset, depositAmount, deadline, v, r, s);
 
+        shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender, msg.sender, asset);
         _afterPublicDeposit(msg.sender, depositAsset, depositAmount, shares, shareLockPeriod);
     }
 
@@ -428,11 +432,9 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         nonReentrant
         returns (uint256 shares)
     {
-        if (isPaused) revert TellerWithMultiAssetSupport__Paused();
-        Asset memory asset = assetData[depositAsset];
-        if (!asset.allowDeposits) revert TellerWithMultiAssetSupport__AssetNotSupported();
+        Asset memory asset = _beforeDeposit(depositAsset);
 
-        shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, to, asset);
+        shares = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender, to, asset);
         emit BulkDeposit(address(depositAsset), depositAmount);
     }
 
@@ -465,6 +467,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         ERC20 depositAsset,
         uint256 depositAmount,
         uint256 minimumMint,
+        address from,
         address to,
         Asset memory asset
     ) internal returns (uint256 shares) {
@@ -472,7 +475,16 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         shares = depositAmount.mulDivDown(ONE_SHARE, accountant.getRateInQuoteSafe(depositAsset));
         shares = asset.sharePremium > 0 ? shares.mulDivDown(1e4 - asset.sharePremium, 1e4) : shares;
         if (shares < minimumMint) revert TellerWithMultiAssetSupport__MinimumMintNotMet();
-        vault.enter(msg.sender, depositAsset, depositAmount, to, shares);
+        vault.enter(from, depositAsset, depositAmount, to, shares);
+    }
+
+    /**
+     * @notice Handle pre-deposit checks.
+     */
+    function _beforeDeposit(ERC20 depositAsset) internal view returns (Asset memory asset) {
+        if (isPaused) revert TellerWithMultiAssetSupport__Paused();
+        asset = assetData[depositAsset];
+        if (!asset.allowDeposits) revert TellerWithMultiAssetSupport__AssetNotSupported();
     }
 
     /**
@@ -485,12 +497,29 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
         uint256 shares,
         uint256 currentShareLockPeriod
     ) internal {
-        shareUnlockTime[user] = block.timestamp + currentShareLockPeriod;
-
-        uint256 nonce = depositNonce;
-        publicDepositHistory[nonce] =
-            keccak256(abi.encode(user, depositAsset, depositAmount, shares, block.timestamp, currentShareLockPeriod));
-        depositNonce++;
+        // Increment then assign as its slightly more gas efficient.
+        uint256 nonce = ++depositNonce;
+        // Only set share unlock time and history if share lock period is greater than 0.
+        if (currentShareLockPeriod > 0) {
+            shareUnlockTime[user] = block.timestamp + currentShareLockPeriod;
+            publicDepositHistory[nonce] = keccak256(
+                abi.encode(user, depositAsset, depositAmount, shares, block.timestamp, currentShareLockPeriod)
+            );
+        }
         emit Deposit(nonce, user, address(depositAsset), depositAmount, shares, block.timestamp, currentShareLockPeriod);
+    }
+
+    /**
+     * @notice Handle permit logic.
+     */
+    function _handlePermit(ERC20 depositAsset, uint256 depositAmount, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+        internal
+    {
+        try depositAsset.permit(msg.sender, address(vault), depositAmount, deadline, v, r, s) {}
+        catch {
+            if (depositAsset.allowance(msg.sender, address(vault)) < depositAmount) {
+                revert TellerWithMultiAssetSupport__PermitFailedAndAllowanceTooLow();
+            }
+        }
     }
 }

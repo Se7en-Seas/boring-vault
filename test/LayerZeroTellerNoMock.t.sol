@@ -211,9 +211,7 @@ contract LayerZeroTellerNoMockTest is Test, MerkleTreeHelper {
         vm.expectRevert(
             bytes(
                 abi.encodeWithSelector(
-                    CrossChainTellerWithGenericBridge
-                        .CrossChainTellerWithGenericBridge__CannotDepositWithNativeAndBridge
-                        .selector
+                    TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__CannotDepositNative.selector
                 )
             )
         );
