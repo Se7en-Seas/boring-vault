@@ -75,6 +75,11 @@ contract AccountantWithFixedRate is AccountantWithRateProviders {
 
     // ========================================= ADMIN FUNCTIONS =========================================
 
+    function setYieldDistributor(address yieldDistributor) external requiresAuth {
+        fixedRateAccountantState.yieldDistributor = yieldDistributor;
+        // TODO event
+    }
+
     function resetHighwaterMark() external view override requiresAuth {
         revert AccountantWithFixedRate__HighWaterMarkCannotChange();
     }
