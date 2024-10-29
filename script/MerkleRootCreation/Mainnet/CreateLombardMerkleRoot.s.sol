@@ -155,6 +155,7 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "Re7WBTC")));
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "gauntletWBTCcore")));
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "MCwBTC")));
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "Re7cbBTC")));
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "gauntletCbBTCcore")));
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "MCcbBTC")));
 
