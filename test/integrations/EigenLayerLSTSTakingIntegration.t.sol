@@ -123,6 +123,8 @@ contract EigenLayerLSTStakingIntegrationTest is Test, MerkleTreeHelper {
             getAddress(sourceChain, "mETHStrategy"),
             getAddress(sourceChain, "strategyManager"),
             getAddress(sourceChain, "delegationManager"),
+            address(0),
+            getAddress(sourceChain, "eigenRewards"),
             address(0)
         );
 
@@ -238,6 +240,8 @@ contract EigenLayerLSTStakingIntegrationTest is Test, MerkleTreeHelper {
             getAddress(sourceChain, "mETHStrategy"),
             getAddress(sourceChain, "strategyManager"),
             getAddress(sourceChain, "delegationManager"),
+            address(0),
+            getAddress(sourceChain, "eigenRewards"),
             address(0)
         );
 
@@ -352,7 +356,9 @@ contract EigenLayerLSTStakingIntegrationTest is Test, MerkleTreeHelper {
             getAddress(sourceChain, "mETHStrategy"),
             getAddress(sourceChain, "strategyManager"),
             getAddress(sourceChain, "delegationManager"),
-            getAddress(sourceChain, "testOperator")
+            getAddress(sourceChain, "testOperator"),
+            getAddress(sourceChain, "eigenRewards"),
+            address(0)
         );
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
