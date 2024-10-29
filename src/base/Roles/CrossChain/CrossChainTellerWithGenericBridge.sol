@@ -130,6 +130,9 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
 
     // ========================================= INTERNAL BRIDGE FUNCTIONS =========================================
 
+    /**
+     * @notice Implement the bridge logic.
+     */
     function _bridge(uint96 shareAmount, address to, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
         internal
     {
