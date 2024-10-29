@@ -105,7 +105,7 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
      * @param maxFee The maximum fee to pay the bridge.
      */
     function bridge(uint96 shareAmount, address to, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
-        public
+        external
         payable
         requiresAuth
         nonReentrant
