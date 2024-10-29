@@ -3782,7 +3782,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 false,
                 "setClaimerFor(address)",
                 new address[](1),
-                string.concat("Set claimer for ", ERC20(lst).symbol()),
+                string.concat("Set rewards claimer to ", vm.toString(claimerFor)),
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
             leafs[leafIndex].argumentAddresses[0] = claimerFor;
