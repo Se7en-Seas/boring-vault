@@ -143,7 +143,7 @@ contract LayerZeroTellerNoMockTest is Test, MerkleTreeHelper {
         vm.startPrank(user);
         WETH.approve(address(boringVault), depositAmount);
         sourceTeller.depositAndBridge{value: fee}(
-            WETH, depositAmount, 0, abi.encode(layerZeroArbitrumEndpointId), NATIVE_ERC20, fee
+            WETH, depositAmount, 0, user, abi.encode(layerZeroArbitrumEndpointId), NATIVE_ERC20, fee
         );
         vm.stopPrank();
     }
@@ -151,29 +151,37 @@ contract LayerZeroTellerNoMockTest is Test, MerkleTreeHelper {
     function testDepositAndBridgeWithPermit(uint256 amount) external {
         amount = bound(amount, 0.0001e18, 10_000e18);
 
-        uint256 userKey = 111;
-        address user = vm.addr(userKey);
-
+        address user;
         uint256 weETH_amount = amount.mulDivDown(1e18, IRateProvider(WEETH_RATE_PROVIDER).getRate());
-        deal(address(WEETH), user, weETH_amount);
-        // function sign(uint256 privateKey, bytes32 digest) external pure returns (uint8 v, bytes32 r, bytes32 s);
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                WEETH.DOMAIN_SEPARATOR(),
-                keccak256(
-                    abi.encode(
-                        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
-                        user,
-                        address(boringVault),
-                        weETH_amount,
-                        WEETH.nonces(user),
-                        block.timestamp
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+        {
+            uint256 userKey = 111;
+            user = vm.addr(userKey);
+
+            deal(address(WEETH), user, weETH_amount);
+            // function sign(uint256 privateKey, bytes32 digest) external pure returns (uint8 v, bytes32 r, bytes32 s);
+            bytes32 digest = keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    WEETH.DOMAIN_SEPARATOR(),
+                    keccak256(
+                        abi.encode(
+                            keccak256(
+                                "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+                            ),
+                            user,
+                            address(boringVault),
+                            weETH_amount,
+                            WEETH.nonces(user),
+                            block.timestamp
+                        )
                     )
                 )
-            )
-        );
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userKey, digest);
+            );
+            (v, r, s) = vm.sign(userKey, digest);
+        }
 
         deal(address(WEETH), user, weETH_amount);
         uint256 fee =
@@ -182,7 +190,17 @@ contract LayerZeroTellerNoMockTest is Test, MerkleTreeHelper {
 
         vm.startPrank(user);
         sourceTeller.depositAndBridgeWithPermit{value: fee}(
-            WEETH, weETH_amount, 0, block.timestamp, v, r, s, abi.encode(layerZeroArbitrumEndpointId), NATIVE_ERC20, fee
+            WEETH,
+            weETH_amount,
+            0,
+            block.timestamp,
+            v,
+            r,
+            s,
+            user,
+            abi.encode(layerZeroArbitrumEndpointId),
+            NATIVE_ERC20,
+            fee
         );
         vm.stopPrank();
     }
@@ -203,7 +221,9 @@ contract LayerZeroTellerNoMockTest is Test, MerkleTreeHelper {
                 )
             )
         );
-        sourceTeller.depositAndBridge(WETH, depositAmount, 0, abi.encode(layerZeroArbitrumEndpointId), NATIVE_ERC20, 0);
+        sourceTeller.depositAndBridge(
+            WETH, depositAmount, 0, user, abi.encode(layerZeroArbitrumEndpointId), NATIVE_ERC20, 0
+        );
         vm.stopPrank();
 
         // Trying to deposit with native asset should revert.
@@ -216,7 +236,7 @@ contract LayerZeroTellerNoMockTest is Test, MerkleTreeHelper {
             )
         );
         sourceTeller.depositAndBridge(
-            NATIVE_ERC20, depositAmount, 0, abi.encode(layerZeroArbitrumEndpointId), NATIVE_ERC20, 0
+            NATIVE_ERC20, depositAmount, 0, user, abi.encode(layerZeroArbitrumEndpointId), NATIVE_ERC20, 0
         );
         vm.stopPrank();
     }

@@ -37,6 +37,7 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
         ERC20 depositAsset,
         uint256 depositAmount,
         uint256 minimumMint,
+        address to,
         bytes calldata bridgeWildCard,
         ERC20 feeToken,
         uint256 maxFee
@@ -55,7 +56,7 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
 
         // Bridge shares
         if (sharesBridged > type(uint96).max) revert CrossChainTellerWithGenericBridge__UnsafeCastToUint96();
-        _bridge(uint96(sharesBridged), msg.sender, bridgeWildCard, feeToken, maxFee);
+        _bridge(uint96(sharesBridged), to, bridgeWildCard, feeToken, maxFee);
     }
 
     /**
@@ -74,6 +75,7 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
         uint8 v,
         bytes32 r,
         bytes32 s,
+        address to,
         bytes calldata bridgeWildCard,
         ERC20 feeToken,
         uint256 maxFee
@@ -86,14 +88,16 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
         returns (uint256 sharesBridged)
     {
         // Permit deposit
-        Asset memory asset = _beforeDeposit(depositAsset);
-        _handlePermit(depositAsset, depositAmount, deadline, v, r, s);
-        sharesBridged = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender, msg.sender, asset);
+        {
+            Asset memory asset = _beforeDeposit(depositAsset);
+            _handlePermit(depositAsset, depositAmount, deadline, v, r, s);
+            sharesBridged = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender, msg.sender, asset);
+        }
         _afterPublicDeposit(msg.sender, depositAsset, depositAmount, sharesBridged, shareLockPeriod);
 
         // Bridge shares
         if (sharesBridged > type(uint96).max) revert CrossChainTellerWithGenericBridge__UnsafeCastToUint96();
-        _bridge(uint96(sharesBridged), msg.sender, bridgeWildCard, feeToken, maxFee);
+        _bridge(uint96(sharesBridged), to, bridgeWildCard, feeToken, maxFee);
     }
 
     /**
