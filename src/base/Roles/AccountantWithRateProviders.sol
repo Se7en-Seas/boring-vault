@@ -253,7 +253,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      * @notice Reset the highwater mark to the current exchange rate.
      * @dev Callable by OWNER_ROLE.
      */
-    function resetHighwaterMark() external requiresAuth {
+    function resetHighwaterMark() external virtual requiresAuth {
         AccountantState storage state = accountantState;
 
         if (state.exchangeRate > state.highwaterMark) {
@@ -278,7 +278,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      *      will pause the contract, and this function will NOT calculate fees owed.
      * @dev Callable by UPDATE_EXCHANGE_RATE_ROLE.
      */
-    function updateExchangeRate(uint96 newExchangeRate) external requiresAuth {
+    function updateExchangeRate(uint96 newExchangeRate) external virtual requiresAuth {
         AccountantState storage state = accountantState;
         if (state.isPaused) revert AccountantWithRateProviders__Paused();
         uint64 currentTime = uint64(block.timestamp);
@@ -415,7 +415,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         uint256 currentExchangeRate,
         uint256 currentTotalShares,
         uint64 currentTime
-    ) internal {
+    ) internal virtual {
         // Only update fees if we are not paused.
         // Update fee accounting.
         uint256 shareSupplyToUse = currentTotalShares;
