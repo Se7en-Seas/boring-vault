@@ -62,7 +62,7 @@ contract AccountantWithFixedRate is AccountantWithRateProviders {
         uint16 allowedExchangeRateChangeUpper,
         uint16 allowedExchangeRateChangeLower,
         uint24 minimumUpdateDelayInSeconds,
-        uint16 managementFee,
+        uint16 platformFee,
         uint16 performanceFee
     )
         AccountantWithRateProviders(
@@ -74,7 +74,7 @@ contract AccountantWithFixedRate is AccountantWithRateProviders {
             allowedExchangeRateChangeUpper,
             allowedExchangeRateChangeLower,
             minimumUpdateDelayInSeconds,
-            managementFee,
+            platformFee,
             performanceFee
         )
     {
@@ -165,10 +165,10 @@ contract AccountantWithFixedRate is AccountantWithRateProviders {
         totalFeesOwedInBase = state.feesOwedInBase;
         if (!shouldPause) {
             if (newExchangeRate > fixedExchangeRate) {
-                (uint256 managementFeesOwedInBase, uint256 shareSupplyToUse) = _calculateManagementFee(
+                (uint256 platformFeesOwedInBase, uint256 shareSupplyToUse) = _calculatePlatformFee(
                     state.totalSharesLastUpdate,
                     state.lastUpdateTimestamp,
-                    state.managementFee,
+                    state.platformFee,
                     newExchangeRate,
                     currentExchangeRate,
                     currentTotalShares,
@@ -177,12 +177,12 @@ contract AccountantWithFixedRate is AccountantWithRateProviders {
 
                 (uint256 performanceFeesOwedInBase, uint256 yieldEarned) =
                     _calculatePerformanceFee(newExchangeRate, shareSupplyToUse, fixedExchangeRate, state.performanceFee);
-                if (yieldEarned < (managementFeesOwedInBase + performanceFeesOwedInBase)) {
-                    // This means that the management fee + performance fee is greater than or equal to the exchange rate appreciation,
-                    // so the management fee is forfeited, but yield and performance fees are still calculated.
+                if (yieldEarned < (platformFeesOwedInBase + performanceFeesOwedInBase)) {
+                    // This means that the platform fee + performance fee is greater than or equal to the exchange rate appreciation,
+                    // so the platform fee is forfeited, but yield and performance fees are still calculated.
                     newFeesOwedInBase = performanceFeesOwedInBase;
                 } else {
-                    newFeesOwedInBase = managementFeesOwedInBase + performanceFeesOwedInBase;
+                    newFeesOwedInBase = platformFeesOwedInBase + performanceFeesOwedInBase;
                 }
                 totalFeesOwedInBase += newFeesOwedInBase;
             }
@@ -214,8 +214,8 @@ contract AccountantWithFixedRate is AccountantWithRateProviders {
      * @dev We only update fees and yield earned if we are above the fixed rate.
      *      Because if we are below the fixed rate there is no yield, and no fees should
      *      be taken as the focus is on getting the rate back to the fixed rate.
-     * @dev If the management fee + performance fee is greater than or equal to the exchange rate appreciation,
-     *      then the management fee is forfeited, but yield and performance fees are still calculated.
+     * @dev If the platform fee + performance fee is greater than or equal to the exchange rate appreciation,
+     *      then the platform fee is forfeited, but yield and performance fees are still calculated.
      */
     function _calculateFeesOwed(
         AccountantState storage state,
@@ -226,11 +226,11 @@ contract AccountantWithFixedRate is AccountantWithRateProviders {
     ) internal override {
         // Only update fees if we are above the fixed rate.
         if (newExchangeRate > fixedExchangeRate) {
-            // Account for management fees.
-            (uint256 managementFeesOwedInBase, uint256 shareSupplyToUse) = _calculateManagementFee(
+            // Account for platform fees.
+            (uint256 platformFeesOwedInBase, uint256 shareSupplyToUse) = _calculatePlatformFee(
                 state.totalSharesLastUpdate,
                 state.lastUpdateTimestamp,
-                state.managementFee,
+                state.platformFee,
                 newExchangeRate,
                 currentExchangeRate,
                 currentTotalShares,
@@ -242,12 +242,12 @@ contract AccountantWithFixedRate is AccountantWithRateProviders {
                 _calculatePerformanceFee(newExchangeRate, shareSupplyToUse, fixedExchangeRate, state.performanceFee);
 
             uint256 feesOwedInBase;
-            if (yieldEarned < (managementFeesOwedInBase + performanceFeesOwedInBase)) {
-                // This means that the management fee + performance fee is greater than or equal to the exchange rate appreciation,
-                // so the management fee is forfeited, but yield and performance fees are still calculated.
+            if (yieldEarned < (platformFeesOwedInBase + performanceFeesOwedInBase)) {
+                // This means that the platform fee + performance fee is greater than or equal to the exchange rate appreciation,
+                // so the platform fee is forfeited, but yield and performance fees are still calculated.
                 feesOwedInBase = performanceFeesOwedInBase;
             } else {
-                feesOwedInBase = managementFeesOwedInBase + performanceFeesOwedInBase;
+                feesOwedInBase = platformFeesOwedInBase + performanceFeesOwedInBase;
             }
             // Since performance fees are a percentage of yield earned, we know this will never underflow.
             yieldEarned -= feesOwedInBase;

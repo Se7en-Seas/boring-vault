@@ -188,7 +188,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== UniswapV3 ==========================
         /**
-         * Full position management for USDC, USDT, DAI, USDe, sUSDe.
+         * Full position platform for USDC, USDT, DAI, USDe, sUSDe.
          */
         address[] memory token0 = new address[](10);
         token0[0] = getAddress(sourceChain, "USDC");
@@ -596,7 +596,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", pancakeSwapDataDecoderAndSanitizer);
 
         /**
-         * Full position management for USDC, USDT, DAI, USDe, sUSDe.
+         * Full position platform for USDC, USDT, DAI, USDe, sUSDe.
          */
         token0 = new address[](10);
         token0[0] = getAddress(sourceChain, "USDC");

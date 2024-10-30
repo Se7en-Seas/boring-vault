@@ -60,7 +60,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
         uint16 allowedExchangeRateChangeUpper;
         uint16 allowedExchangeRateChangeLower;
         uint24 minimumUpateDelayInSeconds;
-        uint16 managementFee;
+        uint16 platformFee;
         uint16 performanceFee;
         uint96 startingExchangeRate;
         ERC20 base;
@@ -204,7 +204,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     accountantParameters.allowedExchangeRateChangeUpper,
                     accountantParameters.allowedExchangeRateChangeLower,
                     accountantParameters.minimumUpateDelayInSeconds,
-                    accountantParameters.managementFee,
+                    accountantParameters.platformFee,
                     accountantParameters.performanceFee
                 );
                 accountant = AccountantWithRateProviders(
@@ -421,11 +421,11 @@ contract DeployArcticArchitecture is Script, ContractNames {
             }
             if (
                 !rolesAuthority.doesRoleHaveCapability(
-                    OWNER_ROLE, address(accountant), AccountantWithRateProviders.updateManagementFee.selector
+                    OWNER_ROLE, address(accountant), AccountantWithRateProviders.updatePlatformFee.selector
                 )
             ) {
                 rolesAuthority.setRoleCapability(
-                    OWNER_ROLE, address(accountant), AccountantWithRateProviders.updateManagementFee.selector, true
+                    OWNER_ROLE, address(accountant), AccountantWithRateProviders.updatePlatformFee.selector, true
                 );
             }
             if (
@@ -951,7 +951,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     "MinimumUpateDelayInSeconds",
                     accountantParameters.minimumUpateDelayInSeconds
                 );
-                vm.serializeUint(accountantConfiguration, "ManagementFee", accountantParameters.managementFee);
+                vm.serializeUint(accountantConfiguration, "PlatformFee", accountantParameters.platformFee);
                 vm.serializeUint(
                     accountantConfiguration, "StartingExchangeRate", accountantParameters.startingExchangeRate
                 );

@@ -27,7 +27,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      * @param isPaused whether or not this contract is paused
      * @param minimumUpdateDelayInSeconds the minimum amount of time that must pass between
      *        exchange rate updates, such that the update won't trigger the contract to be paused
-     * @param managementFee the management fee
+     * @param platformFee the platform fee
      * @param performanceFee the performance fee
      */
     struct AccountantState {
@@ -41,7 +41,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         uint64 lastUpdateTimestamp;
         bool isPaused;
         uint24 minimumUpdateDelayInSeconds;
-        uint16 managementFee;
+        uint16 platformFee;
         uint16 performanceFee;
     }
 
@@ -70,7 +70,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
 
     error AccountantWithRateProviders__UpperBoundTooSmall();
     error AccountantWithRateProviders__LowerBoundTooLarge();
-    error AccountantWithRateProviders__ManagementFeeTooLarge();
+    error AccountantWithRateProviders__PlatformFeeTooLarge();
     error AccountantWithRateProviders__PerformanceFeeTooLarge();
     error AccountantWithRateProviders__Paused();
     error AccountantWithRateProviders__ZeroFeesOwed();
@@ -85,7 +85,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     event DelayInSecondsUpdated(uint24 oldDelay, uint24 newDelay);
     event UpperBoundUpdated(uint16 oldBound, uint16 newBound);
     event LowerBoundUpdated(uint16 oldBound, uint16 newBound);
-    event ManagementFeeUpdated(uint16 oldFee, uint16 newFee);
+    event PlatformFeeUpdated(uint16 oldFee, uint16 newFee);
     event PerformanceFeeUpdated(uint16 oldFee, uint16 newFee);
     event PayoutAddressUpdated(address oldPayout, address newPayout);
     event RateProviderUpdated(address asset, bool isPegged, address rateProvider);
@@ -125,7 +125,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         uint16 allowedExchangeRateChangeUpper,
         uint16 allowedExchangeRateChangeLower,
         uint24 minimumUpdateDelayInSeconds,
-        uint16 managementFee,
+        uint16 platformFee,
         uint16 performanceFee
     ) Auth(_owner, Authority(address(0))) {
         base = ERC20(_base);
@@ -143,7 +143,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
             lastUpdateTimestamp: uint64(block.timestamp),
             isPaused: false,
             minimumUpdateDelayInSeconds: minimumUpdateDelayInSeconds,
-            managementFee: managementFee,
+            platformFee: platformFee,
             performanceFee: performanceFee
         });
     }
@@ -205,14 +205,14 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     }
 
     /**
-     * @notice Update the management fee to a new value.
+     * @notice Update the platform fee to a new value.
      * @dev Callable by OWNER_ROLE.
      */
-    function updateManagementFee(uint16 managementFee) external requiresAuth {
-        if (managementFee > 0.2e4) revert AccountantWithRateProviders__ManagementFeeTooLarge();
-        uint16 oldFee = accountantState.managementFee;
-        accountantState.managementFee = managementFee;
-        emit ManagementFeeUpdated(oldFee, managementFee);
+    function updatePlatformFee(uint16 platformFee) external requiresAuth {
+        if (platformFee > 0.2e4) revert AccountantWithRateProviders__PlatformFeeTooLarge();
+        uint16 oldFee = accountantState.platformFee;
+        accountantState.platformFee = platformFee;
+        emit PlatformFeeUpdated(oldFee, platformFee);
     }
 
     /**
@@ -411,10 +411,10 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         updateWillPause = shouldPause;
         totalFeesOwedInBase = state.feesOwedInBase;
         if (!shouldPause) {
-            (uint256 managementFeesOwedInBase, uint256 shareSupplyToUse) = _calculateManagementFee(
+            (uint256 platformFeesOwedInBase, uint256 shareSupplyToUse) = _calculatePlatformFee(
                 state.totalSharesLastUpdate,
                 state.lastUpdateTimestamp,
-                state.managementFee,
+                state.platformFee,
                 newExchangeRate,
                 currentExchangeRate,
                 currentTotalShares,
@@ -427,7 +427,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
                     newExchangeRate, shareSupplyToUse, state.highwaterMark, state.performanceFee
                 );
             }
-            newFeesOwedInBase = managementFeesOwedInBase + performanceFeesOwedInBase;
+            newFeesOwedInBase = platformFeesOwedInBase + performanceFeesOwedInBase;
             totalFeesOwedInBase += newFeesOwedInBase;
         }
     }
@@ -483,31 +483,31 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     }
 
     /**
-     * @notice Calculate management fees.
+     * @notice Calculate platform fees.
      */
-    function _calculateManagementFee(
+    function _calculatePlatformFee(
         uint128 totalSharesLastUpdate,
         uint64 lastUpdateTimestamp,
-        uint16 managementFee,
+        uint16 platformFee,
         uint96 newExchangeRate,
         uint256 currentExchangeRate,
         uint256 currentTotalShares,
         uint64 currentTime
-    ) internal view returns (uint256 managementFeesOwedInBase, uint256 shareSupplyToUse) {
+    ) internal view returns (uint256 platformFeesOwedInBase, uint256 shareSupplyToUse) {
         shareSupplyToUse = currentTotalShares;
         // Use the minimum between current total supply and total supply for last update.
         if (totalSharesLastUpdate < shareSupplyToUse) {
             shareSupplyToUse = totalSharesLastUpdate;
         }
 
-        // Determine management fees owned.
-        if (managementFee > 0) {
+        // Determine platform fees owned.
+        if (platformFee > 0) {
             uint256 timeDelta = currentTime - lastUpdateTimestamp;
             uint256 minimumAssets = newExchangeRate > currentExchangeRate
                 ? shareSupplyToUse.mulDivDown(currentExchangeRate, ONE_SHARE)
                 : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
-            uint256 managementFeesAnnual = minimumAssets.mulDivDown(managementFee, 1e4);
-            managementFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
+            uint256 platformFeesAnnual = minimumAssets.mulDivDown(platformFee, 1e4);
+            platformFeesOwedInBase = platformFeesAnnual.mulDivDown(timeDelta, 365 days);
         }
     }
 
@@ -540,10 +540,10 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     ) internal virtual {
         // Only update fees if we are not paused.
         // Update fee accounting.
-        (uint256 newFeesOwedInBase, uint256 shareSupplyToUse) = _calculateManagementFee(
+        (uint256 newFeesOwedInBase, uint256 shareSupplyToUse) = _calculatePlatformFee(
             state.totalSharesLastUpdate,
             state.lastUpdateTimestamp,
-            state.managementFee,
+            state.platformFee,
             newExchangeRate,
             currentExchangeRate,
             currentTotalShares,

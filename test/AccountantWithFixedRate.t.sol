@@ -40,7 +40,7 @@ contract AccountantWithFixedRateTest is Test, MerkleTreeHelper {
     address internal mantleLspStaking;
     address internal WEETH_RATE_PROVIDER;
 
-    uint16 managementFee = 0.01e4;
+    uint16 platformFee = 0.01e4;
     uint16 performanceFee = 0.2e4;
     address yieldDistributor = vm.addr(3);
 
@@ -72,7 +72,7 @@ contract AccountantWithFixedRateTest is Test, MerkleTreeHelper {
             6.05e4,
             0.95e4,
             1,
-            managementFee,
+            platformFee,
             performanceFee
         );
 
@@ -125,8 +125,8 @@ contract AccountantWithFixedRateTest is Test, MerkleTreeHelper {
 
         uint256 totalSupply = boringVault.totalSupply(); // Also equal to min assets since exchange rate started at 1e18.
         uint256 grossYield = uint256(firstUpdate - 1e18).mulDivDown(totalSupply, 1e18);
-        // Calculate management fee.
-        uint256 expectedFee = totalSupply.mulDivDown(managementFee, 1e4);
+        // Calculate platform fee.
+        uint256 expectedFee = totalSupply.mulDivDown(platformFee, 1e4);
         expectedFee = expectedFee.mulDivDown(firstDelay, 365 days);
 
         // Calculate performance fee.
@@ -184,7 +184,7 @@ contract AccountantWithFixedRateTest is Test, MerkleTreeHelper {
 
     // The fuzzing will create a variety of scenarios that would pause the accountant, and valid scenarios that would not.
     function testPreviewUpdateExchangeRate(uint96 newExchangeRate, uint256 delay) external {
-        accountant.updateManagementFee(0.01e4);
+        accountant.updatePlatformFee(0.01e4);
         accountant.updatePerformanceFee(0.2e4);
         newExchangeRate = uint96(bound(newExchangeRate, 0.998e18, 1.002e18));
         delay = bound(delay, 1 days / 8, 7 days); // 3 hours to 7 days
@@ -223,8 +223,8 @@ contract AccountantWithFixedRateTest is Test, MerkleTreeHelper {
     function testUpdateExchangeRateWhenFeesOutweighYieldEarned(uint96 newExchangeRate) external {
         newExchangeRate = uint96(bound(newExchangeRate, 1e18, 1.05e18));
 
-        // Update management fee to 10%.
-        accountant.updateManagementFee(0.1e4);
+        // Update platform fee to 10%.
+        accountant.updatePlatformFee(0.1e4);
 
         // Wait 1 year.
         skip(365 days);
@@ -234,7 +234,7 @@ contract AccountantWithFixedRateTest is Test, MerkleTreeHelper {
 
         (uint96 yieldEarned,) = accountant.fixedRateAccountantState();
 
-        // The management fee should be forfeited, but yield and performance fees should be calculated.
+        // The platform fee should be forfeited, but yield and performance fees should be calculated.
         uint256 totalSupply = boringVault.totalSupply(); // Also equal to min assets since exchange rate started at 1e18.
         uint256 grossYield = uint256(newExchangeRate - 1e18).mulDivDown(totalSupply, 1e18);
         uint256 expectedFee = grossYield.mulDivDown(performanceFee, 1e4);
@@ -251,7 +251,7 @@ contract AccountantWithFixedRateTest is Test, MerkleTreeHelper {
 
         // Set the fees to 0.
         accountant.updatePerformanceFee(0);
-        accountant.updateManagementFee(0);
+        accountant.updatePlatformFee(0);
 
         skip(1 days);
 
@@ -281,10 +281,10 @@ contract AccountantWithFixedRateTest is Test, MerkleTreeHelper {
     }
 
     function testUpdateExchangeRateWithZeroPerformanceFee() external {
-        // Set performance fee to 0 but keep management fee
+        // Set performance fee to 0 but keep platform fee
         accountant.updatePerformanceFee(0);
 
-        // Skip some time to accrue management fees
+        // Skip some time to accrue platform fees
         uint256 timeSkip = 30 days;
         skip(timeSkip);
 
@@ -295,24 +295,24 @@ contract AccountantWithFixedRateTest is Test, MerkleTreeHelper {
         uint256 totalSupply = boringVault.totalSupply();
         uint256 grossYield = uint256(newRate - 1e18).mulDivDown(totalSupply, 1e18);
 
-        // Calculate expected management fee
-        uint256 expectedManagementFee = totalSupply.mulDivDown(managementFee, 1e4);
-        expectedManagementFee = expectedManagementFee.mulDivDown(timeSkip, 365 days);
+        // Calculate expected platform fee
+        uint256 expectedPlatformFee = totalSupply.mulDivDown(platformFee, 1e4);
+        expectedPlatformFee = expectedPlatformFee.mulDivDown(timeSkip, 365 days);
 
         // Check yield earned
         (uint96 yieldEarned,) = accountant.fixedRateAccountantState();
-        assertEq(yieldEarned, uint96(grossYield - expectedManagementFee), "Incorrect yield earned");
+        assertEq(yieldEarned, uint96(grossYield - expectedPlatformFee), "Incorrect yield earned");
 
         // Check fees owed
         (,, uint128 actualFeesOwedInBase,,,,,,,,,) = accountant.accountantState();
-        assertEq(actualFeesOwedInBase, expectedManagementFee, "Incorrect fees owed");
+        assertEq(actualFeesOwedInBase, expectedPlatformFee, "Incorrect fees owed");
     }
 
-    function testUpdateExchangeRateWithZeroManagementFee() external {
-        // Set management fee to 0 but keep performance fee
-        accountant.updateManagementFee(0);
+    function testUpdateExchangeRateWithZeroPlatformFee() external {
+        // Set platform fee to 0 but keep performance fee
+        accountant.updatePlatformFee(0);
 
-        // Skip some time (this shouldn't affect fees since management fee is 0)
+        // Skip some time (this shouldn't affect fees since platform fee is 0)
         uint256 timeSkip = 30 days;
         skip(timeSkip);
 
@@ -337,7 +337,7 @@ contract AccountantWithFixedRateTest is Test, MerkleTreeHelper {
 
     function testUpdateExchangeRateWithZeroFees() external {
         // Set both fees to 0
-        accountant.updateManagementFee(0);
+        accountant.updatePlatformFee(0);
         accountant.updatePerformanceFee(0);
 
         // Skip some time (should have no effect since both fees are 0)
@@ -389,7 +389,7 @@ contract AccountantWithFixedRateTest is Test, MerkleTreeHelper {
             1.05e4,
             0.95e4,
             1,
-            managementFee,
+            platformFee,
             performanceFee
         );
 

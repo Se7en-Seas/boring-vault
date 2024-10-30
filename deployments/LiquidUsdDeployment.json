@@ -36,7 +36,7 @@
     "AllowedExchangeRateChangeUpper": 10050,
     "Base": "USDC",
     "BaseAddress": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    "ManagementFee": 200,
+    "PlatformFee": 200,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
     "StartingExchangeRate": 1000000

@@ -11,7 +11,7 @@
     "AllowedExchangeRateChangeUpper": 10050,
     "Base": "BTC.b",
     "BaseAddress": "0x152b9d0FdC40C096757F570A51E494bd4b943E50",
-    "ManagementFee": 200,
+    "PlatformFee": 200,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
     "StartingExchangeRate": 100000000

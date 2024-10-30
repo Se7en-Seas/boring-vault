@@ -65,7 +65,7 @@ contract AccountantWithRateProvidersUsingDifferentDecimalTest is Test, MerkleTre
         accountant.setRateProviderData(SDAI, false, sDaiRateProvider);
 
         // Start accounting so we can claim fees during a test.
-        accountant.updateManagementFee(0.01e4);
+        accountant.updatePlatformFee(0.01e4);
 
         skip(1 days / 24);
         // Increase exchange rate by 5 bps.
