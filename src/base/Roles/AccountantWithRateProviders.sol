@@ -279,16 +279,14 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
      * @dev Callable by UPDATE_EXCHANGE_RATE_ROLE.
      */
     function updateExchangeRate(uint96 newExchangeRate) external virtual requiresAuth {
-        AccountantState storage state = accountantState;
-        if (state.isPaused) revert AccountantWithRateProviders__Paused();
-        uint64 currentTime = uint64(block.timestamp);
-        uint256 currentExchangeRate = state.exchangeRate;
-        uint256 currentTotalShares = vault.totalSupply();
-        if (
-            currentTime < state.lastUpdateTimestamp + state.minimumUpdateDelayInSeconds
-                || newExchangeRate > currentExchangeRate.mulDivDown(state.allowedExchangeRateChangeUpper, 1e4)
-                || newExchangeRate < currentExchangeRate.mulDivDown(state.allowedExchangeRateChangeLower, 1e4)
-        ) {
+        (
+            bool shouldPause,
+            AccountantState storage state,
+            uint64 currentTime,
+            uint256 currentExchangeRate,
+            uint256 currentTotalShares
+        ) = _beforeUpdateExchangeRate(newExchangeRate);
+        if (shouldPause) {
             // Instead of reverting, pause the contract. This way the exchange rate updater is able to update the exchange rate
             // to a better value, and pause it.
             state.isPaused = true;
@@ -296,20 +294,11 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
             _calculateFeesOwed(state, newExchangeRate, currentExchangeRate, currentTotalShares, currentTime);
         }
 
-        newExchangeRate = _updateExchangeRate(newExchangeRate, state);
+        newExchangeRate = _setExchangeRate(newExchangeRate, state);
         state.totalSharesLastUpdate = uint128(currentTotalShares);
         state.lastUpdateTimestamp = currentTime;
 
         emit ExchangeRateUpdated(uint96(currentExchangeRate), newExchangeRate, currentTime);
-    }
-
-    function _updateExchangeRate(uint96 newExchangeRate, AccountantState storage state)
-        internal
-        virtual
-        returns (uint96)
-    {
-        state.exchangeRate = newExchangeRate;
-        return newExchangeRate;
     }
 
     /**
@@ -333,7 +322,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         } else {
             uint8 feeAssetDecimals = ERC20(feeAsset).decimals();
             uint256 feesOwedInBaseUsingFeeAssetDecimals =
-                changeDecimals(state.feesOwedInBase, decimals, feeAssetDecimals);
+                _changeDecimals(state.feesOwedInBase, decimals, feeAssetDecimals);
             if (data.isPeggedToBase) {
                 feesOwedInFeeAsset = feesOwedInBaseUsingFeeAssetDecimals;
             } else {
@@ -349,7 +338,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         emit FeesClaimed(address(feeAsset), feesOwedInFeeAsset);
     }
 
-    // ========================================= RATE FUNCTIONS =========================================
+    // ========================================= VIEW FUNCTIONS =========================================
 
     /**
      * @notice Get this BoringVault's current rate in the base.
@@ -379,7 +368,7 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         } else {
             RateProviderData memory data = rateProviderData[quote];
             uint8 quoteDecimals = ERC20(quote).decimals();
-            uint256 exchangeRateInQuoteDecimals = changeDecimals(accountantState.exchangeRate, decimals, quoteDecimals);
+            uint256 exchangeRateInQuoteDecimals = _changeDecimals(accountantState.exchangeRate, decimals, quoteDecimals);
             if (data.isPeggedToBase) {
                 rateInQuote = exchangeRateInQuoteDecimals;
             } else {
@@ -400,11 +389,54 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         rateInQuote = getRateInQuote(quote);
     }
 
+    /**
+     * @notice Preview the result of an update to the exchange rate.
+     * @return updateWillPause Whether the update will pause the contract.
+     * @return newFeesOwedInBase The new fees owed in base.
+     * @return totalFeesOwedInBase The total fees owed in base.
+     */
+    function previewUpdateExchangeRate(uint96 newExchangeRate)
+        external
+        view
+        virtual
+        returns (bool updateWillPause, uint256 newFeesOwedInBase, uint256 totalFeesOwedInBase)
+    {
+        (
+            bool shouldPause,
+            AccountantState storage state,
+            uint64 currentTime,
+            uint256 currentExchangeRate,
+            uint256 currentTotalShares
+        ) = _beforeUpdateExchangeRate(newExchangeRate);
+        updateWillPause = shouldPause;
+        totalFeesOwedInBase = state.feesOwedInBase;
+        if (!shouldPause) {
+            (uint256 managementFeesOwedInBase, uint256 shareSupplyToUse) = _calculateManagementFee(
+                state.totalSharesLastUpdate,
+                state.lastUpdateTimestamp,
+                state.managementFee,
+                newExchangeRate,
+                currentExchangeRate,
+                currentTotalShares,
+                currentTime
+            );
+
+            uint256 performanceFeesOwedInBase;
+            if (newExchangeRate > state.highwaterMark) {
+                (performanceFeesOwedInBase,) = _calculatePerformanceFee(
+                    newExchangeRate, shareSupplyToUse, state.highwaterMark, state.performanceFee
+                );
+            }
+            newFeesOwedInBase = managementFeesOwedInBase + performanceFeesOwedInBase;
+            totalFeesOwedInBase += newFeesOwedInBase;
+        }
+    }
+
     // ========================================= INTERNAL HELPER FUNCTIONS =========================================
     /**
      * @notice Used to change the decimals of precision used for an amount.
      */
-    function changeDecimals(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {
+    function _changeDecimals(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {
         if (fromDecimals == toDecimals) {
             return amount;
         } else if (fromDecimals < toDecimals) {
@@ -414,26 +446,85 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
         }
     }
 
-    function _handleManagementFee(
-        AccountantState storage state,
+    /**
+     * @notice Check if the new exchange rate is outside of the allowed bounds or if not enough time has passed.
+     */
+    function _beforeUpdateExchangeRate(uint96 newExchangeRate)
+        internal
+        view
+        returns (
+            bool shouldPause,
+            AccountantState storage state,
+            uint64 currentTime,
+            uint256 currentExchangeRate,
+            uint256 currentTotalShares
+        )
+    {
+        state = accountantState;
+        if (state.isPaused) revert AccountantWithRateProviders__Paused();
+        currentTime = uint64(block.timestamp);
+        currentExchangeRate = state.exchangeRate;
+        currentTotalShares = vault.totalSupply();
+        shouldPause = currentTime < state.lastUpdateTimestamp + state.minimumUpdateDelayInSeconds
+            || newExchangeRate > currentExchangeRate.mulDivDown(state.allowedExchangeRateChangeUpper, 1e4)
+            || newExchangeRate < currentExchangeRate.mulDivDown(state.allowedExchangeRateChangeLower, 1e4);
+    }
+
+    /**
+     * @notice Set the exchange rate.
+     */
+    function _setExchangeRate(uint96 newExchangeRate, AccountantState storage state)
+        internal
+        virtual
+        returns (uint96)
+    {
+        state.exchangeRate = newExchangeRate;
+        return newExchangeRate;
+    }
+
+    /**
+     * @notice Calculate management fees.
+     */
+    function _calculateManagementFee(
+        uint128 totalSharesLastUpdate,
+        uint64 lastUpdateTimestamp,
+        uint16 managementFee,
         uint96 newExchangeRate,
         uint256 currentExchangeRate,
         uint256 currentTotalShares,
         uint64 currentTime
-    ) internal view returns (uint256 shareSupplyToUse, uint256 newFeesOwedInBase) {
+    ) internal view returns (uint256 managementFeesOwedInBase, uint256 shareSupplyToUse) {
         shareSupplyToUse = currentTotalShares;
         // Use the minimum between current total supply and total supply for last update.
-        if (state.totalSharesLastUpdate < shareSupplyToUse) {
-            shareSupplyToUse = state.totalSharesLastUpdate;
+        if (totalSharesLastUpdate < shareSupplyToUse) {
+            shareSupplyToUse = totalSharesLastUpdate;
         }
 
         // Determine management fees owned.
-        uint256 timeDelta = currentTime - state.lastUpdateTimestamp;
-        uint256 minimumAssets = newExchangeRate > currentExchangeRate
-            ? shareSupplyToUse.mulDivDown(currentExchangeRate, ONE_SHARE)
-            : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
-        uint256 managementFeesAnnual = minimumAssets.mulDivDown(state.managementFee, 1e4);
-        newFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
+        if (managementFee > 0) {
+            uint256 timeDelta = currentTime - lastUpdateTimestamp;
+            uint256 minimumAssets = newExchangeRate > currentExchangeRate
+                ? shareSupplyToUse.mulDivDown(currentExchangeRate, ONE_SHARE)
+                : shareSupplyToUse.mulDivDown(newExchangeRate, ONE_SHARE);
+            uint256 managementFeesAnnual = minimumAssets.mulDivDown(managementFee, 1e4);
+            managementFeesOwedInBase = managementFeesAnnual.mulDivDown(timeDelta, 365 days);
+        }
+    }
+
+    /**
+     * @notice Calculate performance fees.
+     */
+    function _calculatePerformanceFee(
+        uint96 newExchangeRate,
+        uint256 shareSupplyToUse,
+        uint96 datum,
+        uint16 performanceFee
+    ) internal view returns (uint256 performanceFeesOwedInBase, uint256 yieldEarned) {
+        uint256 changeInExchangeRate = newExchangeRate - datum;
+        yieldEarned = changeInExchangeRate.mulDivDown(shareSupplyToUse, ONE_SHARE);
+        if (performanceFee > 0) {
+            performanceFeesOwedInBase = yieldEarned.mulDivDown(performanceFee, 1e4);
+        }
     }
 
     /**
@@ -449,17 +540,24 @@ contract AccountantWithRateProviders is Auth, IRateProvider, IPausable {
     ) internal virtual {
         // Only update fees if we are not paused.
         // Update fee accounting.
-        (uint256 shareSupplyToUse, uint256 newFeesOwedInBase) =
-            _handleManagementFee(state, newExchangeRate, currentExchangeRate, currentTotalShares, currentTime);
+        (uint256 newFeesOwedInBase, uint256 shareSupplyToUse) = _calculateManagementFee(
+            state.totalSharesLastUpdate,
+            state.lastUpdateTimestamp,
+            state.managementFee,
+            newExchangeRate,
+            currentExchangeRate,
+            currentTotalShares,
+            currentTime
+        );
 
         // Account for performance fees.
         if (newExchangeRate > state.highwaterMark) {
-            if (state.performanceFee > 0) {
-                uint256 changeInExchangeRate = newExchangeRate - state.highwaterMark;
-                uint256 yieldEarned = changeInExchangeRate.mulDivDown(shareSupplyToUse, ONE_SHARE);
-                uint256 performanceFeesOwedInBase = yieldEarned.mulDivDown(state.performanceFee, 1e4);
-                newFeesOwedInBase += performanceFeesOwedInBase;
-            }
+            (uint256 performanceFeesOwedInBase,) =
+                _calculatePerformanceFee(newExchangeRate, shareSupplyToUse, state.highwaterMark, state.performanceFee);
+
+            // Add performance fees to fees owed.
+            newFeesOwedInBase += performanceFeesOwedInBase;
+
             // Always update the highwater mark if the new exchange rate is higher.
             // This way if we are not iniitiall taking performance fees, we can start taking them
             // without back charging them on past performance.

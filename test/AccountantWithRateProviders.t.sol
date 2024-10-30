@@ -498,6 +498,40 @@ contract AccountantWithRateProvidersTest is Test, MerkleTreeHelper {
         assertGt(rateInPt, 1e18, "Rate should be greater than 1e18");
     }
 
+    // The fuzzing will create a variety of scenarios that would pause the accountant, and valid scenarios that would not.
+    function testPreviewUpdateExchangeRate(uint96 newExchangeRate, uint256 delay) external {
+        accountant.updateManagementFee(0.01e4);
+        accountant.updatePerformanceFee(0.2e4);
+        newExchangeRate = uint96(bound(newExchangeRate, 0.998e18, 1.002e18));
+        delay = bound(delay, 1 days / 8, 7 days); // 3 hours to 7 days
+        accountant.updateDelay(uint24(1 days / 4)); // 6 hours
+        skip(1 days / 4);
+        accountant.updateExchangeRate(1e18);
+
+        skip(1 days);
+
+        // Update again so we have some fees owed.
+        accountant.updateExchangeRate(1e18);
+
+        skip(delay);
+
+        (bool updateWillPause, uint256 newFeesOwedInBase, uint256 totalFeesOwedInBase) =
+            accountant.previewUpdateExchangeRate(newExchangeRate);
+
+        accountant.updateExchangeRate(newExchangeRate);
+
+        (,, uint128 feesOwed,,,,,, bool isPaused,,,) = accountant.accountantState();
+        if (updateWillPause) {
+            assertTrue(isPaused, "Accountant should be paused");
+            assertEq(feesOwed, totalFeesOwedInBase, "Fees owed should not have changed");
+            assertEq(newFeesOwedInBase, 0, "New fees owed in base should be 0");
+        } else {
+            assertTrue(!isPaused, "Accountant should not be paused");
+            assertEq(feesOwed, totalFeesOwedInBase, "Fees owed should be total fees owed");
+            assertGt(newFeesOwedInBase, 0, "New fees owed in base should be greater than 0");
+        }
+    }
+
     function testReverts() external {
         accountant.pause();
 
