@@ -172,6 +172,7 @@ contract ChainValues {
         values[mainnet]["EIGEN"] = 0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83.toBytes32();
         values[mainnet]["wcUSDCv3"] = 0x27F2f159Fe990Ba83D57f39Fd69661764BEbf37a.toBytes32();
         values[mainnet]["eBTC"] = 0x657e8C867D8B37dCC18fA4Caead9C45EB088C642.toBytes32();
+        values[mainnet]["USDS"] = 0xdC035D45d973E3EC169d2276DDab16f1e407384F.toBytes32();
 
         // Rate providers
         values[mainnet]["WEETH_RATE_PROVIDER"] = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee.toBytes32();
@@ -715,6 +716,7 @@ contract ChainValues {
         values[mainnet]["fUSDC"] = 0x9Fb7b4477576Fe5B32be4C1843aFB1e55F251B33.toBytes32();
         values[mainnet]["fWETH"] = 0x90551c1795392094FE6D29B758EcCD233cFAa260.toBytes32();
         values[mainnet]["fWSTETH"] = 0x2411802D8BEA09be0aF8fD8D08314a63e706b29C.toBytes32();
+        values[mainnet]["fGHO"] = 0x6A29A46E21C730DcA1d8b23d637c101cec605C5B.toBytes32();
 
         // Symbiotic
         values[mainnet]["wstETHDefaultCollateral"] = 0xC329400492c6ff2438472D4651Ad17389fCb843a.toBytes32();
