@@ -610,10 +610,12 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
             termAuctionOfferLockerAddresses[0] = 0x55580a11c5C111EE2e36e24aef04443Bf130F092;
             address[] memory termRepoLockers = new address[](1);
             termRepoLockers[0] = 0xDFC8271C70303B0d98819267f93F86EfFe9BC3AD;
+            address[] memory termRepoServicers = new address[](1);
+            termRepoServicers[0] = 0x65Cc6CD9d99f497053C3978b8724B05d2aE03D17;
             _addTermFinanceLockOfferLeafs(leafs, purchaseTokens, termAuctionOfferLockerAddresses, termRepoLockers);
             _addTermFinanceUnlockOfferLeafs(leafs, termAuctionOfferLockerAddresses);
             _addTermFinanceRevealOfferLeafs(leafs, termAuctionOfferLockerAddresses);
-            _addTermFinanceRedeemTermRepoTokensLeafs(leafs, termRepoLockers);
+            _addTermFinanceRedeemTermRepoTokensLeafs(leafs, termRepoServicers);
         }
 
         // ========================== SYMBIOTIC ==========================
