@@ -18,7 +18,7 @@ contract CreateEtherFiEigenMerkleRootScript is Script, MerkleTreeHelper {
     address public boringVault = 0xE77076518A813616315EaAba6cA8e595E845EeE9;
     address public managerAddress = 0x354ade0382EEC1BF0a444339ABc82931457C2c0e;
     address public accountantAddress = 0x075e60550C6f77f430B284E76aF699bC31651f75;
-    address public rawDataDecoderAndSanitizer = 0x0De55435028D904e1af8Ec58C2f86DF2c4d32f2a;
+    address public rawDataDecoderAndSanitizer = 0xb7Dd199ABE801cC4985B60B8B1365264Eb31ad26;
     address public itbDecoderAndSanitizer = 0xBF76C48401f7f690f46F0C481Ee9f193D0c43062;
 
     address public itbEigenPositionManager = 0xb814C334748dc8D12145b009020e2783624c0775;
@@ -30,7 +30,36 @@ contract CreateEtherFiEigenMerkleRootScript is Script, MerkleTreeHelper {
      */
     function run() external {
         /// NOTE Only have 1 function run at a time, otherwise the merkle root created will be wrong.
-        generateAdminStrategistMerkleRoot();
+        // generateAdminStrategistMerkleRoot();
+        generateAdminMerkleRoot();
+    }
+
+    function generateAdminMerkleRoot() public {
+        setSourceChainName(mainnet);
+        setAddress(false, mainnet, "boringVault", boringVault);
+        setAddress(false, mainnet, "managerAddress", managerAddress);
+        setAddress(false, mainnet, "accountantAddress", accountantAddress);
+        setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](2);
+
+        leafs[0] = ManageLeaf(
+            itbEigenPositionManager,
+            false,
+            "execute(address,uint256,bytes)",
+            new address[](1),
+            "Execute generic call from ITB Position Manager",
+            rawDataDecoderAndSanitizer
+        );
+        leafs[0].argumentAddresses[0] = getAddress(sourceChain, "eigenRewards");
+
+        _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
+
+        string memory filePath = "./leafs/Mainnet/eEigenAdminLeafs.json";
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+
+        _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
 
     function generateAdminStrategistMerkleRoot() public {

@@ -3797,7 +3797,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             false,
             "processClaim((uint32,uint32,bytes,(address,bytes32),uint32[],bytes[],(address,uint256)[]),address)",
             new address[](1),
-            string.concat("Process claim for ", ERC20(lst).symbol()),
+            string.concat("Process claim for EIGEN Rewards"),
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
