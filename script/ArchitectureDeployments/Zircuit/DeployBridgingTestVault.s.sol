@@ -3,34 +3,53 @@ pragma solidity 0.8.21;
 
 import {DeployArcticArchitecture, ERC20, Deployer} from "script/ArchitectureDeployments/DeployArcticArchitecture.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
-import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
+import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
+import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
 
 // Import Decoder and Sanitizer to deploy.
-import {PumpBtcDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PumpBtcDecoderAndSanitizer.sol";
+import {PointFarmingDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployPumpBtc.s.sol:DeployPumpBtcScript --with-gas-price 3000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Zircuit/DeployBridgingTestVault.s.sol:DeployBridgingTestVaultScript --with-gas-price 70000000 --evm-version london --broadcast --etherscan-api-key $ZIRCUITSCAN_KEY --verifier-url https://explorer.zircuit.com/api/contractVerifyHardhat --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
+contract DeployBridgingTestVaultScript is DeployArcticArchitecture, MerkleTreeHelper {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Pump BTC Vault";
-    string public boringVaultSymbol = "pumpBTCv";
-    uint8 public boringVaultDecimals = 8;
-    address public owner = dev0Address;
+    string public boringVaultName = "Bridging Test Vault";
+    string public boringVaultSymbol = "BTEV";
+    uint8 public boringVaultDecimals = 18;
+
+    address internal owner;
+    address internal testAddress;
+    ERC20 internal WETH;
+    address internal balancerVault;
+    address internal deployerAddress;
+    address internal uniswapV3NonFungiblePositionManager;
+    address internal liquidPayoutAddress;
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("mainnet");
+        vm.createSelectFork("zircuit");
+        setSourceChainName(zircuit);
+
+        owner = getAddress(sourceChain, "dev0Address");
+        testAddress = getAddress(sourceChain, "dev0Address");
+        WETH = getERC20(sourceChain, "WETH");
+        balancerVault = address(0);
+        deployerAddress = getAddress(sourceChain, "deployerAddress");
+        uniswapV3NonFungiblePositionManager = address(0);
+        liquidPayoutAddress = getAddress(sourceChain, "liquidPayoutAddress");
+
+        droneCount = 1;
     }
 
     function run() external {
         // Configure the deployment.
-        configureDeployment.deployContracts = true;
+        configureDeployment.deployContracts = false;
         configureDeployment.setupRoles = true;
         configureDeployment.setupDepositAssets = true;
         configureDeployment.setupWithdrawAssets = true;
@@ -45,22 +64,23 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
         deployer = Deployer(configureDeployment.deployerAddress);
 
         // Define names to determine where contracts are deployed.
-        names.rolesAuthority = PumpBtcRolesAuthorityName;
+        names.rolesAuthority = BridgingTestVaultEthRolesAuthorityName;
         names.lens = ArcticArchitectureLensName;
-        names.boringVault = PumpBtcName;
-        names.manager = PumpBtcManagerName;
-        names.accountant = PumpBtcAccountantName;
-        names.teller = PumpBtcTellerName;
-        names.rawDataDecoderAndSanitizer = PumpBtcDecoderAndSanitizerName;
-        names.delayedWithdrawer = PumpBtcDelayedWithdrawer;
+        names.boringVault = BridgingTestVaultEthName;
+        names.manager = BridgingTestVaultEthManagerName;
+        names.accountant = BridgingTestVaultEthAccountantName;
+        names.teller = BridgingTestVaultEthTellerName;
+        names.rawDataDecoderAndSanitizer = BridgingTestVaultEthDecoderAndSanitizerName;
+        names.delayedWithdrawer = BridgingTestVaultEthDelayedWithdrawer;
+        names.droneBaseName = BridgingTestVaultDroneName;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
-        accountantParameters.base = WBTC;
+        accountantParameters.base = WETH;
         // Decimals are in terms of `base`.
-        accountantParameters.startingExchangeRate = 1e8;
+        accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
-        accountantParameters.managementFee = 0.015e4;
+        accountantParameters.managementFee = 0.02e4;
         accountantParameters.performanceFee = 0;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;
@@ -68,36 +88,16 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
         accountantParameters.minimumUpateDelayInSeconds = 1 days / 4;
 
         // Define Decoder and Sanitizer deployment details.
-        bytes memory creationCode = type(PumpBtcDecoderAndSanitizer).creationCode;
-        bytes memory constructorArgs =
-            abi.encode(deployer.getAddress(names.boringVault), uniswapV3NonFungiblePositionManager);
+        bytes memory creationCode = type(PointFarmingDecoderAndSanitizer).creationCode;
+        bytes memory constructorArgs = abi.encode(deployer.getAddress(names.boringVault));
 
         // Setup extra deposit assets.
-        depositAssets.push(
-            DepositAsset({
-                asset: pumpBTC,
-                isPeggedToBase: true,
-                rateProvider: address(0),
-                genericRateProviderName: "",
-                target: address(0),
-                selector: bytes4(0),
-                params: [bytes32(0), 0, 0, 0, 0, 0, 0, 0]
-            })
-        );
+        // none
+
         // Setup withdraw assets.
         withdrawAssets.push(
             WithdrawAsset({
-                asset: pumpBTC,
-                withdrawDelay: 3 days,
-                completionWindow: 7 days,
-                withdrawFee: 0,
-                maxLoss: 0.01e4
-            })
-        );
-
-        withdrawAssets.push(
-            WithdrawAsset({
-                asset: WBTC,
+                asset: WETH,
                 withdrawDelay: 3 days,
                 completionWindow: 7 days,
                 withdrawFee: 0,
@@ -107,13 +107,13 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
 
         bool allowPublicDeposits = true;
         bool allowPublicWithdraws = true;
-        uint64 shareLockPeriod = 1 days;
+        uint64 shareLockPeriod = 0;
         address delayedWithdrawFeeAddress = liquidPayoutAddress;
 
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "PumpBtcDeployment.json",
+            "Zircuit/BridgingTestVaultDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
@@ -124,7 +124,7 @@ contract DeployPumpBtcScript is DeployArcticArchitecture, MainnetAddresses {
             allowPublicDeposits,
             allowPublicWithdraws,
             shareLockPeriod,
-            dev1Address
+            testAddress
         );
 
         vm.stopBroadcast();

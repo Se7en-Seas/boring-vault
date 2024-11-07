@@ -20,6 +20,7 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
     address public managerAddress = 0x91A2482EA778F3C9AAE1d3768D9e558D6794b972;
     address public accountantAddress = 0x126af21dc55C300B7D0bBfC4F3898F558aE8156b;
     address public rawDataDecoderAndSanitizer = 0xcfa57ea1b1E138cf89050253CcF5d0836566C06D;
+    address public stakingDecoderAndSanitizer = 0x210c179758430646C83f5Da08C7b2bc73c9aAD55;
 
     address public itbDecoderAndSanitizer = 0xcfa57ea1b1E138cf89050253CcF5d0836566C06D;
 
@@ -50,8 +51,6 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "managerAddress", managerAddress);
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", itbDecoderAndSanitizer);
-
-        leafIndex = 0;
 
         ManageLeaf[] memory leafs = new ManageLeaf[](1024);
 
@@ -133,15 +132,6 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
             getAddress(sourceChain, "krsETH"),
             getAddress(sourceChain, "vaultSupervisor")
         );
-
-        // ========================== Lido ==========================
-        _addLidoLeafs(leafs);
-
-        // ========================== EtherFi ==========================
-        _addEtherFiLeafs(leafs);
-
-        // ========================== Native ==========================
-        _addNativeLeafs(leafs);
 
         // ========================== UniswapV3 ==========================
         address[] memory token0 = new address[](56);
@@ -293,14 +283,19 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
         kind[12] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
-        /**
-         * deposit, withdraw
-         */
-        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "SFRXETH")));
+        // ========================== Staking ==========================
+        setAddress(true, mainnet, "rawDataDecoderAndSanitizer", stakingDecoderAndSanitizer);
+
+        _addNativeLeafs(leafs);
+        _addEtherFiLeafs(leafs);
+        _addLidoLeafs(leafs);
+        _addSwellStakingLeafs(leafs);
+        _addMantleStakingLeafs(leafs);
+        _addFraxLeafs(leafs);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        string memory filePath = "./leafs/KarakVaultStrategistLeafs.json";
+        string memory filePath = "./leafs/Mainnet/KarakVaultStrategistLeafs.json";
 
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }

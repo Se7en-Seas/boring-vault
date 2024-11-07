@@ -15,7 +15,9 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
     address public boringVault = 0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C;
-    address public rawDataDecoderAndSanitizer = 0x96B0d32c5F8C15Ee7B4aaF19a7F92809a8c9eDeD;
+    // address public rawDataDecoderAndSanitizer = 0x96B0d32c5F8C15Ee7B4aaF19a7F92809a8c9eDeD;
+    address public rawDataDecoderAndSanitizer = 0xDfe6f90a5b4936a5e15255837B66fd4B4F246286;
+    address public symbioticDecoderAndSanitizer = 0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781;
     address public pancakeSwapDataDecoderAndSanitizer = 0x47F62174e7A8EF939d8525C9670025d19DeFd821;
     address public managerAddress = 0xcFF411d5C54FE0583A984beE1eF43a4776854B9A;
     address public accountantAddress = 0xc315D6e14DDCDC7407784e2Caf815d131Bc1D3E7;
@@ -30,7 +32,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
     // address public itbCurve_sDai_sUsde = address(65);
     // address public itbCurveConvex_FraxUsdc = address(65);
     // address public itbCurveConvex_UsdcCrvUsd = address(65);
-    address public itbDecoderAndSanitizer = 0x7fA5dbDB1A76d2990Ea0f3c74e520E3fcE94748B;
+    address public itbSyrupUsdc = 0xb9df565c8456d7F40f61c7E83aF9F9B31F25b30c;
+    address public itbSyrupUsdt = 0x1bc7694b92AE221E7d3d775BaDe5C4e1C996d69B;
+    address public itbReserveProtocolPositionManager = 0x78Dbb5495044779562A584F133C2eca0B8e349ba;
+
+    address public itbDecoderAndSanitizer = 0xCe39e869C2010A3C049E1cA11F7dfB70ae2ddBF5;
 
     function setUp() external {}
 
@@ -163,12 +169,22 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_sUSDe_12_25_24"), true);
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_USDe_08_23_24"), true);
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_USDe_12_25_24"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_sUSDe_03_26_25"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_sUSDe_karak_01_29_25"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_USDe_karak_01_29_25"), true);
+        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_USDe_03_26_25"), true);
 
         // ========================== Ethena ==========================
         /**
          * deposit, withdraw
          */
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "SUSDE")));
+
+        // ========================== Elixir ==========================
+        /**
+         * deposit, withdraw
+         */
+        _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "sdeUSD")));
 
         // ========================== UniswapV3 ==========================
         /**
@@ -243,8 +259,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
          * Swap PYUSD <-> FRAX
          * Swap PYUSD <-> crvUSD
          */
-        address[] memory assets = new address[](16);
-        SwapKind[] memory kind = new SwapKind[](16);
+        address[] memory assets = new address[](19);
+        SwapKind[] memory kind = new SwapKind[](19);
         assets[0] = getAddress(sourceChain, "USDC");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "USDT");
@@ -277,6 +293,12 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         kind[14] = SwapKind.Sell;
         assets[15] = getAddress(sourceChain, "PENDLE");
         kind[15] = SwapKind.Sell;
+        assets[16] = getAddress(sourceChain, "CAKE");
+        kind[16] = SwapKind.Sell;
+        assets[17] = getAddress(sourceChain, "deUSD");
+        kind[17] = SwapKind.BuyAndSell;
+        assets[18] = getAddress(sourceChain, "sdeUSD");
+        kind[18] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "PENDLE_wETH_30"));
@@ -309,6 +331,14 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== Ethena Withdraws ==========================
         _addEthenaSUSDeWithdrawLeafs(leafs);
+
+        // ========================== Balancer ==========================
+        _addBalancerLeafs(
+            leafs, getBytes32(sourceChain, "deUSD_sdeUSD_ECLP_id"), getAddress(sourceChain, "deUSD_sdeUSD_ECLP_Gauge")
+        );
+
+        // ========================== Aura ==========================
+        _addAuraLeafs(leafs, getAddress(sourceChain, "aura_deUSD_sdeUSD_ECLP"));
 
         // ========================== ITB Aave V3 USDC ==========================
         /**
@@ -392,6 +422,22 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
          * unstake dUSDTV3 from sdUSDTV3
          */
         // _addLeafsForItbGearbox(leafs, itbGearboxUsdt, USDT, ERC20(dUSDTV3), sdUSDTV3, "ITB Gearbox USDT");
+
+        // ========================== ITB Syrup ==========================
+        _addLeafsForItbSyrup(leafs, itbSyrupUsdc, getERC20(sourceChain, "USDC"), "ITB Syrup USDC Position Manager");
+        _addLeafsForItbSyrup(leafs, itbSyrupUsdt, getERC20(sourceChain, "USDT"), "ITB Syrup USDT Position Manager");
+
+        // ========================== ITB Reserve ==========================
+
+        // Add in leafs for erc20 wrapper.
+        _addLeafsForReserveERC20Wrapper(leafs, getAddress(sourceChain, "wcUSDCv3"), getERC20(sourceChain, "cUSDCV3"));
+
+        ERC20[] memory tokensUsed = new ERC20[](2);
+        tokensUsed[0] = getERC20(sourceChain, "SDAI");
+        tokensUsed[1] = getERC20(sourceChain, "wcUSDCv3");
+        _addLeafsForItbReserve(
+            leafs, itbReserveProtocolPositionManager, tokensUsed, "USD3 ITB Reserve Protocol Position Manager"
+        );
 
         // ========================== ITB Curve/Convex PYUSD/USDC ==========================
         /**
@@ -536,435 +582,12 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
             leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "pyUsd_Usdc_Convex_Id");
         }
 
-        // ========================== ITB Curve/Convex FRAX/USDC ==========================
-        /**
-         * itbCurveConvex_FraxUsdc
-         * acceptOwnership() of itbCurveConvex_FraxUsdc
-         * transfer both tokens to the pool
-         * withdraw and withdraw all both tokens
-         * addLiquidityAllCoinsAndStakeConvex
-         * unstakeAndRemoveLiquidityAllCoinsConvex
-         */
-        // {
-        //     // acceptOwnership
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_FraxUsdc,
-        //         false,
-        //         "acceptOwnership()",
-        //         new address[](0),
-        //         "Accept ownership of the ITB Curve/Convex FRAX/USDC contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     // Transfer both tokens to the pool
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         address(FRAX),
-        //         false,
-        //         "transfer(address,uint256)",
-        //         new address[](1),
-        //         "Transfer FRAX to the ITB Curve/Convex FRAX/USDC contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = itbCurveConvex_FraxUsdc;
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         getAddress(sourceChain, "USDC"),
-        //         false,
-        //         "transfer(address,uint256)",
-        //         new address[](1),
-        //         "Transfer USDC to the ITB Curve/Convex FRAX/USDC contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = itbCurveConvex_FraxUsdc;
-        //     // Approvals
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_FraxUsdc,
-        //         false,
-        //         "approveToken(address,address,uint256)",
-        //         new address[](2),
-        //         "Approve Curve pool to spend FRAX",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(FRAX);
-        //     leafs[leafIndex].argumentAddresses[1] = frax_Usdc_Curve_Pool;
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_FraxUsdc,
-        //         false,
-        //         "approveToken(address,address,uint256)",
-        //         new address[](2),
-        //         "Approve Curve pool to spend USDC",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(USDC);
-        //     leafs[leafIndex].argumentAddresses[1] = frax_Usdc_Curve_Pool;
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_FraxUsdc,
-        //         false,
-        //         "approveToken(address,address,uint256)",
-        //         new address[](2),
-        //         "Approve Convex to spend Curve LP",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = frax_Usdc_Curve_Pool;
-        //     leafs[leafIndex].argumentAddresses[1] = convexCurveMainnetBooster;
-        //     // Withdraw both tokens
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_FraxUsdc,
-        //         false,
-        //         "withdraw(address,uint256)",
-        //         new address[](1),
-        //         "Withdraw FRAX from the ITB Curve/Convex FRAX/USDC contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(FRAX);
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_FraxUsdc,
-        //         false,
-        //         "withdraw(address,uint256)",
-        //         new address[](1),
-        //         "Withdraw USDC from the ITB Curve/Convex FRAX/USDC",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(USDC);
-        //     // WithdrawAll both tokens
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_FraxUsdc,
-        //         false,
-        //         "withdrawAll(address)",
-        //         new address[](1),
-        //         "Withdraw all FRAX from the ITB Curve/Convex FRAX/USDC contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(FRAX);
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_FraxUsdc,
-        //         false,
-        //         "withdrawAll(address)",
-        //         new address[](1),
-        //         "Withdraw all USDC from the ITB Curve/Convex FRAX/USDC contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(USDC);
-        //     // Add liquidity and stake
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_FraxUsdc,
-        //         false,
-        //         "addLiquidityAllCoinsAndStakeConvex(address,uint256[],uint256,uint256)",
-        //         new address[](2),
-        //         "Add liquidity to the ITB Curve/Convex FRAX/USDC contract and stake the convex tokens",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = frax_Usdc_Curve_Pool;
-        //     leafs[leafIndex].argumentAddresses[1] = frax_Usdc_Convex_Id;
-        //     // Unstake and remove liquidity
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_FraxUsdc,
-        //         false,
-        //         "unstakeAndRemoveLiquidityAllCoinsConvex(address,uint256,uint256,uint256[])",
-        //         new address[](2),
-        //         "Unstake the convex tokens and remove liquidity from the ITB Curve/Convex FRAX/USDC contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = frax_Usdc_Curve_Pool;
-        //     leafs[leafIndex].argumentAddresses[1] = frax_Usdc_Convex_Id;
-        // }
-
-        // ========================== ITB Curve/Convex USDC/crvUSD ==========================
-        /**
-         * itbCurveConvex_UsdcCrvUsd
-         * acceptOwnership() of itbCurveConvex_UsdcCrvUsd
-         * transfer both tokens to the pool
-         * withdraw and withdraw all both tokens
-         * addLiquidityAllCoinsAndStakeConvex
-         * unstakeAndRemoveLiquidityAllCoinsConvex
-         */
-        // {
-        //     // acceptOwnership
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_UsdcCrvUsd,
-        //         false,
-        //         "acceptOwnership()",
-        //         new address[](0),
-        //         "Accept ownership of the ITB Curve/Convex USDC/crvUSD contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     // Transfer both tokens to the pool
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         address(USDC),
-        //         false,
-        //         "transfer(address,uint256)",
-        //         new address[](1),
-        //         "Transfer USDC to the ITB Curve/Convex USDC/crvUSD contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = itbCurveConvex_UsdcCrvUsd;
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         address(CRVUSD),
-        //         false,
-        //         "transfer(address,uint256)",
-        //         new address[](1),
-        //         "Transfer crvUSD to the ITB Curve/Convex USDC/crvUSD contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = itbCurveConvex_UsdcCrvUsd;
-        //     // Approvals
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_UsdcCrvUsd,
-        //         false,
-        //         "approveToken(address,address,uint256)",
-        //         new address[](2),
-        //         "Approve Curve pool to spend USDC",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(USDC);
-        //     leafs[leafIndex].argumentAddresses[1] = usdc_CrvUsd_Curve_Pool;
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_UsdcCrvUsd,
-        //         false,
-        //         "approveToken(address,address,uint256)",
-        //         new address[](2),
-        //         "Approve Curve pool to spend crvUSD",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(CRVUSD);
-        //     leafs[leafIndex].argumentAddresses[1] = usdc_CrvUsd_Curve_Pool;
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_UsdcCrvUsd,
-        //         false,
-        //         "approveToken(address,address,uint256)",
-        //         new address[](2),
-        //         "Approve Convex to spend Curve LP",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = usdc_CrvUsd_Curve_Pool;
-        //     leafs[leafIndex].argumentAddresses[1] = convexCurveMainnetBooster;
-        //     // Withdraw both tokens
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_UsdcCrvUsd,
-        //         false,
-        //         "withdraw(address,uint256)",
-        //         new address[](1),
-        //         "Withdraw USDC from the ITB Curve/Convex USDC/crvUSD contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(USDC);
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_UsdcCrvUsd,
-        //         false,
-        //         "withdraw(address,uint256)",
-        //         new address[](1),
-        //         "Withdraw crvUSD from the ITB Curve/Convex USDC/crvUSD contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(CRVUSD);
-        //     // WithdrawAll both tokens
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_UsdcCrvUsd,
-        //         false,
-        //         "withdrawAll(address)",
-        //         new address[](1),
-        //         "Withdraw all USDC from the ITB Curve/Convex USDC/crvUSD contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(USDC);
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_UsdcCrvUsd,
-        //         false,
-        //         "withdrawAll(address)",
-        //         new address[](1),
-        //         "Withdraw all crvUSD from the ITB Curve/Convex USDC/crvUSD contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(CRVUSD);
-        //     // Add liquidity and stake
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_UsdcCrvUsd,
-        //         false,
-        //         "addLiquidityAllCoinsAndStakeConvex(address,uint256[],uint256,uint256)",
-        //         new address[](2),
-        //         "Add liquidity to the ITB Curve/Convex USDC/crvUSD contract and stake the convex tokens",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = usdc_CrvUsd_Curve_Pool;
-        //     leafs[leafIndex].argumentAddresses[1] = usdc_CrvUsd_Convex_Id;
-        //     // Unstake and remove liquidity
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurveConvex_UsdcCrvUsd,
-        //         false,
-        //         "unstakeAndRemoveLiquidityAllCoinsConvex(address,uint256,uint256,uint256[])",
-        //         new address[](2),
-        //         "Unstake the convex tokens and remove liquidity from the ITB Curve/Convex USDC/crvUSD contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = usdc_CrvUsd_Curve_Pool;
-        //     leafs[leafIndex].argumentAddresses[1] = usdc_CrvUsd_Convex_Id;
-        // }
-
-        // ========================== ITB Curve sDAI/sUSDe ==========================
-        /**
-         * acceptOwnership() of itbCurve_sDai_sUsde
-         * transfer both tokens to the pool
-         * withdraw and withdraw all both tokens
-         * addLiquidityAllCoinsAndStake
-         * unstakeAndRemoveLiquidityAllCoins
-         */
-        // {
-        //     // acceptOwnership
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurve_sDai_sUsde,
-        //         false,
-        //         "acceptOwnership()",
-        //         new address[](0),
-        //         "Accept ownership of the ITB Curve sDAI/sUSDe contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     // Transfer both tokens to the pool
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         address(sDAI),
-        //         false,
-        //         "transfer(address,uint256)",
-        //         new address[](1),
-        //         "Transfer sDAI to the ITB Curve sDAI/sUSDe contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = itbCurve_sDai_sUsde;
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         address(SUSDE),
-        //         false,
-        //         "transfer(address,uint256)",
-        //         new address[](1),
-        //         "Transfer sUSDe to the ITB Curve sDAI/sUSDe contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = itbCurve_sDai_sUsde;
-        //     // Approvals
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurve_sDai_sUsde,
-        //         false,
-        //         "approveToken(address,address,uint256)",
-        //         new address[](2),
-        //         "Approve Curve pool to spend sDAI",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(sDAI);
-        //     leafs[leafIndex].argumentAddresses[1] = sDai_sUsde_Curve_Pool;
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurve_sDai_sUsde,
-        //         false,
-        //         "approveToken(address,address,uint256)",
-        //         new address[](2),
-        //         "Approve Curve pool to spend sUSDe",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(SUSDE);
-        //     leafs[leafIndex].argumentAddresses[1] = sDai_sUsde_Curve_Pool;
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurve_sDai_sUsde,
-        //         false,
-        //         "approveToken(address,address,uint256)",
-        //         new address[](2),
-        //         "Approve Curve gauge to spend Curve LP",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = sDai_sUsde_Curve_Pool;
-        //     leafs[leafIndex].argumentAddresses[1] = sDai_sUsde_Curve_Gauge;
-        //     // Withdraw both tokens
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurve_sDai_sUsde,
-        //         false,
-        //         "withdraw(address,uint256)",
-        //         new address[](1),
-        //         "Withdraw sDAI from the ITB Curve sDAI/sUSDe contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(sDAI);
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurve_sDai_sUsde,
-        //         false,
-        //         "withdraw(address,uint256)",
-        //         new address[](1),
-        //         "Withdraw sUSDe from the ITB Curve sDAI/sUSDe contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(SUSDE);
-        //     // WithdrawAll both tokens
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurve_sDai_sUsde,
-        //         false,
-        //         "withdrawAll(address)",
-        //         new address[](1),
-        //         "Withdraw all sDAI from the ITB Curve sDAI/sUSDe contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(sDAI);
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurve_sDai_sUsde,
-        //         false,
-        //         "withdrawAll(address)",
-        //         new address[](1),
-        //         "Withdraw all sUSDe from the ITB Curve sDAI/sUSDe contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = address(SUSDE);
-        //     // Add liquidity and stake
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurve_sDai_sUsde,
-        //         false,
-        //         "addLiquidityAllCoinsAndStake(address,uint256[],address,uint256)",
-        //         new address[](2),
-        //         "Add liquidity and stake to the ITB Curve sDAI/sUSDe contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = sDai_sUsde_Curve_Pool;
-        //     leafs[leafIndex].argumentAddresses[1] = sDai_sUsde_Curve_Gauge;
-        //     // Unstake and remove liquidity
-        //     leafIndex++;
-        //     leafs[leafIndex] = ManageLeaf(
-        //         itbCurve_sDai_sUsde,
-        //         false,
-        //         "unstakeAndRemoveLiquidityAllCoins(address,uint256,address,uint256[])",
-        //         new address[](2),
-        //         "Unstake and remove liquidity from the ITB Curve sDAI/sUSDe contract",
-        //         itbDecoderAndSanitizer
-        //     );
-        //     leafs[leafIndex].argumentAddresses[0] = sDai_sUsde_Curve_Pool;
-        //     leafs[leafIndex].argumentAddresses[1] = sDai_sUsde_Curve_Gauge;
-        // }
+        // ========================== Karak ==========================
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "ksUSDe"));
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kUSDe"));
 
         // ========================== SYMBIOTIC ==========================
+        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", symbioticDecoderAndSanitizer);
         address[] memory defaultCollaterals = new address[](1);
         defaultCollaterals[0] = getAddress(sourceChain, "sUSDeDefaultCollateral");
         _addSymbioticLeafs(leafs, defaultCollaterals);
@@ -1001,9 +624,11 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
 
         _addPancakeSwapV3Leafs(leafs, token0, token1);
 
+        _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
-        string memory filePath = "./leafs/LiquidUsdStrategistLeafs.json";
+        string memory filePath = "./leafs/Mainnet/LiquidUsdStrategistLeafs.json";
 
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
     }
@@ -1174,5 +799,221 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
             string.concat("Unstake ", diesal.symbol(), " from Gearbox s", diesal.symbol(), " contract"),
             itbDecoderAndSanitizer
         );
+    }
+
+    function _addLeafsForItbSyrup(
+        ManageLeaf[] memory leafs,
+        address itbPositionManager,
+        ERC20 underlying,
+        string memory itbContractName
+    ) internal {
+        ERC20[] memory tokensUsed = new ERC20[](1);
+        tokensUsed[0] = underlying;
+        _addLeafsForITBPositionManager(leafs, itbPositionManager, tokensUsed, itbContractName);
+
+        // Deposit
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "deposit(uint256,bytes32)",
+            new address[](0),
+            string.concat("Deposit ", underlying.symbol(), " into Syrup ", underlying.symbol(), " Position"),
+            itbDecoderAndSanitizer
+        );
+
+        // Withdraw
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "startWithdrawal(uint256)",
+            new address[](0),
+            string.concat("Start Withdraw ", underlying.symbol(), " from Syrup ", underlying.symbol(), " Position"),
+            itbDecoderAndSanitizer
+        );
+
+        // Assemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "assemble()",
+            new address[](0),
+            string.concat("Assemble Syrup ", underlying.symbol(), " Position"),
+            itbDecoderAndSanitizer
+        );
+
+        // Disassemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "disassemble(uint256)",
+            new address[](0),
+            string.concat("Disassemble Syrup ", underlying.symbol(), " Position"),
+            itbDecoderAndSanitizer
+        );
+
+        // Full Disassemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "fullDisassemble()",
+            new address[](0),
+            string.concat("Full Disassemble Syrup ", underlying.symbol(), " Position"),
+            itbDecoderAndSanitizer
+        );
+    }
+
+    function _addLeafsForItbReserve(
+        ManageLeaf[] memory leafs,
+        address itbPositionManager,
+        ERC20[] memory tokensUsed,
+        string memory itbContractName
+    ) internal {
+        _addLeafsForITBPositionManager(leafs, itbPositionManager, tokensUsed, itbContractName);
+
+        // mint
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "mint(uint256)",
+            new address[](0),
+            string.concat("Mint ", itbContractName),
+            itbDecoderAndSanitizer
+        );
+
+        // redeem
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "redeem(uint256,uint256[])",
+            new address[](0),
+            string.concat("Redeem ", itbContractName),
+            itbDecoderAndSanitizer
+        );
+
+        // redeemCustom
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "redeemCustom(uint256,uint48[],uint192[],address[],uint256[])",
+            new address[](tokensUsed.length),
+            string.concat("Redeem custom ", itbContractName),
+            itbDecoderAndSanitizer
+        );
+        for (uint256 i; i < tokensUsed.length; ++i) {
+            leafs[leafIndex].argumentAddresses[i] = address(tokensUsed[i]);
+        }
+
+        // assemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "assemble(uint256,uint256)",
+            new address[](0),
+            string.concat("Assemble ", itbContractName),
+            itbDecoderAndSanitizer
+        );
+
+        // disassemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "disassemble(uint256,uint256[])",
+            new address[](0),
+            string.concat("Disassemble ", itbContractName),
+            itbDecoderAndSanitizer
+        );
+
+        // fullDisassemble
+        leafIndex++;
+        leafs[leafIndex] = ManageLeaf(
+            itbPositionManager,
+            false,
+            "fullDisassemble(uint256[])",
+            new address[](0),
+            string.concat("Full disassemble ", itbContractName),
+            itbDecoderAndSanitizer
+        );
+    }
+
+    function _addLeafsForReserveERC20Wrapper(ManageLeaf[] memory leafs, address reserveERC20Wrapper, ERC20 underlying)
+        internal
+    {
+        // Approve the reserve erc20 wrapper to spend the underlying.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(underlying),
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve the reserve ERC20 wrapper to spend ", underlying.symbol()),
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = reserveERC20Wrapper;
+
+        // Add deposit leaf.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            reserveERC20Wrapper,
+            false,
+            "deposit(uint256)",
+            new address[](0),
+            string.concat("Deposit ", underlying.symbol(), " into the reserve ERC20 wrapper"),
+            itbDecoderAndSanitizer
+        );
+
+        // Add depositTo leaf.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            reserveERC20Wrapper,
+            false,
+            "depositTo(address,uint256)",
+            new address[](1),
+            string.concat("Deposit To", underlying.symbol(), " into the reserve ERC20 wrapper"),
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = boringVault;
+
+        // Add withdraw leaf.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            reserveERC20Wrapper,
+            false,
+            "withdraw(uint256)",
+            new address[](0),
+            string.concat("Withdraw ", underlying.symbol(), " from the reserve ERC20 wrapper"),
+            itbDecoderAndSanitizer
+        );
+
+        // Add withdrawTo leaf.
+        unchecked {
+            leafIndex++;
+        }
+        leafs[leafIndex] = ManageLeaf(
+            reserveERC20Wrapper,
+            false,
+            "withdrawTo(address,uint256)",
+            new address[](1),
+            string.concat("Withdraw To ", underlying.symbol(), " from the reserve ERC20 wrapper"),
+            itbDecoderAndSanitizer
+        );
+        leafs[leafIndex].argumentAddresses[0] = boringVault;
     }
 }

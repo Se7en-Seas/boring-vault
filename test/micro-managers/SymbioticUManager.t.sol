@@ -39,6 +39,8 @@ contract SymbioticUManagerTest is Test, MainnetAddresses, MerkleTreeHelper {
 
         _startFork(rpcKey, blockNumber);
 
+        dev1Address = 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1;
+
         symbioticUManager = new SymbioticUManager(address(this), rolesAuthority, address(manager), address(boringVault));
 
         setSourceChainName(mainnet);

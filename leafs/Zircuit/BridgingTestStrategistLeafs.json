@@ -1,0 +1,81 @@
+{
+  "metadata": {
+    "AccountantAddress": "0xBA4397B2B1780097eD1B483E3C0717E0Ed4fAAa5",
+    "BoringVaultAddress": "0xf8203A33027607D2C82dFd67b46986096257dFA5",
+    "DecoderAndSanitizerAddress": "0x16D377CE4c95F7737Ef4B45F81301A988F62b61a",
+    "DigestComposition": [
+      "Bytes20(DECODER_AND_SANITIZER_ADDRESS)",
+      "Bytes20(TARGET_ADDRESS)",
+      "Bytes1(CAN_SEND_VALUE)",
+      "Bytes4(TARGET_FUNCTION_SELECTOR)",
+      "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)"
+    ],
+    "LeafCount": 3,
+    "ManageRoot": "0x1f054a4a32d8a9234c368b9e28431a49074a01d12a8e74b46e4ca9181f695e22",
+    "ManagerAddress": "0x3770E6021d7b2617Ba86E89EF210Cc00A7c9Af95",
+    "TreeCapacity": 4
+  },
+  "leafs": [
+    {
+      "AddressArguments": ["0x4200000000000000000000000000000000000010"],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x16D377CE4c95F7737Ef4B45F81301A988F62b61a",
+      "Description": "Approve StandardBridge to spend mETH",
+      "FunctionSelector": "0x095ea7b3",
+      "FunctionSignature": "approve(address,uint256)",
+      "LeafDigest": "0x5d564e9da79f1bed6508c03825df7085ca61a7bef750c87eacaa40f9abf0ee40",
+      "PackedArgumentAddresses": "0x4200000000000000000000000000000000000010",
+      "TargetAddress": "0x91a0F6EBdCa0B4945FbF63ED4a95189d2b57163D"
+    },
+    {
+      "AddressArguments": [
+        "0x91a0F6EBdCa0B4945FbF63ED4a95189d2b57163D",
+        "0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa",
+        "0xf8203A33027607D2C82dFd67b46986096257dFA5"
+      ],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x16D377CE4c95F7737Ef4B45F81301A988F62b61a",
+      "Description": "Bridge mETH from zircuit to mainnet",
+      "FunctionSelector": "0x540abf73",
+      "FunctionSignature": "bridgeERC20To(address,address,address,uint256,uint32,bytes)",
+      "LeafDigest": "0x0d027e13a54a44abf82d6c1489a1ef1b18fe23458de51db29a98cdd6ea10f425",
+      "PackedArgumentAddresses": "0x91a0f6ebdca0b4945fbf63ed4a95189d2b57163dd5f7838f5c461feff7fe49ea5ebaf7728bb0adfaf8203a33027607d2c82dfd67b46986096257dfa5",
+      "TargetAddress": "0x4200000000000000000000000000000000000010"
+    },
+    {
+      "AddressArguments": ["0xf8203A33027607D2C82dFd67b46986096257dFA5"],
+      "CanSendValue": true,
+      "DecoderAndSanitizerAddress": "0x16D377CE4c95F7737Ef4B45F81301A988F62b61a",
+      "Description": "Bridge ETH from zircuit to mainnet",
+      "FunctionSelector": "0xe11013dd",
+      "FunctionSignature": "bridgeETHTo(address,uint32,bytes)",
+      "LeafDigest": "0xf169ce4e0f0177b8302ba24dae5bdd1555e4f28124f0da8fee4f3ef51861c9f4",
+      "PackedArgumentAddresses": "0xf8203a33027607d2c82dfd67b46986096257dfa5",
+      "TargetAddress": "0x4200000000000000000000000000000000000010"
+    },
+    {
+      "AddressArguments": [],
+      "CanSendValue": false,
+      "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
+      "Description": "",
+      "FunctionSelector": "0xc5d24601",
+      "FunctionSignature": "",
+      "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+      "PackedArgumentAddresses": "0x",
+      "TargetAddress": "0x0000000000000000000000000000000000000000"
+    }
+  ],
+  "MerkleTree": {
+    "0": ["0x1f054a4a32d8a9234c368b9e28431a49074a01d12a8e74b46e4ca9181f695e22"],
+    "1": [
+      "0x7e644a4e2f65f3c349d780cd7d8c77d452ad757a9978e1858de4f35bfeaf34bf",
+      "0xe6f7712074d9086a9edda78b8d2e359e1987ee9fed2d6296d7c01c574dd55600"
+    ],
+    "2": [
+      "0x5d564e9da79f1bed6508c03825df7085ca61a7bef750c87eacaa40f9abf0ee40",
+      "0x0d027e13a54a44abf82d6c1489a1ef1b18fe23458de51db29a98cdd6ea10f425",
+      "0xf169ce4e0f0177b8302ba24dae5bdd1555e4f28124f0da8fee4f3ef51861c9f4",
+      "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400"
+    ]
+  }
+}

@@ -23,10 +23,9 @@ import {SwellSimpleStakingDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/SwellSimpleStakingDecoderAndSanitizer.sol";
 import {ZircuitSimpleStakingDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/ZircuitSimpleStakingDecoderAndSanitizer.sol";
-import {PumpStakingDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/Protocols/PumpStakingDecoderAndSanitizer.sol";
+import {SymbioticDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/SymbioticDecoderAndSanitizer.sol";
 
-contract PumpBtcDecoderAndSanitizer is
+contract cbBtcDefiVaultDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
     BalancerV2DecoderAndSanitizer,
     MorphoBlueDecoderAndSanitizer,
@@ -43,7 +42,7 @@ contract PumpBtcDecoderAndSanitizer is
     EigenLayerLSTStakingDecoderAndSanitizer,
     SwellSimpleStakingDecoderAndSanitizer,
     ZircuitSimpleStakingDecoderAndSanitizer,
-    PumpStakingDecoderAndSanitizer
+    SymbioticDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
@@ -120,5 +119,18 @@ contract PumpBtcDecoderAndSanitizer is
         returns (bytes memory addressesFound)
     {
         addressesFound = abi.encodePacked(_token, _receiver);
+    }
+
+    /**
+     * @notice Zirucit, Symbiotic both specify a `withdraw(address,uint256)`,
+     *         all cases are handled the same way.
+     */
+    function withdraw(address add, uint256)
+        external
+        pure
+        override(ZircuitSimpleStakingDecoderAndSanitizer, SymbioticDecoderAndSanitizer)
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(add);
     }
 }

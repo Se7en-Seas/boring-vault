@@ -224,6 +224,13 @@ contract DecoderCustomTypes {
         uint256[] shares;
     }
 
+    struct SignatureWithExpiry {
+        // the signature itself, formatted as a single bytes object
+        bytes signature;
+        // the expiration timestamp (UTC) of the signature
+        uint256 expiry;
+    }
+
     // ========================================= CCIP =========================================
 
     // If extraArgs is empty bytes, the default is 200k gas limit.
@@ -277,6 +284,40 @@ contract DecoderCustomTypes {
         bytes32 stateRoot;
         bytes32 messagePasserStorageRoot;
         bytes32 latestBlockhash;
+    }
+
+    // ========================================= Mantle L1StandardBridge =========================================
+
+    struct MantleWithdrawalTransaction {
+        uint256 nonce;
+        address sender;
+        address target;
+        uint256 mntValue;
+        uint256 value;
+        uint256 gasLimit;
+        bytes data;
+    }
+
+    // ========================================= Linea Bridge =========================================
+
+    struct ClaimMessageWithProofParams {
+        bytes32[] proof;
+        uint256 messageNumber;
+        uint32 leafIndex;
+        address from;
+        address to;
+        uint256 fee;
+        uint256 value;
+        address payable feeRecipient;
+        bytes32 merkleRoot;
+        bytes data;
+    }
+
+    // ========================================= Scroll Bridge =========================================
+
+    struct L2MessageProof {
+        uint256 batchIndex;
+        bytes merkleProof;
     }
 
     // ========================================= Camelot V3 =========================================

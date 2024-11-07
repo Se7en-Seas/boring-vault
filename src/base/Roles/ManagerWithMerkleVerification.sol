@@ -245,9 +245,9 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
     ) internal view {
         // Use address decoder to get addresses in call data.
         bytes memory packedArgumentAddresses = abi.decode(decoderAndSanitizer.functionStaticCall(targetData), (bytes));
-        address puppetTarget = DroneLib.extractTargetFromInput(targetData);
-        if (puppetTarget != address(0)) {
-            packedArgumentAddresses = abi.encodePacked(packedArgumentAddresses, puppetTarget);
+        address droneTarget = DroneLib.extractTargetFromInput(targetData);
+        if (droneTarget != address(0)) {
+            packedArgumentAddresses = abi.encodePacked(packedArgumentAddresses, droneTarget);
         }
 
         if (

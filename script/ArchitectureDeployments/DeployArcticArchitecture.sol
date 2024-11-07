@@ -17,7 +17,7 @@ import {ArcticArchitectureLens} from "src/helper/ArcticArchitectureLens.sol";
 import {ContractNames} from "resources/ContractNames.sol";
 import {GenericRateProvider} from "src/helper/GenericRateProvider.sol";
 import {DelayedWithdraw} from "src/base/Roles/DelayedWithdraw.sol";
-
+import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 
@@ -50,6 +50,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
         string teller;
         string rawDataDecoderAndSanitizer;
         string delayedWithdrawer;
+        string droneBaseName;
     }
 
     ArchitectureNames public names;
@@ -112,12 +113,18 @@ contract DeployArcticArchitecture is Script, ContractNames {
     uint8 public constant STRATEGIST_ROLE = 7;
     uint8 public constant UPDATE_EXCHANGE_RATE_ROLE = 11;
 
+    uint8 public droneCount;
+    address[] public droneAddresses;
+
+    bytes public boringCreationCode;
+
     string finalJson;
     string coreOutput;
     string depositAssetConfigurationOutput;
     string withdrawAssetConfigurationOutput;
     string accountantConfigurationOutput;
     string depositConfigurationOutput;
+    string droneOutput;
 
     function _getAddressIfDeployed(string memory name) internal view returns (address) {
         address deployedAt = deployer.getAddress(name);
@@ -166,7 +173,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
 
             deployedAddress = _getAddressIfDeployed(names.boringVault);
             if (deployedAddress == address(0)) {
-                creationCode = type(BoringVault).creationCode;
+                creationCode = boringCreationCode.length == 0 ? type(BoringVault).creationCode : boringCreationCode;
                 constructorArgs = abi.encode(owner, boringVaultName, boringVaultSymbol, boringVaultDecimals);
                 boringVault =
                     BoringVault(payable(deployer.deployContract(names.boringVault, creationCode, constructorArgs, 0)));
@@ -240,6 +247,18 @@ contract DeployArcticArchitecture is Script, ContractNames {
             } else {
                 delayedWithdrawer = DelayedWithdraw(deployedAddress);
             }
+
+            for (uint256 i; i < droneCount; ++i) {
+                string memory droneName = string.concat(names.droneBaseName, "-", vm.toString(i));
+                deployedAddress = _getAddressIfDeployed(droneName);
+                if (deployedAddress == address(0)) {
+                    creationCode = type(BoringDrone).creationCode;
+                    constructorArgs = abi.encode(address(boringVault), 0);
+                    droneAddresses.push(deployer.deployContract(droneName, creationCode, constructorArgs, 0));
+                } else {
+                    droneAddresses.push(deployedAddress);
+                }
+            }
         } else {
             rolesAuthority = RolesAuthority(_getAddressIfDeployed(names.rolesAuthority));
             lens = ArcticArchitectureLens(_getAddressIfDeployed(names.lens));
@@ -249,6 +268,11 @@ contract DeployArcticArchitecture is Script, ContractNames {
             teller = TellerWithMultiAssetSupport(payable(_getAddressIfDeployed(names.teller)));
             rawDataDecoderAndSanitizer = _getAddressIfDeployed(names.rawDataDecoderAndSanitizer);
             delayedWithdrawer = DelayedWithdraw(_getAddressIfDeployed(names.delayedWithdrawer));
+            for (uint256 i; i < droneCount; ++i) {
+                string memory droneName = string.concat(names.droneBaseName, "-", vm.toString(i));
+                address deployedAddress = _getAddressIfDeployed(droneName);
+                droneAddresses.push(deployedAddress);
+            }
         }
 
         if (configureDeployment.setupRoles) {
@@ -445,20 +469,11 @@ contract DeployArcticArchitecture is Script, ContractNames {
             }
             if (
                 !rolesAuthority.doesRoleHaveCapability(
-                    OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.addAsset.selector
+                    OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.updateAssetData.selector
                 )
             ) {
                 rolesAuthority.setRoleCapability(
-                    OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.addAsset.selector, true
-                );
-            }
-            if (
-                !rolesAuthority.doesRoleHaveCapability(
-                    OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.removeAsset.selector
-                )
-            ) {
-                rolesAuthority.setRoleCapability(
-                    OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.removeAsset.selector, true
+                    OWNER_ROLE, address(teller), TellerWithMultiAssetSupport.updateAssetData.selector, true
                 );
             }
             if (
@@ -767,7 +782,8 @@ contract DeployArcticArchitecture is Script, ContractNames {
 
         if (configureDeployment.setupDepositAssets) {
             // Setup deposit asset.
-            if (!teller.isSupported(accountantParameters.base)) teller.addAsset(accountantParameters.base);
+            (bool allowDeposits,,) = teller.assetData(accountantParameters.base);
+            if (!allowDeposits) teller.updateAssetData(accountantParameters.base, true, false, 0);
 
             // Setup extra deposit assets.
             for (uint256 i; i < depositAssets.length; i++) {
@@ -780,11 +796,11 @@ contract DeployArcticArchitecture is Script, ContractNames {
                 if (depositAsset.isPeggedToBase) {
                     // Rate provider is not needed.
                     accountant.setRateProviderData(depositAsset.asset, true, address(0));
-                    teller.addAsset(depositAsset.asset);
+                    teller.updateAssetData(depositAsset.asset, true, false, 0);
                 } else if (depositAsset.rateProvider != address(0)) {
                     // Rate provider is provided.
                     accountant.setRateProviderData(depositAsset.asset, false, depositAsset.rateProvider);
-                    teller.addAsset(depositAsset.asset);
+                    teller.updateAssetData(depositAsset.asset, true, false, 0);
                 } else {
                     // We need a generic rate provider.
                     creationCode = type(GenericRateProvider).creationCode;
@@ -799,7 +815,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
                     }
 
                     accountant.setRateProviderData(depositAsset.asset, false, depositAsset.rateProvider);
-                    teller.addAsset(depositAsset.asset);
+                    teller.updateAssetData(depositAsset.asset, true, false, 0);
                 }
             }
         }
@@ -945,6 +961,14 @@ contract DeployArcticArchitecture is Script, ContractNames {
             }
 
             {
+                string memory drones = "drone key";
+                for (uint256 i; i < droneAddresses.length; i++) {
+                    droneOutput =
+                        vm.serializeAddress(drones, string.concat("drone-", vm.toString(i)), droneAddresses[i]);
+                }
+            }
+
+            {
                 string memory depositConfiguration = "deposit configuration key";
                 vm.serializeBool(depositConfiguration, "AllowPublicDeposits", allowPublicDeposits);
                 vm.serializeBool(depositConfiguration, "AllowPublicWithdraws", allowPublicWithdraws);
@@ -955,6 +979,7 @@ contract DeployArcticArchitecture is Script, ContractNames {
             vm.serializeString(finalJson, "core", coreOutput);
             vm.serializeString(finalJson, "accountantConfiguration", accountantConfigurationOutput);
             vm.serializeString(finalJson, "WithdrawAssets", withdrawAssetConfigurationOutput);
+            vm.serializeString(finalJson, "Drones", droneOutput);
             finalJson = vm.serializeString(finalJson, "DepositAssets", depositAssetConfigurationOutput);
 
             vm.writeJson(finalJson, filePath);
