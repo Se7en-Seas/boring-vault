@@ -9,6 +9,7 @@
       "rateProvider": "0x0000000000000000000000000000000000000000"
     }
   },
+  "Drones": "",
   "WithdrawAssets": {
     "LBTC": {
       "CompletionWindow": 604800,
@@ -28,9 +29,9 @@
     "AllowedExchangeRateChangeUpper": 10050,
     "Base": "WBTC",
     "BaseAddress": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-    "PlatformFee": 150,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
+    "PlatformFee": 150,
     "StartingExchangeRate": 100000000
   },
   "core": {

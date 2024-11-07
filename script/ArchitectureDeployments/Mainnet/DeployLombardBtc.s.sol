@@ -9,17 +9,17 @@ import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 import {LombardEarnDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/LombardEarnDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployCanaryBtc.s.sol:DeployCanaryBtcScript --with-gas-price 3000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLombardBtc.s.sol:DeployLombardBtcScript --with-gas-price 3000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
+contract DeployLombardBtcScript is DeployArcticArchitecture, MainnetAddresses {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
 
     // Deployment parameters
-    string public boringVaultName = "Lombard Earn";
-    string public boringVaultSymbol = "LBTCe";
+    string public boringVaultName = "Lombard BTC Vault";
+    string public boringVaultSymbol = "LBTCv";
     uint8 public boringVaultDecimals = 8;
     address public owner = dev0Address;
 
@@ -30,12 +30,12 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
 
     function run() external {
         // Configure the deployment.
-        configureDeployment.deployContracts = false;
-        configureDeployment.setupRoles = true;
-        configureDeployment.setupDepositAssets = true;
-        configureDeployment.setupWithdrawAssets = true;
-        configureDeployment.finishSetup = true;
-        configureDeployment.setupTestUser = true;
+        configureDeployment.deployContracts = true;
+        configureDeployment.setupRoles = false;
+        configureDeployment.setupDepositAssets = false;
+        configureDeployment.setupWithdrawAssets = false;
+        configureDeployment.finishSetup = false;
+        configureDeployment.setupTestUser = false;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
@@ -45,14 +45,14 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         deployer = Deployer(configureDeployment.deployerAddress);
 
         // Define names to determine where contracts are deployed.
-        names.rolesAuthority = CanaryBtcRolesAuthorityName;
+        names.rolesAuthority = LombardBtcRolesAuthorityName;
         names.lens = ArcticArchitectureLensName;
-        names.boringVault = CanaryBtcName;
-        names.manager = CanaryBtcManagerName;
-        names.accountant = CanaryBtcAccountantName;
-        names.teller = CanaryBtcTellerName;
-        names.rawDataDecoderAndSanitizer = CanaryBtcDecoderAndSanitizerName;
-        names.delayedWithdrawer = CanaryBtcDelayedWithdrawer;
+        names.boringVault = LombardBtcName;
+        names.manager = LombardBtcManagerName;
+        names.accountant = LombardBtcAccountantName;
+        names.teller = LombardBtcTellerName;
+        names.rawDataDecoderAndSanitizer = LombardBtcDecoderAndSanitizerName;
+        names.delayedWithdrawer = LombardBtcDelayedWithdrawer;
 
         // Define Accountant Parameters.
         accountantParameters.payoutAddress = liquidPayoutAddress;
@@ -113,7 +113,7 @@ contract DeployCanaryBtcScript is DeployArcticArchitecture, MainnetAddresses {
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "LombardEarnDeployment.json",
+            "LombardBtcDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
