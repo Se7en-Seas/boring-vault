@@ -325,4 +325,12 @@ contract DecoderCustomTypes {
         uint256[] shares;
         address withdrawer;
     }
+
+
+    // ========================================= Aera ==========================================
+    
+    struct AssetValue {
+        address asset;
+        uint256 value;
+    } 
 }
