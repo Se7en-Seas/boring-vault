@@ -35,7 +35,7 @@ import {CompoundV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Prot
 import {MerklDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/MerklDecoderAndSanitizer.sol";
 import {LidoDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/LidoDecoderAndSanitizer.sol";
 
-contract LombardEarnDecoderAndSanitizer is
+contract LombardBtcDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
     BalancerV2DecoderAndSanitizer,
     MorphoBlueDecoderAndSanitizer,

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.21;
 
-import {LombardEarnDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/LombardEarnDecoderAndSanitizer.sol";
+import {LombardBtcDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/LombardBtcDecoderAndSanitizer.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
@@ -21,7 +21,7 @@ contract MerkleTreeCheckerTest is Test, MerkleTreeHelper {
 
         _startFork(rpcKey, blockNumber);
 
-        rawDataDecoderAndSanitizer = address(new LombardEarnDecoderAndSanitizer(boringVault, address(0)));
+        rawDataDecoderAndSanitizer = address(new LombardBtcDecoderAndSanitizer(boringVault, address(0)));
     }
 
     function testCheckingGoodTree() external {

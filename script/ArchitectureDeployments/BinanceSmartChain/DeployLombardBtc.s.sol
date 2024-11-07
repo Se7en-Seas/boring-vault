@@ -3,16 +3,16 @@ pragma solidity 0.8.21;
 
 import {DeployArcticArchitecture, ERC20, Deployer} from "script/ArchitectureDeployments/DeployArcticArchitecture.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
-import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
+import {BinanceSmartChainAddresses} from "test/resources/BinanceSmartChainAddresses.sol";
 
 // Import Decoder and Sanitizer to deploy.
 import {LombardBtcDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/LombardBtcDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLombardBtc.s.sol:DeployLombardBtcScript --with-gas-price 3000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/BinanceSmartChain/DeployLombardBtc.s.sol:DeployLombardBtcScript --evm-version london --broadcast --etherscan-api-key $BSCSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployLombardBtcScript is DeployArcticArchitecture, MainnetAddresses {
+contract DeployLombardBtcScript is DeployArcticArchitecture, BinanceSmartChainAddresses {
     using AddressToBytes32Lib for address;
 
     uint256 public privateKey;
@@ -25,21 +25,21 @@ contract DeployLombardBtcScript is DeployArcticArchitecture, MainnetAddresses {
 
     function setUp() external {
         privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("mainnet");
+        vm.createSelectFork("bsc");
     }
 
     function run() external {
         // Configure the deployment.
         configureDeployment.deployContracts = true;
-        configureDeployment.setupRoles = false;
-        configureDeployment.setupDepositAssets = false;
-        configureDeployment.setupWithdrawAssets = false;
-        configureDeployment.finishSetup = false;
-        configureDeployment.setupTestUser = false;
+        configureDeployment.setupRoles = true;
+        configureDeployment.setupDepositAssets = true;
+        configureDeployment.setupWithdrawAssets = true;
+        configureDeployment.finishSetup = true;
+        configureDeployment.setupTestUser = true;
         configureDeployment.saveDeploymentDetails = true;
         configureDeployment.deployerAddress = deployerAddress;
         configureDeployment.balancerVault = balancerVault;
-        configureDeployment.WETH = address(WETH);
+        configureDeployment.WETH = address(WBNB);
 
         // Save deployer.
         deployer = Deployer(configureDeployment.deployerAddress);
@@ -58,7 +58,7 @@ contract DeployLombardBtcScript is DeployArcticArchitecture, MainnetAddresses {
         accountantParameters.payoutAddress = liquidPayoutAddress;
         accountantParameters.base = WBTC;
         // Decimals are in terms of `base`.
-        accountantParameters.startingExchangeRate = 1e8;
+        accountantParameters.startingExchangeRate = 1.00377152e8;
         //  4 decimals
         accountantParameters.platformFee = 0.015e4;
         accountantParameters.performanceFee = 0;
@@ -113,7 +113,7 @@ contract DeployLombardBtcScript is DeployArcticArchitecture, MainnetAddresses {
         vm.startBroadcast(privateKey);
 
         _deploy(
-            "LombardBtcDeployment.json",
+            "BinanceSmartChain/LombardBtcDeployment.json",
             owner,
             boringVaultName,
             boringVaultSymbol,
