@@ -402,4 +402,12 @@ contract DecoderCustomTypes {
         /// @dev The address of the ERC20 purchase token
         address purchaseToken;
     }
+
+    // ========================================= Aera =========================================
+    
+    struct AssetValue {
+        address asset; 
+        uint256 amount; 
+    }
+
 }
