@@ -38,7 +38,7 @@ jobs:
       - name: Run Forge build
         run: |
           forge --version
-          forge build
+          forge build --skip script
         id: build
 
       - name: Run Forge tests
