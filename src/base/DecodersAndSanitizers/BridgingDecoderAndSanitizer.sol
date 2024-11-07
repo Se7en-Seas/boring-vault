@@ -18,6 +18,7 @@ import {ScrollBridgeDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/ScrollBridgeDecoderAndSanitizer.sol";
 import {LidoStandardBridgeDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/Protocols/LidoStandardBridgeDecoderAndSanitizer.sol";
+import {HyperlaneDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/HyperlaneDecoderAndSanitizer.sol";
 
 contract BridgingDecoderAndSanitizer is
     ArbitrumNativeBridgeDecoderAndSanitizer,
@@ -27,7 +28,8 @@ contract BridgingDecoderAndSanitizer is
     MantleStandardBridgeDecoderAndSanitizer,
     LineaBridgeDecoderAndSanitizer,
     ScrollBridgeDecoderAndSanitizer,
-    LidoStandardBridgeDecoderAndSanitizer
+    LidoStandardBridgeDecoderAndSanitizer,
+    HyperlaneDecoderAndSanitizer
 {
     constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
 

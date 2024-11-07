@@ -31,6 +31,8 @@ contract ChainValues {
     uint32 public constant layerZeroArbitrumEndpointId = 30110;
     uint32 public constant layerZeroLineaEndpointId = 30183;
     uint32 public constant layerZeroScrollEndpointId = 30214;
+    uint32 public constant hyperlaneMainnetEndpointId = 1;
+    uint32 public constant hyperlaneEclipseEndpointId = 1408864445;
 
     error ChainValues__ZeroAddress(string chainName, string valueName);
     error ChainValues__ZeroBytes32(string chainName, string valueName);
@@ -840,6 +842,10 @@ contract ChainValues {
         values[mainnet]["termRepoLocker"] = 0xFD9033C9A97Bc3Ec8a44439Cb6512516c5053076.toBytes32();
         values[mainnet]["termRepoServicer"] = 0xaD2401Dd7518Fac6C868c86442922E2236797e32.toBytes32();
         values[mainnet]["termRepoToken"] = 0x3A1427da14F8A57CEe76a5E85fB465ed72De8EC7.toBytes32();
+
+        // Hyperlane
+        values[mainnet]["hyperlaneUsdcRouter"] = 0xe1De9910fe71cC216490AC7FCF019e13a34481D7.toBytes32();
+        values[mainnet]["hyperlaneTestRecipient"] = 0xfb53392bf4a0590a317ca716c28c29ace7c448bc132d7f8188ca234f595aa121;
     }
 
     function _addBaseValues() private {
