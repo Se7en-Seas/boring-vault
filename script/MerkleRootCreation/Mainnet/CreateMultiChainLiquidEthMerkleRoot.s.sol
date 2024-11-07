@@ -428,6 +428,17 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
 
         _addPancakeSwapV3Leafs(leafs, token0, token1);
 
+        // ========================== Reclamation ==========================
+        {
+            address reclamationDecoder = 0xd7335170816912F9D06e23d23479589ed63b3c33;
+            address target = 0x778aC5d0EE062502fADaa2d300a51dE0869f7995;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0xC4F5Ee078a1C4DA280330546C29840d45ab32753;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+            target = 0x572F323Aa330B467C356c5a30Bf9A20480F4fD52;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+        }
+
         _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);

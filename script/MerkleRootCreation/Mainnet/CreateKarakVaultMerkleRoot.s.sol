@@ -54,6 +54,19 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
 
         ManageLeaf[] memory leafs = new ManageLeaf[](1024);
 
+        // ========================== Karak ==========================
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kmETH"));
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kweETH"));
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kwstETH"));
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "krETH"));
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kcbETH"));
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kwBETH"));
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kswETH"));
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kETHx"));
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "ksfrxETH"));
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "krswETH"));
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "krsETH"));
+
         // ========================== ITB Karak Position Managers ==========================
         _addLeafsForITBKarakPositionManager(
             leafs,
@@ -292,6 +305,21 @@ contract CreateKarakVaultMerkleRootScript is Script, MerkleTreeHelper {
         _addSwellStakingLeafs(leafs);
         _addMantleStakingLeafs(leafs);
         _addFraxLeafs(leafs);
+
+        {
+            address reclamationDecoder = 0xd7335170816912F9D06e23d23479589ed63b3c33;
+            _addReclamationLeafs(leafs, itbKmETHPositionManager, reclamationDecoder);
+            _addReclamationLeafs(leafs, itbKweETHPositionManager, reclamationDecoder);
+            _addReclamationLeafs(leafs, itbKwstETHPositionManager, reclamationDecoder);
+            _addReclamationLeafs(leafs, itbKrETHPositionManager, reclamationDecoder);
+            _addReclamationLeafs(leafs, itbKcbETHPositionManager, reclamationDecoder);
+            _addReclamationLeafs(leafs, itbKwBETHPositionManager, reclamationDecoder);
+            _addReclamationLeafs(leafs, itbKswETHPositionManager, reclamationDecoder);
+            _addReclamationLeafs(leafs, itbKETHxPositionManager, reclamationDecoder);
+            _addReclamationLeafs(leafs, itbKsfrxETHPositionManager, reclamationDecoder);
+            _addReclamationLeafs(leafs, itbKrswETHPositionManager, reclamationDecoder);
+            _addReclamationLeafs(leafs, itbKrsETHPositionManager, reclamationDecoder);
+        }
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 

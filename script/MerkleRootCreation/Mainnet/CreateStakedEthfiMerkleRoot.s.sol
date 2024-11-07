@@ -57,6 +57,16 @@ contract CreateStakedEthfiMerkleRootScript is Script, MerkleTreeHelper {
             getAddress(sourceChain, "vaultSupervisor")
         );
 
+        // ========================== Karak ==========================
+        _addKarakLeafs(leafs, getAddress(sourceChain, "vaultSupervisor"), getAddress(sourceChain, "kETHFI"));
+
+        // ========================== Reclamation ==========================
+        {
+            address reclamationDecoder = 0xd7335170816912F9D06e23d23479589ed63b3c33;
+            address target = 0xCF413A1989e33C8Ef59fbA79935d93205C9BE4c7;
+            _addReclamationLeafs(leafs, target, reclamationDecoder);
+        }
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/StakedETHFIStrategistLeafs.json";

@@ -72,7 +72,9 @@ contract EigenStakingIntegrationTest is Test, MerkleTreeHelper {
             getAddress(sourceChain, "eigenStrategy"),
             getAddress(sourceChain, "strategyManager"),
             getAddress(sourceChain, "delegationManager"),
-            getAddress(sourceChain, "eEigenOperator")
+            getAddress(sourceChain, "eEigenOperator"),
+            getAddress(sourceChain, "eigenRewards"),
+            address(0)
         );
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
@@ -192,7 +194,9 @@ contract EigenStakingIntegrationTest is Test, MerkleTreeHelper {
             getAddress(sourceChain, "eigenStrategy"),
             getAddress(sourceChain, "strategyManager"),
             getAddress(sourceChain, "delegationManager"),
-            getAddress(sourceChain, "eEigenOperator")
+            getAddress(sourceChain, "eEigenOperator"),
+            getAddress(sourceChain, "eigenRewards"),
+            address(0)
         );
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);

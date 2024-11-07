@@ -231,6 +231,26 @@ contract DecoderCustomTypes {
         uint256 expiry;
     }
 
+    struct EarnerTreeMerkleLeaf {
+        address earner;
+        bytes32 earnerTokenRoot;
+    }
+
+    struct TokenTreeMerkleLeaf {
+        address token;
+        uint256 cumulativeEarnings;
+    }
+
+    struct RewardsMerkleClaim {
+        uint32 rootIndex;
+        uint32 earnerIndex;
+        bytes earnerTreeProof;
+        EarnerTreeMerkleLeaf earnerLeaf;
+        uint32[] tokenIndices;
+        bytes[] tokenTreeProofs;
+        TokenTreeMerkleLeaf[] tokenLeaves;
+    }
+
     // ========================================= CCIP =========================================
 
     // If extraArgs is empty bytes, the default is 200k gas limit.
@@ -367,6 +387,21 @@ contract DecoderCustomTypes {
         address withdrawer;
     }
 
+    // ========================================= Term Finance ==================================
+
+    /// @dev TermAuctionOfferSubmission represents an offer submission to offeror an amount of money for a specific interest rate
+    struct TermAuctionOfferSubmission {
+        /// @dev For an existing offer this is the unique onchain identifier for this offer. For a new offer this is a randomized input that will be used to generate the unique onchain identifier.
+        bytes32 id;
+        /// @dev The address of the offeror
+        address offeror;
+        /// @dev Hash of the offered price as a percentage of the initial loaned amount vs amount returned at maturity. This stores 9 decimal places
+        bytes32 offerPriceHash;
+        /// @dev The maximum amount of purchase tokens that can be lent
+        uint256 amount;
+        /// @dev The address of the ERC20 purchase token
+        address purchaseToken;
+    }
 
     // ========================================= Aera ==========================================
     
@@ -374,4 +409,5 @@ contract DecoderCustomTypes {
         address asset;
         uint256 value;
     } 
+
 }

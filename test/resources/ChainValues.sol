@@ -172,6 +172,7 @@ contract ChainValues {
         values[mainnet]["EIGEN"] = 0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83.toBytes32();
         values[mainnet]["wcUSDCv3"] = 0x27F2f159Fe990Ba83D57f39Fd69661764BEbf37a.toBytes32();
         values[mainnet]["eBTC"] = 0x657e8C867D8B37dCC18fA4Caead9C45EB088C642.toBytes32();
+        values[mainnet]["USDS"] = 0xdC035D45d973E3EC169d2276DDab16f1e407384F.toBytes32();
 
         // Rate providers
         values[mainnet]["WEETH_RATE_PROVIDER"] = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee.toBytes32();
@@ -547,6 +548,7 @@ contract ChainValues {
         values[mainnet]["gauntletWBTCcore"] = 0x443df5eEE3196e9b2Dd77CaBd3eA76C3dee8f9b2.toBytes32();
         values[mainnet]["Re7WBTC"] = 0xE0C98605f279e4D7946d25B75869c69802823763.toBytes32();
         values[mainnet]["MCwBTC"] = 0x1c530D6de70c05A81bF1670157b9d928e9699089.toBytes32();
+        values[mainnet]["Re7cbBTC"] = 0xA02F5E93f783baF150Aa1F8b341Ae90fe0a772f7.toBytes32();
         values[mainnet]["gauntletCbBTCcore"] = 0xF587f2e8AfF7D76618d3B6B4626621860FbD54e3.toBytes32();
         values[mainnet]["MCcbBTC"] = 0x98cF0B67Da0F16E1F8f1a1D23ad8Dc64c0c70E0b.toBytes32();
 
@@ -554,7 +556,7 @@ contract ChainValues {
 
         // 1Inch
         values[mainnet]["aggregationRouterV5"] = 0x1111111254EEB25477B68fb85Ed929f73A960582.toBytes32();
-        values[mainnet]["oneInchExecutor"] = 0xE37e799D5077682FA0a244D46E5649F71457BD09.toBytes32();
+        values[mainnet]["oneInchExecutor"] = 0x3451B6b219478037a1AC572706627FC2BDa1e812.toBytes32();
         values[mainnet]["wETHweETH5bps"] = 0x7A415B19932c0105c82FDB6b720bb01B0CC2CAe3.toBytes32();
 
         // Gearbox
@@ -643,6 +645,9 @@ contract ChainValues {
         values[mainnet]["pendle_LBTC_corn_market_12_26_24"] = 0xCaE62858DB831272A03768f5844cbe1B40bB381f.toBytes32();
         values[mainnet]["pendle_LBTC_market_03_26_25"] = 0x70B70Ac0445C3eF04E314DFdA6caafd825428221.toBytes32();
 
+        values[mainnet]["pendle_pumpBTC_market_03_26_25"] = 0x8098B48a1c4e4080b30A43a7eBc0c87b52F17222.toBytes32();
+        values[mainnet]["pendle_corn_pumpBTC_market_12_25_24"] = 0xf8208fB52BA80075aF09840A683143C22DC5B4dd.toBytes32();
+
         // Aave V3
         values[mainnet]["v3Pool"] = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2.toBytes32();
 
@@ -687,6 +692,7 @@ contract ChainValues {
         values[mainnet]["testOperator"] = 0xDbEd88D83176316fc46797B43aDeE927Dc2ff2F5.toBytes32();
         values[mainnet]["eigenStrategy"] = 0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7.toBytes32();
         values[mainnet]["eEigenOperator"] = 0xDcAE4FAf7C7d0f4A78abe147244c6e9d60cFD202.toBytes32();
+        values[mainnet]["eigenRewards"] = 0x7750d328b314EfFa365A0402CcfD489B80B0adda.toBytes32();
 
         // Swell
         values[mainnet]["swellSimpleStaking"] = 0x38D43a6Cb8DA0E855A42fB6b0733A0498531d774.toBytes32();
@@ -710,6 +716,7 @@ contract ChainValues {
         values[mainnet]["fUSDC"] = 0x9Fb7b4477576Fe5B32be4C1843aFB1e55F251B33.toBytes32();
         values[mainnet]["fWETH"] = 0x90551c1795392094FE6D29B758EcCD233cFAa260.toBytes32();
         values[mainnet]["fWSTETH"] = 0x2411802D8BEA09be0aF8fD8D08314a63e706b29C.toBytes32();
+        values[mainnet]["fGHO"] = 0x6A29A46E21C730DcA1d8b23d637c101cec605C5B.toBytes32();
 
         // Symbiotic
         values[mainnet]["wstETHDefaultCollateral"] = 0xC329400492c6ff2438472D4651Ad17389fCb843a.toBytes32();
@@ -826,6 +833,11 @@ contract ChainValues {
         values[mainnet]["TreehouseRouter"] = 0xeFA3fa8e85D2b3CfdB250CdeA156c2c6C90628F5.toBytes32();
         values[mainnet]["tETH"] = 0xD11c452fc99cF405034ee446803b6F6c1F6d5ED8.toBytes32();
         values[mainnet]["tETH_wstETH_curve_pool"] = 0xA10d15538E09479186b4D3278BA5c979110dDdB1.toBytes32();
+        // Term Finance
+        values[mainnet]["termAuctionOfferLocker"] = 0xa557a6099d1a85d7569EA4B6d8ad59a94a8162CC.toBytes32();
+        values[mainnet]["termRepoLocker"] = 0xFD9033C9A97Bc3Ec8a44439Cb6512516c5053076.toBytes32();
+        values[mainnet]["termRepoServicer"] = 0xaD2401Dd7518Fac6C868c86442922E2236797e32.toBytes32();
+        values[mainnet]["termRepoToken"] = 0x3A1427da14F8A57CEe76a5E85fB465ed72De8EC7.toBytes32();
     }
 
     function _addBaseValues() private {

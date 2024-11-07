@@ -133,7 +133,7 @@ contract ContractNames {
     string public constant Btc_FiManagerName = "BTC-Fi Manager With Merkle Verification V0.0";
     string public constant Btc_FiAccountantName = "BTC-Fi Accountant With Rate Providers V0.0";
     string public constant Btc_FiTellerName = "BTC-Fi Teller With Multi Asset Support V0.0";
-    string public constant Btc_FiDecoderAndSanitizerName = "BTC-Fi Decoder and Sanitizer V0.0";
+    string public constant Btc_FiDecoderAndSanitizerName = "BTC-Fi Decoder and Sanitizer V0.1";
     string public constant Btc_FiDelayedWithdrawer = "BTC-Fi Delayed Withdrawer V0.0";
 
     string public constant SymbioticLRTVaultRolesAuthorityName = "Symbiotic LRT Vault RolesAuthority V0.0";
