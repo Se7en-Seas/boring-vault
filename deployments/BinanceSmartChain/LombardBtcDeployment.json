@@ -28,11 +28,11 @@
     "AllowedExchangeRateChangeLower": 9950,
     "AllowedExchangeRateChangeUpper": 10050,
     "Base": "WBTC",
-    "BaseAddress": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    "BaseAddress": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
     "PlatformFee": 150,
-    "StartingExchangeRate": 100000000
+    "StartingExchangeRate": 100377152
   },
   "core": {
     "AccountantWithRateProviders": "0x28634D0c5edC67CF2450E74deA49B90a4FF93dCE",

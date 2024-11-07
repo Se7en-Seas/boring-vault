@@ -81,6 +81,7 @@ contract ChainValues {
         _addLineaValues();
         _addScrollValues();
         _addFraxtalValues();
+        _addBscValues();
 
         // Add testnet values
         _addHoleskyValues();
@@ -1209,5 +1210,15 @@ contract ChainValues {
         // Standard Bridge.
         // values[fraxtal]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
         // values[fraxtal]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
+    }
+
+    function _addBscValues() private {
+        values[bsc]["deployerAddress"] = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d.toBytes32();
+        values[bsc]["dev0Address"] = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b.toBytes32();
+        values[bsc]["dev1Address"] = 0xf8553c8552f906C19286F21711721E206EE4909E.toBytes32();
+
+        values[bsc]["LBTC"] = 0xecAc9C5F704e954931349Da37F60E39f515c11c1.toBytes32();
+        values[bsc]["WBTC"] = 0x0555E30da8f98308EdB960aa94C0Db47230d2B9c.toBytes32();
+        values[bsc]["WBNB"] = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c.toBytes32();
     }
 }
