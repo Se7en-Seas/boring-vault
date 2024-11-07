@@ -171,6 +171,7 @@ contract ChainValues {
         values[mainnet]["fBTC"] = 0xC96dE26018A54D51c097160568752c4E3BD6C364.toBytes32();
         values[mainnet]["EIGEN"] = 0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83.toBytes32();
         values[mainnet]["wcUSDCv3"] = 0x27F2f159Fe990Ba83D57f39Fd69661764BEbf37a.toBytes32();
+        values[mainnet]["ZRO"] = 0x6985884C4392D348587B19cb9eAAf157F13271cd.toBytes32();
         values[mainnet]["eBTC"] = 0x657e8C867D8B37dCC18fA4Caead9C45EB088C642.toBytes32();
         values[mainnet]["USDS"] = 0xdC035D45d973E3EC169d2276DDab16f1e407384F.toBytes32();
 
@@ -802,6 +803,7 @@ contract ChainValues {
         values[mainnet]["lidoBaseResolvedDelegate"] = 0x866E82a600A1414e583f7F13623F1aC5d58b0Afa.toBytes32();
 
         // Layer Zero.
+        values[mainnet]["LayerZeroEndPoint"] = 0x1a44076050125825900e736c501f859c50fE728c.toBytes32();
         values[mainnet]["EtherFiOFTAdapter"] = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D.toBytes32();
 
         // Merkl

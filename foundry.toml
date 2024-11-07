@@ -9,6 +9,17 @@ optimizer_runs = 200
 fs_permissions = [{ access = "read-write", path = "./" }]
 deny_warnings = true
 
+remappings = [
+    "@solmate/=lib/solmate/src/",
+    "@forge-std/=lib/forge-std/src/",
+    "@ds-test/=lib/forge-std/lib/ds-test/src/",
+    "ds-test/=lib/forge-std/lib/ds-test/src/",
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "@ccip=lib/ccip/",
+    "@oapp-auth=lib/OAppAuth/src/",
+]
+
+
 [rpc_endpoints]
 mainnet = "${MAINNET_RPC_URL}"
 polygon = "${MATIC_RPC_URL}"

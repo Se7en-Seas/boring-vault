@@ -8,6 +8,10 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
     using MessageLib for uint256;
     using MessageLib for MessageLib.Message;
 
+    //============================== ERRORS ===============================
+
+    error CrossChainTellerWithGenericBridge__UnsafeCastToUint96();
+
     //============================== EVENTS ===============================
 
     event MessageSent(bytes32 indexed messageId, uint256 shareAmount, address indexed to);
@@ -22,6 +26,81 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
     // ========================================= PUBLIC FUNCTIONS =========================================
 
     /**
+     * @notice Deposit an asset and bridge the shares to another chain.
+     * @dev This function will REVERT if `beforeTransfer` hook reverts from:
+     *     - shares being locked
+     *     - allow list
+     * @dev Since call to `bridge` is public, msg.sig is not updated which means any role capabilities regarding this function
+     *      are also granted to the `bridge` function.
+     */
+    function depositAndBridge(
+        ERC20 depositAsset,
+        uint256 depositAmount,
+        uint256 minimumMint,
+        address to,
+        bytes calldata bridgeWildCard,
+        ERC20 feeToken,
+        uint256 maxFee
+    )
+        external
+        payable
+        requiresAuth
+        nonReentrant
+        revertOnNativeDeposit(address(depositAsset))
+        returns (uint256 sharesBridged)
+    {
+        // Deposit
+        Asset memory asset = _beforeDeposit(depositAsset);
+        sharesBridged = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender, msg.sender, asset);
+        _afterPublicDeposit(msg.sender, depositAsset, depositAmount, sharesBridged, shareLockPeriod);
+
+        // Bridge shares
+        if (sharesBridged > type(uint96).max) revert CrossChainTellerWithGenericBridge__UnsafeCastToUint96();
+        _bridge(uint96(sharesBridged), to, bridgeWildCard, feeToken, maxFee);
+    }
+
+    /**
+     * @notice Deposit an asset and bridge the shares to another chain using a permit.
+     * @dev This function will REVERT if `beforeTransfer` hook reverts from:
+     *     - shares being locked
+     *     - allow list
+     * @dev Since calls to `depositWithPermit` and `bridge` are public, msg.sig is not updated which means any role capabilities regarding this function
+     *      are also granted to the `depositWithPermit` and `bridge` function.
+     */
+    function depositAndBridgeWithPermit(
+        ERC20 depositAsset,
+        uint256 depositAmount,
+        uint256 minimumMint,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        address to,
+        bytes calldata bridgeWildCard,
+        ERC20 feeToken,
+        uint256 maxFee
+    )
+        external
+        payable
+        requiresAuth
+        nonReentrant
+        revertOnNativeDeposit(address(depositAsset))
+        returns (uint256 sharesBridged)
+    {
+        // Permit deposit
+        {
+            Asset memory asset = _beforeDeposit(depositAsset);
+            _handlePermit(depositAsset, depositAmount, deadline, v, r, s);
+            sharesBridged = _erc20Deposit(depositAsset, depositAmount, minimumMint, msg.sender, msg.sender, asset);
+        }
+        _afterPublicDeposit(msg.sender, depositAsset, depositAmount, sharesBridged, shareLockPeriod);
+
+        // Bridge shares
+        if (sharesBridged > type(uint96).max) revert CrossChainTellerWithGenericBridge__UnsafeCastToUint96();
+        _bridge(uint96(sharesBridged), to, bridgeWildCard, feeToken, maxFee);
+    }
+
+    /**
      * @notice Bridge shares to another chain.
      * @param shareAmount The amount of shares to bridge.
      * @param to The address to send the shares to on the other chain.
@@ -31,25 +110,12 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
      */
     function bridge(uint96 shareAmount, address to, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
         external
+        payable
         requiresAuth
         nonReentrant
     {
         if (isPaused) revert TellerWithMultiAssetSupport__Paused();
-        // Since shares are directly burned, call `beforeTransfer` to enforce before transfer hooks.
-        beforeTransfer(msg.sender, address(0), msg.sender);
-
-        // Burn shares from sender
-        vault.exit(address(0), ERC20(address(0)), 0, msg.sender, shareAmount);
-
-        // Send the message.
-        MessageLib.Message memory m = MessageLib.Message(shareAmount, to);
-        // `messageToUnit256` reverts on overflow, eventhough it is not possible to overflow.
-        // This was done for future proofing.
-        uint256 message = m.messageToUint256();
-
-        bytes32 messageId = _sendMessage(message, bridgeWildCard, feeToken, maxFee);
-
-        emit MessageSent(messageId, shareAmount, to);
+        _bridge(shareAmount, to, bridgeWildCard, feeToken, maxFee);
     }
 
     /**
@@ -67,6 +133,30 @@ abstract contract CrossChainTellerWithGenericBridge is TellerWithMultiAssetSuppo
     }
 
     // ========================================= INTERNAL BRIDGE FUNCTIONS =========================================
+
+    /**
+     * @notice Implement the bridge logic.
+     */
+    function _bridge(uint96 shareAmount, address to, bytes calldata bridgeWildCard, ERC20 feeToken, uint256 maxFee)
+        internal
+    {
+        // Since shares are directly burned, call `beforeTransfer` to enforce before transfer hooks.
+        beforeTransfer(msg.sender, address(0), msg.sender);
+
+        // Burn shares from sender
+        vault.exit(address(0), ERC20(address(0)), 0, msg.sender, shareAmount);
+
+        // Send the message.
+        MessageLib.Message memory m = MessageLib.Message(shareAmount, to);
+        // `messageToUnit256` reverts on overflow, eventhough it is not possible to overflow.
+        // This was done for future proofing.
+        uint256 message = m.messageToUint256();
+
+        bytes32 messageId = _sendMessage(message, bridgeWildCard, feeToken, maxFee);
+
+        emit MessageSent(messageId, shareAmount, to);
+    }
+
     /**
      * @notice Complete the message receive process, should be called in child contract once
      *         message has been confirmed as legit.`
