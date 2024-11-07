@@ -85,7 +85,7 @@ contract AccountantWithRateProvidersTest is Test, MerkleTreeHelper {
             ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateLower.selector, true
         );
         rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updateManagementFee.selector, true
+            ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updatePlatformFee.selector, true
         );
         rolesAuthority.setRoleCapability(
             ADMIN_ROLE, address(accountant), AccountantWithRateProviders.updatePayoutAddress.selector, true
@@ -153,11 +153,11 @@ contract AccountantWithRateProvidersTest is Test, MerkleTreeHelper {
         assertEq(lower_bound, 0.998e4, "Lower bound should be 0.9980e4");
     }
 
-    function testUpdateManagementFee() external {
-        accountant.updateManagementFee(0.09e4);
-        (,,,,,,,,,, uint16 management_fee,) = accountant.accountantState();
+    function testUpdatePlatformFee() external {
+        accountant.updatePlatformFee(0.09e4);
+        (,,,,,,,,,, uint16 platform_fee,) = accountant.accountantState();
 
-        assertEq(management_fee, 0.09e4, "Management Fee should be 0.09e4");
+        assertEq(platform_fee, 0.09e4, "Platform Fee should be 0.09e4");
     }
 
     function testUpdataePerformanceFee() external {
@@ -179,21 +179,21 @@ contract AccountantWithRateProvidersTest is Test, MerkleTreeHelper {
         );
         accountant.resetHighwaterMark();
 
-        // Set a management fee.
-        accountant.updateManagementFee(0.01e4);
+        // Set a platform fee.
+        accountant.updatePlatformFee(0.01e4);
 
         // Change share price to 0.5.
         accountant.unpause();
         accountant.updateExchangeRate(0.5e18);
 
-        // Advance time to accumualte management fees.
+        // Advance time to accumualte platform fees.
         skip(1 days);
 
         (,, uint128 feesOwedInBaseBeforeReset,,,,,,,,,) = accountant.accountantState();
 
         accountant.resetHighwaterMark();
         (, uint96 highwater_mark, uint128 feesOwedInBase,,,,,,,,,) = accountant.accountantState();
-        assertGt(feesOwedInBase, feesOwedInBaseBeforeReset, "Management fees should have been accumulated");
+        assertGt(feesOwedInBase, feesOwedInBaseBeforeReset, "Platform fees should have been accumulated");
         assertEq(highwater_mark, 0.5e18, "Highwater mark should be 0.5e18");
     }
 
@@ -214,8 +214,8 @@ contract AccountantWithRateProvidersTest is Test, MerkleTreeHelper {
         assertEq(address(rate_provider), WEETH_RATE_PROVIDER, "WEETH rate provider should be set");
     }
 
-    function testUpdateExchangeRateAndManagementFeeLogic() external {
-        accountant.updateManagementFee(0.01e4);
+    function testUpdateExchangeRateAndPlatformFeeLogic() external {
+        accountant.updatePlatformFee(0.01e4);
 
         skip(1 days / 24);
         // Increase exchange rate by 5 bps.
@@ -392,7 +392,7 @@ contract AccountantWithRateProvidersTest is Test, MerkleTreeHelper {
     }
 
     function testClaimFees() external {
-        accountant.updateManagementFee(0.01e4);
+        accountant.updatePlatformFee(0.01e4);
 
         skip(1 days / 24);
         // Increase exchange rate by 5 bps.
@@ -498,6 +498,40 @@ contract AccountantWithRateProvidersTest is Test, MerkleTreeHelper {
         assertGt(rateInPt, 1e18, "Rate should be greater than 1e18");
     }
 
+    // The fuzzing will create a variety of scenarios that would pause the accountant, and valid scenarios that would not.
+    function testPreviewUpdateExchangeRate(uint96 newExchangeRate, uint256 delay) external {
+        accountant.updatePlatformFee(0.01e4);
+        accountant.updatePerformanceFee(0.2e4);
+        newExchangeRate = uint96(bound(newExchangeRate, 0.998e18, 1.002e18));
+        delay = bound(delay, 1 days / 8, 7 days); // 3 hours to 7 days
+        accountant.updateDelay(uint24(1 days / 4)); // 6 hours
+        skip(1 days / 4);
+        accountant.updateExchangeRate(1e18);
+
+        skip(1 days);
+
+        // Update again so we have some fees owed.
+        accountant.updateExchangeRate(1e18);
+
+        skip(delay);
+
+        (bool updateWillPause, uint256 newFeesOwedInBase, uint256 totalFeesOwedInBase) =
+            accountant.previewUpdateExchangeRate(newExchangeRate);
+
+        accountant.updateExchangeRate(newExchangeRate);
+
+        (,, uint128 feesOwed,,,,,, bool isPaused,,,) = accountant.accountantState();
+        if (updateWillPause) {
+            assertTrue(isPaused, "Accountant should be paused");
+            assertEq(feesOwed, totalFeesOwedInBase, "Fees owed should not have changed");
+            assertEq(newFeesOwedInBase, 0, "New fees owed in base should be 0");
+        } else {
+            assertTrue(!isPaused, "Accountant should not be paused");
+            assertEq(feesOwed, totalFeesOwedInBase, "Fees owed should be total fees owed");
+            assertGt(newFeesOwedInBase, 0, "New fees owed in base should be greater than 0");
+        }
+    }
+
     function testReverts() external {
         accountant.pause();
 
@@ -554,7 +588,7 @@ contract AccountantWithRateProvidersTest is Test, MerkleTreeHelper {
         vm.expectRevert();
         accountant.getRateInQuoteSafe(ETHX);
 
-        // Updating bounds, and management fee reverts.
+        // Updating bounds, and platform fee reverts.
         vm.expectRevert(
             abi.encodeWithSelector(AccountantWithRateProviders.AccountantWithRateProviders__UpperBoundTooSmall.selector)
         );
@@ -567,10 +601,10 @@ contract AccountantWithRateProvidersTest is Test, MerkleTreeHelper {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                AccountantWithRateProviders.AccountantWithRateProviders__ManagementFeeTooLarge.selector
+                AccountantWithRateProviders.AccountantWithRateProviders__PlatformFeeTooLarge.selector
             )
         );
-        accountant.updateManagementFee(0.2001e4);
+        accountant.updatePlatformFee(0.2001e4);
 
         vm.expectRevert(
             abi.encodeWithSelector(

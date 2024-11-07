@@ -61,7 +61,7 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
     error ManagerWithMerkleVerification__Paused();
     error ManagerWithMerkleVerification__OnlyCallableByBoringVault();
     error ManagerWithMerkleVerification__OnlyCallableByBalancerVault();
-    error ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringManagement();
+    error ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringPlatform();
 
     //============================== EVENTS ===============================
 
@@ -152,7 +152,7 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
             vault.manage(targets[i], targetData[i], values[i]);
         }
         if (totalSupply != vault.totalSupply()) {
-            revert ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringManagement();
+            revert ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringPlatform();
         }
         emit BoringVaultManaged(targetsLength);
     }

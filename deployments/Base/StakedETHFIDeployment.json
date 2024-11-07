@@ -19,7 +19,7 @@
     "AllowedExchangeRateChangeUpper": 10050,
     "Base": "ETHFI",
     "BaseAddress": "0x6C240DDA6b5c336DF09A4D011139beAAa1eA2Aa2",
-    "ManagementFee": 0,
+    "PlatformFee": 0,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
     "StartingExchangeRate": 1000000000000000000

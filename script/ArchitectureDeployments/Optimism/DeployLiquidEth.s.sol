@@ -61,7 +61,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, OptimismAddresses {
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1028735518391250446;
         //  4 decimals
-        accountantParameters.managementFee = 0.02e4;
+        accountantParameters.platformFee = 0.02e4;
         accountantParameters.performanceFee = 0;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;

@@ -19,7 +19,7 @@
     "AllowedExchangeRateChangeUpper": 10050,
     "Base": "EIGEN",
     "BaseAddress": "0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83",
-    "ManagementFee": 200,
+    "PlatformFee": 200,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
     "StartingExchangeRate": 1000000000000000000
