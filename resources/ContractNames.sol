@@ -212,6 +212,16 @@ contract ContractNames {
     string public constant EtherFiElixirUsdPancakeSwapDecoderAndSanitizerName =
         "EtherFi Elixir USD PancakeSwap Decoder and Sanitizer V0.0";
 
+    string public constant SommTestVaultRolesAuthorityName = "Somm Test Vault RolesAuthority V0.0";
+    string public constant SommTestVaultName = "Somm Test Vault V0.0";
+    string public constant SommTestVaultManagerName = "Somm Test Vault Manager With Merkle Verification V0.0";
+    string public constant SommTestVaultAccountantName = "Somm Test Vault Accountant With Rate Providers V0.0";
+    string public constant SommTestVaultTellerName = "Somm Test Vault Teller With Multi Asset Support V0.0";
+    string public constant SommTestVaultDecoderAndSanitizerName = "Somm Test Vault Decoder and Sanitizer V0.0";
+    string public constant SommTestVaultDelayedWithdrawer = "Somm Test Vault Delayed Withdrawer V0.0";
+    string public constant SommTestVaultQueueName = "Somm Test Vault Queue V0.0";
+    string public constant SommTestVaultQueueSolverName = "Somm Test Vault Queue Solver V0.0";
+
     string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.5";
 
     // Generic Rate Providers
