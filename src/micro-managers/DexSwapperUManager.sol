@@ -177,7 +177,7 @@ contract DexSwapperUManager is UManager {
      * @param manageProofs 2 manage proofs, the first one for the ERC20 approval, and the second for the swap
      * @param decodersAndSanitizers 2 DecodersAndSanitizers one that implements ERC20 approve, and one that implements BalancerV2Vault.swap
      * @param singleSwap the swap data
-     * @param funds the fund management data
+     * @param funds the fund platform data
      * @param limit the maximum amount of assetIn to swap, or the minimum amount of assets out to receive
      * @param deadline the swap deadline
      * @dev Callable by STRATEGIST_ROLE.

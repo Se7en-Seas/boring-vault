@@ -10,6 +10,6 @@
 [submodule "lib/ccip"]
 	path = lib/ccip
 	url = https://github.com/smartcontractkit/ccip
-[submodule "lib/LayerZero-v2"]
-	path = lib/LayerZero-v2
-	url = https://github.com/LayerZero-Labs/LayerZero-v2
+[submodule "lib/OAppAuth"]
+	path = lib/OAppAuth
+	url = https://github.com/Se7en-Seas/OAppAuth

@@ -31,6 +31,8 @@ contract ChainValues {
     uint32 public constant layerZeroArbitrumEndpointId = 30110;
     uint32 public constant layerZeroLineaEndpointId = 30183;
     uint32 public constant layerZeroScrollEndpointId = 30214;
+    uint32 public constant hyperlaneMainnetEndpointId = 1;
+    uint32 public constant hyperlaneEclipseEndpointId = 1408864445;
 
     error ChainValues__ZeroAddress(string chainName, string valueName);
     error ChainValues__ZeroBytes32(string chainName, string valueName);
@@ -79,6 +81,7 @@ contract ChainValues {
         _addLineaValues();
         _addScrollValues();
         _addFraxtalValues();
+        _addBscValues();
 
         // Add testnet values
         _addHoleskyValues();
@@ -171,6 +174,7 @@ contract ChainValues {
         values[mainnet]["fBTC"] = 0xC96dE26018A54D51c097160568752c4E3BD6C364.toBytes32();
         values[mainnet]["EIGEN"] = 0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83.toBytes32();
         values[mainnet]["wcUSDCv3"] = 0x27F2f159Fe990Ba83D57f39Fd69661764BEbf37a.toBytes32();
+        values[mainnet]["ZRO"] = 0x6985884C4392D348587B19cb9eAAf157F13271cd.toBytes32();
         values[mainnet]["eBTC"] = 0x657e8C867D8B37dCC18fA4Caead9C45EB088C642.toBytes32();
         values[mainnet]["USDS"] = 0xdC035D45d973E3EC169d2276DDab16f1e407384F.toBytes32();
 
@@ -802,6 +806,7 @@ contract ChainValues {
         values[mainnet]["lidoBaseResolvedDelegate"] = 0x866E82a600A1414e583f7F13623F1aC5d58b0Afa.toBytes32();
 
         // Layer Zero.
+        values[mainnet]["LayerZeroEndPoint"] = 0x1a44076050125825900e736c501f859c50fE728c.toBytes32();
         values[mainnet]["EtherFiOFTAdapter"] = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D.toBytes32();
 
         // Merkl
@@ -842,6 +847,11 @@ contract ChainValues {
 
         //Aera
         values[mainnet]["aeraCompoundReservesVault"] = 0x3D6eEf6A92b15361697698695334E98C5db91D6b.toBytes32(); 
+
+        // Hyperlane
+        values[mainnet]["hyperlaneUsdcRouter"] = 0xe1De9910fe71cC216490AC7FCF019e13a34481D7.toBytes32();
+        values[mainnet]["hyperlaneTestRecipient"] = 0xfb53392bf4a0590a317ca716c28c29ace7c448bc132d7f8188ca234f595aa121;
+
     }
 
     function _addBaseValues() private {
@@ -1205,5 +1215,15 @@ contract ChainValues {
         // Standard Bridge.
         // values[fraxtal]["standardBridge"] = 0x4200000000000000000000000000000000000010.toBytes32();
         // values[fraxtal]["crossDomainMessenger"] = 0x4200000000000000000000000000000000000007.toBytes32();
+    }
+
+    function _addBscValues() private {
+        values[bsc]["deployerAddress"] = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d.toBytes32();
+        values[bsc]["dev0Address"] = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b.toBytes32();
+        values[bsc]["dev1Address"] = 0xf8553c8552f906C19286F21711721E206EE4909E.toBytes32();
+
+        values[bsc]["LBTC"] = 0xecAc9C5F704e954931349Da37F60E39f515c11c1.toBytes32();
+        values[bsc]["WBTC"] = 0x0555E30da8f98308EdB960aa94C0Db47230d2B9c.toBytes32();
+        values[bsc]["WBNB"] = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c.toBytes32();
     }
 }

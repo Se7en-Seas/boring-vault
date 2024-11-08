@@ -28,6 +28,14 @@ contract ContractNames {
     string public constant EtherFiLiquidUsdPancakeSwapDecoderAndSanitizerName =
         "EtherFi Liquid USD PancakeSwap Decoder and Sanitizer V0.0";
 
+    string public constant LombardBtcRolesAuthorityName = "Lombard BTC RolesAuthority Version 0.0";
+    string public constant LombardBtcName = "Lombard BTC V0.1";
+    string public constant LombardBtcManagerName = "Lombard BTC Manager With Merkle Verification V0.0";
+    string public constant LombardBtcAccountantName = "Lombard BTC Accountant With Rate Providers V0.1";
+    string public constant LombardBtcTellerName = "Lombard BTC Teller With Multi Asset Support V0.1";
+    string public constant LombardBtcDecoderAndSanitizerName = "Lombard BTC Decoder and Sanitizer V0.0";
+    string public constant LombardBtcDelayedWithdrawer = "Lombard BTC Delayed Withdrawer V0.0";
+
     string public constant EtherFiLiquidEthRolesAuthorityName = "EtherFi Liquid ETH RolesAuthority Version 0.0";
     string public constant EtherFiLiquidEthName = "EtherFi Liquid ETH V0.1";
     string public constant EtherFiLiquidEthManagerName = "EtherFi Liquid ETH Manager With Merkle Verification V0.1";
@@ -167,7 +175,7 @@ contract ContractNames {
     string public constant EtherFiEigenManagerName = "EtherFi EIGEN Manager With Merkle Verification V0.0";
     string public constant EtherFiEigenAccountantName = "EtherFi EIGEN Accountant With Rate Providers V0.0";
     string public constant EtherFiEigenTellerName = "EtherFi EIGEN Teller With Multi Asset Support V0.0";
-    string public constant EtherFiEigenDecoderAndSanitizerName = "EtherFi EIGEN Decoder and Sanitizer V0.0";
+    string public constant EtherFiEigenDecoderAndSanitizerName = "EtherFi EIGEN Decoder and Sanitizer V0.1";
     string public constant EtherFiEigenDelayedWithdrawer = "EtherFi EIGEN Delayed Withdrawer V0.0";
 
     string public constant YakMilkAvaxVaultRolesAuthorityName = "Yak Milk Avax Vault RolesAuthority V0.0";
@@ -203,6 +211,16 @@ contract ContractNames {
     string public constant EtherFiElixirUsdDelayedWithdrawer = "EtherFi Elixir USD Delayed Withdrawer V0.0";
     string public constant EtherFiElixirUsdPancakeSwapDecoderAndSanitizerName =
         "EtherFi Elixir USD PancakeSwap Decoder and Sanitizer V0.0";
+
+    string public constant SommTestVaultRolesAuthorityName = "Somm Test Vault RolesAuthority V0.0";
+    string public constant SommTestVaultName = "Somm Test Vault V0.0";
+    string public constant SommTestVaultManagerName = "Somm Test Vault Manager With Merkle Verification V0.0";
+    string public constant SommTestVaultAccountantName = "Somm Test Vault Accountant With Rate Providers V0.0";
+    string public constant SommTestVaultTellerName = "Somm Test Vault Teller With Multi Asset Support V0.0";
+    string public constant SommTestVaultDecoderAndSanitizerName = "Somm Test Vault Decoder and Sanitizer V0.0";
+    string public constant SommTestVaultDelayedWithdrawer = "Somm Test Vault Delayed Withdrawer V0.0";
+    string public constant SommTestVaultQueueName = "Somm Test Vault Queue V0.0";
+    string public constant SommTestVaultQueueSolverName = "Somm Test Vault Queue Solver V0.0";
 
     string public constant ItbPositionDecoderAndSanitizerName = "ITB Position Decoder and Sanitizer V0.5";
 

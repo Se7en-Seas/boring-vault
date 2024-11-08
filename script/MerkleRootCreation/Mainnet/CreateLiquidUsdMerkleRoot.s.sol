@@ -190,7 +190,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
 
         // ========================== UniswapV3 ==========================
         /**
-         * Full position management for USDC, USDT, DAI, USDe, sUSDe.
+         * Full position platform for USDC, USDT, DAI, USDe, sUSDe.
          */
         address[] memory token0 = new address[](13);
         token0[0] = getAddress(sourceChain, "USDC");
@@ -268,8 +268,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
          * Swap PYUSD <-> FRAX
          * Swap PYUSD <-> crvUSD
          */
-        address[] memory assets = new address[](20);
-        SwapKind[] memory kind = new SwapKind[](20);
+        address[] memory assets = new address[](21);
+        SwapKind[] memory kind = new SwapKind[](21);
         assets[0] = getAddress(sourceChain, "USDC");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "USDT");
@@ -310,6 +310,8 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         kind[18] = SwapKind.BuyAndSell;
         assets[19] = getAddress(sourceChain, "USDS");
         kind[19] = SwapKind.BuyAndSell;
+        assets[20] = getAddress(sourceChain, "SUSDE");
+        kind[20] = SwapKind.BuyAndSell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "PENDLE_wETH_30"));
@@ -605,10 +607,15 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
             ERC20[] memory purchaseTokens = new ERC20[](1);
             purchaseTokens[0] = getERC20(sourceChain, "USDC");
             address[] memory termAuctionOfferLockerAddresses = new address[](1);
-            termAuctionOfferLockerAddresses[0] = 0x1C43Fd40211b1f7B6E6F5CE9ffe8a75f647e7cFf;
+            termAuctionOfferLockerAddresses[0] = 0x55580a11c5C111EE2e36e24aef04443Bf130F092;
             address[] memory termRepoLockers = new address[](1);
-            termRepoLockers[0] = 0x7021471b9d32904D71Fa1E5011E323c4065946e2;
+            termRepoLockers[0] = 0xDFC8271C70303B0d98819267f93F86EfFe9BC3AD;
+            address[] memory termRepoServicers = new address[](1);
+            termRepoServicers[0] = 0x65Cc6CD9d99f497053C3978b8724B05d2aE03D17;
             _addTermFinanceLockOfferLeafs(leafs, purchaseTokens, termAuctionOfferLockerAddresses, termRepoLockers);
+            _addTermFinanceUnlockOfferLeafs(leafs, termAuctionOfferLockerAddresses);
+            _addTermFinanceRevealOfferLeafs(leafs, termAuctionOfferLockerAddresses);
+            _addTermFinanceRedeemTermRepoTokensLeafs(leafs, termRepoServicers);
         }
 
         // ========================== SYMBIOTIC ==========================
@@ -621,7 +628,7 @@ contract CreateLiquidUsdMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", pancakeSwapDataDecoderAndSanitizer);
 
         /**
-         * Full position management for USDC, USDT, DAI, USDe, sUSDe.
+         * Full position platform for USDC, USDT, DAI, USDe, sUSDe.
          */
         token0 = new address[](10);
         token0[0] = getAddress(sourceChain, "USDC");

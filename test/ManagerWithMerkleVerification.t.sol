@@ -273,7 +273,7 @@ contract ManagerWithMerkleVerificationTest is Test, MerkleTreeHelper {
         vm.stopPrank();
     }
 
-    function testManagementMintingSharesRevert() external {
+    function testPlatformMintingSharesRevert() external {
         deal(address(boringVault), 1_000e18);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](2);
@@ -300,7 +300,7 @@ contract ManagerWithMerkleVerificationTest is Test, MerkleTreeHelper {
         vm.expectRevert(
             abi.encodeWithSelector(
                 ManagerWithMerkleVerification
-                    .ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringManagement
+                    .ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringPlatform
                     .selector
             )
         );

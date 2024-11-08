@@ -176,8 +176,13 @@ contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
         WETH.safeApprove(address(boringVault), wETH_amount);
         EETH.safeApprove(address(boringVault), eETH_amount);
 
+        uint96 currentNonce = teller.depositNonce();
+
         teller.deposit(WETH, wETH_amount, 0);
+        assertEq(teller.depositNonce(), currentNonce + 1, "Deposit nonce should have increased by 1");
         teller.deposit(EETH, eETH_amount, 0);
+        assertEq(teller.depositNonce(), currentNonce + 2, "Deposit nonce should have increased by 2");
+        assertEq(teller.depositNonce(), 2, "Deposit nonce should be 2");
 
         uint256 expected_shares = 2 * amount;
 

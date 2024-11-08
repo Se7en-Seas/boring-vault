@@ -39,7 +39,7 @@
     "AllowedExchangeRateChangeUpper": 10050,
     "Base": "cbBTC",
     "BaseAddress": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
-    "ManagementFee": 150,
+    "PlatformFee": 150,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
     "StartingExchangeRate": 100000000

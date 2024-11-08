@@ -28,6 +28,10 @@ contract BaseDecoderAndSanitizer {
         addressesFound = abi.encodePacked(feeAsset);
     }
 
+    function claimYield(address yieldAsset) external pure returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(yieldAsset);
+    }
+
     function withdrawNonBoringToken(address token, uint256 /*amount*/ )
         external
         pure
