@@ -80,10 +80,7 @@ contract TellerWithRemediationTest is Test, MerkleTreeHelper {
         rolesAuthority.setRoleCapability(MINTER_ROLE, address(boringVault), BoringVault.enter.selector, true);
         rolesAuthority.setRoleCapability(BURNER_ROLE, address(boringVault), BoringVault.exit.selector, true);
         rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.addAsset.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.removeAsset.selector, true
+            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.updateAssetData.selector, true
         );
         rolesAuthority.setRoleCapability(
             ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.bulkDeposit.selector, true
@@ -113,10 +110,10 @@ contract TellerWithRemediationTest is Test, MerkleTreeHelper {
         rolesAuthority.setUserRole(address(atomicQueue), QUEUE_ROLE, true);
         rolesAuthority.setUserRole(solver, CAN_SOLVE_ROLE, true);
 
-        teller.addAsset(WETH);
-        teller.addAsset(ERC20(NATIVE));
-        teller.addAsset(EETH);
-        teller.addAsset(WEETH);
+        teller.updateAssetData(WETH, true, true, 0);
+        teller.updateAssetData(ERC20(NATIVE), true, true, 0);
+        teller.updateAssetData(EETH, true, true, 0);
+        teller.updateAssetData(WEETH, true, true, 0);
 
         accountant.setRateProviderData(EETH, true, address(0));
         accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));

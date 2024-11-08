@@ -82,10 +82,7 @@ contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
         rolesAuthority.setRoleCapability(MINTER_ROLE, address(boringVault), BoringVault.enter.selector, true);
         rolesAuthority.setRoleCapability(BURNER_ROLE, address(boringVault), BoringVault.exit.selector, true);
         rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.addAsset.selector, true
-        );
-        rolesAuthority.setRoleCapability(
-            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.removeAsset.selector, true
+            ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.updateAssetData.selector, true
         );
         rolesAuthority.setRoleCapability(
             ADMIN_ROLE, address(teller), TellerWithMultiAssetSupport.bulkDeposit.selector, true
@@ -117,10 +114,10 @@ contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
         rolesAuthority.setUserRole(address(atomicQueue), QUEUE_ROLE, true);
         rolesAuthority.setUserRole(solver, CAN_SOLVE_ROLE, true);
 
-        teller.addAsset(WETH);
-        teller.addAsset(ERC20(NATIVE));
-        teller.addAsset(EETH);
-        teller.addAsset(WEETH);
+        teller.updateAssetData(WETH, true, true, 0);
+        teller.updateAssetData(ERC20(NATIVE), true, true, 0);
+        teller.updateAssetData(EETH, true, true, 0);
+        teller.updateAssetData(WEETH, true, true, 0);
 
         accountant.setRateProviderData(EETH, true, address(0));
         accountant.setRateProviderData(WEETH, false, address(WEETH_RATE_PROVIDER));
@@ -179,8 +176,13 @@ contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
         WETH.safeApprove(address(boringVault), wETH_amount);
         EETH.safeApprove(address(boringVault), eETH_amount);
 
+        uint96 currentNonce = teller.depositNonce();
+
         teller.deposit(WETH, wETH_amount, 0);
+        assertEq(teller.depositNonce(), currentNonce + 1, "Deposit nonce should have increased by 1");
         teller.deposit(EETH, eETH_amount, 0);
+        assertEq(teller.depositNonce(), currentNonce + 2, "Deposit nonce should have increased by 2");
+        assertEq(teller.depositNonce(), 2, "Deposit nonce should be 2");
 
         uint256 expected_shares = 2 * amount;
 
@@ -402,16 +404,28 @@ contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
         vm.stopPrank();
     }
 
-    function testAssetIsSupported() external {
-        assertTrue(teller.isSupported(WETH) == true, "WETH should be supported");
+    function testUpdateAssetData() external {
+        (bool allowDeposits, bool allowWithdraws, uint16 sharePremium) = teller.assetData(WETH);
+        assertTrue(allowDeposits == true, "WETH deposits should be supported");
+        assertTrue(allowWithdraws == true, "WETH withdraws should be supported");
+        assertEq(sharePremium, 0, "WETH sharePremium should be zero.");
 
-        teller.removeAsset(WETH);
+        teller.updateAssetData(WETH, false, false, 0);
 
-        assertTrue(teller.isSupported(WETH) == false, "WETH should not be supported");
+        (allowDeposits, allowWithdraws, sharePremium) = teller.assetData(WETH);
 
-        teller.addAsset(WETH);
+        assertTrue(allowDeposits == false, "WETH deposits should not be supported");
+        assertTrue(allowWithdraws == false, "WETH withdraws should not be supported");
+        assertEq(sharePremium, 0, "WETH sharePremium should be zero.");
 
-        assertTrue(teller.isSupported(WETH) == true, "WETH should be supported");
+        uint16 newSharePremium = 40;
+        teller.updateAssetData(WETH, true, true, newSharePremium);
+
+        (allowDeposits, allowWithdraws, sharePremium) = teller.assetData(WETH);
+
+        assertTrue(allowDeposits == true, "WETH deposits should be supported");
+        assertTrue(allowWithdraws == true, "WETH withdraws should be supported");
+        assertEq(sharePremium, 40, "WETH sharePremium should equal newSharePremium.");
     }
 
     function testDenyList() external {
@@ -530,6 +544,150 @@ contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
         boringVault.transferFrom(from, to, 1e18);
     }
 
+    function testSharePremiumLogicERC20Deposit(uint256 depositAmount, uint16 sharePremium) external {
+        depositAmount = bound(depositAmount, 0.0001e18, 1_000e18);
+        sharePremium = uint16(bound(sharePremium, 0, 1_000));
+        teller.updateAssetData(WETH, true, true, sharePremium);
+
+        deal(address(WETH), address(this), depositAmount);
+        WETH.approve(address(boringVault), depositAmount);
+
+        uint256 shareDelta = boringVault.balanceOf(address(this));
+        uint256 sharesOut = teller.deposit(WETH, depositAmount, 0);
+        shareDelta = boringVault.balanceOf(address(this)) - shareDelta;
+
+        // WETH is 1:1 with share price, so shares out should equal depositAmount - sharePremium
+        uint256 expectedSharesOut = depositAmount.mulDivDown(1e4 - sharePremium, 1e4);
+
+        assertEq(shareDelta, sharesOut, "Share delta should match shares out.");
+        assertEq(sharesOut, expectedSharesOut, "Shares out should equal expected shares out.");
+        assertEq(WETH.balanceOf(address(this)), 0, "All assets should have been spent.");
+        assertEq(WETH.balanceOf(address(boringVault)), depositAmount, "All assets should be in boring vault.");
+    }
+
+    function testSharePremiumLogicNativeDeposit(uint256 depositAmount, uint16 sharePremium) external {
+        depositAmount = bound(depositAmount, 0.0001e18, 1_000e18);
+        sharePremium = uint16(bound(sharePremium, 0, 1_000));
+        teller.updateAssetData(ERC20(NATIVE), true, true, sharePremium);
+
+        deal(address(this), depositAmount);
+
+        uint256 shareDelta = boringVault.balanceOf(address(this));
+        uint256 sharesOut = teller.deposit{value: depositAmount}(ERC20(NATIVE), 0, 0);
+        shareDelta = boringVault.balanceOf(address(this)) - shareDelta;
+
+        // ETH is 1:1 with share price, so shares out should equal depositAmount - sharePremium
+        uint256 expectedSharesOut = depositAmount.mulDivDown(1e4 - sharePremium, 1e4);
+
+        assertEq(shareDelta, sharesOut, "Share delta should match shares out.");
+        assertEq(sharesOut, expectedSharesOut, "Shares out should equal expected shares out.");
+        assertEq(address(this).balance, 0, "All assets should have been spent.");
+        assertEq(WETH.balanceOf(address(boringVault)), depositAmount, "All assets should be in boring vault.");
+    }
+
+    function testAllowDeposits() external {
+        // Stop deposits.
+        teller.updateAssetData(WETH, false, false, 0);
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__AssetNotSupported.selector
+                )
+            )
+        );
+        teller.deposit(WETH, 0, 0);
+
+        // Allow deposits
+        teller.updateAssetData(WETH, true, false, 0);
+
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__ZeroAssets.selector))
+        );
+        teller.deposit(WETH, 0, 0);
+
+        // Stop deposits.
+        teller.updateAssetData(WETH, false, false, 0);
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__AssetNotSupported.selector
+                )
+            )
+        );
+        teller.depositWithPermit(WETH, 0, 0, 0, 0, bytes32(0), bytes32(0));
+
+        // Allow deposits
+        teller.updateAssetData(WETH, true, false, 0);
+
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__ZeroAssets.selector))
+        );
+        teller.depositWithPermit(WETH, 0, 0, 0, 0, bytes32(0), bytes32(0));
+
+        // Stop deposits.
+        teller.updateAssetData(WETH, false, false, 0);
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__AssetNotSupported.selector
+                )
+            )
+        );
+        teller.bulkDeposit(WETH, 0, 0, address(0));
+
+        // Allow deposits
+        teller.updateAssetData(WETH, true, false, 0);
+
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__ZeroAssets.selector))
+        );
+        teller.bulkDeposit(WETH, 0, 0, address(0));
+    }
+
+    function testAllowWithdraws() external {
+        // Stop withdraws.
+        teller.updateAssetData(WETH, false, false, 0);
+
+        vm.expectRevert(
+            bytes(
+                abi.encodeWithSelector(
+                    TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__AssetNotSupported.selector
+                )
+            )
+        );
+        teller.bulkWithdraw(WETH, 0, 0, address(0));
+
+        // Allow withdraws
+        teller.updateAssetData(WETH, false, true, 0);
+
+        vm.expectRevert(
+            bytes(abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__ZeroShares.selector))
+        );
+        teller.bulkWithdraw(WETH, 0, 0, address(0));
+    }
+
+    function testShowDepositAndTransferLogic() external {
+        boringVault.setBeforeTransferHook(address(teller));
+        // If share lock period is set to 0 we allow for deposit and transfer in the same tx.
+        teller.setShareLockPeriod(0);
+
+        address user = vm.addr(1);
+
+        uint256 shareDelta = boringVault.balanceOf(user);
+        depositAndTransfer(WETH, 1e18, user, false);
+        shareDelta = boringVault.balanceOf(user) - shareDelta;
+
+        assertEq(shareDelta, 1e18, "User should have received 1 share.");
+
+        // But if share lock period is greater than 0, deposit and transfers in the same tx revert.
+        teller.setShareLockPeriod(1);
+
+        depositAndTransfer(WETH, 1e18, user, true);
+    }
+
     function testReverts() external {
         // Test pause logic
         teller.pause();
@@ -546,14 +704,14 @@ contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
 
         teller.unpause();
 
-        teller.removeAsset(WETH);
+        teller.updateAssetData(WETH, false, false, 0);
 
         vm.expectRevert(
             abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__AssetNotSupported.selector)
         );
         teller.deposit(WETH, 0, 0);
 
-        teller.addAsset(WETH);
+        teller.updateAssetData(WETH, true, true, 0);
 
         vm.expectRevert(
             abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__ZeroAssets.selector)
@@ -579,6 +737,14 @@ contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
             abi.encodeWithSelector(TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__MinimumMintNotMet.selector)
         );
         teller.deposit{value: 1}(NATIVE_ERC20, 1, type(uint256).max);
+
+        // updateAssetData revert
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__SharePremiumTooLarge.selector
+            )
+        );
+        teller.updateAssetData(WETH, true, true, 1_001);
 
         // bulkDeposit reverts
         vm.expectRevert(
@@ -649,5 +815,23 @@ contract TellerWithMultiAssetSupportTest is Test, MerkleTreeHelper {
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
+    }
+
+    function depositAndTransfer(ERC20 asset, uint256 depositAmount, address to, bool expectRevert) public {
+        deal(address(asset), address(this), depositAmount);
+        asset.approve(address(boringVault), depositAmount);
+        uint256 shares = teller.deposit(asset, depositAmount, 0);
+        if (expectRevert) {
+            vm.expectRevert(
+                bytes(
+                    abi.encodeWithSelector(
+                        TellerWithMultiAssetSupport.TellerWithMultiAssetSupport__SharesAreLocked.selector
+                    )
+                )
+            );
+            boringVault.transfer(to, shares);
+        } else {
+            boringVault.transfer(to, shares);
+        }
     }
 }

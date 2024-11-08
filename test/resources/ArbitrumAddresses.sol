@@ -7,7 +7,7 @@ contract ArbitrumAddresses {
     // Liquid Ecosystem
     address public deployerAddress = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d;
     address public dev0Address = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b;
-    address public dev1Address = 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1;
+    address public dev1Address = 0xf8553c8552f906C19286F21711721E206EE4909E;
     address public liquidPayoutAddress = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A;
 
     // DeFi Ecosystem
@@ -43,6 +43,7 @@ contract ArbitrumAddresses {
     ERC20 public AURA = ERC20(0x1509706a6c66CA549ff0cB464de88231DDBe213B);
     ERC20 public PENDLE = ERC20(0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8);
     ERC20 public RSR = ERC20(0xCa5Ca9083702c56b481D1eec86F1776FDbd2e594);
+    ERC20 public ETHFI = ERC20(0x7189fb5B6504bbfF6a852B13B7B82a3c118fDc27);
 
     // Aave V3
     address public v3Pool = 0x794a61358D6845594F94dc1DB02A252b5b4814aD;

@@ -21,6 +21,7 @@
       "rateProvider": "0x0000000000000000000000000000000000000000"
     }
   },
+  "Drones": "",
   "WithdrawAssets": {
     "USD0++": {
       "CompletionWindow": 1209600,
@@ -34,7 +35,7 @@
     "AllowedExchangeRateChangeUpper": 10050,
     "Base": "USD0",
     "BaseAddress": "0x73A15FeD60Bf67631dC6cd7Bc5B6e8da8190aCF5",
-    "ManagementFee": 200,
+    "PlatformFee": 200,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
     "StartingExchangeRate": 1000000000000000000
@@ -42,7 +43,7 @@
   "core": {
     "AccountantWithRateProviders": "0x1D4F0F05e50312d3E7B65659Ef7d06aa74651e0C",
     "BoringVault": "0xeDa663610638E6557c27e2f4e973D3393e844E70",
-    "DecoderAndSanitizer": "0x8cDeD215E8fa36E1367Eeda41d24B4C87d17ABCB",
+    "DecoderAndSanitizer": "0xA8633d10B828f80383D57a63914Fd23D6F71B157",
     "DelayedWithdraw": "0x7837CD2f99f2e3c192E4492f580F2790A30E34f9",
     "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
     "ManagerWithMerkleVerification": "0x5F2Ecb56Ed33c86219840A2F89316285A1D9ee0F",

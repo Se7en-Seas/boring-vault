@@ -53,4 +53,32 @@ abstract contract EigenLayerLSTStakingDecoderAndSanitizer is BaseDecoderAndSanit
             }
         }
     }
+
+    function delegateTo(
+        address operator,
+        DecoderCustomTypes.SignatureWithExpiry calldata, /*approverSignatureAndExpiry*/
+        bytes32 /*approverSalt*/
+    ) external pure returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(operator);
+    }
+
+    function undelegate(address staker) external pure returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(staker);
+    }
+
+    function setClaimerFor(address claimer) external pure returns (bytes memory addressesFound) {
+        addressesFound = abi.encodePacked(claimer);
+    }
+
+    /**
+     * @notice We intentionally do not report claim.earnerLeaf.earner, and claim.tokenLeaves[i].token
+     *         These addresses are not important for the security of the call.
+     */
+    function processClaim(DecoderCustomTypes.RewardsMerkleClaim calldata, /*claim*/ address recipient)
+        external
+        pure
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(recipient);
+    }
 }

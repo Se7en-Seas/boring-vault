@@ -3,7 +3,7 @@
     "AllowedExchangeRateChangeLower": 9950,
     "AllowedExchangeRateChangeUpper": 10050,
     "Base": "0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa",
-    "ManagementFee": 200,
+    "PlatformFee": 200,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
     "StartingExchangeRate": 1000000000000000000

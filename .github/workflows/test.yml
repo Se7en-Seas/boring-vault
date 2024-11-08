@@ -22,6 +22,8 @@ jobs:
       BASE_RPC_URL: https://base-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_API_KEY }}
       AVALANCHE_RPC_URL: https://avalanche-mainnet.infura.io/v3/${{ secrets.INFURA_API_KEY }}
       OPTIMISM_RPC_URL: https://optimism-mainnet.infura.io/v3/${{ secrets.INFURA_API_KEY }}
+      LINEA_RPC_URL: https://linea-mainnet.infura.io/v3/${{ secrets.INFURA_API_KEY }}
+      MANTLE_RPC_URL: https://mantle-mainnet.infura.io/v3/${{ secrets.INFURA_API_KEY }}
       HOLESKY_RPC_URL: https://holesky.infura.io/v3/${{ secrets.INFURA_API_KEY_0 }}
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +38,7 @@ jobs:
       - name: Run Forge build
         run: |
           forge --version
-          forge build
+          forge build --skip script
         id: build
 
       - name: Run Forge tests

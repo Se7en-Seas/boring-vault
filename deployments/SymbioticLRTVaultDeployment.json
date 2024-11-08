@@ -118,7 +118,7 @@
     "AllowedExchangeRateChangeUpper": 10050,
     "Base": "WETH",
     "BaseAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-    "ManagementFee": 0,
+    "PlatformFee": 0,
     "MinimumUpateDelayInSeconds": 21600,
     "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
     "StartingExchangeRate": 1000000000000000000
@@ -126,7 +126,7 @@
   "core": {
     "AccountantWithRateProviders": "0xbe16605B22a7faCEf247363312121670DFe5afBE",
     "BoringVault": "0x917ceE801a67f933F2e6b33fC0cD1ED2d5909D88",
-    "DecoderAndSanitizer": "0xdaEfE2146908BAd73A1C45f75eB2B8E46935c781",
+    "DecoderAndSanitizer": "0x210c179758430646C83f5Da08C7b2bc73c9aAD55",
     "DelayedWithdraw": "0x1bd68bdb88bFc08F0e55Fd5996E4B19D8F306d53",
     "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
     "ManagerWithMerkleVerification": "0xA24dD7B978Fbe36125cC4817192f7b8AA18d213c",

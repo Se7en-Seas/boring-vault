@@ -15,10 +15,12 @@ import "forge-std/Script.sol";
 contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
-    address public boringVault = 0xaA6D4Fb1FF961f8E52334f433974d40484e8be8F;
-    address public managerAddress = 0x744d1f71a6d064204b4c59Cf2BDCF9De9C6c3430;
-    address public accountantAddress = 0x99c836937305693A5518819ED457B0d3dfE99785;
-    address public rawDataDecoderAndSanitizer = 0x28edfc0bffdF1f9C986923729b88B5F40f2B92D9;
+    address public boringVault = 0xf8203A33027607D2C82dFd67b46986096257dFA5;
+    address public managerAddress = 0x3770E6021d7b2617Ba86E89EF210Cc00A7c9Af95;
+    address public accountantAddress = 0xBA4397B2B1780097eD1B483E3C0717E0Ed4fAAa5;
+    address public rawDataDecoderAndSanitizer = 0xD9023495256B23D7b4FA32A5Fd724140F179F51b;
+    address public drone = 0x80aA0E6c933316464D66A4CFd2A4F1C04677da73;
+    address public zircuitDrone = 0xFdC94b15819cc12a010c65A713563B65cDc060E4;
 
     function setUp() external {}
 
@@ -37,56 +39,40 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
         setAddress(false, mainnet, "accountantAddress", accountantAddress);
         setAddress(false, mainnet, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](256);
+        ManageLeaf[] memory leafs = new ManageLeaf[](64);
 
-        // ========================== Native Bridge ==========================
-        ERC20[] memory nativeBridgeTokens = new ERC20[](2);
-        nativeBridgeTokens[0] = getERC20(sourceChain, "WETH");
-        nativeBridgeTokens[1] = getERC20(sourceChain, "WSTETH");
-        _addArbitrumNativeBridgeLeafs(leafs, nativeBridgeTokens);
+        // ========================== Linea Bridge ==========================
+        ERC20[] memory localTokens = new ERC20[](1);
+        localTokens[0] = getERC20(sourceChain, "DAI");
+        _addLineaNativeBridgeLeafs(leafs, "linea", localTokens);
 
-        // ========================== Aave V3 ==========================
-        ERC20[] memory supplyAssets = new ERC20[](3);
-        supplyAssets[0] = getERC20(sourceChain, "WETH");
-        supplyAssets[1] = getERC20(sourceChain, "WSTETH");
-        supplyAssets[2] = getERC20(sourceChain, "WEETH");
-        ERC20[] memory borrowAssets = new ERC20[](3);
-        borrowAssets[0] = getERC20(sourceChain, "WETH");
-        borrowAssets[1] = getERC20(sourceChain, "WSTETH");
-        borrowAssets[2] = getERC20(sourceChain, "WEETH");
-        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
+        // ========================== Scroll Bridge ==========================
+        _addScrollNativeBridgeLeafs(leafs, "scroll", localTokens);
 
-        // ========================== Native ==========================
-        /**
-         * wrap, unwrap
-         */
-        _addNativeLeafs(leafs);
-
-        // ========================== Standard Bridge ==========================
-        ERC20[] memory localTokens = new ERC20[](2);
-        localTokens[0] = getERC20(sourceChain, "WETH");
-        localTokens[1] = getERC20(sourceChain, "WSTETH");
-        ERC20[] memory remoteTokens = new ERC20[](2);
-        remoteTokens[0] = getERC20(mainnet, "WETH");
-        remoteTokens[1] = getERC20(mainnet, "WSTETH");
+        // ========================== Mantle Bridge ==========================
+        localTokens = new ERC20[](1);
+        localTokens[0] = getERC20("mainnet", "METH");
+        ERC20[] memory remoteTokens = new ERC20[](1);
+        remoteTokens[0] = getERC20("mantle", "METH");
         _addStandardBridgeLeafs(
             leafs,
-            optimism,
-            getAddress(optimism, "crossDomainMessenger"),
-            getAddress(sourceChain, "optimismResolvedDelegate"),
-            getAddress(sourceChain, "optimismStandardBridge"),
-            getAddress(sourceChain, "optimismPortal"),
+            "mantle",
+            getAddress("mantle", "crossDomainMessenger"),
+            getAddress(sourceChain, "mantleResolvedDelegate"),
+            getAddress(sourceChain, "mantleStandardBridge"),
+            getAddress(sourceChain, "mantlePortal"),
             localTokens,
             remoteTokens
         );
 
+        // ========================== Zircuit Bridge ==========================
         _addStandardBridgeLeafs(
             leafs,
-            base,
-            getAddress(base, "crossDomainMessenger"),
-            getAddress(sourceChain, "baseResolvedDelegate"),
-            getAddress(sourceChain, "baseStandardBridge"),
-            getAddress(sourceChain, "basePortal"),
+            "zircuit",
+            getAddress("zircuit", "crossDomainMessenger"),
+            getAddress(sourceChain, "zircuitResolvedDelegate"),
+            getAddress(sourceChain, "zircuitStandardBridge"),
+            getAddress(sourceChain, "zircuitPortal"),
             localTokens,
             remoteTokens
         );
@@ -96,22 +82,23 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
             leafs,
             getERC20(sourceChain, "WEETH"),
             getAddress(sourceChain, "EtherFiOFTAdapter"),
-            layerZeroOptimismEndpointId
+            layerZeroLineaEndpointId
         );
         _addLayerZeroLeafs(
-            leafs, getERC20(sourceChain, "WEETH"), getAddress(sourceChain, "EtherFiOFTAdapter"), layerZeroBaseEndpointId
+            leafs,
+            getERC20(sourceChain, "WEETH"),
+            getAddress(sourceChain, "EtherFiOFTAdapter"),
+            layerZeroScrollEndpointId
         );
 
-        // ========================== Pendle ==========================
-        // update to use Liquid ETHs Decoder and Sanitizer.
-        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", 0xdCbC0DeF063C497aA25Eb52eB29aa96C90be0F79);
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarket"), true);
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleZircuitWeETHMarket"), true);
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketSeptember"), true);
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketDecember"), true);
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleKarakWeETHMarketSeptember"), true);
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleZircuitWeETHMarketAugust"), true);
-        _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendleWeETHMarketJuly"), true);
+        // ========================== Drone Linea Bridge ==========================
+        uint256 startIndex = leafIndex + 1;
+        _addLineaNativeBridgeLeafs(leafs, "linea", localTokens);
+
+        _createDroneLeafs(leafs, drone, startIndex, leafIndex + 1);
+
+        // ========================== Drone Transfers ==========================
+        _addLeafsForDroneTransfers(leafs, drone, localTokens);
 
         string memory filePath = "./leafs/Mainnet/BridgingTestStrategistLeafs.json";
 

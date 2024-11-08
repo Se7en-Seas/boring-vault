@@ -3,23 +3,18 @@ pragma solidity ^0.8.0;
 
 import {BaseDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
 
-import "./karak/KarakDecoderAndSanitizer.sol";
-import {UniswapV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/UniswapV3DecoderAndSanitizer.sol";
-import {EtherFiDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/EtherFiDecoderAndSanitizer.sol";
-import {NativeWrapperDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/Protocols/NativeWrapperDecoderAndSanitizer.sol";
-import {OneInchDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/OneInchDecoderAndSanitizer.sol";
-import {LidoDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/LidoDecoderAndSanitizer.sol";
-import {ERC4626DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/ERC4626DecoderAndSanitizer.sol";
-import {GearboxDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/Protocols/ITB/gearbox/GearboxDecoderAndSanitizer.sol";
+// ITB Decoders
+import {ExecutableDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/ITB/common/ExecutableDecoderAndSanitizer.sol";
+import {WithdrawableDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/Protocols/ITB/common/WithdrawableDecoderAndSanitizer.sol";
 
-contract ITBPositionDecoderAndSanitizer is BaseDecoderAndSanitizer, GearboxDecoderAndSanitizer {
-    constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
-
-    function transfer(address _to, uint256) external pure returns (bytes memory addressesFound) {
-        addressesFound = abi.encodePacked(_to);
-    }
+contract ITBPositionDecoderAndSanitizer is
+    BaseDecoderAndSanitizer,
+    ExecutableDecoderAndSanitizer,
+    WithdrawableDecoderAndSanitizer
+{
+    constructor() BaseDecoderAndSanitizer(address(0)) {}
 
     //============================== HANDLE FUNCTION COLLISIONS ===============================
 }

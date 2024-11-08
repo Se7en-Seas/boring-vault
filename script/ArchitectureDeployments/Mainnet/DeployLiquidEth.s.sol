@@ -10,7 +10,7 @@ import {EtherFiLiquidEthDecoderAndSanitizer} from
     "src/base/DecodersAndSanitizers/EtherFiLiquidEthDecoderAndSanitizer.sol";
 
 /**
- *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 10000000000 --slow --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
+ *  source .env && forge script script/ArchitectureDeployments/Mainnet/DeployLiquidEth.s.sol:DeployLiquidEthScript --with-gas-price 10000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
 contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
@@ -63,7 +63,7 @@ contract DeployLiquidEthScript is DeployArcticArchitecture, ChainValues {
         // Decimals are in terms of `base`.
         accountantParameters.startingExchangeRate = 1e18;
         //  4 decimals
-        accountantParameters.managementFee = 0.02e4;
+        accountantParameters.platformFee = 0.02e4;
         accountantParameters.performanceFee = 0;
         accountantParameters.allowedExchangeRateChangeLower = 0.995e4;
         accountantParameters.allowedExchangeRateChangeUpper = 1.005e4;

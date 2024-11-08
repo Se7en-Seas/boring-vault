@@ -61,7 +61,7 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
     error ManagerWithMerkleVerification__Paused();
     error ManagerWithMerkleVerification__OnlyCallableByBoringVault();
     error ManagerWithMerkleVerification__OnlyCallableByBalancerVault();
-    error ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringManagement();
+    error ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringPlatform();
 
     //============================== EVENTS ===============================
 
@@ -152,7 +152,7 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
             vault.manage(targets[i], targetData[i], values[i]);
         }
         if (totalSupply != vault.totalSupply()) {
-            revert ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringManagement();
+            revert ManagerWithMerkleVerification__TotalSupplyMustRemainConstantDuringPlatform();
         }
         emit BoringVaultManaged(targetsLength);
     }
@@ -245,9 +245,9 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
     ) internal view {
         // Use address decoder to get addresses in call data.
         bytes memory packedArgumentAddresses = abi.decode(decoderAndSanitizer.functionStaticCall(targetData), (bytes));
-        address puppetTarget = DroneLib.extractTargetFromInput(targetData);
-        if (puppetTarget != address(0)) {
-            packedArgumentAddresses = abi.encodePacked(packedArgumentAddresses, puppetTarget);
+        address droneTarget = DroneLib.extractTargetFromInput(targetData);
+        if (droneTarget != address(0)) {
+            packedArgumentAddresses = abi.encodePacked(packedArgumentAddresses, droneTarget);
         }
 
         if (

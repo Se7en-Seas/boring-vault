@@ -7,7 +7,7 @@ contract MainnetAddresses {
     // Liquid Ecosystem
     address public deployerAddress = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d;
     address public dev0Address = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b;
-    address public dev1Address = 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1;
+    address public dev1Address = 0xf8553c8552f906C19286F21711721E206EE4909E;
     address public liquidV1PriceRouter = 0x693799805B502264f9365440B93C113D86a4fFF5;
     address public liquidPayoutAddress = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A;
     address public liquidMultisig = 0xCEA8039076E35a825854c5C2f85659430b06ec96;
@@ -77,6 +77,9 @@ contract MainnetAddresses {
     ERC20 public pumpBTC = ERC20(0xF469fBD2abcd6B9de8E169d128226C0Fc90a012e);
     ERC20 public deUSD = ERC20(0x15700B564Ca08D9439C58cA5053166E8317aa138);
     ERC20 public sdeUSD = ERC20(0x5C5b196aBE0d54485975D1Ec29617D42D9198326);
+    ERC20 public cbBTC = ERC20(0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf);
+    ERC20 public fBTC = ERC20(0xC96dE26018A54D51c097160568752c4E3BD6C364);
+    ERC20 public EIGEN = ERC20(0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83);
 
     // Rate providers
     address public WEETH_RATE_PROVIDER = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
@@ -590,4 +593,10 @@ contract MainnetAddresses {
     // LayerZero
     address public EtherFiOFTAdapter = 0xFE7fe01F8B9A76803aF3750144C2715D9bcf7D0D;
     uint32 public baseEndpointId = 30184;
+
+    // Term Finance
+    address public termAuctionOfferLocker = 0xa557a6099d1a85d7569EA4B6d8ad59a94a8162CC;
+    address public termRepoLocker = 0xFD9033C9A97Bc3Ec8a44439Cb6512516c5053076;
+    address public termRepoServicer = 0xaD2401Dd7518Fac6C868c86442922E2236797e32;
+    address public termRepoToken = 0x3A1427da14F8A57CEe76a5E85fB465ed72De8EC7;
 }

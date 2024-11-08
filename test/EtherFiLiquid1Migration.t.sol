@@ -45,7 +45,7 @@ contract EtherFiLiquid1MigrationTest is Test, MerkleTreeHelper {
     BoringVault public boringVault = BoringVault(payable(0xf0bb20865277aBd641a307eCe5Ee04E79073416C));
     ManagerWithMerkleVerification public manager =
         ManagerWithMerkleVerification(0x227975088C28DBBb4b421c6d96781a53578f19a8);
-    TellerWithMultiAssetSupport public teller = TellerWithMultiAssetSupport(0x5c135e8eC99557b412b9B4492510dCfBD36066F5);
+    LegacyTeller public teller = LegacyTeller(0x5c135e8eC99557b412b9B4492510dCfBD36066F5);
     AccountantWithRateProviders public accountant =
         AccountantWithRateProviders(0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198);
     RolesAuthority public rolesAuthority = RolesAuthority(0x485Bde66Bb668a51f2372E34e45B1c6226798122);
@@ -169,6 +169,7 @@ contract EtherFiLiquid1MigrationTest is Test, MerkleTreeHelper {
     }
 
     function testMigration() external {
+        dev1Address = 0x2322ba43eFF1542b6A7bAeD35e66099Ea0d12Bd1;
         // Setup the BoringVault position.
         // Add both migration adaptors and positions to the registry.
         // Also setAddress 1 to be the migration share price oracle.
@@ -521,7 +522,13 @@ contract EtherFiLiquid1MigrationTest is Test, MerkleTreeHelper {
         address[] memory users = new address[](1);
         users[0] = user;
         atomicSolver.migrationRedeemSolve(
-            atomicQueue, ERC20(address(etherFiLiquid1)), WETH, users, 0, expectedWethOut, teller
+            atomicQueue,
+            ERC20(address(etherFiLiquid1)),
+            WETH,
+            users,
+            0,
+            expectedWethOut,
+            TellerWithMultiAssetSupport(address(teller))
         );
         vm.stopPrank();
 
@@ -921,4 +928,9 @@ interface PriceRouter {
 
 interface PositionManager {
     function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256);
+}
+
+interface LegacyTeller {
+    function deposit(ERC20 asset, uint256 amount, uint256 minMint) external returns (uint256);
+    function removeAsset(ERC20 asset) external;
 }

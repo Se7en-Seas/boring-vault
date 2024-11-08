@@ -1,0 +1,72 @@
+{
+  "DepositAssets": {
+    "FBTC": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "WBTC": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "cbBTC": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    },
+    "pumpBTC": {
+      "isPeggedToBase": true,
+      "rateProvider": "0x0000000000000000000000000000000000000000"
+    }
+  },
+  "Drones": "",
+  "WithdrawAssets": {
+    "FBTC": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "WBTC": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "cbBTC": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    },
+    "pumpBTC": {
+      "CompletionWindow": 604800,
+      "MaxLoss": 100,
+      "WithdrawDelay": 259200,
+      "WithdrawFee": 0
+    }
+  },
+  "accountantConfiguration": {
+    "AllowedExchangeRateChangeLower": 9950,
+    "AllowedExchangeRateChangeUpper": 10050,
+    "Base": "WBTC",
+    "BaseAddress": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    "PlatformFee": 100,
+    "MinimumUpateDelayInSeconds": 21600,
+    "PayoutAddress": "0xA9962a5BfBea6918E958DeE0647E99fD7863b95A",
+    "StartingExchangeRate": 100000000
+  },
+  "core": {
+    "AccountantWithRateProviders": "0xf1ecf4802C2b5Cf9c830A4AF297842Daa6D0f986",
+    "BoringVault": "0xFE0C961A49E1aEe2AE2d842fE40157365C6d978f",
+    "DecoderAndSanitizer": "0xc4149959d8eA6F118A0755029C9a71E1FcDF6477",
+    "DelayedWithdraw": "0x15102c4d5f1a17326c997129f66d91D6b4973af7",
+    "Lens": "0x5232bc0F5999f8dA604c42E1748A13a170F94A1B",
+    "ManagerWithMerkleVerification": "0xaE4b4cfBB7A0B90e9455761ed6D93d6Dc1759710",
+    "RolesAuthority": "0x834F92fc65895bEFfd7703EFBA71BCf0C39D3656",
+    "TellerWithMultiAssetSupport": "0x59896bf82F9Eded846f331964205362BaCfC3f36"
+  },
+  "depositConfiguration": {
+    "AllowPublicDeposits": true,
+    "AllowPublicWithdraws": true,
+    "ShareLockPeriod": 86400
+  }
+}
