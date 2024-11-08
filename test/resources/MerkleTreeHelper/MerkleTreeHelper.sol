@@ -5520,7 +5520,61 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             );
             leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
         }
+    }
+    
+    // ========================================= Aera Finance =========================================
+    
+    function _addAeraLeafs(ManageLeaf[] memory leafs, address vault, ERC20[] memory assets) internal {
+        for (uint256 i; i < assets.length; i++) {
+            // Approvals.
+            if (!tokenToSpenderToApprovalInTree[address(assets[i])][vault]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    address(assets[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Aera Vault to spend ", assets[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = vault;
+                tokenToSpenderToApprovalInTree[address(assets[i])][vault] = true;
+            }
+        }
 
+        unchecked{
+            leafIndex++; 
+        }
+
+        for (uint256 i; i < assets.length; i++) {
+            leafs[leafIndex] = ManageLeaf(
+                vault, //target
+                false, //can send value
+                "deposit(address,uint256)", //func sig
+                new address[](1), //argumentAddresses
+                string.concat("Deposit into Aera vault"), //description
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(assets[i]); 
+        }
+
+        unchecked{
+            leafIndex++; 
+        }
+
+        for (uint256 i; i < assets.length; i++) {
+            leafs[leafIndex] = ManageLeaf(
+                vault, //target
+                false, //can send value
+                "withdraw(address,uint256)", //func sig
+                new address[](1), //argumentAddresses
+                string.concat("Withdraw from Aera vault"), //description
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(assets[i]); 
+        }
     }
 
     // ========================================= BoringVault Teller =========================================
