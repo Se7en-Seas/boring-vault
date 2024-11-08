@@ -8,8 +8,8 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
-import {EtherFiLiquidUsdDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/EtherFiLiquidUsdDecoderAndSanitizer.sol";
+import {AeraVaultFullDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/AeraVaultFullDecoderAndSanitizer.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
@@ -37,7 +37,7 @@ contract AeraVaultIntegrationTest is Test, MerkleTreeHelper {
         setSourceChainName("mainnet");
         // Setup forked environment.
         string memory rpcKey = "MAINNET_RPC_URL";
-        uint256 blockNumber = 19826676;
+        uint256 blockNumber = 21142593;
 
         _startFork(rpcKey, blockNumber);
 
@@ -46,11 +46,7 @@ contract AeraVaultIntegrationTest is Test, MerkleTreeHelper {
         manager =
             new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
 
-        rawDataDecoderAndSanitizer = address(
-            new EtherFiLiquidUsdDecoderAndSanitizer(
-                address(boringVault), getAddress(sourceChain, "uniswapV3NonFungiblePositionManager")
-            )
-        );
+        rawDataDecoderAndSanitizer = address(new AeraVaultFullDecoderAndSanitizer(address(boringVault)));
 
         setAddress(false, sourceChain, "boringVault", address(boringVault));
         setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
@@ -105,4 +101,95 @@ contract AeraVaultIntegrationTest is Test, MerkleTreeHelper {
         rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
         rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
         rolesAuthority.setUserRole(getAddress(sourceChain, "vault"), BALANCER_VAULT_ROLE, true);
+        
     }
+    
+    function testAeraVault() public {
+        address aeraVault = getAddress(sourceChain, "aeraCompoundReservesVault"); 
+        address owner = IVault(aeraVault).owner(); 
+        vm.prank(owner); 
+        IVault(aeraVault).transferOwnership(address(boringVault)); 
+        
+        address pendingOwner = IVault(aeraVault).pendingOwner(); 
+        assertEq(address(boringVault), pendingOwner); 
+
+        vm.prank(pendingOwner); 
+        IVault(aeraVault).acceptOwnership(); 
+        
+        address whale = 0x37305B1cD40574E4C5Ce33f8e8306Be057fD7341; 
+        vm.prank(whale); 
+        getERC20(sourceChain, "USDC").transfer(address(boringVault), 1000e6); 
+
+        uint256 usdcBalance = getERC20(sourceChain, "USDC").balanceOf(address(boringVault)); 
+        assertEq(usdcBalance, 1000e6); 
+        
+        ERC20[] memory assets = new ERC20[](1);  
+        assets[0] = getERC20(sourceChain, "USDC"); 
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        _addAeraLeafs(
+            leafs,
+            getAddress(sourceChain, "aeraCompoundReservesVault"),
+            assets
+        );
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](3);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](3);
+        targets[0] = getAddress(sourceChain, "USDC");
+        targets[1] = getAddress(sourceChain, "aeraCompoundReservesVault");
+        targets[2] = getAddress(sourceChain, "aeraCompoundReservesVault");
+        
+        DecoderCustomTypes.AssetValue[] memory assetValues = new DecoderCustomTypes.AssetValue[](1); 
+        assetValues[0] = DecoderCustomTypes.AssetValue(getAddress(sourceChain, "USDC"), 100e6); 
+
+        bytes[] memory targetData = new bytes[](3);
+        targetData[0] =
+            abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "aeraCompoundReservesVault"), 10000e6);
+        targetData[1] = abi.encodeWithSignature(
+            "deposit((address,uint256)[])",
+            assetValues
+        );
+        targetData[2] = abi.encodeWithSignature(
+            "withdraw((address,uint256)[])",
+            assetValues
+        );
+        uint256[] memory values = new uint256[](3);
+        address[] memory decodersAndSanitizers = new address[](3);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+
+
+    }
+
+        // ========================================= HELPER FUNCTIONS =========================================
+
+    function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
+        forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
+        vm.selectFork(forkId);
+    }
+}
+
+interface IVault {
+    function owner() external returns (address); 
+    function pendingOwner() external returns (address); 
+    function transferOwnership(address newOwner) external; 
+    function acceptOwnership() external; 
+}
+    
+interface MerklDistributor {
+    function onlyOperatorCanClaim(address user) external view returns (uint256);
+    function operators(address user, address operator) external view returns (uint256);
+    function toggleOperator(address user, address operator) external;
+}
+

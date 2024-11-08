@@ -6,5 +6,5 @@ import {AeraVaultDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Proto
 
 contract AeraVaultFullDecoderAndSanitizer is AeraVaultDecoderAndSanitizer {
     
-    constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
+    constructor(address _boringVault) AeraVaultDecoderAndSanitizer(_boringVault) {}
 }

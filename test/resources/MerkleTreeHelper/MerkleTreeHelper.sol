@@ -5552,7 +5552,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             leafs[leafIndex] = ManageLeaf(
                 vault, //target
                 false, //can send value
-                "deposit(address,uint256)", //func sig
+                "deposit((address,uint256)[])", //func sig
                 new address[](1), //argumentAddresses
                 string.concat("Deposit into Aera vault"), //description
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
@@ -5568,7 +5568,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             leafs[leafIndex] = ManageLeaf(
                 vault, //target
                 false, //can send value
-                "withdraw(address,uint256)", //func sig
+                "withdraw((address,uint256)[])", //func sig
                 new address[](1), //argumentAddresses
                 string.concat("Withdraw from Aera vault"), //description
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
@@ -5785,7 +5785,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 merkleTreeOut[i][j] = merkleTreeIn[i][j];
             }
         }
-
+        
         uint256 next_layer_length;
         if (layer_length % 2 != 0) {
             next_layer_length = (layer_length + 1) / 2;
@@ -5804,6 +5804,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             // We need to process the next layer of leaves.
             merkleTreeOut = _buildTrees(merkleTreeOut);
         }
+
     }
 
     function _generateMerkleTree(ManageLeaf[] memory manageLeafs) internal pure returns (bytes32[][] memory tree) {
