@@ -16,6 +16,7 @@ contract CreateLiquidElixirMerkleRootScript is Script, MerkleTreeHelper {
 
     address public boringVault = 0x352180974C71f84a934953Cf49C4E538a6F9c997;
     address public rawDataDecoderAndSanitizer = 0x0b01C5F5D333f9921240ab08dA92805F41604add;
+    address public elixirWithdrawDecoderAndSanitizer = 0xF8e9517e7e98D7134E306aD3747A50AC8dC1dbc9;
     address public managerAddress = 0x4D0EF2A55db2439A37507a893b624f89eC7A403c;
     address public accountantAddress = 0xBae19b38Bf727Be64AF0B578c34985c3D612e2Ba;
 
@@ -125,6 +126,13 @@ contract CreateLiquidElixirMerkleRootScript is Script, MerkleTreeHelper {
          */
         _addERC4626Leafs(leafs, ERC4626(getAddress(sourceChain, "sdeUSD")));
 
+        // ========================== Elixir Withdraws ==========================
+        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", elixirWithdrawDecoderAndSanitizer);
+        _addElixirSdeUSDWithdrawLeafs(leafs);
+
+        // Set it back to the original decoder and sanitizer.
+        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
+
         // ========================== PancakeSwapV3 ==========================
         setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", pancakeSwapDataDecoderAndSanitizer);
         token0 = new address[](10);
@@ -152,6 +160,8 @@ contract CreateLiquidElixirMerkleRootScript is Script, MerkleTreeHelper {
         token1[9] = getAddress(sourceChain, "sdeUSD");
 
         _addPancakeSwapV3Leafs(leafs, token0, token1);
+
+        _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
