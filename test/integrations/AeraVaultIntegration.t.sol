@@ -169,7 +169,6 @@ contract AeraVaultIntegrationTest is Test, MerkleTreeHelper {
 
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
-
     }
 
         // ========================================= HELPER FUNCTIONS =========================================
