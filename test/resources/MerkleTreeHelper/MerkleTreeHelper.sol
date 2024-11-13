@@ -5577,6 +5577,75 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
     }
 
+    // ========================================= Lombard BTC  =========================================
+    
+    function _addLombardBTCLeafs(ManageLeaf[] memory leafs, ERC20 BTCB, ERC20 LBTC) internal {
+        unchecked {
+            leafIndex++; 
+        }
+
+        leafs[leafIndex] = ManageLeaf(
+            address(BTCB), //target
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve BTCB to be staked into LBTC"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "LBTC"); 
+        tokenToSpenderToApprovalInTree[address(BTCB)][getAddress(sourceChain, "LBTC")] = true; 
+
+        unchecked {
+            leafIndex++; 
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(LBTC), //target
+            false,
+            "mint(address,uint256)",
+            new address[](1),
+            string.concat("Mint LBTC if permissioned"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");  
+
+        unchecked {
+            leafIndex++; 
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(LBTC), //target
+            false,
+            "mint(bytes,bytes)",
+            new address[](1),
+            string.concat("Mint LBTC"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");  
+
+        unchecked {
+            leafIndex++; 
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(LBTC), //target
+            false,
+            "redeem(bytes,uint256)",
+            new address[](0),
+            string.concat("Unstake LBTC"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+
+        unchecked {
+            leafIndex++; 
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(LBTC), //target
+            false,
+            "burn(uint256)",
+            new address[](0),
+            string.concat("Burn LBTC"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+    } 
+
     // ========================================= BoringVault Teller =========================================
 
     function _addTellerLeafs(ManageLeaf[] memory leafs, address teller, ERC20[] memory assets) internal {
