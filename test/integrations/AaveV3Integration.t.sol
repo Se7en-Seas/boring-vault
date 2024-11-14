@@ -121,18 +121,20 @@ contract AaveV3IntegrationTest is Test, MerkleTreeHelper {
         // Withdraw WSTETH
         // Call setUserUseReserveAsCollateral
         // Call setUserEMode
-        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        ManageLeaf[] memory leafs = new ManageLeaf[](16);
         ERC20[] memory supplyAssets = new ERC20[](1);
         supplyAssets[0] = getERC20(sourceChain, "WSTETH");
         ERC20[] memory borrowAssets = new ERC20[](1);
         borrowAssets[0] = getERC20(sourceChain, "WETH");
-        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
+        ERC20[] memory claimAssets = new ERC20[](1); 
+        claimAssets[0] = getERC20(sourceChain, "WSTETH");
+        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets, claimAssets);
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](8);
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](9);
         manageLeafs[0] = leafs[0];
         manageLeafs[1] = leafs[1];
         manageLeafs[2] = leafs[2];
@@ -141,9 +143,10 @@ contract AaveV3IntegrationTest is Test, MerkleTreeHelper {
         manageLeafs[5] = leafs[3];
         manageLeafs[6] = leafs[6];
         manageLeafs[7] = leafs[7];
+        manageLeafs[8] = leafs[8];
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
-        address[] memory targets = new address[](8);
+        address[] memory targets = new address[](9);
         targets[0] = getAddress(sourceChain, "WSTETH");
         targets[1] = getAddress(sourceChain, "WETH");
         targets[2] = getAddress(sourceChain, "v3Pool");
@@ -152,8 +155,12 @@ contract AaveV3IntegrationTest is Test, MerkleTreeHelper {
         targets[5] = getAddress(sourceChain, "v3Pool");
         targets[6] = getAddress(sourceChain, "v3Pool");
         targets[7] = getAddress(sourceChain, "v3Pool");
+        targets[8] = getAddress(sourceChain, "v3RewardsController");
 
-        bytes[] memory targetData = new bytes[](8);
+        address[] memory claimAssetsData = new address[](1); 
+        claimAssetsData[0] = getAddress(sourceChain, "WSTETH"); 
+
+        bytes[] memory targetData = new bytes[](9);
         targetData[0] =
             abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "v3Pool"), type(uint256).max);
         targetData[1] =
@@ -187,8 +194,9 @@ contract AaveV3IntegrationTest is Test, MerkleTreeHelper {
             "setUserUseReserveAsCollateral(address,bool)", getAddress(sourceChain, "WSTETH"), true
         );
         targetData[7] = abi.encodeWithSignature("setUserEMode(uint8)", 0);
+        targetData[8] = abi.encodeWithSignature("claimRewards(address[],uint256,address,address)", claimAssetsData, 0, getAddress(sourceChain, "boringVault"), 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0); 
 
-        address[] memory decodersAndSanitizers = new address[](8);
+        address[] memory decodersAndSanitizers = new address[](9);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
@@ -197,8 +205,9 @@ contract AaveV3IntegrationTest is Test, MerkleTreeHelper {
         decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[7] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[8] = rawDataDecoderAndSanitizer;
 
-        uint256[] memory values = new uint256[](8);
+        uint256[] memory values = new uint256[](9);
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 

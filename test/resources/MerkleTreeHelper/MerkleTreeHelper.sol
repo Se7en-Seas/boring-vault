@@ -2098,22 +2098,22 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
 
     // ========================================= Aave V3 =========================================
 
-    function _addAaveV3Leafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets)
+    function _addAaveV3Leafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets, ERC20[] memory claimAssets)
         internal
     {
-        _addAaveV3ForkLeafs("Aave V3", getAddress(sourceChain, "v3Pool"), leafs, supplyAssets, borrowAssets);
+        _addAaveV3ForkLeafs("Aave V3", getAddress(sourceChain, "v3Pool"), leafs, supplyAssets, borrowAssets, claimAssets);
     }
 
-    function _addAaveV3LidoLeafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets)
+    function _addAaveV3LidoLeafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets, ERC20[] memory claimAssets)
         internal
     {
-        _addAaveV3ForkLeafs("Aave V3 Lido", getAddress(sourceChain, "v3LidoPool"), leafs, supplyAssets, borrowAssets);
+        _addAaveV3ForkLeafs("Aave V3 Lido", getAddress(sourceChain, "v3LidoPool"), leafs, supplyAssets, borrowAssets, claimAssets);
     }
 
-    function _addSparkLendLeafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets)
+    function _addSparkLendLeafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets, ERC20[] memory claimAssets)
         internal
     {
-        _addAaveV3ForkLeafs("SparkLend", getAddress(sourceChain, "sparkLendPool"), leafs, supplyAssets, borrowAssets);
+        _addAaveV3ForkLeafs("SparkLend", getAddress(sourceChain, "sparkLendPool"), leafs, supplyAssets, borrowAssets, claimAssets);
     }
 
     function _addAaveV3ForkLeafs(
@@ -2121,7 +2121,8 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         address protocolAddress,
         ManageLeaf[] memory leafs,
         ERC20[] memory supplyAssets,
-        ERC20[] memory borrowAssets
+        ERC20[] memory borrowAssets,
+        ERC20[] memory claimAssets
     ) internal {
         // Approvals
         string memory baseApprovalString = string.concat("Approve ", protocolName, " Pool to spend ");
@@ -2249,6 +2250,21 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             string.concat("Set user e-mode in ", protocolName),
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
+
+        for (uint256 i; i < claimAssets.length; i++) {
+            unchecked{
+                leafIndex++; 
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "v3RewardsController"),
+                false,
+                "claimRewards(address[],uint256,address,address)",
+                new address[](1),
+                string.concat("Claim reward", claimAssets[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            ); 
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault"); 
+        }
     }
 
     // ========================================= Uniswap V3 =========================================

@@ -50,4 +50,13 @@ abstract contract AaveV3DecoderAndSanitizer is BaseDecoderAndSanitizer {
         // Nothing to sanitize or return
         return addressesFound;
     }
+
+    function claimRewards(address[] calldata /*assets*/, uint256 /*amount*/, address to, address /*reward*/)
+        external
+        pure
+        virtual
+        returns (bytes memory addressesFound)
+    {
+        addressesFound = abi.encodePacked(to); 
+    }
 }
