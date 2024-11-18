@@ -117,6 +117,7 @@ contract ChainValues {
         values[mainnet]["DAI"] = 0x6B175474E89094C44Da98b954EedeAC495271d0F.toBytes32();
         values[mainnet]["WSTETH"] = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0.toBytes32();
         values[mainnet]["STETH"] = 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84.toBytes32();
+        values[mainnet]["WeETH"] = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee.toBytes32(); 
         values[mainnet]["FRAX"] = 0x853d955aCEf822Db058eb8505911ED77F175b99e.toBytes32();
         values[mainnet]["BAL"] = 0xba100000625a3754423978a60c9317c58a424e3D.toBytes32();
         values[mainnet]["COMP"] = 0xc00e94Cb662C3520282E6f5717214004A7f26888.toBytes32();
@@ -722,6 +723,7 @@ contract ChainValues {
         values[mainnet]["fWETH"] = 0x90551c1795392094FE6D29B758EcCD233cFAa260.toBytes32();
         values[mainnet]["fWSTETH"] = 0x2411802D8BEA09be0aF8fD8D08314a63e706b29C.toBytes32();
         values[mainnet]["fGHO"] = 0x6A29A46E21C730DcA1d8b23d637c101cec605C5B.toBytes32();
+        values[mainnet]["WeETHDexUSDC-USDT"] = 0x01F0D07fdE184614216e76782c6b7dF663F5375e.toBytes32(); 
 
         // Symbiotic
         values[mainnet]["wstETHDefaultCollateral"] = 0xC329400492c6ff2438472D4651Ad17389fCb843a.toBytes32();

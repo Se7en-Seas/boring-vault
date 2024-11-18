@@ -4321,6 +4321,85 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Fluid Dex =========================================
+    //@notice dex borrows happen against a vault, which is just a liquidity pool of 2 assets
+    function _addFluidDexLeafs(ManageLeaf[] memory leafs, address dex, ERC20[] memory tokens) internal {
+        // Approvals for token pair
+        for (uint256 i = 0; i < tokens.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+
+            leafs[leafIndex] = ManageLeaf(
+                address(tokens[i]),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Fluid Dex to spend ", tokens[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = dex;
+        }
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(dex),
+                false,
+                "deposit(uint256,uint256,uint256,bool)",
+                new address[](0),
+                string.concat("Deposit ", tokens[i].symbol(), " into Fluid Dex Vault"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+        }
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(dex),
+                false,
+                "withdraw(uint256,uint256,uint256,address)",
+                new address[](1),
+                string.concat("Withdraw ", tokens[i].symbol(), " from Fluid Dex Vault"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        }
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(dex),
+                false,
+                "borrow(uint256,uint256,uint256,address)",
+                new address[](1),
+                string.concat("Borrow ", tokens[i].symbol(), " from Fluid Dex Vault"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        }
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(dex),
+                false,
+                "payback(uint256,uint256,uint256,bool)",
+                new address[](0),
+                string.concat("Payback ", tokens[i].symbol(), " to Fluid Dex Vault"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+        }
+    }  
+
     // ========================================= Symbiotic =========================================
 
     function _addSymbioticApproveAndDepositLeaf(ManageLeaf[] memory leafs, address defaultCollateral) internal {
@@ -5661,6 +5740,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         ); 
     } 
+
 
     // ========================================= BoringVault Teller =========================================
 
