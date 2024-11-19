@@ -13,6 +13,7 @@ import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
+import {LibsErrorTypes} from "test/resources/libs/FluidDexErrors.sol"; 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
 contract FluidDexIntegrationTest is Test, MerkleTreeHelper {
@@ -106,30 +107,39 @@ contract FluidDexIntegrationTest is Test, MerkleTreeHelper {
     }
     
     function testFluidDexIntegration() public {
-        ERC20[] memory tokens = new ERC20[](1); 
-        tokens[0] = getERC20(sourceChain, "WeETH");  
+        deal(getAddress(sourceChain, "WeETH"), address(boringVault), 1000e18); 
 
+        ERC20[] memory supplyTokens = new ERC20[](1); 
+        supplyTokens[0] = getERC20(sourceChain, "WeETH");  
 
+        ERC20[] memory borrowTokens = new ERC20[](2); 
+        borrowTokens[0] = getERC20(sourceChain, "USDC"); 
+        borrowTokens[1] = getERC20(sourceChain, "USDT"); 
+        
         //1) approve the dex vault address 
-        //2) mint liquidity nft (deposit)
+        //2) mint liquidity nft (deposit)?
         //3) can then borrow, etc, using NFT
-
-        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        
+        //3 approvals, 1 leaf for `operate()`
+        ManageLeaf[] memory leafs = new ManageLeaf[](4);
         _addFluidDexLeafs(
             leafs,
             getAddress(sourceChain, "WeETHDexUSDC-USDT"),
-            tokens
+            supplyTokens,
+            borrowTokens
         ); 
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](5);
-        manageLeafs[0] = leafs[0]; 
-        manageLeafs[1] = leafs[1]; 
-        manageLeafs[2] = leafs[2]; 
-        manageLeafs[3] = leafs[3]; 
-        manageLeafs[4] = leafs[4]; 
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](7);
+        manageLeafs[0] = leafs[0];  //approval supply 
+        manageLeafs[1] = leafs[1];  //approval borrow0 
+        manageLeafs[2] = leafs[2];  //approval borrow1
+        manageLeafs[3] = leafs[3];  //operate() deposit params
+        manageLeafs[4] = leafs[3];  //operate() borrow params
+        manageLeafs[5] = leafs[3];  //operate() payback params
+        manageLeafs[6] = leafs[3];  //operate() withdraw params
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
         
@@ -137,22 +147,73 @@ contract FluidDexIntegrationTest is Test, MerkleTreeHelper {
         //
         //setup boring vault tx data 
         
-        address[] memory targets = new address[](5); 
+        //this is what will be minted after we deposit 
+        uint256 nftId = 2795; 
+
+        //deal some dust to payback borrow
+        //deal(getAddress(sourceChain, "USDC"), address(boringVault), 10e18); //I know USDC and USDT don't have 18decimals
+        //deal(getAddress(sourceChain, "USDT"), address(boringVault), 10e18); 
+
+        address[] memory targets = new address[](7); 
         targets[0] = getAddress(sourceChain, "WeETH"); 
-        targets[1] = getAddress(sourceChain, "WeETHDexUSDC-USDT");  
-        targets[2] = getAddress(sourceChain, "WeETHDexUSDC-USDT");  
+        targets[1] = getAddress(sourceChain, "USDC"); 
+        targets[2] = getAddress(sourceChain, "USDT"); 
         targets[3] = getAddress(sourceChain, "WeETHDexUSDC-USDT");  
         targets[4] = getAddress(sourceChain, "WeETHDexUSDC-USDT");  
+        targets[5] = getAddress(sourceChain, "WeETHDexUSDC-USDT");  
+        targets[6] = getAddress(sourceChain, "WeETHDexUSDC-USDT");  
 
-        bytes[] memory targetData = new bytes[](5); 
+        bytes[] memory targetData = new bytes[](7); 
         targetData[0] =
             abi.encodeWithSignature("approve(address,uint256)", 
                 getAddress(sourceChain, "WeETHDexUSDC-USDT"),
                 1000e18
             );
-        targetData[1] = 
-            abi.encodeWithSignature("deposit(uint256,uint256,uint256,bool)",
-                
+        targetData[1] =
+            abi.encodeWithSignature("approve(address,uint256)", 
+                getAddress(sourceChain, "WeETHDexUSDC-USDT"),
+                1000e18
+            );
+        targetData[2] =
+            abi.encodeWithSignature("approve(address,uint256)", 
+                getAddress(sourceChain, "WeETHDexUSDC-USDT"),
+                1000e18
+            );
+        //deposit
+        targetData[3] = 
+            abi.encodeWithSignature("operate(uint256,int256,int256,int256,int256,address)",
+                0, 100e18, 0, 0, 0, getAddress(sourceChain, "boringVault")
+            ); 
+        ////borrow
+        targetData[4] = 
+            abi.encodeWithSignature("operate(uint256,int256,int256,int256,int256,address)",
+                nftId, 0, 1e8, 1e8, 1000e18, getAddress(sourceChain, "boringVault")
+            ); 
+        //payback
+        targetData[5] = 
+            abi.encodeWithSignature("operate(uint256,int256,int256,int256,int256,address)",
+                nftId, 0, -1e8, -1e8, -5e18, getAddress(sourceChain, "boringVault")  
+            ); 
+        ////withdraw
+        targetData[6] = 
+            abi.encodeWithSignature("operate(uint256,int256,int256,int256,int256,address)",
+                nftId, -99.9e18, 0, 0, 0, getAddress(sourceChain, "boringVault")
+            ); 
+        uint256[] memory values = new uint256[](7);
+        address[] memory decodersAndSanitizers = new address[](7);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
+         
+        
+        //get the nft id first
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values); 
+        
+        
     }
 
     // ========================================= HELPER FUNCTIONS =========================================

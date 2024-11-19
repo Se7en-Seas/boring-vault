@@ -4322,82 +4322,54 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
     }
 
     // ========================================= Fluid Dex =========================================
-    //@notice dex borrows happen against a vault, which is just a liquidity pool of 2 assets
-    function _addFluidDexLeafs(ManageLeaf[] memory leafs, address dex, ERC20[] memory tokens) internal {
-        // Approvals for token pair
-        for (uint256 i = 0; i < tokens.length; i++) {
+    
+    //@notice dex borrows happen against a vault, but each dex type is different, ranging from T1 to T4
+    function _addFluidDexLeafs(ManageLeaf[] memory leafs, address dex, ERC20[] memory supplyTokens, ERC20[] memory borrowTokens) internal {
+        // Approvals for token
+        for (uint256 i = 0; i < supplyTokens.length; i++) {
             unchecked {
                 leafIndex++;
             }
 
             leafs[leafIndex] = ManageLeaf(
-                address(tokens[i]),
+                address(supplyTokens[i]),
                 false,
                 "approve(address,uint256)",
                 new address[](1),
-                string.concat("Approve Fluid Dex to spend ", tokens[i].symbol()),
+                string.concat("Approve Fluid Dex to spend ", supplyTokens[i].symbol()),
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
             leafs[leafIndex].argumentAddresses[0] = dex;
         }
 
-        for (uint256 i = 0; i < tokens.length; i++) {
+        for (uint256 i = 0; i < borrowTokens.length; i++) {
             unchecked {
                 leafIndex++;
             }
-            leafs[leafIndex] = ManageLeaf(
-                address(dex),
-                false,
-                "deposit(uint256,uint256,uint256,bool)",
-                new address[](0),
-                string.concat("Deposit ", tokens[i].symbol(), " into Fluid Dex Vault"),
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-        }
 
-        for (uint256 i = 0; i < tokens.length; i++) {
-            unchecked {
-                leafIndex++;
-            }
             leafs[leafIndex] = ManageLeaf(
-                address(dex),
+                address(borrowTokens[i]),
                 false,
-                "withdraw(uint256,uint256,uint256,address)",
+                "approve(address,uint256)",
                 new address[](1),
-                string.concat("Withdraw ", tokens[i].symbol(), " from Fluid Dex Vault"),
+                string.concat("Approve Fluid Dex to spend ", borrowTokens[i].symbol()),
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             );
-            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+            leafs[leafIndex].argumentAddresses[0] = dex;
         }
 
-        for (uint256 i = 0; i < tokens.length; i++) {
-            unchecked {
-                leafIndex++;
-            }
-            leafs[leafIndex] = ManageLeaf(
-                address(dex),
-                false,
-                "borrow(uint256,uint256,uint256,address)",
-                new address[](1),
-                string.concat("Borrow ", tokens[i].symbol(), " from Fluid Dex Vault"),
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
+        unchecked {
+            leafIndex++;
         }
-
-        for (uint256 i = 0; i < tokens.length; i++) {
-            unchecked {
-                leafIndex++;
-            }
-            leafs[leafIndex] = ManageLeaf(
-                address(dex),
-                false,
-                "payback(uint256,uint256,uint256,bool)",
-                new address[](0),
-                string.concat("Payback ", tokens[i].symbol(), " to Fluid Dex Vault"),
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-        }
+        leafs[leafIndex] = ManageLeaf(
+            address(dex),
+            false,
+            "operate(uint256,int256,int256,int256,int256,address)",
+            new address[](1),
+            string.concat("Operate on Fluid Dex Vault"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault"); 
     }  
 
     // ========================================= Symbiotic =========================================

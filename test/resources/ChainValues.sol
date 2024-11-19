@@ -723,6 +723,7 @@ contract ChainValues {
         values[mainnet]["fWETH"] = 0x90551c1795392094FE6D29B758EcCD233cFAa260.toBytes32();
         values[mainnet]["fWSTETH"] = 0x2411802D8BEA09be0aF8fD8D08314a63e706b29C.toBytes32();
         values[mainnet]["fGHO"] = 0x6A29A46E21C730DcA1d8b23d637c101cec605C5B.toBytes32();
+        values[mainnet]["fVault"] = 0x3E11B9aEb9C7dBbda4DD41477223Cc2f3f24b9d7.toBytes32(); 
         values[mainnet]["WeETHDexUSDC-USDT"] = 0x01F0D07fdE184614216e76782c6b7dF663F5375e.toBytes32(); 
 
         // Symbiotic

@@ -5,37 +5,21 @@ import {BaseDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/BaseDecode
 
 
 abstract contract FluidDexDecoderAndSanitizer is BaseDecoderAndSanitizer {
-
-    function deposit(uint256 /*token0Amt*/, uint256 /*token1Amt*/, uint256 /*minSharesAmt*/, bool /*estimate*/) external pure virtual returns (bytes memory addressesFound) {
-        //nothing to sanitize
-        return addressesFound; 
-    }  
-
-    function withdraw(
-        uint256 /*token0Amt*/,
-        uint256 /*token1Amt*/,
-        uint256 /*maxSharesAmt*/,
+    /*  @notice nftId_ The ID of the NFT representing the vault position, if 0 then new position
+     *  @param newCol_ The change in collateral amount (positive for deposit, negative for withdrawal)
+     *  @param newDebtToken0_ The change in debt amount for token0 (positive for borrowing, negative for repayment)
+     *  @param newDebtToken1_ The change in debt amount for token1 (positive for borrowing, negative for repayment)
+     *  @param debtSharesMinMax_ Min or max debt shares to mint or burn (positive for borrowing, negative for repayment)
+     *  @param to_ The address to receive withdrawn collateral or borrowed tokens (if address(0), defaults to msg.sender)
+    */ 
+    function operate(
+        uint256 /*nftId_*/,
+        int256 /*newCol_*/,
+        int256 /*newDebtToken0_*/,
+        int256 /*newDebtToken1_*/,
+        int256 /*debtSharesMinMax_*/,
         address to
-    ) external pure virtual returns (bytes memory addressesFound) {
+    ) external pure returns (bytes memory addressesFound) {
         addressesFound = abi.encodePacked(to); 
-    }
-
-    function borrow(
-        uint256 /*token0Amt*/,
-        uint256 /*token1Amt*/,
-        uint256 /*maxSharesAmt*/,
-        address to
-    ) external pure virtual returns (bytes memory addressesFound) {
-        addressesFound = abi.encodePacked(to); 
-    }
-    
-    function payback(
-        uint256 /*token0Amt*/,
-        uint256 /*token1Amt*/,
-        uint256 /*minSharesAmt*/,
-        bool /*estimate*/
-    ) external pure virtual returns (bytes memory addressesFound) {
-        //nothing to sanitize
-        return addressesFound;  
     }
 }
