@@ -5646,13 +5646,14 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
 
     // ========================================= Lombard BTC  =========================================
     
-    function _addLombardBTCLeafs(ManageLeaf[] memory leafs, ERC20 BTCB, ERC20 LBTC) internal {
+    // @notice to avoid having an extra unneeded approval leaf for base vs bnb merkle trees
+    function _addLombardBTCLeafs(ManageLeaf[] memory leafs, ERC20 BTCB_or_CBBtc, ERC20 LBTC) internal {
         unchecked {
             leafIndex++; 
         }
 
         leafs[leafIndex] = ManageLeaf(
-            address(BTCB), //target
+            address(BTCB_or_CBBtc), //target
             false,
             "approve(address,uint256)",
             new address[](1),
@@ -5660,7 +5661,6 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         ); 
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "LBTC"); 
-        tokenToSpenderToApprovalInTree[address(BTCB)][getAddress(sourceChain, "LBTC")] = true; 
 
         unchecked {
             leafIndex++; 
@@ -5711,6 +5711,33 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             string.concat("Burn LBTC"),
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         ); 
+
+        if (getAddress("base", "cbBTC") == address(BTCB_or_CBBtc)) {
+            unchecked {
+                leafIndex++; 
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(BTCB_or_CBBtc), //target
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve cbBTC to be swapped for LBTC"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            ); 
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "cbBTCPMM"); 
+
+            unchecked {
+                leafIndex++; 
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "cbBTCPMM"), //target
+                false,
+                "swapCBBTCToLBTC(uint256)",
+                new address[](0),
+                string.concat("Swap cbBTC to LBTC"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            ); 
+        }
     } 
 
 

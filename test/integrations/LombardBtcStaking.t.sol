@@ -15,7 +15,7 @@ import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper
 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
-contract WeETHIntegrationTest is Test, MerkleTreeHelper {
+contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
     using stdStorage for StdStorage;
@@ -41,11 +41,13 @@ contract WeETHIntegrationTest is Test, MerkleTreeHelper {
         uint32 index;
     }
 
-    function setUp() external {
-        setSourceChainName("bsc");
+    function _setUp(string memory chainName, string memory RPC_URL, uint256 blockNumber) internal {
+        //setSourceChainName("bsc");
+        setSourceChainName(chainName); 
         // Setup forked environment.
-        string memory rpcKey = "BNB_RPC_URL";
-        uint256 blockNumber = 43951627;
+        //string memory rpcKey = "BNB_RPC_URL";
+        string memory rpcKey = RPC_URL; 
+        //uint256 blockNumber = 43951627;
 
         _startFork(rpcKey, blockNumber);
 
@@ -115,7 +117,8 @@ contract WeETHIntegrationTest is Test, MerkleTreeHelper {
     }
 
 
-    function testLombardStakingIntegration() external {
+    function testLombardStakingIntegrationBNB() external {
+        _setUp("bsc", "BNB_RPC_URL", 43951627); 
         // Deploy Mock Consortium
         MockConsortium mockConsortium = new MockConsortium(); 
 
@@ -203,10 +206,109 @@ contract WeETHIntegrationTest is Test, MerkleTreeHelper {
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
     }
 
+    function testLombardStakingIntegrationBase() external {
+        _setUp("base", "BASE_RPC_URL", 22662896 ); 
+        deal(address(getAddress(sourceChain, "cbBTC")), address(boringVault), 1000e18); 
+
+        // Deploy Mock Consortium
+        MockConsortium mockConsortium = new MockConsortium(); 
+
+        // Transfer ownership to Mock Consortium
+        address LBTC = getAddress(sourceChain, "LBTC"); 
+        vm.startPrank(ILBTC(LBTC).owner()); 
+            ILBTC(LBTC).changeConsortium(address(mockConsortium)); 
+            ILBTC(LBTC).addMinter(address(boringVault)); 
+            ILBTC(LBTC).toggleWithdrawals(); 
+            ILBTC(LBTC).changeTreasuryAddress(address(69)); 
+        vm.stopPrank(); 
+
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
+        _addLombardBTCLeafs(
+            leafs,
+            getERC20(sourceChain, "cbBTC"),
+            getERC20(sourceChain, "LBTC")
+        );
+
+        bytes32[][] memory manageTree = _generateMerkleTree(leafs);
+        manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
+
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](7);
+        manageLeafs[0] = leafs[0];
+        manageLeafs[1] = leafs[1];
+        manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3]; 
+        manageLeafs[4] = leafs[4]; 
+        manageLeafs[5] = leafs[5]; 
+        manageLeafs[6] = leafs[6]; 
+        
+        bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
+
+        address[] memory targets = new address[](7);
+        targets[0] = getAddress(sourceChain, "cbBTC");
+        targets[1] = getAddress(sourceChain, "LBTC");
+        targets[2] = getAddress(sourceChain, "LBTC");
+        targets[3] = getAddress(sourceChain, "LBTC");
+        targets[4] = getAddress(sourceChain, "LBTC");
+        targets[5] = getAddress(sourceChain, "cbBTC");
+        targets[6] = getAddress(sourceChain, "cbBTCPMM");
+
+        bytes memory depositData = abi.encode(OutputWithPayload(
+                8453, //bsc chain id
+                getAddress(sourceChain, "boringVault"),
+                uint64(uint256(100e18)),
+                bytes32(uint256(5)),
+                uint32(10)
+            )
+        ); 
+
+        bytes memory signature = hex"00"; // Could be any bytes
+
+        // Dummy BTC Pubkey -- P2WPKH scriptPubkey
+        bytes memory scriptPubkey = abi.encodePacked(
+            hex"0014", // OP_0 (00) followed by OP_DATA_20 (14)
+            hex"1234567890123456789012345678901234567890" // 20 bytes of example data
+        );
+
+        // Target Data
+        bytes[] memory targetData = new bytes[](7);
+         targetData[0] =
+            abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "LBTC"), type(uint256).max);
+         targetData[1] = 
+             abi.encodeWithSignature("mint(address,uint256)", getAddress(sourceChain, "boringVault"), 100e18);  
+         targetData[2] = 
+             abi.encodeWithSignature("mint(bytes,bytes)", depositData, signature); 
+         targetData[3] = 
+             abi.encodeWithSignature("redeem(bytes,uint256)", scriptPubkey, 90e18);  
+         targetData[4] = 
+            abi.encodeWithSignature("burn(uint256)", 10e18); 
+         targetData[5] = 
+             abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "cbBTCPMM"), type(uint256).max); 
+         targetData[6] = 
+             abi.encodeWithSignature("swapCBBTCToLBTC(uint256)", 1e4); 
+
+        // Eth Amounts 
+        uint256[] memory values = new uint256[](7); //empty, not passing any ETH
+
+        // Decoders and Sanitizers
+        address[] memory decodersAndSanitizers = new address[](7);
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
+
+        // Run the functions
+        manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
+        
+    }
+
 
     // ========================================= HELPER FUNCTIONS =========================================
 
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
+        //run against base fork
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
     }

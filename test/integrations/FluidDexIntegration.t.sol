@@ -13,7 +13,6 @@ import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 
-import {LibsErrorTypes} from "test/resources/libs/FluidDexErrors.sol"; 
 import {Test, stdStorage, StdStorage, stdError, console} from "@forge-std/Test.sol";
 
 contract FluidDexIntegrationTest is Test, MerkleTreeHelper {
