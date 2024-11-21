@@ -725,6 +725,7 @@ contract ChainValues {
         values[mainnet]["fGHO"] = 0x6A29A46E21C730DcA1d8b23d637c101cec605C5B.toBytes32();
         values[mainnet]["fVault"] = 0x3E11B9aEb9C7dBbda4DD41477223Cc2f3f24b9d7.toBytes32(); 
         values[mainnet]["WeETHDexUSDC-USDT"] = 0x01F0D07fdE184614216e76782c6b7dF663F5375e.toBytes32(); 
+        values[mainnet]["wBTC-cbBTCDex-USDT"] = 0xf7FA55D14C71241e3c970E30C509Ff58b5f5D557.toBytes32(); 
 
         // Symbiotic
         values[mainnet]["wstETHDefaultCollateral"] = 0xC329400492c6ff2438472D4651Ad17389fCb843a.toBytes32();
@@ -879,8 +880,12 @@ contract ChainValues {
         values[base]["BSDETH"] = 0xCb327b99fF831bF8223cCEd12B1338FF3aA322Ff.toBytes32();
         values[base]["SFRXETH"] = 0x1f55a02A049033E3419a8E2975cF3F572F4e6E9A.toBytes32();
         values[base]["cbBTC"] = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf.toBytes32();
+        values[base]["LBTC"] = 0xecAc9C5F704e954931349Da37F60E39f515c11c1.toBytes32(); 
         values[base]["tBTC"] = 0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b.toBytes32();
         values[base]["dlcBTC"] = 0x12418783e860997eb99e8aCf682DF952F721cF62.toBytes32();
+
+        // Lombard
+        values[base]["cbBTCPMM"] = 0x92c01FC0F59857c6E920EdFf1139904b2Bb74c7c.toBytes32(); 
 
         // Balancer vault
         values[base]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
