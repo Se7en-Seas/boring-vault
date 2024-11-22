@@ -59,8 +59,8 @@ contract CreateBtcFiMerkleRootScript is Script, MerkleTreeHelper {
         _addUniswapV3Leafs(leafs, token0, token1);
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](4);
-        SwapKind[] memory kind = new SwapKind[](4);
+        address[] memory assets = new address[](5);
+        SwapKind[] memory kind = new SwapKind[](5);
         assets[0] = getAddress(sourceChain, "WBTC");
         kind[0] = SwapKind.BuyAndSell;
         assets[1] = getAddress(sourceChain, "pumpBTC");
@@ -69,6 +69,8 @@ contract CreateBtcFiMerkleRootScript is Script, MerkleTreeHelper {
         kind[2] = SwapKind.BuyAndSell;
         assets[3] = getAddress(sourceChain, "cbBTC");
         kind[3] = SwapKind.BuyAndSell;
+        assets[4] = getAddress(sourceChain, "PENDLE"); 
+        kind[4] = SwapKind.Sell;
         _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
 
         // ========================== Pendle ==========================
