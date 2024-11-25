@@ -18,4 +18,12 @@ abstract contract AeraVaultDecoderAndSanitizer is BaseDecoderAndSanitizer {
             addressesFound = abi.encodePacked(amounts[i].asset); 
         }
     }
+
+    function pause() external pure returns (bytes memory addressesFound) {
+        return addressesFound; 
+    }
+
+    function resume() external pure returns (bytes memory addressesFound) {
+        return addressesFound; 
+    }
 }

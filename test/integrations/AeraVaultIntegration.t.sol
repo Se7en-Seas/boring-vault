@@ -126,7 +126,7 @@ contract AeraVaultIntegrationTest is Test, MerkleTreeHelper {
         ERC20[] memory assets = new ERC20[](1);  
         assets[0] = getERC20(sourceChain, "USDC"); 
 
-        ManageLeaf[] memory leafs = new ManageLeaf[](4);
+        ManageLeaf[] memory leafs = new ManageLeaf[](8);
         _addAeraLeafs(
             leafs,
             getAddress(sourceChain, "aeraCompoundReservesVault"),
@@ -135,22 +135,26 @@ contract AeraVaultIntegrationTest is Test, MerkleTreeHelper {
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](3);
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](5);
         manageLeafs[0] = leafs[0];
         manageLeafs[1] = leafs[1];
         manageLeafs[2] = leafs[2];
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
-        address[] memory targets = new address[](3);
+        address[] memory targets = new address[](5);
         targets[0] = getAddress(sourceChain, "USDC");
         targets[1] = getAddress(sourceChain, "aeraCompoundReservesVault");
         targets[2] = getAddress(sourceChain, "aeraCompoundReservesVault");
+        targets[3] = getAddress(sourceChain, "aeraCompoundReservesVault");
+        targets[4] = getAddress(sourceChain, "aeraCompoundReservesVault");
         
         DecoderCustomTypes.AssetValue[] memory assetValues = new DecoderCustomTypes.AssetValue[](1); 
         assetValues[0] = DecoderCustomTypes.AssetValue(getAddress(sourceChain, "USDC"), 100e6); 
 
-        bytes[] memory targetData = new bytes[](3);
+        bytes[] memory targetData = new bytes[](5);
         targetData[0] =
             abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "aeraCompoundReservesVault"), 10000e6);
         targetData[1] = abi.encodeWithSignature(
@@ -161,11 +165,20 @@ contract AeraVaultIntegrationTest is Test, MerkleTreeHelper {
             "withdraw((address,uint256)[])",
             assetValues
         );
-        uint256[] memory values = new uint256[](3);
-        address[] memory decodersAndSanitizers = new address[](3);
+        targetData[3] = abi.encodeWithSignature(
+            "pause()"
+        );
+        targetData[4] = abi.encodeWithSignature(
+            "resume()"
+        );
+
+        uint256[] memory values = new uint256[](5);
+        address[] memory decodersAndSanitizers = new address[](5);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
+        decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
 
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
 
