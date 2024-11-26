@@ -847,6 +847,7 @@ contract ChainValues {
 
         //Aera
         values[mainnet]["aeraCompoundReservesVault"] = 0x3D6eEf6A92b15361697698695334E98C5db91D6b.toBytes32(); 
+        values[mainnet]["aeraLoopBTCVault"] = 0x47562b3738C439B80fe4012e6D40c8acB51ce136.toBytes32(); 
 
         // Hyperlane
         values[mainnet]["hyperlaneUsdcRouter"] = 0xe1De9910fe71cC216490AC7FCF019e13a34481D7.toBytes32();

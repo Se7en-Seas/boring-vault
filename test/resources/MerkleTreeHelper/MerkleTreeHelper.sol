@@ -5611,7 +5611,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 false, //can send value
                 "deposit((address,uint256)[])", //func sig
                 new address[](1), //argumentAddresses
-                string.concat("Deposit into Aera vault"), //description
+                string.concat("Deposit ", assets[i].symbol(), " into Aera vault"), //description
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
             );
             leafs[leafIndex].argumentAddresses[0] = address(assets[i]); 
@@ -5627,7 +5627,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 false, //can send value
                 "withdraw((address,uint256)[])", //func sig
                 new address[](1), //argumentAddresses
-                string.concat("Withdraw from Aera vault"), //description
+                string.concat("Withdraw ", assets[i].symbol(), " from Aera vault"), //description
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
             );
             leafs[leafIndex].argumentAddresses[0] = address(assets[i]); 
