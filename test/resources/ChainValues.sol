@@ -882,7 +882,9 @@ contract ChainValues {
         values[base]["cbBTC"] = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf.toBytes32();
         values[base]["LBTC"] = 0xecAc9C5F704e954931349Da37F60E39f515c11c1.toBytes32(); 
         values[base]["tBTC"] = 0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b.toBytes32();
+        values[base]["WBTC"] = 0x0555E30da8f98308EdB960aa94C0Db47230d2B9c.toBytes32(); 
         values[base]["dlcBTC"] = 0x12418783e860997eb99e8aCf682DF952F721cF62.toBytes32();
+        //values[base]["PENDLE"] = //no token yet? 
 
         // Lombard
         values[base]["cbBTCPMM"] = 0x92c01FC0F59857c6E920EdFf1139904b2Bb74c7c.toBytes32(); 
@@ -923,11 +925,16 @@ contract ChainValues {
         values[base]["wstETH_wETH_945"] = 0x3a4048c64ba1b375330d376b1ce40e4047d03b47ab4d48af484edec9fec801ba;
         values[base]["cbETH_wETH_965"] = 0x6600aae6c56d242fa6ba68bd527aff1a146e77813074413186828fd3f1cdca91;
         values[base]["cbETH_wETH_945"] = 0x84662b4f95b85d6b082b68d32cf71bb565b3f22f216a65509cc2ede7dccdfe8c;
-
+        
+        // Uniswap
         values[base]["uniV3Router"] = 0x2626664c2603336E57B271c5C0b26F421741e481.toBytes32();
-
+        
+        // 1inch
         values[base]["aggregationRouterV5"] = 0x1111111254EEB25477B68fb85Ed929f73A960582.toBytes32();
         values[base]["oneInchExecutor"] = 0xE37e799D5077682FA0a244D46E5649F71457BD09.toBytes32();
+        
+        // MetaMorpho
+        values[base]["gauntletCbBTCcore"] = 0x6770216aC60F634483Ec073cBABC4011c94307Cb.toBytes32(); 
 
         // Compound V3
         values[base]["cWETHV3"] = 0x46e6b214b524310239732D51387075E0e70970bf.toBytes32();
@@ -936,6 +943,9 @@ contract ChainValues {
         // Instadapp Fluid
         values[base]["fWETH"] = 0x9272D6153133175175Bc276512B2336BE3931CE9.toBytes32();
         values[base]["fWSTETH"] = 0x896E39f0E9af61ECA9dD2938E14543506ef2c2b5.toBytes32();
+    
+        // Pendle 
+        values[base]["pendle_LBTC_market_05_29_25"] = 0x727cEbAcfb10fFd353Fc221D06A862B437eC1735.toBytes32(); 
     }
 
     function _addArbitrumValues() private {

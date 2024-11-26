@@ -34,6 +34,7 @@ import {StandardBridgeDecoderAndSanitizer} from
 import {CompoundV3DecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/CompoundV3DecoderAndSanitizer.sol";
 import {MerklDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/MerklDecoderAndSanitizer.sol";
 import {LidoDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/LidoDecoderAndSanitizer.sol";
+import {LombardBTCMinterDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/LombardBtcMinterDecoderAndSanitizer.sol";
 
 contract LombardBtcDecoderAndSanitizer is
     UniswapV3DecoderAndSanitizer,
@@ -59,7 +60,8 @@ contract LombardBtcDecoderAndSanitizer is
     StandardBridgeDecoderAndSanitizer,
     CompoundV3DecoderAndSanitizer,
     MerklDecoderAndSanitizer,
-    LidoDecoderAndSanitizer
+    LidoDecoderAndSanitizer,
+    LombardBTCMinterDecoderAndSanitizer
 {
     constructor(address _boringVault, address _uniswapV3NonFungiblePositionManager)
         BaseDecoderAndSanitizer(_boringVault)
@@ -166,6 +168,16 @@ contract LombardBtcDecoderAndSanitizer is
         pure
         override(EtherFiDecoderAndSanitizer, LidoDecoderAndSanitizer)
         returns (bytes memory addressesFound)
+    {
+        // Nothing to sanitize or return
+        return addressesFound;
+    }
+
+    function burn(uint256) 
+        external 
+        pure
+        override(UniswapV3DecoderAndSanitizer, LombardBTCMinterDecoderAndSanitizer) 
+        returns (bytes memory addressesFound) 
     {
         // Nothing to sanitize or return
         return addressesFound;
