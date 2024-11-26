@@ -15,17 +15,19 @@ import {Deployer} from "src/helper/Deployer.sol";
 import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 import {ContractNames} from "resources/ContractNames.sol";
 import {PointFarmingDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
+import {LombardBtcDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/LombardBtcDecoderAndSanitizer.sol"; 
 
 import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
+import "forge-std/Test.sol"; 
 
 /**
  *  source .env && forge script script/DeployDecoderAndSanitizer.s.sol:DeployDecoderAndSanitizerScript --with-gas-price 30000000000 --broadcast --etherscan-api-key $ETHERSCAN_KEY --verify
  * @dev Optionally can change `--with-gas-price` to something more reasonable
  */
-contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddresses {
+contract DeployDecoderAndSanitizerScript is Script, Test, ContractNames, MainnetAddresses {
     uint256 public privateKey;
     Deployer public deployer = Deployer(deployerAddress);
 
@@ -35,14 +37,16 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
     address liquidUsd = 0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C;
 
     function setUp() external {
-        privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("mainnet");
+        //privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
+        vm.createSelectFork("base");
     }
 
     function run() external {
-        bytes memory creationCode;
-        bytes memory constructorArgs;
+        //bytes memory creationCode;
+        //bytes memory constructorArgs;
+        privateKey = vm.envUint("PRIVATE_KEY"); 
         vm.startBroadcast(privateKey);
+        console.log(privateKey); 
 
         // creationCode = type(AerodromeDecoderAndSanitizer).creationCode;
         // constructorArgs =
@@ -57,18 +61,25 @@ contract DeployDecoderAndSanitizerScript is Script, ContractNames, MainnetAddres
         // constructorArgs = abi.encode(boringVault, pancakeSwapV3NonFungiblePositionManager, pancakeSwapV3MasterChefV3);
         // deployer.deployContract(LombardPancakeSwapDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
-        creationCode = type(ITBPositionDecoderAndSanitizer).creationCode;
-        constructorArgs = abi.encode(eEigen);
-        deployer.deployContract(
-            "ITB Eigen Position Manager Decoder and Sanitizer V0.1", creationCode, constructorArgs, 0
-        );
+        //creationCode = type(ITBPositionDecoderAndSanitizer).creationCode;
+        //constructorArgs = abi.encode(eEigen);
+        //deployer.deployContract(
+        //    "ITB Eigen Position Manager Decoder and Sanitizer V0.1", creationCode, constructorArgs, 0
+        //);
         // creationCode = type(ITBPositionDecoderAndSanitizer).creationCode;
         // constructorArgs = abi.encode(liquidUsd);
         // deployer.deployContract(ItbPositionDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
-        creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
-        constructorArgs = abi.encode(liquidUsd, uniswapV3NonFungiblePositionManager);
-        deployer.deployContract(EtherFiLiquidUsdDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+        //creationCode = type(EtherFiLiquidUsdDecoderAndSanitizer).creationCode;
+        //constructorArgs = abi.encode(liquidUsd, uniswapV3NonFungiblePositionManager);
+        //deployer.deployContract(EtherFiLiquidUsdDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+
+        //creationCode = type(LombardBtcDecoderAndSanitizer).creationCode;
+        //constructorArgs = abi.encode(boringVault); 
+        //deployer.deployContract(LombardBtcDecoderAndSanitizerName, creationCode, constructorArgs, 0); 
+        
+        address baseUniswapV3NonFungiblePositionManager = 0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1; 
+        new LombardBtcDecoderAndSanitizer(boringVault, baseUniswapV3NonFungiblePositionManager); 
 
         vm.stopBroadcast();
     }

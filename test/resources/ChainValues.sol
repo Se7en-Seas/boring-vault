@@ -945,6 +945,8 @@ contract ChainValues {
         values[base]["fWSTETH"] = 0x896E39f0E9af61ECA9dD2938E14543506ef2c2b5.toBytes32();
     
         // Pendle 
+        values[base]["pendleRouter"] = 0x888888888889758F76e7103c6CbF23ABbF58F946.toBytes32(); 
+        values[base]["pendleLimitOrderRouter"] = 0xf86DDA825885674F85C5420079E1Df1bC0F372c6.toBytes32(); 
         values[base]["pendle_LBTC_market_05_29_25"] = 0x727cEbAcfb10fFd353Fc221D06A862B437eC1735.toBytes32(); 
     }
 
