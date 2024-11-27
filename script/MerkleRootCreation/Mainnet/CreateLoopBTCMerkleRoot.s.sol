@@ -18,7 +18,7 @@ contract CreateLoopBtcMerkleRootScript is Script, MerkleTreeHelper {
     address public boringVault = 0xFE0C961A49E1aEe2AE2d842fE40157365C6d978f;
     address public managerAddress = 0xaE4b4cfBB7A0B90e9455761ed6D93d6Dc1759710;
     address public accountantAddress = 0xf1ecf4802C2b5Cf9c830A4AF297842Daa6D0f986;
-    address public rawDataDecoderAndSanitizer = address(69); 
+    address public rawDataDecoderAndSanitizer = 0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A; 
 
     function setUp() external {}
 
