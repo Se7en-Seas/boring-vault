@@ -5248,6 +5248,8 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
 
         for (uint256 i; i < gauges.length; ++i) {
+            if (gauges[i] == address(0)) continue;
+
             // Approve gauge to spend staking token.
             address stakingToken = VelodromV2Gauge(gauges[i]).stakingToken();
             unchecked {
