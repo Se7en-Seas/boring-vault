@@ -8,12 +8,15 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {OAppAuth, Origin, MessagingFee, MessagingReceipt} from "@oapp-auth/OAppAuth.sol";
 import {AddressToBytes32Lib} from "src/helper/AddressToBytes32Lib.sol";
 import {OptionsBuilder} from "@oapp-auth/OptionsBuilder.sol";
+import {PairwiseRateLimiter} from "src/base/Roles/CrossChain/PairwiseRateLimiter.sol";
+import {MessageLib} from "src/base/Roles/CrossChain/MessageLib.sol";
 
-contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
+contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth, PairwiseRateLimiter {
     using SafeTransferLib for ERC20;
     using AddressToBytes32Lib for address;
     using AddressToBytes32Lib for bytes32;
     using OptionsBuilder for bytes;
+    using MessageLib for uint256;
 
     // ========================================= STRUCTS =========================================
 
@@ -165,6 +168,22 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
     }
 
     /**
+     * @notice Set outbound rate limit configurations.
+     * @dev Callable by MULTISIG_ROLE.
+     */
+    function setOutboundRateLimits(RateLimitConfig[] calldata _rateLimitConfigs) external requiresAuth {
+       _setOutboundRateLimits(_rateLimitConfigs);
+    }
+
+    /**
+     * @notice Set inbound rate limit configurations.
+     * @dev Callable by MULTISIG_ROLE.
+     */
+    function setInboundRateLimits(RateLimitConfig[] calldata _rateLimitConfigs) external requiresAuth {
+        _setInboundRateLimits(_rateLimitConfigs);
+    }
+
+    /**
      * @notice Set the gas limit for messages to a chain.
      * @dev Callable by OWNER_ROLE.
      */
@@ -195,6 +214,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
         Chain memory source = idToChains[_origin.srcEid];
         if (!source.allowMessagesFrom) revert LayerZeroTeller__MessagesNotAllowedFrom(_origin.srcEid);
         uint256 message = abi.decode(_message, (uint256));
+        _checkAndUpdateInboundRateLimit(_origin.srcEid, message.uint256ToMessage().shareAmount);
         _completeMessageReceive(_guid, message);
     }
 
@@ -217,6 +237,7 @@ contract LayerZeroTeller is CrossChainTellerWithGenericBridge, OAppAuth {
         returns (bytes32 messageId)
     {
         uint32 destinationId = abi.decode(bridgeWildCard, (uint32));
+        _checkAndUpdateOutboundRateLimit(destinationId, message.uint256ToMessage().shareAmount);
         Chain memory chain = idToChains[destinationId];
         if (!chain.allowMessagesTo) {
             revert LayerZeroTeller__MessagesNotAllowedTo(destinationId);
