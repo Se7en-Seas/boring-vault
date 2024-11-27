@@ -84,7 +84,9 @@ contract CreateLBTCMerkleRootScript is Script, MerkleTreeHelper {
         address[] memory gauges = new address[](1);
         gauges[0] = address(0);
 
-        _addVelodromeV2Leafs(leafs, _token0, _token1, getAddress(sourceChain, "aerodromeRouter"), gauges);
+        _addVelodromeV3Leafs(
+            leafs, _token0, _token1, getAddress(sourceChain, "aerodromeNonFungiblePositionManager"), gauges
+        );
 
         // ========================== Lombard ========================
         // setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);

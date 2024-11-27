@@ -5062,19 +5062,21 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             leafs[leafIndex].argumentAddresses[1] = token0[i];
             leafs[leafIndex].argumentAddresses[2] = token1[i];
 
-            // Approve gauge to spend NFT.
-            unchecked {
-                leafIndex++;
+            if (gauges[i] != address(0)) {
+                // Approve gauge to spend NFT.
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    nonfungiblePositionManager,
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    "Approve gauge to spend VelodromeV3 position",
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = gauges[i];
             }
-            leafs[leafIndex] = ManageLeaf(
-                nonfungiblePositionManager,
-                false,
-                "approve(address,uint256)",
-                new address[](1),
-                "Approve gauge to spend VelodromeV3 position",
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-            leafs[leafIndex].argumentAddresses[0] = gauges[i];
         }
 
         // Decrease liquidity
@@ -5116,54 +5118,56 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
 
         for (uint256 i; i < gauges.length; ++i) {
-            // Deposit into Gauge
-            unchecked {
-                leafIndex++;
+            if (gauges[i] != address(0)) {
+                // Deposit into Gauge
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    gauges[i],
+                    false,
+                    "deposit(uint256)",
+                    new address[](0),
+                    string.concat("Deposit into VelodromeV3 gauge ", vm.toString(gauges[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                // Withdraw from Gauge
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    gauges[i],
+                    false,
+                    "withdraw(uint256)",
+                    new address[](0),
+                    string.concat("Withdraw from VelodromeV3 gauge ", vm.toString(gauges[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                // Get reward
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    gauges[i],
+                    false,
+                    "getReward(uint256)",
+                    new address[](0),
+                    string.concat("Get reward from VelodromeV3 gauge ", vm.toString(gauges[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    gauges[i],
+                    false,
+                    "getReward(address)",
+                    new address[](1),
+                    string.concat("Get reward from VelodromeV3 gauge ", vm.toString(gauges[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
             }
-            leafs[leafIndex] = ManageLeaf(
-                gauges[i],
-                false,
-                "deposit(uint256)",
-                new address[](0),
-                string.concat("Deposit into VelodromeV3 gauge ", vm.toString(gauges[i])),
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-            // Withdraw from Gauge
-            unchecked {
-                leafIndex++;
-            }
-            leafs[leafIndex] = ManageLeaf(
-                gauges[i],
-                false,
-                "withdraw(uint256)",
-                new address[](0),
-                string.concat("Withdraw from VelodromeV3 gauge ", vm.toString(gauges[i])),
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-            // Get reward
-            unchecked {
-                leafIndex++;
-            }
-            leafs[leafIndex] = ManageLeaf(
-                gauges[i],
-                false,
-                "getReward(uint256)",
-                new address[](0),
-                string.concat("Get reward from VelodromeV3 gauge ", vm.toString(gauges[i])),
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-            unchecked {
-                leafIndex++;
-            }
-            leafs[leafIndex] = ManageLeaf(
-                gauges[i],
-                false,
-                "getReward(address)",
-                new address[](1),
-                string.concat("Get reward from VelodromeV3 gauge ", vm.toString(gauges[i])),
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
         }
     }
 
