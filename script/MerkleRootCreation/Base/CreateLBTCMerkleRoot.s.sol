@@ -87,6 +87,7 @@ contract CreateLBTCMerkleRootScript is Script, MerkleTreeHelper {
         _addVelodromeV2Leafs(leafs, _token0, _token1, getAddress(sourceChain, "aerodromeRouter"), gauges);
 
         // ========================== Lombard ========================
+        // setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
         // _addLombardBTCLeafs(leafs, getERC20(sourceChain, "cbBTC"), getERC20(sourceChain, "LBTC"));
 
         string memory filePath = "./leafs/Base/LombardBTCStrategistLeafs.json";
