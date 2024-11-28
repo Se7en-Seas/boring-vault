@@ -16,16 +16,6 @@ abstract contract LombardBTCMinterDecoderAndSanitizer is BaseDecoderAndSanitizer
         addressesFound = abi.encodePacked(to); 
     }
     
-    /// @notice redeem LTBC to BTC wallet via LBTC contract
-    function redeem(bytes calldata /*scriptPubkey*/, uint256 /*amount*/) external pure virtual returns (bytes memory addressesFound) {
-        return addressesFound; 
-    }
-    
-    /// @notice burn LBTC 
-    function burn(uint256 /*amount*/) external pure virtual returns (bytes memory addressesFound) {
-        return addressesFound; 
-    }
-    
     /// @notice for minting using cbBTCPPM contract
     function swapCBBTCToLBTC(uint256 /*amount*/) external pure virtual returns (bytes memory addressesFound) {
         return addressesFound; 
