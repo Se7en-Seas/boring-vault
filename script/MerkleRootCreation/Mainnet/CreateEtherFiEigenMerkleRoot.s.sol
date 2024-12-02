@@ -30,8 +30,8 @@ contract CreateEtherFiEigenMerkleRootScript is Script, MerkleTreeHelper {
      */
     function run() external {
         /// NOTE Only have 1 function run at a time, otherwise the merkle root created will be wrong.
-        // generateAdminStrategistMerkleRoot();
-        generateAdminMerkleRoot();
+         generateAdminStrategistMerkleRoot();
+        //generateAdminMerkleRoot();
     }
 
     function generateAdminMerkleRoot() public {

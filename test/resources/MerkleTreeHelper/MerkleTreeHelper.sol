@@ -7,8 +7,7 @@ import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IComet} from "src/interfaces/IComet.sol";
-import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol";
-import {BaseDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
+import {TellerWithMultiAssetSupport} from "src/base/Roles/TellerWithMultiAssetSupport.sol"; import {BaseDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
 import "forge-std/Base.sol";
 
 contract MerkleTreeHelper is CommonBase, ChainValues {
@@ -3754,7 +3753,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
-        leafs[leafIndex].argumentAddresses[1] = address(0);
+        leafs[leafIndex].argumentAddresses[1] = operator; 
         leafs[leafIndex].argumentAddresses[2] = getAddress(sourceChain, "boringVault");
         leafs[leafIndex].argumentAddresses[3] = strategy;
         leafs[leafIndex].argumentAddresses[4] = lst;
@@ -5695,7 +5694,48 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             );
             leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
         }
+
     }
+    
+    // ========================================= Aera Finance =========================================
+    
+    function _addAeraLeafs(ManageLeaf[] memory leafs, address vault, ERC20[] memory assets) internal {
+        for (uint256 i; i < assets.length; i++) {
+            // Approvals.
+            if (!tokenToSpenderToApprovalInTree[address(assets[i])][vault]) {
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    address(assets[i]),
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    string.concat("Approve Aera Vault to spend ", assets[i].symbol()),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = vault;
+                tokenToSpenderToApprovalInTree[address(assets[i])][vault] = true;
+            }
+        }
+
+
+        for (uint256 i; i < assets.length; i++) {
+            unchecked{
+                leafIndex++; 
+            }
+
+            leafs[leafIndex] = ManageLeaf(
+                vault, //target
+                false, //can send value
+                "deposit((address,uint256)[])", //func sig
+                new address[](1), //argumentAddresses
+                string.concat("Deposit ", assets[i].symbol(), " into Aera vault"), //description
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(assets[i]); 
+        }
+
 
     // ========================================= Lombard BTC  =========================================
     
@@ -5794,6 +5834,68 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
     } 
 
 
+        for (uint256 i; i < assets.length; i++) {
+            unchecked{
+                leafIndex++; 
+            }
+            leafs[leafIndex] = ManageLeaf(
+                vault, //target
+                false, //can send value
+                "withdraw((address,uint256)[])", //func sig
+                new address[](1), //argumentAddresses
+                string.concat("Withdraw ", assets[i].symbol(), " from Aera vault"), //description
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(assets[i]); 
+        }
+
+        unchecked{
+            leafIndex++; 
+        }
+
+        leafs[leafIndex] = ManageLeaf(
+            vault, //target
+            false, //can send value
+            "pause()", //func sig
+            new address[](0), //argumentAddresses
+            string.concat("Pause the Aera vault"), //description
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
+        );
+
+        unchecked{
+            leafIndex++; 
+        }
+
+        leafs[leafIndex] = ManageLeaf(
+            vault, //target
+            false, //can send value
+            "resume()", //func sig
+            new address[](0), //argumentAddresses
+            string.concat("Resume the Aera vault"), //description
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
+        );
+
+    }
+
+    // ============================================= WeETH ==================================================
+
+    function _addWeETHLeafs(ManageLeaf[] memory leafs, address ETH, address referral) internal {
+        unchecked {
+            leafIndex++;
+        }
+
+        leafs[leafIndex] = ManageLeaf(
+            getAddress(sourceChain, "etherFiL2SyncPool"), //target
+            true,
+            "deposit(address,uint256,uint256,address)",
+            new address[](2),
+            string.concat("Depsoit ETH into WeETH"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        );
+        leafs[leafIndex].argumentAddresses[0] = ETH; 
+        leafs[leafIndex].argumentAddresses[1] = referral; 
+    }
+    
     // ========================================= BoringVault Teller =========================================
 
     function _addTellerLeafs(ManageLeaf[] memory leafs, address teller, ERC20[] memory assets) internal {
@@ -6002,7 +6104,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 merkleTreeOut[i][j] = merkleTreeIn[i][j];
             }
         }
-
+        
         uint256 next_layer_length;
         if (layer_length % 2 != 0) {
             next_layer_length = (layer_length + 1) / 2;
@@ -6021,6 +6123,7 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             // We need to process the next layer of leaves.
             merkleTreeOut = _buildTrees(merkleTreeOut);
         }
+
     }
 
     function _generateMerkleTree(ManageLeaf[] memory manageLeafs) internal pure returns (bytes32[][] memory tree) {
