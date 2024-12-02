@@ -176,7 +176,7 @@ contract LombardBtcDecoderAndSanitizer is
     function burn(uint256) 
         external 
         pure
-        override(UniswapV3DecoderAndSanitizer, LombardBTCMinterDecoderAndSanitizer) 
+        override(UniswapV3DecoderAndSanitizer) 
         returns (bytes memory addressesFound) 
     {
         // Nothing to sanitize or return

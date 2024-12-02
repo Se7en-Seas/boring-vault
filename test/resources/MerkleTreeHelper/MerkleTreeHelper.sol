@@ -5736,6 +5736,48 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             leafs[leafIndex].argumentAddresses[0] = address(assets[i]); 
         }
 
+        for (uint256 i; i < assets.length; i++) {
+            unchecked{
+                leafIndex++; 
+            }
+            leafs[leafIndex] = ManageLeaf(
+                vault, //target
+                false, //can send value
+                "withdraw((address,uint256)[])", //func sig
+                new address[](1), //argumentAddresses
+                string.concat("Withdraw ", assets[i].symbol(), " from Aera vault"), //description
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
+            );
+            leafs[leafIndex].argumentAddresses[0] = address(assets[i]); 
+        }
+
+        unchecked{
+            leafIndex++; 
+        }
+
+        leafs[leafIndex] = ManageLeaf(
+            vault, //target
+            false, //can send value
+            "pause()", //func sig
+            new address[](0), //argumentAddresses
+            string.concat("Pause the Aera vault"), //description
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
+        );
+
+        unchecked{
+            leafIndex++; 
+        }
+
+        leafs[leafIndex] = ManageLeaf(
+            vault, //target
+            false, //can send value
+            "resume()", //func sig
+            new address[](0), //argumentAddresses
+            string.concat("Resume the Aera vault"), //description
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
+        );
+
+    }
 
     // ========================================= Lombard BTC  =========================================
     
@@ -5834,48 +5876,6 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
     } 
 
 
-        for (uint256 i; i < assets.length; i++) {
-            unchecked{
-                leafIndex++; 
-            }
-            leafs[leafIndex] = ManageLeaf(
-                vault, //target
-                false, //can send value
-                "withdraw((address,uint256)[])", //func sig
-                new address[](1), //argumentAddresses
-                string.concat("Withdraw ", assets[i].symbol(), " from Aera vault"), //description
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
-            );
-            leafs[leafIndex].argumentAddresses[0] = address(assets[i]); 
-        }
-
-        unchecked{
-            leafIndex++; 
-        }
-
-        leafs[leafIndex] = ManageLeaf(
-            vault, //target
-            false, //can send value
-            "pause()", //func sig
-            new address[](0), //argumentAddresses
-            string.concat("Pause the Aera vault"), //description
-            getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
-        );
-
-        unchecked{
-            leafIndex++; 
-        }
-
-        leafs[leafIndex] = ManageLeaf(
-            vault, //target
-            false, //can send value
-            "resume()", //func sig
-            new address[](0), //argumentAddresses
-            string.concat("Resume the Aera vault"), //description
-            getAddress(sourceChain, "rawDataDecoderAndSanitizer") //d&s address
-        );
-
-    }
 
     // ============================================= WeETH ==================================================
 
