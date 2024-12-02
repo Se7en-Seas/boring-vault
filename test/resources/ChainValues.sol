@@ -933,6 +933,10 @@ contract ChainValues {
         // Instadapp Fluid
         values[base]["fWETH"] = 0x9272D6153133175175Bc276512B2336BE3931CE9.toBytes32();
         values[base]["fWSTETH"] = 0x896E39f0E9af61ECA9dD2938E14543506ef2c2b5.toBytes32();
+
+
+        // EtherFi WeETH 
+        values[base]["etherFiL2SyncPool"] = 0xc38e046dFDAdf15f7F56853674242888301208a5.toBytes32(); 
     }
 
     function _addArbitrumValues() private {

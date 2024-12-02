@@ -18,6 +18,7 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
     address public rawDataDecoderAndSanitizer = 0x568a4E08909aab6995979dB24B3cdaE00244CeB4;
     address public managerAddress = 0x227975088C28DBBb4b421c6d96781a53578f19a8;
     address public accountantAddress = 0x0d05D94a5F1E76C18fbeB7A13d17C8a314088198;
+    address public weEthFullDecoderAndSanitizer = 0x34Daed44420e3750608Eb992f092aDcA4A8C73b6;
 
     address public aerodromeDecoderAndSanitizer = 0x0cD9e50616efdc3a5598e4483e212fe127E08f3C;
 
@@ -200,6 +201,15 @@ contract CreateMultiChainLiquidEthMerkleRootScript is Script, MerkleTreeHelper {
         gauges[2] = getAddress(sourceChain, "aerodrome_Weth_Reth_v2_05_gauge");
         gauges[3] = getAddress(sourceChain, "aerodrome_Sfrxeth_Wsteth_v2_30_gauge");
         _addVelodromeV2Leafs(leafs, token0, token1, getAddress(sourceChain, "aerodromeRouter"), gauges);
+
+        // ========================== WeETH ==========================
+        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", weEthFullDecoderAndSanitizer);
+
+        _addWeETHLeafs(
+            leafs,
+            getAddress(sourceChain, "ETH"), //tokenIn
+            getAddress(sourceChain, "boringVault") //referral
+        );
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
