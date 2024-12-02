@@ -224,16 +224,17 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
         uint96 sharesToBridge = uint96(bound(uint96(101), 1, 1_000e18));
         bytes memory bridgeData = abi.encode(DESTINATION_ID);
         uint256 bridgeValue = 0.001e18;
+        address to = vm.addr(1);
 
         // Test outbound rate limit.
         sourceTeller.setOutboundRateLimits(createRateLimitConfig(DESTINATION_ID, 100, 4 hours));
         // Expect failure by exceeding limit.
         vm.expectRevert(PairwiseRateLimiter.OutboundRateLimitExceeded.selector);
-        sourceTeller.bridge{value: bridgeValue}( sharesToBridge, vm.addr(1), bridgeData, NATIVE_ERC20, 1e18);
+        sourceTeller.bridge{value: bridgeValue}( sharesToBridge, to, bridgeData, NATIVE_ERC20, 1e18);
         
         // Increase limit and retry
         sourceTeller.setOutboundRateLimits(createRateLimitConfig(DESTINATION_ID, 2000 ether, 4 hours));
-        sourceTeller.bridge{value: bridgeValue}( sharesToBridge, vm.addr(1), bridgeData, NATIVE_ERC20, 1e18);
+        sourceTeller.bridge{value: bridgeValue}( sharesToBridge, to, bridgeData, NATIVE_ERC20, 1e18);
 
         // Test inbound rate limit.
         destinationTeller.setInboundRateLimits(createRateLimitConfig(SOURCE_ID, 100, 4 hours));
@@ -243,8 +244,11 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
         vm.expectRevert(PairwiseRateLimiter.InboundRateLimitExceeded.selector);
         LayerZeroTeller(m.to).lzReceive(m._origin, m._guid, m._message, m._executor, m._extraData);
     
-        // Reset limit.
+        // Reset limit and retry.
         destinationTeller.setInboundRateLimits(createRateLimitConfig(SOURCE_ID, 2000 ether, 4 hours));
+        vm.prank(address(endPoint));
+        LayerZeroTeller(m.to).lzReceive(m._origin, m._guid, m._message, m._executor, m._extraData);
+        assertEq(boringVault.balanceOf(to), sharesToBridge, "To address should have received shares.");
 
         // Adding a chain with a zero message gas limit should revert.
         vm.expectRevert(bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector)));
