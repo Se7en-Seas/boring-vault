@@ -1,0 +1,239 @@
+{
+    "metadata": {
+        "AccountantAddress": "0xf1ecf4802C2b5Cf9c830A4AF297842Daa6D0f986",
+        "BoringVaultAddress": "0xFE0C961A49E1aEe2AE2d842fE40157365C6d978f",
+        "DecoderAndSanitizerAddress": "0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A",
+        "DigestComposition": [
+            "Bytes20(DECODER_AND_SANITIZER_ADDRESS)",
+            "Bytes20(TARGET_ADDRESS)",
+            "Bytes1(CAN_SEND_VALUE)",
+            "Bytes4(TARGET_FUNCTION_SELECTOR)",
+            "Bytes{N*20}(ADDRESS_ARGUMENT_0,...,ADDRESS_ARGUMENT_N)"
+        ],
+        "LeafCount": 11,
+        "ManageRoot": "0x88bd0b03942fffe1bfa2bd8a473dd1378da4d1c8cd6b4962ba1012520620da2e",
+        "ManagerAddress": "0xaE4b4cfBB7A0B90e9455761ed6D93d6Dc1759710",
+        "TreeCapacity": 16
+    },
+    "leafs": [
+        {
+            "AddressArguments": ["0x47562b3738C439B80fe4012e6D40c8acB51ce136"],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A",
+            "Description": "Approve Aera Vault to spend WBTC",
+            "FunctionSelector": "0x095ea7b3",
+            "FunctionSignature": "approve(address,uint256)",
+            "LeafDigest": "0x7da029a8f8a436a16d9b43ec2d4997a7dc0bf6c6d5f580f053e7d4dbbc47e7d3",
+            "PackedArgumentAddresses": "0x47562b3738c439b80fe4012e6d40c8acb51ce136",
+            "TargetAddress": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+        },
+        {
+            "AddressArguments": ["0x47562b3738C439B80fe4012e6D40c8acB51ce136"],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A",
+            "Description": "Approve Aera Vault to spend LBTC",
+            "FunctionSelector": "0x095ea7b3",
+            "FunctionSignature": "approve(address,uint256)",
+            "LeafDigest": "0x39e656b962df19b32b917bb86637b3dcc32bd52805a7c1258995f8bdf9650a0b",
+            "PackedArgumentAddresses": "0x47562b3738c439b80fe4012e6d40c8acb51ce136",
+            "TargetAddress": "0x8236a87084f8B84306f72007F36F2618A5634494"
+        },
+        {
+            "AddressArguments": ["0x47562b3738C439B80fe4012e6D40c8acB51ce136"],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A",
+            "Description": "Approve Aera Vault to spend cbBTC",
+            "FunctionSelector": "0x095ea7b3",
+            "FunctionSignature": "approve(address,uint256)",
+            "LeafDigest": "0xe97747a6c3b0cb1847575e4c30240cb84d5ae849886ba3927b8f7aaa5906fb2b",
+            "PackedArgumentAddresses": "0x47562b3738c439b80fe4012e6d40c8acb51ce136",
+            "TargetAddress": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+        },
+        {
+            "AddressArguments": ["0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A",
+            "Description": "Deposit WBTC into Aera vault",
+            "FunctionSelector": "0x59e97475",
+            "FunctionSignature": "deposit((address,uint256)[])",
+            "LeafDigest": "0xc0f95ef44368dbbf5ce26f2363a56a260292e414514887030c418f59a0a7c3fd",
+            "PackedArgumentAddresses": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+            "TargetAddress": "0x47562b3738C439B80fe4012e6D40c8acB51ce136"
+        },
+        {
+            "AddressArguments": ["0x8236a87084f8B84306f72007F36F2618A5634494"],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A",
+            "Description": "Deposit LBTC into Aera vault",
+            "FunctionSelector": "0x59e97475",
+            "FunctionSignature": "deposit((address,uint256)[])",
+            "LeafDigest": "0x64f4a1aab9c8bf09794a56cf0197cec62b70bf2de8cf06e64c8b92157f787a9e",
+            "PackedArgumentAddresses": "0x8236a87084f8b84306f72007f36f2618a5634494",
+            "TargetAddress": "0x47562b3738C439B80fe4012e6D40c8acB51ce136"
+        },
+        {
+            "AddressArguments": ["0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A",
+            "Description": "Deposit cbBTC into Aera vault",
+            "FunctionSelector": "0x59e97475",
+            "FunctionSignature": "deposit((address,uint256)[])",
+            "LeafDigest": "0x53af3e9dfba63530e79bb47a0a939b371580b6801d4752740c7f9952e1b0b077",
+            "PackedArgumentAddresses": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+            "TargetAddress": "0x47562b3738C439B80fe4012e6D40c8acB51ce136"
+        },
+        {
+            "AddressArguments": ["0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A",
+            "Description": "Withdraw WBTC from Aera vault",
+            "FunctionSelector": "0xecdbb2b3",
+            "FunctionSignature": "withdraw((address,uint256)[])",
+            "LeafDigest": "0xd41d2e15ceb19060334aaceedb1c81df2cb2ccb37230d2b083efcab6a9b7c23e",
+            "PackedArgumentAddresses": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+            "TargetAddress": "0x47562b3738C439B80fe4012e6D40c8acB51ce136"
+        },
+        {
+            "AddressArguments": ["0x8236a87084f8B84306f72007F36F2618A5634494"],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A",
+            "Description": "Withdraw LBTC from Aera vault",
+            "FunctionSelector": "0xecdbb2b3",
+            "FunctionSignature": "withdraw((address,uint256)[])",
+            "LeafDigest": "0xc487800bee301611fc0f386971a17a5a2fe19e3ae1b2dec085e0b6437d1365cc",
+            "PackedArgumentAddresses": "0x8236a87084f8b84306f72007f36f2618a5634494",
+            "TargetAddress": "0x47562b3738C439B80fe4012e6D40c8acB51ce136"
+        },
+        {
+            "AddressArguments": ["0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A",
+            "Description": "Withdraw cbBTC from Aera vault",
+            "FunctionSelector": "0xecdbb2b3",
+            "FunctionSignature": "withdraw((address,uint256)[])",
+            "LeafDigest": "0xa787aed50f9ae21a8bf37ea9eae2d9f68fa64266e615812c29ed95e8ca2e9800",
+            "PackedArgumentAddresses": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+            "TargetAddress": "0x47562b3738C439B80fe4012e6D40c8acB51ce136"
+        },
+        {
+            "AddressArguments": [],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A",
+            "Description": "Pause the Aera vault",
+            "FunctionSelector": "0x8456cb59",
+            "FunctionSignature": "pause()",
+            "LeafDigest": "0xa4d58ec03012151e6c21cecdd0d2a1df86d827f192a798e96864bd311dab69d9",
+            "PackedArgumentAddresses": "0x",
+            "TargetAddress": "0x47562b3738C439B80fe4012e6D40c8acB51ce136"
+        },
+        {
+            "AddressArguments": [],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A",
+            "Description": "Resume the Aera vault",
+            "FunctionSelector": "0x046f7da2",
+            "FunctionSignature": "resume()",
+            "LeafDigest": "0xd9cbe3d8eaac1803196dea242fa673746c449cf4e06b076e104bd1436810ba73",
+            "PackedArgumentAddresses": "0x",
+            "TargetAddress": "0x47562b3738C439B80fe4012e6D40c8acB51ce136"
+        },
+        {
+            "AddressArguments": [],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
+            "Description": "",
+            "FunctionSelector": "0xc5d24601",
+            "FunctionSignature": "",
+            "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+            "PackedArgumentAddresses": "0x",
+            "TargetAddress": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "AddressArguments": [],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
+            "Description": "",
+            "FunctionSelector": "0xc5d24601",
+            "FunctionSignature": "",
+            "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+            "PackedArgumentAddresses": "0x",
+            "TargetAddress": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "AddressArguments": [],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
+            "Description": "",
+            "FunctionSelector": "0xc5d24601",
+            "FunctionSignature": "",
+            "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+            "PackedArgumentAddresses": "0x",
+            "TargetAddress": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "AddressArguments": [],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
+            "Description": "",
+            "FunctionSelector": "0xc5d24601",
+            "FunctionSignature": "",
+            "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+            "PackedArgumentAddresses": "0x",
+            "TargetAddress": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "AddressArguments": [],
+            "CanSendValue": false,
+            "DecoderAndSanitizerAddress": "0x0000000000000000000000000000000000000000",
+            "Description": "",
+            "FunctionSelector": "0xc5d24601",
+            "FunctionSignature": "",
+            "LeafDigest": "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+            "PackedArgumentAddresses": "0x",
+            "TargetAddress": "0x0000000000000000000000000000000000000000"
+        }
+    ],
+    "MerkleTree": {
+        "0": [
+            "0x88bd0b03942fffe1bfa2bd8a473dd1378da4d1c8cd6b4962ba1012520620da2e"
+        ],
+        "1": [
+            "0xc5e94ab1731adaaeb6fe61b63d6680d627d21478440d820f14ef52f539783130",
+            "0x889e3593524ea3ef7fa966ad150dc320dad901908ec153bf0350166b8a8e3f1b"
+        ],
+        "2": [
+            "0x7886e3683885632f916958e6005bb70b565c1e53f8278c4f76add321b8e2a7d3",
+            "0x2191753cf055280cc3b967c00a5ba0d14221684d74ce8ee099d1f82161796bd7",
+            "0x00a49c304011f4cbdac26f333febd1f93b08bd79c586c4091cf680767f1b5dc2",
+            "0x849eda7a295b642e5ddaf49a30eec4470cf507efa83b4104c0752d069c7638fe"
+        ],
+        "3": [
+            "0x4d29654131c741eb3a2c7b5c301ba2260ea9c2e68b0d463eddf57c482781d237",
+            "0xb666dcbde0952ea559f2d7d034a46c07575392dfa1aec2da6444123db8119652",
+            "0xc99f2fba571c7348b1b292a8e85d02be01d9a39ec63c27b5bdb004b8070aba7f",
+            "0x89987d2e3b1afa6217e65ec418140277c75772e62902c26ebe074a2d0c8d07c0",
+            "0x5fb6f1a281302facb95ff93ed43ee2acce2516725c9315f730d6a36f2db40c18",
+            "0xccb813b5da32d3d390cfc26463df2f1b591dca3bc2a5c54fdd0d2891e8a3113a",
+            "0xc5a36f3b7b955966d5ed3135dcc612f978306d73bce3697e230afae57fbaeeba",
+            "0xc5a36f3b7b955966d5ed3135dcc612f978306d73bce3697e230afae57fbaeeba"
+        ],
+        "4": [
+            "0x7da029a8f8a436a16d9b43ec2d4997a7dc0bf6c6d5f580f053e7d4dbbc47e7d3",
+            "0x39e656b962df19b32b917bb86637b3dcc32bd52805a7c1258995f8bdf9650a0b",
+            "0xe97747a6c3b0cb1847575e4c30240cb84d5ae849886ba3927b8f7aaa5906fb2b",
+            "0xc0f95ef44368dbbf5ce26f2363a56a260292e414514887030c418f59a0a7c3fd",
+            "0x64f4a1aab9c8bf09794a56cf0197cec62b70bf2de8cf06e64c8b92157f787a9e",
+            "0x53af3e9dfba63530e79bb47a0a939b371580b6801d4752740c7f9952e1b0b077",
+            "0xd41d2e15ceb19060334aaceedb1c81df2cb2ccb37230d2b083efcab6a9b7c23e",
+            "0xc487800bee301611fc0f386971a17a5a2fe19e3ae1b2dec085e0b6437d1365cc",
+            "0xa787aed50f9ae21a8bf37ea9eae2d9f68fa64266e615812c29ed95e8ca2e9800",
+            "0xa4d58ec03012151e6c21cecdd0d2a1df86d827f192a798e96864bd311dab69d9",
+            "0xd9cbe3d8eaac1803196dea242fa673746c449cf4e06b076e104bd1436810ba73",
+            "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+            "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+            "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+            "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400",
+            "0xa7a0fd846665d92e66be6155c6221b3acd7145ca7c4e4b67a594e4c516969400"
+        ]
+    }
+}
