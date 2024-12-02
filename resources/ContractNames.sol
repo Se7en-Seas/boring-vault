@@ -33,7 +33,9 @@ contract ContractNames {
     string public constant LombardBtcManagerName = "Lombard BTC Manager With Merkle Verification V0.0";
     string public constant LombardBtcAccountantName = "Lombard BTC Accountant With Rate Providers V0.1";
     string public constant LombardBtcTellerName = "Lombard BTC Teller With Multi Asset Support V0.1";
-    string public constant LombardBtcDecoderAndSanitizerName = "Lombard BTC Decoder and Sanitizer V0.0";
+    string public constant LombardBtcDecoderAndSanitizerName = "Lombard BTC Decoder and Sanitizer V0.1";
+    string public constant LombardBtcAerodromeDecoderAndSanitizerName =
+        "Lombard BTC Aerodrome Decoder and Sanitizer V0.0";
     string public constant LombardBtcDelayedWithdrawer = "Lombard BTC Delayed Withdrawer V0.0";
 
     string public constant EtherFiLiquidEthRolesAuthorityName = "EtherFi Liquid ETH RolesAuthority Version 0.0";

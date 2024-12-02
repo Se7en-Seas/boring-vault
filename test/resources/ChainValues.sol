@@ -117,6 +117,7 @@ contract ChainValues {
         values[mainnet]["DAI"] = 0x6B175474E89094C44Da98b954EedeAC495271d0F.toBytes32();
         values[mainnet]["WSTETH"] = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0.toBytes32();
         values[mainnet]["STETH"] = 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84.toBytes32();
+        values[mainnet]["WeETH"] = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee.toBytes32(); 
         values[mainnet]["FRAX"] = 0x853d955aCEf822Db058eb8505911ED77F175b99e.toBytes32();
         values[mainnet]["BAL"] = 0xba100000625a3754423978a60c9317c58a424e3D.toBytes32();
         values[mainnet]["COMP"] = 0xc00e94Cb662C3520282E6f5717214004A7f26888.toBytes32();
@@ -654,6 +655,7 @@ contract ChainValues {
 
         // Aave V3
         values[mainnet]["v3Pool"] = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2.toBytes32();
+        values[mainnet]["v3RewardsController"] = 0x8164Cc65827dcFe994AB23944CBC90e0aa80bFcb.toBytes32(); 
 
         // Aave V3 Lido
         values[mainnet]["v3LidoPool"] = 0x4e033931ad43597d96D6bcc25c280717730B58B1.toBytes32();
@@ -721,6 +723,9 @@ contract ChainValues {
         values[mainnet]["fWETH"] = 0x90551c1795392094FE6D29B758EcCD233cFAa260.toBytes32();
         values[mainnet]["fWSTETH"] = 0x2411802D8BEA09be0aF8fD8D08314a63e706b29C.toBytes32();
         values[mainnet]["fGHO"] = 0x6A29A46E21C730DcA1d8b23d637c101cec605C5B.toBytes32();
+        values[mainnet]["fVault"] = 0x3E11B9aEb9C7dBbda4DD41477223Cc2f3f24b9d7.toBytes32(); 
+        values[mainnet]["WeETHDexUSDC-USDT"] = 0x01F0D07fdE184614216e76782c6b7dF663F5375e.toBytes32(); 
+        values[mainnet]["wBTC-cbBTCDex-USDT"] = 0xf7FA55D14C71241e3c970E30C509Ff58b5f5D557.toBytes32(); 
 
         // Symbiotic
         values[mainnet]["wstETHDefaultCollateral"] = 0xC329400492c6ff2438472D4651Ad17389fCb843a.toBytes32();
@@ -881,8 +886,14 @@ contract ChainValues {
         values[base]["BSDETH"] = 0xCb327b99fF831bF8223cCEd12B1338FF3aA322Ff.toBytes32();
         values[base]["SFRXETH"] = 0x1f55a02A049033E3419a8E2975cF3F572F4e6E9A.toBytes32();
         values[base]["cbBTC"] = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf.toBytes32();
+        values[base]["LBTC"] = 0xecAc9C5F704e954931349Da37F60E39f515c11c1.toBytes32(); 
         values[base]["tBTC"] = 0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b.toBytes32();
+        values[base]["WBTC"] = 0x0555E30da8f98308EdB960aa94C0Db47230d2B9c.toBytes32(); 
         values[base]["dlcBTC"] = 0x12418783e860997eb99e8aCf682DF952F721cF62.toBytes32();
+        //values[base]["PENDLE"] = //no token yet? 
+
+        // Lombard
+        values[base]["cbBTCPMM"] = 0x92c01FC0F59857c6E920EdFf1139904b2Bb74c7c.toBytes32(); 
 
         // Balancer vault
         values[base]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
@@ -920,11 +931,16 @@ contract ChainValues {
         values[base]["wstETH_wETH_945"] = 0x3a4048c64ba1b375330d376b1ce40e4047d03b47ab4d48af484edec9fec801ba;
         values[base]["cbETH_wETH_965"] = 0x6600aae6c56d242fa6ba68bd527aff1a146e77813074413186828fd3f1cdca91;
         values[base]["cbETH_wETH_945"] = 0x84662b4f95b85d6b082b68d32cf71bb565b3f22f216a65509cc2ede7dccdfe8c;
-
+        
+        // Uniswap
         values[base]["uniV3Router"] = 0x2626664c2603336E57B271c5C0b26F421741e481.toBytes32();
-
+        
+        // 1inch
         values[base]["aggregationRouterV5"] = 0x1111111254EEB25477B68fb85Ed929f73A960582.toBytes32();
         values[base]["oneInchExecutor"] = 0xE37e799D5077682FA0a244D46E5649F71457BD09.toBytes32();
+        
+        // MetaMorpho
+        values[base]["gauntletCbBTCcore"] = 0x6770216aC60F634483Ec073cBABC4011c94307Cb.toBytes32(); 
 
         // Compound V3
         values[base]["cWETHV3"] = 0x46e6b214b524310239732D51387075E0e70970bf.toBytes32();
@@ -934,9 +950,17 @@ contract ChainValues {
         values[base]["fWETH"] = 0x9272D6153133175175Bc276512B2336BE3931CE9.toBytes32();
         values[base]["fWSTETH"] = 0x896E39f0E9af61ECA9dD2938E14543506ef2c2b5.toBytes32();
 
+    
+        // Pendle 
+        values[base]["pendleRouter"] = 0x888888888889758F76e7103c6CbF23ABbF58F946.toBytes32(); 
+        values[base]["pendleLimitOrderRouter"] = 0xf86DDA825885674F85C5420079E1Df1bC0F372c6.toBytes32(); 
+        values[base]["pendle_LBTC_market_05_29_25"] = 0x727cEbAcfb10fFd353Fc221D06A862B437eC1735.toBytes32(); 
+
+
 
         // EtherFi WeETH 
         values[base]["etherFiL2SyncPool"] = 0xc38e046dFDAdf15f7F56853674242888301208a5.toBytes32(); 
+
     }
 
     function _addArbitrumValues() private {
@@ -1230,5 +1254,9 @@ contract ChainValues {
         values[bsc]["LBTC"] = 0xecAc9C5F704e954931349Da37F60E39f515c11c1.toBytes32();
         values[bsc]["WBTC"] = 0x0555E30da8f98308EdB960aa94C0Db47230d2B9c.toBytes32();
         values[bsc]["WBNB"] = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c.toBytes32();
+        values[bsc]["BTCB"] = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c.toBytes32(); 
+        
+        //Balancer (not deployed on BSC, but needed for merkle manager)
+        values[bsc]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
     }
 }

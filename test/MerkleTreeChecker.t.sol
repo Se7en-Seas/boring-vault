@@ -38,7 +38,9 @@ contract MerkleTreeCheckerTest is Test, MerkleTreeHelper {
         supplyAssets[0] = getERC20(sourceChain, "WBTC");
         ERC20[] memory borrowAssets = new ERC20[](1);
         borrowAssets[0] = getERC20(sourceChain, "WBTC");
-        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
+        ERC20[] memory claimAssets = new ERC20[](1); 
+        claimAssets[0] = getERC20(sourceChain, "WBTC");
+        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets, claimAssets);
 
         // ========================== SparkLend ==========================
         /**
@@ -47,7 +49,7 @@ contract MerkleTreeCheckerTest is Test, MerkleTreeHelper {
          */
         borrowAssets = new ERC20[](1);
         borrowAssets[0] = getERC20(sourceChain, "WBTC");
-        _addSparkLendLeafs(leafs, supplyAssets, borrowAssets);
+        _addSparkLendLeafs(leafs, supplyAssets, borrowAssets, claimAssets);
 
         // ========================== Gearbox ==========================
         _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWBTCV3")), getAddress(sourceChain, "sdWBTCV3"));
@@ -118,7 +120,9 @@ contract MerkleTreeCheckerTest is Test, MerkleTreeHelper {
         supplyAssets[0] = getERC20(sourceChain, "WBTC");
         ERC20[] memory borrowAssets = new ERC20[](1);
         borrowAssets[0] = getERC20(sourceChain, "WBTC");
-        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
+        ERC20[] memory claimAssets = new ERC20[](1); 
+        claimAssets[0] = getERC20(sourceChain, "WBTC");
+        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets, claimAssets);
 
         // ========================== SparkLend ==========================
         /**
@@ -127,7 +131,7 @@ contract MerkleTreeCheckerTest is Test, MerkleTreeHelper {
          */
         borrowAssets = new ERC20[](1);
         borrowAssets[0] = getERC20(sourceChain, "WBTC");
-        _addSparkLendLeafs(leafs, supplyAssets, borrowAssets);
+        _addSparkLendLeafs(leafs, supplyAssets, borrowAssets, claimAssets);
 
         // ========================== Gearbox ==========================
         _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWBTCV3")), getAddress(sourceChain, "sdWBTCV3"));

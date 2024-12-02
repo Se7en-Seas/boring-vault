@@ -2,6 +2,7 @@
 cache/
 out/
 broadcast/
+lib/LayerZero-v2
 
 # Ignores development broadcast logs
 !/broadcast

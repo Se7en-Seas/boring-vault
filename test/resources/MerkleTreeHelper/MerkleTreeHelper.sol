@@ -2097,22 +2097,22 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
 
     // ========================================= Aave V3 =========================================
 
-    function _addAaveV3Leafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets)
+    function _addAaveV3Leafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets, ERC20[] memory claimAssets)
         internal
     {
-        _addAaveV3ForkLeafs("Aave V3", getAddress(sourceChain, "v3Pool"), leafs, supplyAssets, borrowAssets);
+        _addAaveV3ForkLeafs("Aave V3", getAddress(sourceChain, "v3Pool"), leafs, supplyAssets, borrowAssets, claimAssets);
     }
 
-    function _addAaveV3LidoLeafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets)
+    function _addAaveV3LidoLeafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets, ERC20[] memory claimAssets)
         internal
     {
-        _addAaveV3ForkLeafs("Aave V3 Lido", getAddress(sourceChain, "v3LidoPool"), leafs, supplyAssets, borrowAssets);
+        _addAaveV3ForkLeafs("Aave V3 Lido", getAddress(sourceChain, "v3LidoPool"), leafs, supplyAssets, borrowAssets, claimAssets);
     }
 
-    function _addSparkLendLeafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets)
+    function _addSparkLendLeafs(ManageLeaf[] memory leafs, ERC20[] memory supplyAssets, ERC20[] memory borrowAssets, ERC20[] memory claimAssets)
         internal
     {
-        _addAaveV3ForkLeafs("SparkLend", getAddress(sourceChain, "sparkLendPool"), leafs, supplyAssets, borrowAssets);
+        _addAaveV3ForkLeafs("SparkLend", getAddress(sourceChain, "sparkLendPool"), leafs, supplyAssets, borrowAssets, claimAssets);
     }
 
     function _addAaveV3ForkLeafs(
@@ -2120,7 +2120,8 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         address protocolAddress,
         ManageLeaf[] memory leafs,
         ERC20[] memory supplyAssets,
-        ERC20[] memory borrowAssets
+        ERC20[] memory borrowAssets,
+        ERC20[] memory claimAssets
     ) internal {
         // Approvals
         string memory baseApprovalString = string.concat("Approve ", protocolName, " Pool to spend ");
@@ -2248,6 +2249,21 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             string.concat("Set user e-mode in ", protocolName),
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         );
+
+        for (uint256 i; i < claimAssets.length; i++) {
+            unchecked{
+                leafIndex++; 
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "v3RewardsController"),
+                false,
+                "claimRewards(address[],uint256,address,address)",
+                new address[](1),
+                string.concat("Claim reward", claimAssets[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            ); 
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault"); 
+        }
     }
 
     // ========================================= Uniswap V3 =========================================
@@ -4304,6 +4320,104 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[1] = getAddress(sourceChain, "boringVault");
     }
 
+    // ========================================= Fluid Dex =========================================
+    
+    // @notice dex borrows happen against a vault, but each dex type is different, ranging from T1 to T4 indicating either smart collateral or smart debt (see docs for more)
+    // @param dexType 2000, 3000, 4000. Used by Instadapp for types of pools. They have different operate functions, but each pool will only need it's specific type
+    function _addFluidDexLeafs(ManageLeaf[] memory leafs, address dex, uint256 dexType, ERC20[] memory supplyTokens, ERC20[] memory borrowTokens) internal {
+        // Approvals for token
+        for (uint256 i = 0; i < supplyTokens.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+
+            leafs[leafIndex] = ManageLeaf(
+                address(supplyTokens[i]),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Fluid Dex to spend ", supplyTokens[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = dex;
+        }
+
+        for (uint256 i = 0; i < borrowTokens.length; i++) {
+            unchecked {
+                leafIndex++;
+            }
+
+            leafs[leafIndex] = ManageLeaf(
+                address(borrowTokens[i]),
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve Fluid Dex to spend ", borrowTokens[i].symbol()),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = dex;
+        }
+        
+        //t2 and t3 leaves
+        if (dexType == 2000 || dexType == 3000) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(dex),
+                false,
+                "operate(uint256,int256,int256,int256,int256,address)",
+                new address[](1),
+                string.concat("Operate on Fluid Dex Vault"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault"); 
+
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(dex),
+                false,
+                "operatePerfect(uint256,int256,int256,int256,int256,address)",
+                new address[](1),
+                string.concat("Operate Perfect on Fluid Dex Vault"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault"); 
+        }
+
+        //t4 leaves
+        if (dexType == 4000) {
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(dex),
+                false,
+                "operate(uint256,int256,int256,int256,int256,int256,int256,address)",
+                new address[](1),
+                string.concat("Operate on Fluid Dex Vault"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault"); 
+
+            unchecked {
+                leafIndex++;
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(dex),
+                false,
+                "operatePerfect(uint256,int256,int256,int256,int256,int256,int256,address)",
+                new address[](1),
+                string.concat("Operate on Fluid Dex Vault"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            );
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault"); 
+        }
+
+    }  
+
     // ========================================= Symbiotic =========================================
 
     function _addSymbioticApproveAndDepositLeaf(ManageLeaf[] memory leafs, address defaultCollateral) internal {
@@ -4947,19 +5061,21 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             leafs[leafIndex].argumentAddresses[1] = token0[i];
             leafs[leafIndex].argumentAddresses[2] = token1[i];
 
-            // Approve gauge to spend NFT.
-            unchecked {
-                leafIndex++;
+            if (gauges[i] != address(0)) {
+                // Approve gauge to spend NFT.
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    nonfungiblePositionManager,
+                    false,
+                    "approve(address,uint256)",
+                    new address[](1),
+                    "Approve gauge to spend VelodromeV3 position",
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = gauges[i];
             }
-            leafs[leafIndex] = ManageLeaf(
-                nonfungiblePositionManager,
-                false,
-                "approve(address,uint256)",
-                new address[](1),
-                "Approve gauge to spend VelodromeV3 position",
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-            leafs[leafIndex].argumentAddresses[0] = gauges[i];
         }
 
         // Decrease liquidity
@@ -5001,54 +5117,56 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
 
         for (uint256 i; i < gauges.length; ++i) {
-            // Deposit into Gauge
-            unchecked {
-                leafIndex++;
+            if (gauges[i] != address(0)) {
+                // Deposit into Gauge
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    gauges[i],
+                    false,
+                    "deposit(uint256)",
+                    new address[](0),
+                    string.concat("Deposit into VelodromeV3 gauge ", vm.toString(gauges[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                // Withdraw from Gauge
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    gauges[i],
+                    false,
+                    "withdraw(uint256)",
+                    new address[](0),
+                    string.concat("Withdraw from VelodromeV3 gauge ", vm.toString(gauges[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                // Get reward
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    gauges[i],
+                    false,
+                    "getReward(uint256)",
+                    new address[](0),
+                    string.concat("Get reward from VelodromeV3 gauge ", vm.toString(gauges[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                unchecked {
+                    leafIndex++;
+                }
+                leafs[leafIndex] = ManageLeaf(
+                    gauges[i],
+                    false,
+                    "getReward(address)",
+                    new address[](1),
+                    string.concat("Get reward from VelodromeV3 gauge ", vm.toString(gauges[i])),
+                    getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+                );
+                leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
             }
-            leafs[leafIndex] = ManageLeaf(
-                gauges[i],
-                false,
-                "deposit(uint256)",
-                new address[](0),
-                string.concat("Deposit into VelodromeV3 gauge ", vm.toString(gauges[i])),
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-            // Withdraw from Gauge
-            unchecked {
-                leafIndex++;
-            }
-            leafs[leafIndex] = ManageLeaf(
-                gauges[i],
-                false,
-                "withdraw(uint256)",
-                new address[](0),
-                string.concat("Withdraw from VelodromeV3 gauge ", vm.toString(gauges[i])),
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-            // Get reward
-            unchecked {
-                leafIndex++;
-            }
-            leafs[leafIndex] = ManageLeaf(
-                gauges[i],
-                false,
-                "getReward(uint256)",
-                new address[](0),
-                string.concat("Get reward from VelodromeV3 gauge ", vm.toString(gauges[i])),
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-            unchecked {
-                leafIndex++;
-            }
-            leafs[leafIndex] = ManageLeaf(
-                gauges[i],
-                false,
-                "getReward(address)",
-                new address[](1),
-                string.concat("Get reward from VelodromeV3 gauge ", vm.toString(gauges[i])),
-                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-            );
-            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");
         }
     }
 
@@ -5133,6 +5251,8 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         }
 
         for (uint256 i; i < gauges.length; ++i) {
+            if (gauges[i] == address(0)) continue;
+
             // Approve gauge to spend staking token.
             address stakingToken = VelodromV2Gauge(gauges[i]).stakingToken();
             unchecked {
@@ -5616,7 +5736,6 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             leafs[leafIndex].argumentAddresses[0] = address(assets[i]); 
         }
 
-
         for (uint256 i; i < assets.length; i++) {
             unchecked{
                 leafIndex++; 
@@ -5659,6 +5778,104 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         );
 
     }
+
+    // ========================================= Lombard BTC  =========================================
+    
+    // @notice to avoid having an extra unneeded approval leaf for base vs bnb merkle trees
+    function _addLombardBTCLeafs(ManageLeaf[] memory leafs, ERC20 BTCB_or_CBBtc, ERC20 LBTC) internal {
+        unchecked {
+            leafIndex++; 
+        }
+
+        leafs[leafIndex] = ManageLeaf(
+            address(BTCB_or_CBBtc), //target
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve BTCB to be staked into LBTC"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "LBTC"); 
+
+        unchecked {
+            leafIndex++; 
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(LBTC), //target
+            false,
+            "mint(address,uint256)",
+            new address[](1),
+            string.concat("Mint LBTC if permissioned"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");  
+
+        unchecked {
+            leafIndex++; 
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(LBTC), //target
+            false,
+            "mint(bytes,bytes)",
+            new address[](1),
+            string.concat("Mint LBTC"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");  
+
+        unchecked {
+            leafIndex++; 
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(LBTC), //target
+            false,
+            "redeem(bytes,uint256)",
+            new address[](0),
+            string.concat("Unstake LBTC"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+
+        unchecked {
+            leafIndex++; 
+        }
+        leafs[leafIndex] = ManageLeaf(
+            address(LBTC), //target
+            false,
+            "burn(uint256)",
+            new address[](0),
+            string.concat("Burn LBTC"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+
+        if (getAddress("base", "cbBTC") == address(BTCB_or_CBBtc)) {
+            unchecked {
+                leafIndex++; 
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(BTCB_or_CBBtc), //target
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve cbBTC to be swapped for LBTC"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            ); 
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "cbBTCPMM"); 
+
+            unchecked {
+                leafIndex++; 
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "cbBTCPMM"), //target
+                false,
+                "swapCBBTCToLBTC(uint256)",
+                new address[](0),
+                string.concat("Swap cbBTC to LBTC"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            ); 
+        }
+    } 
+
+
 
     // ============================================= WeETH ==================================================
 
