@@ -231,11 +231,44 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         // Solve users request using p2p solve.
 
         uint256 wETHDelta = WETH.balanceOf(address(this));
-        boringSolver.boringRedeemSolve(requests, liquidEth_teller);
+        boringSolver.boringRedeemSolve(requests, liquidEth_teller, false);
         wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
 
         assertEq(WETH.balanceOf(testUser), requests[0].amountOfAssets, "User should have received their wETH.");
         assertGt(wETHDelta, 0, "This address should have received some wETH.");
+    }
+
+    function testRedeemSolveCoverDeficit() external {
+        uint128 amountOfShares = 1_000e18;
+        uint16 sharePriceBpsDecrease = 2;
+        uint16 discount = 1;
+        uint24 secondsToDeadline = 1 days;
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
+        (, requests[0]) = _haveUserCreateRequest(testUser, address(WETH), amountOfShares, discount, secondsToDeadline);
+
+        // Update liquidEth share price.
+        vm.startPrank(liquidEth_accountant.owner());
+        uint256 newRate = liquidEth_accountant.getRate();
+        newRate = newRate * (1e4 - sharePriceBpsDecrease) / 1e4;
+        liquidEth_accountant.updateExchangeRate(uint96(newRate));
+        vm.stopPrank();
+
+        skip(3 days);
+
+        uint256 expectedDeficit = 103525308149087000; // Pulled from logs of revert.
+        vm.expectRevert(
+            abi.encodeWithSelector(BoringSolver.BoringSolver___CannotCoverDeficit.selector, expectedDeficit)
+        );
+        boringSolver.boringRedeemSolve(requests, liquidEth_teller, false);
+
+        uint256 wETHDeficit = WETH.balanceOf(address(this));
+        WETH.approve(address(boringSolver), expectedDeficit);
+        boringSolver.boringRedeemSolve(requests, liquidEth_teller, true);
+
+        wETHDeficit = wETHDeficit - WETH.balanceOf(address(this));
+
+        assertEq(WETH.balanceOf(testUser), requests[0].amountOfAssets, "User should have received their wETH.");
+        assertEq(wETHDeficit, expectedDeficit, "Bad Deficit.");
     }
 
     function testRedeemMintSolve(uint128 amountOfShares, uint16 discount) external {
@@ -250,13 +283,50 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         // Solve users request using p2p solve.
 
         uint256 wETHDelta = WETH.balanceOf(address(this));
-        boringSolver.boringRedeemMintSolve(requests, liquidEth_teller, weETHs_teller, address(WETH));
+        boringSolver.boringRedeemMintSolve(requests, liquidEth_teller, weETHs_teller, address(WETH), false);
         wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
 
         assertEq(
             ERC20(weETHs).balanceOf(testUser), requests[0].amountOfAssets, "User should have received their weETHs."
         );
         assertGt(wETHDelta, 0, "This address should have received some wETH.");
+    }
+
+    function testRedeemMintSolveCoverDeficit() external {
+        uint128 amountOfShares = 1_000e18;
+        uint16 sharePriceBpsDecrease = 2;
+        uint16 discount = 1;
+        uint24 secondsToDeadline = 1 days;
+        BoringOnChainQueue.OnChainWithdraw[] memory requests = new BoringOnChainQueue.OnChainWithdraw[](1);
+        (, requests[0]) = _haveUserCreateRequest(testUser, weETHs, amountOfShares, discount, secondsToDeadline);
+
+        // Update liquidEth share price.
+        vm.startPrank(liquidEth_accountant.owner());
+        uint256 newRate = liquidEth_accountant.getRate();
+        newRate = newRate * (1e4 - sharePriceBpsDecrease) / 1e4;
+        liquidEth_accountant.updateExchangeRate(uint96(newRate));
+        vm.stopPrank();
+
+        // No need to skip since maturity is 0.
+
+        // Solve users request using p2p solve.
+
+        uint256 expectedDeficit = 103525308149085736; // Pulled from logs of revert.
+        vm.expectRevert(
+            abi.encodeWithSelector(BoringSolver.BoringSolver___CannotCoverDeficit.selector, expectedDeficit)
+        );
+        boringSolver.boringRedeemMintSolve(requests, liquidEth_teller, weETHs_teller, address(WETH), false);
+
+        uint256 wETHDeficit = WETH.balanceOf(address(this));
+        WETH.approve(address(boringSolver), expectedDeficit);
+        boringSolver.boringRedeemMintSolve(requests, liquidEth_teller, weETHs_teller, address(WETH), true);
+
+        wETHDeficit = wETHDeficit - WETH.balanceOf(address(this));
+
+        assertEq(
+            ERC20(weETHs).balanceOf(testUser), requests[0].amountOfAssets, "User should have received their weETHs."
+        );
+        assertEq(wETHDeficit, expectedDeficit, "Bad Deficit.");
     }
 
     function testUserRequestsThenCancels(uint128 amountOfShares, uint16 discount) external {
@@ -341,7 +411,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         skip(3 days);
 
         uint256 wETHDelta = WETH.balanceOf(address(this));
-        boringSolver.boringRedeemSolve(requests, liquidEth_teller);
+        boringSolver.boringRedeemSolve(requests, liquidEth_teller, false);
         wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
         uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
 
@@ -661,7 +731,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         skip(3 days);
 
         // Solve request using boringSolver.
-        boringSolver.boringRedeemSolve(requests, liquidEth_teller);
+        boringSolver.boringRedeemSolve(requests, liquidEth_teller, false);
 
         // User makes a redeem mint solve request for weETHs.
         address userB = vm.addr(3);
@@ -669,7 +739,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
         (, requests[0]) = _haveUserCreateRequest(userB, weETHs, 1e18, 100, 1 days);
 
         // Solve request using boringSolver.
-        boringSolver.boringRedeemMintSolve(requests, liquidEth_teller, weETHs_teller, address(WETH));
+        boringSolver.boringRedeemMintSolve(requests, liquidEth_teller, weETHs_teller, address(WETH), false);
 
         // User A and user B should not have any shares.
         assertEq(ERC20(liquidEth).balanceOf(userA), 0, "User A should have had their shares solved.");
@@ -699,7 +769,12 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
             )
         );
         boringSolver.boringSolve(
-            address(boringSolver), liquidEth, address(WETH), 0, 0, abi.encode(0, address(this), weETHs_teller, true)
+            address(boringSolver),
+            liquidEth,
+            address(WETH),
+            0,
+            0,
+            abi.encode(0, address(this), weETHs_teller, true, false)
         );
 
         // Redeem Mint Solve teller mismatch revert.
@@ -716,7 +791,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
             address(WETH),
             0,
             0,
-            abi.encode(1, address(this), weETHs_teller, liquidEth_teller, WETH, true)
+            abi.encode(1, address(this), weETHs_teller, liquidEth_teller, WETH, true, false)
         );
 
         vm.expectRevert(
@@ -732,7 +807,7 @@ contract BoringQueueTest is Test, MerkleTreeHelper {
             address(WETH),
             0,
             0,
-            abi.encode(1, address(this), liquidEth_teller, weETHs_teller, WETH, true)
+            abi.encode(1, address(this), liquidEth_teller, weETHs_teller, WETH, true, false)
         );
         vm.stopPrank();
 

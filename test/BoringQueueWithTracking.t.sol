@@ -188,7 +188,7 @@ contract BoringQueueWithtrackingTest is Test, MerkleTreeHelper {
         skip(3 days);
 
         uint256 wETHDelta = WETH.balanceOf(address(this));
-        boringSolver.boringRedeemSolve(requests, liquidEth_teller);
+        boringSolver.boringRedeemSolve(requests, liquidEth_teller, false);
         wETHDelta = WETH.balanceOf(address(this)) - wETHDelta;
         uint256 endingShares = ERC20(liquidEth).balanceOf(testUser);
 
