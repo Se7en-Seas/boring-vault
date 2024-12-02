@@ -3,6 +3,7 @@ pragma solidity 0.8.21;
 
 import {BoringVault} from "src/base/BoringVault.sol";
 import {LayerZeroTeller} from "src/base/Roles/CrossChain/Bridges/LayerZero/LayerZeroTeller.sol";
+import {PairwiseRateLimiter} from "src/base/Roles/CrossChain/PairwiseRateLimiter.sol";
 import {AccountantWithRateProviders} from "src/base/Roles/AccountantWithRateProviders.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
@@ -133,6 +134,10 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
         // Setup chains on bridge.
         sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller), 1_000_000);
         destinationTeller.addChain(SOURCE_ID, true, true, address(sourceTeller), 1_000_000);
+
+        // Setup rate limiting.
+        sourceTeller.setOutboundRateLimits(createRateLimitConfig(DESTINATION_ID, 2000 ether, 4 hours));
+        destinationTeller.setInboundRateLimits(createRateLimitConfig(SOURCE_ID, 2000 ether, 4 hours));
     }
 
     function testBridgingShares(uint96 sharesToBridge) external {
@@ -216,6 +221,31 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
     }
 
     function testReverts() external {
+        uint96 sharesToBridge = uint96(bound(uint96(101), 1, 1_000e18));
+        bytes memory bridgeData = abi.encode(DESTINATION_ID);
+        uint256 bridgeValue = 0.001e18;
+
+        // Test outbound rate limit.
+        sourceTeller.setOutboundRateLimits(createRateLimitConfig(DESTINATION_ID, 100, 4 hours));
+        // Expect failure by exceeding limit.
+        vm.expectRevert(PairwiseRateLimiter.OutboundRateLimitExceeded.selector);
+        sourceTeller.bridge{value: bridgeValue}( sharesToBridge, vm.addr(1), bridgeData, NATIVE_ERC20, 1e18);
+        
+        // Increase limit and retry
+        sourceTeller.setOutboundRateLimits(createRateLimitConfig(DESTINATION_ID, 2000 ether, 4 hours));
+        sourceTeller.bridge{value: bridgeValue}( sharesToBridge, vm.addr(1), bridgeData, NATIVE_ERC20, 1e18);
+
+        // Test inbound rate limit.
+        destinationTeller.setInboundRateLimits(createRateLimitConfig(SOURCE_ID, 100, 4 hours));
+        MockLayerZeroEndPoint.Packet memory m = endPoint.getLastMessage();
+        // Expect failure by exceeding limit.
+        vm.prank(address(endPoint));
+        vm.expectRevert(PairwiseRateLimiter.InboundRateLimitExceeded.selector);
+        LayerZeroTeller(m.to).lzReceive(m._origin, m._guid, m._message, m._executor, m._extraData);
+    
+        // Reset limit.
+        destinationTeller.setInboundRateLimits(createRateLimitConfig(SOURCE_ID, 2000 ether, 4 hours));
+
         // Adding a chain with a zero message gas limit should revert.
         vm.expectRevert(bytes(abi.encodeWithSelector(LayerZeroTeller.LayerZeroTeller__ZeroMessageGasLimit.selector)));
         sourceTeller.addChain(DESTINATION_ID, true, true, address(destinationTeller), 0);
@@ -268,7 +298,7 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
 
         sourceTeller.bridge{value: 0.001e18}(1e18, address(this), abi.encode(DESTINATION_ID), NATIVE_ERC20, 1e18);
 
-        MockLayerZeroEndPoint.Packet memory m = endPoint.getLastMessage();
+        m = endPoint.getLastMessage();
 
         // Send message to destination.
         vm.startPrank(address(endPoint));
@@ -301,5 +331,19 @@ contract LayerZeroTellerTest is Test, MerkleTreeHelper {
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
+    }
+
+    function createRateLimitConfig(
+        uint32 peerId,
+        uint256 limit,
+        uint256 window
+    ) internal pure returns (PairwiseRateLimiter.RateLimitConfig[] memory) {
+        PairwiseRateLimiter.RateLimitConfig[] memory configs = new PairwiseRateLimiter.RateLimitConfig[](1);
+        configs[0] = PairwiseRateLimiter.RateLimitConfig({
+            peerEid: peerId,
+            limit: limit,
+            window: window
+        });
+        return configs;
     }
 }
