@@ -5895,6 +5895,67 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
         leafs[leafIndex].argumentAddresses[0] = ETH; 
         leafs[leafIndex].argumentAddresses[1] = referral; 
     }
+
+    // ============================================= BTCN Corn ==================================================
+
+    function _addBTCNLeafs(ManageLeaf[] memory leafs, ERC20 WBTC, ERC20 BTCN, address cornSwapFacility) internal {
+        unchecked {
+            leafIndex++;  
+        }
+
+        leafs[leafIndex] = ManageLeaf(
+            address(WBTC), //target
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve WBTC to be swapped for BTCN by the Corn SwapFacility Contract"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+        leafs[leafIndex].argumentAddresses[0] = cornSwapFacility; 
+
+        unchecked {
+            leafIndex++;  
+        }
+
+        leafs[leafIndex] = ManageLeaf(
+            address(BTCN), //target
+            false,
+            "approve(address,uint256)",
+            new address[](1),
+            string.concat("Approve BTCN to be swapped for WBTC by the Corn SwapFacility Contract"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+        leafs[leafIndex].argumentAddresses[0] = cornSwapFacility; 
+
+        unchecked {
+            leafIndex++;  
+        }
+        
+       leafs[leafIndex] = ManageLeaf(
+            cornSwapFacility, //target
+            false,
+            "swapExactCollateralForDebt(uint256,uint256,address,uint256)",
+            new address[](1),
+            string.concat("Swap WBTC for BTCN"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault"); 
+
+        unchecked {
+            leafIndex++;  
+        }
+
+        leafs[leafIndex] = ManageLeaf(
+            cornSwapFacility, //target
+            false,
+            "swapExactDebtForCollateral(uint256,uint256,address,uint256)",
+            new address[](1),
+            string.concat("Swap BTCN for WBTC"),
+            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+        ); 
+        leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault"); 
+          
+    }
     
     // ========================================= BoringVault Teller =========================================
 

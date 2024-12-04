@@ -20,6 +20,7 @@ contract ChainValues {
     string public constant linea = "linea";
     string public constant scroll = "scroll";
     string public constant fraxtal = "fraxtal";
+    string public constant corn = "corn";
     string public constant holesky = "holesky";
 
     // Bridging constants.
@@ -82,6 +83,7 @@ contract ChainValues {
         _addScrollValues();
         _addFraxtalValues();
         _addBscValues();
+        _addCornValues();
 
         // Add testnet values
         _addHoleskyValues();
@@ -178,6 +180,7 @@ contract ChainValues {
         values[mainnet]["ZRO"] = 0x6985884C4392D348587B19cb9eAAf157F13271cd.toBytes32();
         values[mainnet]["eBTC"] = 0x657e8C867D8B37dCC18fA4Caead9C45EB088C642.toBytes32();
         values[mainnet]["USDS"] = 0xdC035D45d973E3EC169d2276DDab16f1e407384F.toBytes32();
+        values[mainnet]["BTCN"] = 0x386E7A3a0c0919c9d53c3b04FF67E73Ff9e45Fb6.toBytes32(); 
 
         // Rate providers
         values[mainnet]["WEETH_RATE_PROVIDER"] = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee.toBytes32();
@@ -837,6 +840,7 @@ contract ChainValues {
 
         // corn
         values[mainnet]["cornSilo"] = 0x8bc93498b861fd98277c3b51d240e7E56E48F23c.toBytes32();
+        values[mainnet]["cornSwapFacility"] = 0x5f5ec4E17a2c2851D8c42B78Fc1A3d2c57070732.toBytes32(); 
 
         // Treehouse
         values[mainnet]["TreehouseRedemption"] = 0x0618DBdb3Be798346e6D9C08c3c84658f94aD09F.toBytes32();
@@ -857,6 +861,7 @@ contract ChainValues {
         // Hyperlane
         values[mainnet]["hyperlaneUsdcRouter"] = 0xe1De9910fe71cC216490AC7FCF019e13a34481D7.toBytes32();
         values[mainnet]["hyperlaneTestRecipient"] = 0xfb53392bf4a0590a317ca716c28c29ace7c448bc132d7f8188ca234f595aa121;
+
 
     }
 
@@ -1258,5 +1263,17 @@ contract ChainValues {
         
         //Balancer (not deployed on BSC, but needed for merkle manager)
         values[bsc]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
+    }
+
+    function _addCornValues() private {
+        values[corn]["deployerAddress"] = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d.toBytes32();
+        values[corn]["dev0Address"] = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b.toBytes32();
+        values[corn]["dev1Address"] = 0xf8553c8552f906C19286F21711721E206EE4909E.toBytes32();
+
+        // Tokens
+        values[corn]["WBTCN"] = 0xda5dDd7270381A7C2717aD10D1c0ecB19e3CDFb2.toBytes32();
+
+        //Balancer (not deployed on Corn, but needed for merkle manager)
+        values[corn]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();
     }
 }
