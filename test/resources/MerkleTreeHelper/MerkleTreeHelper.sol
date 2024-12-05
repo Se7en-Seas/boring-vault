@@ -5822,31 +5822,8 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
             getAddress(sourceChain, "rawDataDecoderAndSanitizer")
         ); 
         leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "boringVault");  
-
-        unchecked {
-            leafIndex++; 
-        }
-        leafs[leafIndex] = ManageLeaf(
-            address(LBTC), //target
-            false,
-            "redeem(bytes,uint256)",
-            new address[](0),
-            string.concat("Unstake LBTC"),
-            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-        ); 
-
-        unchecked {
-            leafIndex++; 
-        }
-        leafs[leafIndex] = ManageLeaf(
-            address(LBTC), //target
-            false,
-            "burn(uint256)",
-            new address[](0),
-            string.concat("Burn LBTC"),
-            getAddress(sourceChain, "rawDataDecoderAndSanitizer")
-        ); 
-
+        
+        //set the swap leaf based on if we are on bnc or base
         if (getAddress("base", "cbBTC") == address(BTCB_or_CBBtc)) {
             unchecked {
                 leafIndex++; 
@@ -5870,6 +5847,31 @@ contract MerkleTreeHelper is CommonBase, ChainValues {
                 "swapCBBTCToLBTC(uint256)",
                 new address[](0),
                 string.concat("Swap cbBTC to LBTC"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            ); 
+        } else {
+            unchecked {
+                leafIndex++; 
+            }
+            leafs[leafIndex] = ManageLeaf(
+                address(BTCB_or_CBBtc), //target
+                false,
+                "approve(address,uint256)",
+                new address[](1),
+                string.concat("Approve BTCB to be swapped for LBTC via swap contract"),
+                getAddress(sourceChain, "rawDataDecoderAndSanitizer")
+            ); 
+            leafs[leafIndex].argumentAddresses[0] = getAddress(sourceChain, "BTCBPMM"); 
+
+            unchecked {
+                leafIndex++; 
+            }
+            leafs[leafIndex] = ManageLeaf(
+                getAddress(sourceChain, "BTCBPMM"), //target
+                false,
+                "swapBTCBToLBTC(uint256)",
+                new address[](0),
+                string.concat("Swap BTCB to LBTC"),
                 getAddress(sourceChain, "rawDataDecoderAndSanitizer")
             ); 
         }
