@@ -844,6 +844,9 @@ contract ChainValues {
         values[mainnet]["cornSwapFacilityWBTC"] = 0xBf5eB70b93d5895C839B8BeB3C27dc36f6B56fea.toBytes32();
         values[mainnet]["cornSwapFacilitycbBTC"] = 0x554335b8C994E47e6dbfDC08Fa8aca0510e66BA1.toBytes32();
 
+        values[mainnet]["LBTCOFTAdapter"] = 0x6bc15D7930839Ec18A57F6f7dF72aE1B439D077f.toBytes32(); 
+        
+
         // Treehouse
         values[mainnet]["TreehouseRedemption"] = 0x0618DBdb3Be798346e6D9C08c3c84658f94aD09F.toBytes32();
         values[mainnet]["TreehouseRouter"] = 0xeFA3fa8e85D2b3CfdB250CdeA156c2c6C90628F5.toBytes32();
@@ -899,6 +902,7 @@ contract ChainValues {
 
         // Lombard
         values[base]["cbBTCPMM"] = 0x92c01FC0F59857c6E920EdFf1139904b2Bb74c7c.toBytes32();
+        
 
         // Balancer vault
         values[base]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();

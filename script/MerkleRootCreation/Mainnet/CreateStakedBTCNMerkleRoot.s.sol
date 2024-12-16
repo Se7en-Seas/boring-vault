@@ -66,6 +66,9 @@ contract CreateStakedBTCNMerkleRoot is Script, MerkleTreeHelper {
         _addLayerZeroLeafs(
             leafs, getERC20(sourceChain, "BTCN"), getAddress(sourceChain, "BTCN"), layerZeroCornEndpointId
         );
+        _addLayerZeroLeafs(
+            leafs, getERC20(sourceChain, "LBTC"), getAddress(sourceChain, "LBTCOFTAdapter"), layerZeroCornEndpointId
+        ); 
 
         _verifyDecoderImplementsLeafsFunctionSelectors(leafs);
 
