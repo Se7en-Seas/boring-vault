@@ -9,16 +9,12 @@ import {ManagerWithMerkleVerification} from "src/base/Roles/ManagerWithMerkleVer
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
 import "forge-std/Script.sol";
 
-
 /**
  *  source .env && forge script script/MerkleRootCreation/Mainnet/CreateAeraTestMerkleRoot.s.sol:CreateAeraMerkleRoot --rpc-url $MAINNET_RPC_URL
  */
-
-
 contract CreateAeraMerkleRoot is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
-        
-    
+
     /**
      * @notice Uncomment which script you want to run.
      */
@@ -27,8 +23,5 @@ contract CreateAeraMerkleRoot is Script, MerkleTreeHelper {
         generateAdminStrategistMerkleRoot();
     }
 
-    function generateAdminStrategistMerkleRoot() public {
-
-    }
-
+    function generateAdminStrategistMerkleRoot() public {}
 }

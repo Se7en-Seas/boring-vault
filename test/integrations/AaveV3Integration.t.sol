@@ -126,7 +126,7 @@ contract AaveV3IntegrationTest is Test, MerkleTreeHelper {
         supplyAssets[0] = getERC20(sourceChain, "WSTETH");
         ERC20[] memory borrowAssets = new ERC20[](1);
         borrowAssets[0] = getERC20(sourceChain, "WETH");
-        ERC20[] memory claimAssets = new ERC20[](1); 
+        ERC20[] memory claimAssets = new ERC20[](1);
         claimAssets[0] = getERC20(sourceChain, "WSTETH");
         _addAaveV3Leafs(leafs, supplyAssets, borrowAssets, claimAssets);
 
@@ -157,8 +157,8 @@ contract AaveV3IntegrationTest is Test, MerkleTreeHelper {
         targets[7] = getAddress(sourceChain, "v3Pool");
         targets[8] = getAddress(sourceChain, "v3RewardsController");
 
-        address[] memory claimAssetsData = new address[](1); 
-        claimAssetsData[0] = getAddress(sourceChain, "WSTETH"); 
+        address[] memory claimAssetsData = new address[](1);
+        claimAssetsData[0] = getAddress(sourceChain, "WSTETH");
 
         bytes[] memory targetData = new bytes[](9);
         targetData[0] =
@@ -194,7 +194,13 @@ contract AaveV3IntegrationTest is Test, MerkleTreeHelper {
             "setUserUseReserveAsCollateral(address,bool)", getAddress(sourceChain, "WSTETH"), true
         );
         targetData[7] = abi.encodeWithSignature("setUserEMode(uint8)", 0);
-        targetData[8] = abi.encodeWithSignature("claimRewards(address[],uint256,address,address)", claimAssetsData, 0, getAddress(sourceChain, "boringVault"), 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0); 
+        targetData[8] = abi.encodeWithSignature(
+            "claimRewards(address[],uint256,address,address)",
+            claimAssetsData,
+            0,
+            getAddress(sourceChain, "boringVault"),
+            0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0
+        );
 
         address[] memory decodersAndSanitizers = new address[](9);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;

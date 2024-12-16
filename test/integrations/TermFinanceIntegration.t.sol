@@ -8,9 +8,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
-import {
-    TermFinanceDecoderAndSanitizer
-} from "src/base/DecodersAndSanitizers/TermFinanceDecoderAndSanitizer.sol";
+import {TermFinanceDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/TermFinanceDecoderAndSanitizer.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
@@ -59,7 +57,7 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](2);
         manageLeafs[0] = leafs[0];
         manageLeafs[1] = leafs[1];
-  
+
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](2);
@@ -69,16 +67,19 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         targetData[0] = abi.encodeWithSignature(
             "approve(address,uint256)", getAddress(sourceChain, "termRepoLocker"), type(uint256).max
         );
-        DecoderCustomTypes.TermAuctionOfferSubmission memory termAuctionOfferSubmission = DecoderCustomTypes.TermAuctionOfferSubmission(
+        DecoderCustomTypes.TermAuctionOfferSubmission memory termAuctionOfferSubmission = DecoderCustomTypes
+            .TermAuctionOfferSubmission(
             keccak256(abi.encodePacked(uint256(block.timestamp), address(boringVault))),
             address(boringVault),
             keccak256(abi.encode(uint256(10e17), uint256(1e18))),
             2e18,
-            weth   
+            weth
         );
-        DecoderCustomTypes.TermAuctionOfferSubmission[] memory offerSubmissions = new DecoderCustomTypes.TermAuctionOfferSubmission[](1);
+        DecoderCustomTypes.TermAuctionOfferSubmission[] memory offerSubmissions =
+            new DecoderCustomTypes.TermAuctionOfferSubmission[](1);
         offerSubmissions[0] = termAuctionOfferSubmission;
-        targetData[1] = abi.encodeWithSignature("lockOffers((bytes32,address,bytes32,uint256,address)[])", offerSubmissions);
+        targetData[1] =
+            abi.encodeWithSignature("lockOffers((bytes32,address,bytes32,uint256,address)[])", offerSubmissions);
 
         address[] memory decodersAndSanitizers = new address[](2);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
@@ -96,14 +97,13 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         termAuctionOfferLockers[0] = getAddress(sourceChain, "termAuctionOfferLocker");
         _addTermFinanceUnlockOfferLeafs(leafs, termAuctionOfferLockers);
 
-
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
         manageLeafs[0] = leafs[0];
-  
+
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
@@ -111,12 +111,10 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
 
         bytes[] memory targetData = new bytes[](1);
         bytes32[] memory offerIds = new bytes32[](1);
-        bytes32 idHash =  keccak256(abi.encodePacked(uint256(block.timestamp), address(boringVault)));
-        offerIds[0] = keccak256(
-            abi.encodePacked(idHash, address(boringVault), termAuctionOfferLockers[0])
-        );
+        bytes32 idHash = keccak256(abi.encodePacked(uint256(block.timestamp), address(boringVault)));
+        offerIds[0] = keccak256(abi.encodePacked(idHash, address(boringVault), termAuctionOfferLockers[0]));
         targetData[0] = abi.encodeWithSignature("unlockOffers(bytes32[])", offerIds);
-        
+
         address[] memory decodersAndSanitizers = new address[](1);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         manager.manageVaultWithMerkleVerification(
@@ -126,7 +124,7 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
 
     function testTermFinanceIntegrationRevealOffer() external {
         testTermFinanceIntegrationLockOffer();
-        bytes32 idHash =  keccak256(abi.encodePacked(uint256(block.timestamp), address(boringVault)));
+        bytes32 idHash = keccak256(abi.encodePacked(uint256(block.timestamp), address(boringVault)));
 
         vm.warp(1725555601);
         leafIndex = type(uint256).max;
@@ -135,14 +133,13 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         termAuctionOfferLockers[0] = getAddress(sourceChain, "termAuctionOfferLocker");
         _addTermFinanceRevealOfferLeafs(leafs, termAuctionOfferLockers);
 
-
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
         manageLeafs[0] = leafs[0];
-  
+
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
@@ -150,9 +147,7 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
 
         bytes[] memory targetData = new bytes[](1);
         bytes32[] memory offerIds = new bytes32[](1);
-        offerIds[0] = keccak256(
-            abi.encodePacked(idHash, address(boringVault), termAuctionOfferLockers[0])
-        );
+        offerIds[0] = keccak256(abi.encodePacked(idHash, address(boringVault), termAuctionOfferLockers[0]));
 
         uint256[] memory prices = new uint256[](1);
         prices[0] = uint256(10e17);
@@ -161,7 +156,7 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         nonces[0] = uint256(1e18);
 
         targetData[0] = abi.encodeWithSignature("revealOffers(bytes32[],uint256[],uint256[])", offerIds, prices, nonces);
-        
+
         address[] memory decodersAndSanitizers = new address[](1);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         manager.manageVaultWithMerkleVerification(
@@ -187,9 +182,9 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
 
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
         manageLeafs[0] = leafs[0];
-  
+
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
- 
+
         address[] memory targets = new address[](1);
         targets[0] = getAddress(sourceChain, "termRepoServicer");
 
@@ -215,11 +210,7 @@ contract TermFinanceIntegrationTest is Test, MerkleTreeHelper {
         manager =
             new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
 
-        rawDataDecoderAndSanitizer = address(
-            new TermFinanceDecoderAndSanitizer(
-                address(boringVault)
-            )
-        );
+        rawDataDecoderAndSanitizer = address(new TermFinanceDecoderAndSanitizer(address(boringVault)));
 
         setAddress(false, sourceChain, "boringVault", address(boringVault));
         setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);

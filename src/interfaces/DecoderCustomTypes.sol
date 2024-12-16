@@ -404,10 +404,9 @@ contract DecoderCustomTypes {
     }
 
     // ========================================= Aera =========================================
-    
-    struct AssetValue {
-        address asset; 
-        uint256 amount; 
-    }
 
+    struct AssetValue {
+        address asset;
+        uint256 amount;
+    }
 }

@@ -45,7 +45,7 @@ contract WeETHIntegrationTest is Test, MerkleTreeHelper {
         manager =
             new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
 
-        rawDataDecoderAndSanitizer = address(new WeETHFullDecoderAndSanitizer(address(boringVault))); 
+        rawDataDecoderAndSanitizer = address(new WeETHFullDecoderAndSanitizer(address(boringVault)));
 
         setAddress(false, sourceChain, "boringVault", address(boringVault));
         setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
@@ -105,9 +105,8 @@ contract WeETHIntegrationTest is Test, MerkleTreeHelper {
         rolesAuthority.setPublicCapability(address(boringVault), bytes4(0), true);
     }
 
-
     function testWeETHIntegration() external {
-        deal(address(boringVault), 100e18); 
+        deal(address(boringVault), 100e18);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](2);
         _addWeETHLeafs(
@@ -118,38 +117,38 @@ contract WeETHIntegrationTest is Test, MerkleTreeHelper {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
-        
+
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
         manageLeafs[0] = leafs[0];
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
-        targets[0] = getAddress(sourceChain, "etherFiL2SyncPool"); 
+        targets[0] = getAddress(sourceChain, "etherFiL2SyncPool");
 
-        bytes[] memory targetData = new bytes[](1); 
-        targetData[0] =
-            abi.encodeWithSignature("deposit(address,uint256,uint256,address)", 
-            getAddress(sourceChain, "ETH"), 
-            198600000000000000, 
-            178740000000000000, 
+        bytes[] memory targetData = new bytes[](1);
+        targetData[0] = abi.encodeWithSignature(
+            "deposit(address,uint256,uint256,address)",
+            getAddress(sourceChain, "ETH"),
+            198600000000000000,
+            178740000000000000,
             getAddress(sourceChain, "boringVault")
         );
         uint256[] memory values = new uint256[](1);
-        values[0] = 198600000000000000; 
+        values[0] = 198600000000000000;
         address[] memory decodersAndSanitizers = new address[](1);
-        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer; 
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
 
         //send the tx
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-        
+
         //sanity check
-        uint256 weETHBalance = getERC20(sourceChain, "WEETH").balanceOf(address(boringVault)); 
-        assertGt(weETHBalance, 0); 
+        uint256 weETHBalance = getERC20(sourceChain, "WEETH").balanceOf(address(boringVault));
+        assertGt(weETHBalance, 0);
     }
 
     function testWeETHIntegration__Reverts() external {
-        deal(address(boringVault), 1); 
+        deal(address(boringVault), 1);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](2);
         _addWeETHLeafs(
@@ -160,37 +159,36 @@ contract WeETHIntegrationTest is Test, MerkleTreeHelper {
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
-        
+
         ManageLeaf[] memory manageLeafs = new ManageLeaf[](1);
         manageLeafs[0] = leafs[0];
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](1);
-        targets[0] = getAddress(sourceChain, "etherFiL2SyncPool"); 
+        targets[0] = getAddress(sourceChain, "etherFiL2SyncPool");
 
-        bytes[] memory targetData = new bytes[](1); 
-        targetData[0] =
-            abi.encodeWithSignature("deposit(address,uint256,uint256,address)", 
-            getAddress(sourceChain, "ETH"), 
-            198600000000000000, 
-            178740000000000000, 
+        bytes[] memory targetData = new bytes[](1);
+        targetData[0] = abi.encodeWithSignature(
+            "deposit(address,uint256,uint256,address)",
+            getAddress(sourceChain, "ETH"),
+            198600000000000000,
+            178740000000000000,
             getAddress(sourceChain, "boringVault")
         );
         uint256[] memory values = new uint256[](1);
-        values[0] = 198600000000000000; 
+        values[0] = 198600000000000000;
         address[] memory decodersAndSanitizers = new address[](1);
-        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer; 
+        decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
 
         //send the tx
         vm.expectRevert(); //not enough ETH
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-        
-        //sanity check
-        uint256 weETHBalance = getERC20(sourceChain, "WEETH").balanceOf(address(boringVault)); 
-        assertEq(weETHBalance, 0); 
-    }
 
+        //sanity check
+        uint256 weETHBalance = getERC20(sourceChain, "WEETH").balanceOf(address(boringVault));
+        assertEq(weETHBalance, 0);
+    }
 
     // ========================================= HELPER FUNCTIONS =========================================
 
@@ -198,5 +196,4 @@ contract WeETHIntegrationTest is Test, MerkleTreeHelper {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
     }
-
 }
