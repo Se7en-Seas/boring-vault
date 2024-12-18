@@ -959,11 +959,11 @@ contract ChainValues {
         values[base]["fWETH"] = 0x9272D6153133175175Bc276512B2336BE3931CE9.toBytes32();
         values[base]["fWSTETH"] = 0x896E39f0E9af61ECA9dD2938E14543506ef2c2b5.toBytes32();
 
-        // Pendle
-        values[base]["pendleRouter"] = 0x888888888889758F76e7103c6CbF23ABbF58F946.toBytes32();
-        values[base]["pendleLimitOrderRouter"] = 0xf86DDA825885674F85C5420079E1Df1bC0F372c6.toBytes32();
-        values[base]["pendle_LBTC_market_05_29_25"] = 0x727cEbAcfb10fFd353Fc221D06A862B437eC1735.toBytes32();
-
+        // Pendle 
+        values[base]["pendleRouter"] = 0x888888888889758F76e7103c6CbF23ABbF58F946.toBytes32(); 
+        values[base]["pendleLimitOrderRouter"] = 0x000000000000c9B3E2C3Ec88B1B4c0cD853f4321.toBytes32(); 
+        values[base]["pendle_LBTC_market_05_29_25"] = 0x727cEbAcfb10fFd353Fc221D06A862B437eC1735.toBytes32(); 
+        
         // EtherFi WeETH
         values[base]["etherFiL2SyncPool"] = 0xc38e046dFDAdf15f7F56853674242888301208a5.toBytes32();
     }

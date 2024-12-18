@@ -41,22 +41,6 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
 
         ManageLeaf[] memory leafs = new ManageLeaf[](512);
 
-        // ========================== Aave V3 ==========================
-        ERC20[] memory supplyAssets = new ERC20[](1);
-        supplyAssets[0] = getERC20(sourceChain, "WBTC");
-        ERC20[] memory borrowAssets = new ERC20[](1);
-        borrowAssets[0] = getERC20(sourceChain, "WBTC");
-        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
-
-        // ========================== SparkLend ==========================
-        /**
-         * lend USDC, USDT, DAI, sDAI
-         * borrow wETH, wstETH
-         */
-        borrowAssets = new ERC20[](1);
-        borrowAssets[0] = getERC20(sourceChain, "WBTC");
-        _addSparkLendLeafs(leafs, supplyAssets, borrowAssets);
-
         // ========================== Gearbox ==========================
         _addGearboxLeafs(leafs, ERC4626(getAddress(sourceChain, "dWBTCV3")), getAddress(sourceChain, "sdWBTCV3"));
 
