@@ -19,9 +19,15 @@ abstract contract LombardBTCMinterDecoderAndSanitizer is BaseDecoderAndSanitizer
         (, address to,,,) = abi.decode(data, (uint256, address, uint64, bytes32, uint32));
         addressesFound = abi.encodePacked(to);
     }
-
-    /// @notice for minting using cbBTCPPM contract
-    function swapCBBTCToLBTC(uint256 /*amount*/ ) external pure virtual returns (bytes memory addressesFound) {
-        return addressesFound;
+    
+    /// @notice for minting using cbBTCPPM contract (on Base)
+    function swapCBBTCToLBTC(uint256 /*amount*/) external pure virtual returns (bytes memory addressesFound) {
+        return addressesFound; 
     }
+    
+    /// @notice for minting using btcbPMM contract (on BSC)
+    function swapBTCBToLBTC(uint256 /*amount*/) external pure virtual returns (bytes memory addressesFound) {
+        return addressesFound; 
+    }
+
 }

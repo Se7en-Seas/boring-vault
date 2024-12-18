@@ -1243,7 +1243,8 @@ contract ChainValues {
         values[fraxtal]["dev1Address"] = 0xf8553c8552f906C19286F21711721E206EE4909E.toBytes32();
         values[fraxtal]["liquidPayoutAddress"] = 0xA9962a5BfBea6918E958DeE0647E99fD7863b95A.toBytes32();
         values[fraxtal]["balancerVault"] = address(1).toBytes32();
-        // ERC20
+
+        // ERC20s
         values[fraxtal]["wfrxETH"] = 0xFC00000000000000000000000000000000000006.toBytes32();
 
         // Standard Bridge.
@@ -1252,14 +1253,19 @@ contract ChainValues {
     }
 
     function _addBscValues() private {
+        // Deployment/Dev 
         values[bsc]["deployerAddress"] = 0x5F2F11ad8656439d5C14d9B351f8b09cDaC2A02d.toBytes32();
         values[bsc]["dev0Address"] = 0x0463E60C7cE10e57911AB7bD1667eaa21de3e79b.toBytes32();
         values[bsc]["dev1Address"] = 0xf8553c8552f906C19286F21711721E206EE4909E.toBytes32();
-
+        
+        // ERC20s
         values[bsc]["LBTC"] = 0xecAc9C5F704e954931349Da37F60E39f515c11c1.toBytes32();
         values[bsc]["WBTC"] = 0x0555E30da8f98308EdB960aa94C0Db47230d2B9c.toBytes32();
         values[bsc]["WBNB"] = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c.toBytes32();
-        values[bsc]["BTCB"] = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c.toBytes32();
+        values[bsc]["BTCB"] = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c.toBytes32(); 
+        
+        // Lombard
+        values[bsc]["BTCBPMM"] = 0xE4ff44a615dF38e37cdF475833c1d57774CC9D4A.toBytes32(); 
 
         //Balancer (not deployed on BSC, but needed for merkle manager)
         values[bsc]["vault"] = 0xBA12222222228d8Ba445958a75a0704d566BF2C8.toBytes32();

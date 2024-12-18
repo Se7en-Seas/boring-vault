@@ -153,8 +153,8 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
         targets[0] = getAddress(sourceChain, "BTCB");
         targets[1] = getAddress(sourceChain, "LBTC");
         targets[2] = getAddress(sourceChain, "LBTC");
-        targets[3] = getAddress(sourceChain, "LBTC");
-        targets[4] = getAddress(sourceChain, "LBTC");
+        targets[3] = getAddress(sourceChain, "BTCB");
+        targets[4] = getAddress(sourceChain, "BTCBPMM");
 
         bytes memory depositData = abi.encode(
             OutputWithPayload(
@@ -169,21 +169,26 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
         bytes memory signature = hex"00"; // Could be any bytes
 
         // Dummy BTC Pubkey -- P2WPKH scriptPubkey
-        bytes memory scriptPubkey = abi.encodePacked(
-            hex"0014", // OP_0 (00) followed by OP_DATA_20 (14)
-            hex"1234567890123456789012345678901234567890" // 20 bytes of example data
-        );
+        //bytes memory scriptPubkey = abi.encodePacked(
+        //    hex"0014", // OP_0 (00) followed by OP_DATA_20 (14)
+        //    hex"1234567890123456789012345678901234567890" // 20 bytes of example data
+        //);
 
         // Target Data
         bytes[] memory targetData = new bytes[](5);
         targetData[0] =
             abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "LBTC"), type(uint256).max);
-        targetData[1] = abi.encodeWithSignature("mint(address,uint256)", getAddress(sourceChain, "boringVault"), 100e18);
-        targetData[2] = abi.encodeWithSignature("mint(bytes,bytes)", depositData, signature);
-        targetData[3] = abi.encodeWithSignature("redeem(bytes,uint256)", scriptPubkey, 90e18);
-        targetData[4] = abi.encodeWithSignature("burn(uint256)", 10e18);
 
-        // Eth Amounts
+         targetData[1] = 
+             abi.encodeWithSignature("mint(address,uint256)", getAddress(sourceChain, "boringVault"), 100e18);  
+         targetData[2] = 
+             abi.encodeWithSignature("mint(bytes,bytes)", depositData, signature); 
+         targetData[3] = 
+             abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "BTCBPMM"), type(uint256).max);  
+         targetData[4] = 
+            abi.encodeWithSignature("swapBTCBToLBTC(uint256)", 10e18); 
+
+        // Eth Amounts 
         uint256[] memory values = new uint256[](5); //empty, not passing any ETH
 
         // Decoders and Sanitizers
@@ -220,25 +225,22 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
-        ManageLeaf[] memory manageLeafs = new ManageLeaf[](7);
+        ManageLeaf[] memory manageLeafs = new ManageLeaf[](5);
         manageLeafs[0] = leafs[0];
         manageLeafs[1] = leafs[1];
         manageLeafs[2] = leafs[2];
-        manageLeafs[3] = leafs[3];
-        manageLeafs[4] = leafs[4];
-        manageLeafs[5] = leafs[5];
-        manageLeafs[6] = leafs[6];
+        manageLeafs[3] = leafs[3]; 
+        manageLeafs[4] = leafs[4]; 
+        
 
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
-        address[] memory targets = new address[](7);
+        address[] memory targets = new address[](5);
         targets[0] = getAddress(sourceChain, "cbBTC");
         targets[1] = getAddress(sourceChain, "LBTC");
         targets[2] = getAddress(sourceChain, "LBTC");
-        targets[3] = getAddress(sourceChain, "LBTC");
-        targets[4] = getAddress(sourceChain, "LBTC");
-        targets[5] = getAddress(sourceChain, "cbBTC");
-        targets[6] = getAddress(sourceChain, "cbBTCPMM");
+        targets[3] = getAddress(sourceChain, "cbBTC"); //approving dif swap contract
+        targets[4] = getAddress(sourceChain, "cbBTCPMM");
 
         bytes memory depositData = abi.encode(
             OutputWithPayload(
@@ -252,36 +254,36 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
 
         bytes memory signature = hex"00"; // Could be any bytes
 
-        // Dummy BTC Pubkey -- P2WPKH scriptPubkey
-        bytes memory scriptPubkey = abi.encodePacked(
-            hex"0014", // OP_0 (00) followed by OP_DATA_20 (14)
-            hex"1234567890123456789012345678901234567890" // 20 bytes of example data
-        );
+    //    // Dummy BTC Pubkey -- P2WPKH scriptPubkey
+    //    bytes memory scriptPubkey = abi.encodePacked(
+    //        hex"0014", // OP_0 (00) followed by OP_DATA_20 (14)
+    //        hex"1234567890123456789012345678901234567890" // 20 bytes of example data
+    //    );
 
         // Target Data
-        bytes[] memory targetData = new bytes[](7);
-        targetData[0] =
+        bytes[] memory targetData = new bytes[](5);
+         targetData[0] =
             abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "LBTC"), type(uint256).max);
-        targetData[1] = abi.encodeWithSignature("mint(address,uint256)", getAddress(sourceChain, "boringVault"), 100e18);
-        targetData[2] = abi.encodeWithSignature("mint(bytes,bytes)", depositData, signature);
-        targetData[3] = abi.encodeWithSignature("redeem(bytes,uint256)", scriptPubkey, 90e18);
-        targetData[4] = abi.encodeWithSignature("burn(uint256)", 10e18);
-        targetData[5] =
-            abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "cbBTCPMM"), type(uint256).max);
-        targetData[6] = abi.encodeWithSignature("swapCBBTCToLBTC(uint256)", 1e4);
+         targetData[1] = 
+             abi.encodeWithSignature("mint(address,uint256)", getAddress(sourceChain, "boringVault"), 100e18);  
+         targetData[2] = 
+             abi.encodeWithSignature("mint(bytes,bytes)", depositData, signature); 
+         targetData[3] = 
+             abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "cbBTCPMM"), type(uint256).max); 
+         targetData[4] = 
+             abi.encodeWithSignature("swapCBBTCToLBTC(uint256)", 1e4); 
 
-        // Eth Amounts
-        uint256[] memory values = new uint256[](7); //empty, not passing any ETH
+        // Eth Amounts 
+        uint256[] memory values = new uint256[](5); //empty, not passing any ETH
+
 
         // Decoders and Sanitizers
-        address[] memory decodersAndSanitizers = new address[](7);
+        address[] memory decodersAndSanitizers = new address[](5);
         decodersAndSanitizers[0] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[1] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[2] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[3] = rawDataDecoderAndSanitizer;
         decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
-        decodersAndSanitizers[5] = rawDataDecoderAndSanitizer;
-        decodersAndSanitizers[6] = rawDataDecoderAndSanitizer;
 
         // Run the functions
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
