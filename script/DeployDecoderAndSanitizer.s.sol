@@ -16,8 +16,8 @@ import {MainnetAddresses} from "test/resources/MainnetAddresses.sol";
 import {ContractNames} from "resources/ContractNames.sol";
 import {PointFarmingDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/PointFarmingDecoderAndSanitizer.sol";
 import {LombardBtcDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/LombardBtcDecoderAndSanitizer.sol";
-import {AeraVaultFullDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/AeraVaultFullDecoderAndSanitizer.sol"; 
-
+import {AeraVaultFullDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/AeraVaultFullDecoderAndSanitizer.sol";
+import {sBTCNDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/sBTCNDecoderAndSanitizer.sol";
 
 import {BoringDrone} from "src/base/Drones/BoringDrone.sol";
 
@@ -33,19 +33,19 @@ contract DeployDecoderAndSanitizerScript is Script, Test, ContractNames, Mainnet
     uint256 public privateKey;
     Deployer public deployer = Deployer(deployerAddress);
 
-
-    address boringVault = 0x5401b8620E5FB570064CA9114fd1e135fd77D57c;
+    //address boringVault = 0x5401b8620E5FB570064CA9114fd1e135fd77D57c;
 
     //address boringVault = 0x5401b8620E5FB570064CA9114fd1e135fd77D57c;
-    //address boringVault = 0x1293b71644e7E55A692Cade85a0EDB381868AA7c; 
-    address eEigen = 0xE77076518A813616315EaAba6cA8e595E845EeE9;
+    //address boringVault = 0x1293b71644e7E55A692Cade85a0EDB381868AA7c;
+    //address eEigen = 0xE77076518A813616315EaAba6cA8e595E845EeE9;
 
-    address liquidUsd = 0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C;
+    //address liquidUsd = 0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C;
 
+    address boringVault = 0x5E272ca4bD94e57Ec5C51D26703621Ccac1A7089; 
 
     function setUp() external {
         //privateKey = vm.envUint("ETHERFI_LIQUID_DEPLOYER");
-        vm.createSelectFork("base");
+        vm.createSelectFork("mainnet");
     }
 
     function run() external {
@@ -53,12 +53,11 @@ contract DeployDecoderAndSanitizerScript is Script, Test, ContractNames, Mainnet
         bytes memory constructorArgs;
         privateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(privateKey);
-        console.log(privateKey);
 
-        creationCode = type(AerodromeDecoderAndSanitizer).creationCode;
-        address aerodromeNonFungiblePositionManager = 0x827922686190790b37229fd06084350E74485b72;
-        constructorArgs = abi.encode(boringVault, aerodromeNonFungiblePositionManager);
-        deployer.deployContract(LombardBtcAerodromeDecoderAndSanitizerName, creationCode, constructorArgs, 0);
+        //creationCode = type(AerodromeDecoderAndSanitizer).creationCode;
+        //address aerodromeNonFungiblePositionManager = 0x827922686190790b37229fd06084350E74485b72;
+        //constructorArgs = abi.encode(boringVault, aerodromeNonFungiblePositionManager);
+        //deployer.deployContract(LombardBtcAerodromeDecoderAndSanitizerName, creationCode, constructorArgs, 0);
 
         // creationCode = type(OnlyKarakDecoderAndSanitizer).creationCode;
         // constructorArgs = abi.encode(boringVault);
@@ -88,11 +87,14 @@ contract DeployDecoderAndSanitizerScript is Script, Test, ContractNames, Mainnet
 
         // new LombardBtcDecoderAndSanitizer(boringVault, baseUniswapV3NonFungiblePositionManager);
 
-        creationCode = type(AeraVaultFullDecoderAndSanitizer).creationCode; 
-        constructorArgs = abi.encode(boringVault); 
-        deployer.deployContract("Aera Vault Decoder and Santizier v0.0", creationCode, constructorArgs, 0); 
-
-
+        //creationCode = type(AeraVaultFullDecoderAndSanitizer).creationCode;
+        //constructorArgs = abi.encode(boringVault);
+        //deployer.deployContract("Aera Vault Decoder and Santizier v0.0", creationCode, constructorArgs, 0);
+        
+        creationCode = type(sBTCNDecoderAndSanitizer).creationCode;     
+        constructorArgs = abi.encode(boringVault, uniswapV3NonFungiblePositionManager); 
+        deployer.deployContract("Staked BTCN Decoder and Sanitizer V0.2", creationCode, constructorArgs, 0); 
+        
         vm.stopBroadcast();
     }
 }

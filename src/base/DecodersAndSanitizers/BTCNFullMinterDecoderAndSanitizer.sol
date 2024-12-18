@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.21;
 
-import {WeETHDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/WeEthDecoderAndSanitizer.sol";
 import {BaseDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol";
+import {BTCNMinterDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/Protocols/BTCNMinterDecoderAndSanitizer.sol";
 
-contract WeETHFullDecoderAndSanitizer is WeETHDecoderAndSanitizer {
+contract BTCNFullMinterDecoderAndSanitizer is BTCNMinterDecoderAndSanitizer {
     constructor(address _boringVault) BaseDecoderAndSanitizer(_boringVault) {}
 }
