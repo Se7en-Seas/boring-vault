@@ -8,7 +8,8 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
-import {LombardBTCFullMinterDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/LombardBtcFullMinterDecoderAndSanitizer.sol";
+import {LombardBTCFullMinterDecoderAndSanitizer} from
+    "src/base/DecodersAndSanitizers/LombardBtcFullMinterDecoderAndSanitizer.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
@@ -43,10 +44,10 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
 
     function _setUp(string memory chainName, string memory RPC_URL, uint256 blockNumber) internal {
         //setSourceChainName("bsc");
-        setSourceChainName(chainName); 
+        setSourceChainName(chainName);
         // Setup forked environment.
         //string memory rpcKey = "BNB_RPC_URL";
-        string memory rpcKey = RPC_URL; 
+        string memory rpcKey = RPC_URL;
         //uint256 blockNumber = 43951627;
 
         _startFork(rpcKey, blockNumber);
@@ -56,7 +57,7 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
         manager =
             new ManagerWithMerkleVerification(address(this), address(boringVault), getAddress(sourceChain, "vault"));
 
-        rawDataDecoderAndSanitizer = address(new LombardBTCFullMinterDecoderAndSanitizer(address(boringVault))); 
+        rawDataDecoderAndSanitizer = address(new LombardBTCFullMinterDecoderAndSanitizer(address(boringVault)));
 
         setAddress(false, sourceChain, "boringVault", address(boringVault));
         setAddress(false, sourceChain, "rawDataDecoderAndSanitizer", rawDataDecoderAndSanitizer);
@@ -116,30 +117,24 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
         rolesAuthority.setPublicCapability(address(boringVault), bytes4(0), true);
     }
 
-
     function testLombardStakingIntegrationBNB() external {
-        _setUp("bsc", "BNB_RPC_URL", 43951627); 
+        _setUp("bsc", "BNB_RPC_URL", 43951627);
         // Deploy Mock Consortium
-        MockConsortium mockConsortium = new MockConsortium(); 
+        MockConsortium mockConsortium = new MockConsortium();
 
         // Transfer ownership to Mock Consortium
-        address LBTC = getAddress(sourceChain, "LBTC"); 
-        vm.startPrank(ILBTC(LBTC).owner()); 
-            ILBTC(LBTC).changeConsortium(address(mockConsortium)); 
-            ILBTC(LBTC).addMinter(address(boringVault)); 
-            ILBTC(LBTC).toggleWithdrawals(); 
-            ILBTC(LBTC).changeTreasuryAddress(address(69)); 
-        vm.stopPrank(); 
+        address LBTC = getAddress(sourceChain, "LBTC");
+        vm.startPrank(ILBTC(LBTC).owner());
+        ILBTC(LBTC).changeConsortium(address(mockConsortium));
+        ILBTC(LBTC).addMinter(address(boringVault));
+        ILBTC(LBTC).toggleWithdrawals();
+        ILBTC(LBTC).changeTreasuryAddress(address(69));
+        vm.stopPrank();
 
-
-        deal(address(getAddress(sourceChain, "BTCB")), address(boringVault), 200e18); 
+        deal(address(getAddress(sourceChain, "BTCB")), address(boringVault), 200e18);
 
         ManageLeaf[] memory leafs = new ManageLeaf[](8);
-        _addLombardBTCLeafs(
-            leafs,
-            getERC20(sourceChain, "BTCB"),
-            getERC20(sourceChain, "LBTC")
-        );
+        _addLombardBTCLeafs(leafs, getERC20(sourceChain, "BTCB"), getERC20(sourceChain, "LBTC"));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
@@ -148,9 +143,9 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
         manageLeafs[0] = leafs[0];
         manageLeafs[1] = leafs[1];
         manageLeafs[2] = leafs[2];
-        manageLeafs[3] = leafs[3]; 
-        manageLeafs[4] = leafs[4]; 
-        
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         // Targets
@@ -161,14 +156,15 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
         targets[3] = getAddress(sourceChain, "LBTC");
         targets[4] = getAddress(sourceChain, "LBTC");
 
-        bytes memory depositData = abi.encode(OutputWithPayload(
+        bytes memory depositData = abi.encode(
+            OutputWithPayload(
                 56, //bsc chain id
                 getAddress(sourceChain, "boringVault"),
                 uint64(uint256(100e18)),
                 bytes32(uint256(5)),
                 uint32(10)
             )
-        ); 
+        );
 
         bytes memory signature = hex"00"; // Could be any bytes
 
@@ -180,18 +176,14 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
 
         // Target Data
         bytes[] memory targetData = new bytes[](5);
-         targetData[0] =
+        targetData[0] =
             abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "LBTC"), type(uint256).max);
-         targetData[1] = 
-             abi.encodeWithSignature("mint(address,uint256)", getAddress(sourceChain, "boringVault"), 100e18);  
-         targetData[2] = 
-             abi.encodeWithSignature("mint(bytes,bytes)", depositData, signature); 
-         targetData[3] = 
-             abi.encodeWithSignature("redeem(bytes,uint256)", scriptPubkey, 90e18);  
-         targetData[4] = 
-            abi.encodeWithSignature("burn(uint256)", 10e18); 
+        targetData[1] = abi.encodeWithSignature("mint(address,uint256)", getAddress(sourceChain, "boringVault"), 100e18);
+        targetData[2] = abi.encodeWithSignature("mint(bytes,bytes)", depositData, signature);
+        targetData[3] = abi.encodeWithSignature("redeem(bytes,uint256)", scriptPubkey, 90e18);
+        targetData[4] = abi.encodeWithSignature("burn(uint256)", 10e18);
 
-        // Eth Amounts 
+        // Eth Amounts
         uint256[] memory values = new uint256[](5); //empty, not passing any ETH
 
         // Decoders and Sanitizers
@@ -207,27 +199,23 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
     }
 
     function testLombardStakingIntegrationBase() external {
-        _setUp("base", "BASE_RPC_URL", 22662896 ); 
-        deal(address(getAddress(sourceChain, "cbBTC")), address(boringVault), 1000e18); 
+        _setUp("base", "BASE_RPC_URL", 22662896);
+        deal(address(getAddress(sourceChain, "cbBTC")), address(boringVault), 1000e18);
 
         // Deploy Mock Consortium
-        MockConsortium mockConsortium = new MockConsortium(); 
+        MockConsortium mockConsortium = new MockConsortium();
 
         // Transfer ownership to Mock Consortium
-        address LBTC = getAddress(sourceChain, "LBTC"); 
-        vm.startPrank(ILBTC(LBTC).owner()); 
-            ILBTC(LBTC).changeConsortium(address(mockConsortium)); 
-            ILBTC(LBTC).addMinter(address(boringVault)); 
-            ILBTC(LBTC).toggleWithdrawals(); 
-            ILBTC(LBTC).changeTreasuryAddress(address(69)); 
-        vm.stopPrank(); 
+        address LBTC = getAddress(sourceChain, "LBTC");
+        vm.startPrank(ILBTC(LBTC).owner());
+        ILBTC(LBTC).changeConsortium(address(mockConsortium));
+        ILBTC(LBTC).addMinter(address(boringVault));
+        ILBTC(LBTC).toggleWithdrawals();
+        ILBTC(LBTC).changeTreasuryAddress(address(69));
+        vm.stopPrank();
 
         ManageLeaf[] memory leafs = new ManageLeaf[](8);
-        _addLombardBTCLeafs(
-            leafs,
-            getERC20(sourceChain, "cbBTC"),
-            getERC20(sourceChain, "LBTC")
-        );
+        _addLombardBTCLeafs(leafs, getERC20(sourceChain, "cbBTC"), getERC20(sourceChain, "LBTC"));
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
@@ -236,11 +224,11 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
         manageLeafs[0] = leafs[0];
         manageLeafs[1] = leafs[1];
         manageLeafs[2] = leafs[2];
-        manageLeafs[3] = leafs[3]; 
-        manageLeafs[4] = leafs[4]; 
-        manageLeafs[5] = leafs[5]; 
-        manageLeafs[6] = leafs[6]; 
-        
+        manageLeafs[3] = leafs[3];
+        manageLeafs[4] = leafs[4];
+        manageLeafs[5] = leafs[5];
+        manageLeafs[6] = leafs[6];
+
         bytes32[][] memory manageProofs = _getProofsUsingTree(manageLeafs, manageTree);
 
         address[] memory targets = new address[](7);
@@ -252,14 +240,15 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
         targets[5] = getAddress(sourceChain, "cbBTC");
         targets[6] = getAddress(sourceChain, "cbBTCPMM");
 
-        bytes memory depositData = abi.encode(OutputWithPayload(
+        bytes memory depositData = abi.encode(
+            OutputWithPayload(
                 8453, //bsc chain id
                 getAddress(sourceChain, "boringVault"),
                 uint64(uint256(100e18)),
                 bytes32(uint256(5)),
                 uint32(10)
             )
-        ); 
+        );
 
         bytes memory signature = hex"00"; // Could be any bytes
 
@@ -271,22 +260,17 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
 
         // Target Data
         bytes[] memory targetData = new bytes[](7);
-         targetData[0] =
+        targetData[0] =
             abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "LBTC"), type(uint256).max);
-         targetData[1] = 
-             abi.encodeWithSignature("mint(address,uint256)", getAddress(sourceChain, "boringVault"), 100e18);  
-         targetData[2] = 
-             abi.encodeWithSignature("mint(bytes,bytes)", depositData, signature); 
-         targetData[3] = 
-             abi.encodeWithSignature("redeem(bytes,uint256)", scriptPubkey, 90e18);  
-         targetData[4] = 
-            abi.encodeWithSignature("burn(uint256)", 10e18); 
-         targetData[5] = 
-             abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "cbBTCPMM"), type(uint256).max); 
-         targetData[6] = 
-             abi.encodeWithSignature("swapCBBTCToLBTC(uint256)", 1e4); 
+        targetData[1] = abi.encodeWithSignature("mint(address,uint256)", getAddress(sourceChain, "boringVault"), 100e18);
+        targetData[2] = abi.encodeWithSignature("mint(bytes,bytes)", depositData, signature);
+        targetData[3] = abi.encodeWithSignature("redeem(bytes,uint256)", scriptPubkey, 90e18);
+        targetData[4] = abi.encodeWithSignature("burn(uint256)", 10e18);
+        targetData[5] =
+            abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "cbBTCPMM"), type(uint256).max);
+        targetData[6] = abi.encodeWithSignature("swapCBBTCToLBTC(uint256)", 1e4);
 
-        // Eth Amounts 
+        // Eth Amounts
         uint256[] memory values = new uint256[](7); //empty, not passing any ETH
 
         // Decoders and Sanitizers
@@ -301,9 +285,7 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
 
         // Run the functions
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-        
     }
-
 
     // ========================================= HELPER FUNCTIONS =========================================
 
@@ -312,25 +294,25 @@ contract LombardBTCStakingIntegrationTest is Test, MerkleTreeHelper {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
         vm.selectFork(forkId);
     }
-
 }
 
 interface ILBTC {
-    function owner() external returns (address); 
-    function changeConsortium(address newVal) external; 
-    function addMinter(address minter) external; 
-    function toggleWithdrawals() external; 
-    function changeTreasuryAddress(address newValue) external; 
+    function owner() external returns (address);
+    function changeConsortium(address newVal) external;
+    function addMinter(address minter) external;
+    function toggleWithdrawals() external;
+    function changeTreasuryAddress(address newValue) external;
 }
 
 // Mock consortium that accepts any signature
 contract MockConsortium {
     // This is the magic value that EIP1271 expects for valid signatures
-    bytes4 constant internal MAGIC_VALUE = 0x1626ba7e;
+    bytes4 internal constant MAGIC_VALUE = 0x1626ba7e;
 
     function isValidSignature(bytes32 hash, bytes calldata signature) external pure returns (bytes4) {
         // Always return the magic value indicating a valid signature
-        hash; signature; 
+        hash;
+        signature;
         return MAGIC_VALUE;
     }
 }

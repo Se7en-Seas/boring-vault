@@ -8,8 +8,7 @@ import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {ERC4626} from "@solmate/tokens/ERC4626.sol";
-import {AeraVaultFullDecoderAndSanitizer} from
-    "src/base/DecodersAndSanitizers/AeraVaultFullDecoderAndSanitizer.sol";
+import {AeraVaultFullDecoderAndSanitizer} from "src/base/DecodersAndSanitizers/AeraVaultFullDecoderAndSanitizer.sol";
 import {DecoderCustomTypes} from "src/interfaces/DecoderCustomTypes.sol";
 import {RolesAuthority, Authority} from "@solmate/auth/authorities/RolesAuthority.sol";
 import {MerkleTreeHelper} from "test/resources/MerkleTreeHelper/MerkleTreeHelper.sol";
@@ -101,37 +100,32 @@ contract AeraVaultIntegrationTest is Test, MerkleTreeHelper {
         rolesAuthority.setUserRole(address(manager), MANAGER_ROLE, true);
         rolesAuthority.setUserRole(address(boringVault), BORING_VAULT_ROLE, true);
         rolesAuthority.setUserRole(getAddress(sourceChain, "vault"), BALANCER_VAULT_ROLE, true);
-        
     }
-    
+
     function testAeraVault() public {
-        address aeraVault = getAddress(sourceChain, "aeraCompoundReservesVault"); 
-        address owner = IVault(aeraVault).owner(); 
-        vm.prank(owner); 
-        IVault(aeraVault).transferOwnership(address(boringVault)); 
-        
-        address pendingOwner = IVault(aeraVault).pendingOwner(); 
-        assertEq(address(boringVault), pendingOwner); 
+        address aeraVault = getAddress(sourceChain, "aeraCompoundReservesVault");
+        address owner = IVault(aeraVault).owner();
+        vm.prank(owner);
+        IVault(aeraVault).transferOwnership(address(boringVault));
 
-        vm.prank(pendingOwner); 
-        IVault(aeraVault).acceptOwnership(); 
-        
-        address whale = 0x37305B1cD40574E4C5Ce33f8e8306Be057fD7341; 
-        vm.prank(whale); 
-        getERC20(sourceChain, "USDC").transfer(address(boringVault), 1000e6); 
+        address pendingOwner = IVault(aeraVault).pendingOwner();
+        assertEq(address(boringVault), pendingOwner);
 
-        uint256 usdcBalance = getERC20(sourceChain, "USDC").balanceOf(address(boringVault)); 
-        assertEq(usdcBalance, 1000e6); 
-        
-        ERC20[] memory assets = new ERC20[](1);  
-        assets[0] = getERC20(sourceChain, "USDC"); 
+        vm.prank(pendingOwner);
+        IVault(aeraVault).acceptOwnership();
+
+        address whale = 0x37305B1cD40574E4C5Ce33f8e8306Be057fD7341;
+        vm.prank(whale);
+        getERC20(sourceChain, "USDC").transfer(address(boringVault), 1000e6);
+
+        uint256 usdcBalance = getERC20(sourceChain, "USDC").balanceOf(address(boringVault));
+        assertEq(usdcBalance, 1000e6);
+
+        ERC20[] memory assets = new ERC20[](1);
+        assets[0] = getERC20(sourceChain, "USDC");
 
         ManageLeaf[] memory leafs = new ManageLeaf[](8);
-        _addAeraLeafs(
-            leafs,
-            getAddress(sourceChain, "aeraCompoundReservesVault"),
-            assets
-        );
+        _addAeraLeafs(leafs, getAddress(sourceChain, "aeraCompoundReservesVault"), assets);
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
         manager.setManageRoot(address(this), manageTree[manageTree.length - 1][0]);
 
@@ -150,27 +144,18 @@ contract AeraVaultIntegrationTest is Test, MerkleTreeHelper {
         targets[2] = getAddress(sourceChain, "aeraCompoundReservesVault");
         targets[3] = getAddress(sourceChain, "aeraCompoundReservesVault");
         targets[4] = getAddress(sourceChain, "aeraCompoundReservesVault");
-        
-        DecoderCustomTypes.AssetValue[] memory assetValues = new DecoderCustomTypes.AssetValue[](1); 
-        assetValues[0] = DecoderCustomTypes.AssetValue(getAddress(sourceChain, "USDC"), 100e6); 
+
+        DecoderCustomTypes.AssetValue[] memory assetValues = new DecoderCustomTypes.AssetValue[](1);
+        assetValues[0] = DecoderCustomTypes.AssetValue(getAddress(sourceChain, "USDC"), 100e6);
 
         bytes[] memory targetData = new bytes[](5);
-        targetData[0] =
-            abi.encodeWithSignature("approve(address,uint256)", getAddress(sourceChain, "aeraCompoundReservesVault"), 10000e6);
-        targetData[1] = abi.encodeWithSignature(
-            "deposit((address,uint256)[])",
-            assetValues
+        targetData[0] = abi.encodeWithSignature(
+            "approve(address,uint256)", getAddress(sourceChain, "aeraCompoundReservesVault"), 10000e6
         );
-        targetData[2] = abi.encodeWithSignature(
-            "withdraw((address,uint256)[])",
-            assetValues
-        );
-        targetData[3] = abi.encodeWithSignature(
-            "pause()"
-        );
-        targetData[4] = abi.encodeWithSignature(
-            "resume()"
-        );
+        targetData[1] = abi.encodeWithSignature("deposit((address,uint256)[])", assetValues);
+        targetData[2] = abi.encodeWithSignature("withdraw((address,uint256)[])", assetValues);
+        targetData[3] = abi.encodeWithSignature("pause()");
+        targetData[4] = abi.encodeWithSignature("resume()");
 
         uint256[] memory values = new uint256[](5);
         address[] memory decodersAndSanitizers = new address[](5);
@@ -181,10 +166,9 @@ contract AeraVaultIntegrationTest is Test, MerkleTreeHelper {
         decodersAndSanitizers[4] = rawDataDecoderAndSanitizer;
 
         manager.manageVaultWithMerkleVerification(manageProofs, decodersAndSanitizers, targets, targetData, values);
-
     }
 
-        // ========================================= HELPER FUNCTIONS =========================================
+    // ========================================= HELPER FUNCTIONS =========================================
 
     function _startFork(string memory rpcKey, uint256 blockNumber) internal returns (uint256 forkId) {
         forkId = vm.createFork(vm.envString(rpcKey), blockNumber);
@@ -193,15 +177,14 @@ contract AeraVaultIntegrationTest is Test, MerkleTreeHelper {
 }
 
 interface IVault {
-    function owner() external returns (address); 
-    function pendingOwner() external returns (address); 
-    function transferOwnership(address newOwner) external; 
-    function acceptOwnership() external; 
+    function owner() external returns (address);
+    function pendingOwner() external returns (address);
+    function transferOwnership(address newOwner) external;
+    function acceptOwnership() external;
 }
-    
+
 interface MerklDistributor {
     function onlyOperatorCanClaim(address user) external view returns (uint256);
     function operators(address user, address operator) external view returns (uint256);
     function toggleOperator(address user, address operator) external;
 }
-

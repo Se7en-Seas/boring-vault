@@ -38,7 +38,7 @@ contract MerkleTreeCheckerTest is Test, MerkleTreeHelper {
         supplyAssets[0] = getERC20(sourceChain, "WBTC");
         ERC20[] memory borrowAssets = new ERC20[](1);
         borrowAssets[0] = getERC20(sourceChain, "WBTC");
-        ERC20[] memory claimAssets = new ERC20[](1); 
+        ERC20[] memory claimAssets = new ERC20[](1);
         claimAssets[0] = getERC20(sourceChain, "WBTC");
         _addAaveV3Leafs(leafs, supplyAssets, borrowAssets, claimAssets);
 
@@ -120,7 +120,7 @@ contract MerkleTreeCheckerTest is Test, MerkleTreeHelper {
         supplyAssets[0] = getERC20(sourceChain, "WBTC");
         ERC20[] memory borrowAssets = new ERC20[](1);
         borrowAssets[0] = getERC20(sourceChain, "WBTC");
-        ERC20[] memory claimAssets = new ERC20[](1); 
+        ERC20[] memory claimAssets = new ERC20[](1);
         claimAssets[0] = getERC20(sourceChain, "WBTC");
         _addAaveV3Leafs(leafs, supplyAssets, borrowAssets, claimAssets);
 

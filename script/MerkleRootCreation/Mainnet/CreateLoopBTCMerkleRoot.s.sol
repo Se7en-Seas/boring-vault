@@ -18,7 +18,7 @@ contract CreateLoopBtcMerkleRootScript is Script, MerkleTreeHelper {
     address public boringVault = 0xFE0C961A49E1aEe2AE2d842fE40157365C6d978f;
     address public managerAddress = 0xaE4b4cfBB7A0B90e9455761ed6D93d6Dc1759710;
     address public accountantAddress = 0xf1ecf4802C2b5Cf9c830A4AF297842Daa6D0f986;
-    address public rawDataDecoderAndSanitizer = 0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A; 
+    address public rawDataDecoderAndSanitizer = 0x1bF0033c1F582ABFce07Dcb9b9020cB50416e20A;
 
     function setUp() external {}
 
@@ -40,11 +40,11 @@ contract CreateLoopBtcMerkleRootScript is Script, MerkleTreeHelper {
         ManageLeaf[] memory leafs = new ManageLeaf[](16);
 
         // ========================== Aera ==========================
-        ERC20[] memory depositTokens = new ERC20[](3); 
+        ERC20[] memory depositTokens = new ERC20[](3);
         depositTokens[0] = ERC20(getAddress(sourceChain, "WBTC"));
-        depositTokens[1] = ERC20(getAddress(sourceChain, "LBTC")); 
+        depositTokens[1] = ERC20(getAddress(sourceChain, "LBTC"));
         depositTokens[2] = ERC20(getAddress(sourceChain, "cbBTC"));
-        _addAeraLeafs(leafs, getAddress(sourceChain, "aeraLoopBTCVault"), depositTokens);  
+        _addAeraLeafs(leafs, getAddress(sourceChain, "aeraLoopBTCVault"), depositTokens);
 
         //_verifyDecoderImplementsLeafsFunctionSelectors(leafs);
 
