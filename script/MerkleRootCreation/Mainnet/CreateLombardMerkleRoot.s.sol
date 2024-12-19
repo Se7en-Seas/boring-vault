@@ -157,6 +157,20 @@ contract CreateLombardMerkleRootScript is Script, MerkleTreeHelper {
 
         _addPancakeSwapV3Leafs(leafs, token0, token1);
 
+        // ========================== Corn BTCN ==========================
+        _addBTCNLeafs(leafs, getERC20(sourceChain, "WBTC"), getERC20(sourceChain, "BTCN"), getAddress(sourceChain, "cornSwapFacilityWBTC"));
+        _addBTCNLeafs(leafs, getERC20(sourceChain, "cbBTC"), getERC20(sourceChain, "BTCN"), getAddress(sourceChain, "cornSwapFacilitycbBTC"));
+
+        // ========================== LayerZero ==========================
+        _addLayerZeroLeafs(
+            leafs, getERC20(sourceChain, "BTCN"), getAddress(sourceChain, "BTCN"), layerZeroCornEndpointId
+        );
+        _addLayerZeroLeafs(
+            leafs, getERC20(sourceChain, "LBTC"), getAddress(sourceChain, "LBTCOFTAdapter"), layerZeroCornEndpointId
+        );
+        
+        // ========================== File Generation ==========================
+
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         string memory filePath = "./leafs/Mainnet/LombardStrategistLeafs.json";
