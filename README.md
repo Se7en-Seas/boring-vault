@@ -55,7 +55,7 @@ This Teller was designed to take all the good things about multiple deposit asse
 
 ### AccountantWithRateProviders
 
-This Accountant provides the exchange rate information needed by the Teller to accept multiple deposit assets, and is designed to be manipulation resitant using the following:
+This Accountant provides the exchange rate information needed by the Teller to accept multiple deposit assets, and is designed to be manipulation resistant using the following:
 
 1. The share exchange rate is calculated offchain, because it is possible for attackers to manipulate onchain data sources.
 2. Exchange rates written on chain are rate limited, and bound limited.
