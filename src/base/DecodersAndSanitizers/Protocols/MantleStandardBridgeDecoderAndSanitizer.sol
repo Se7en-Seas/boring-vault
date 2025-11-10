@@ -28,7 +28,7 @@ abstract contract MantleStandardBridgeDecoderAndSanitizer is BaseDecoderAndSanit
         sensitiveArguments = abi.encodePacked(_tx.sender, _tx.target);
     }
 
-    /// @notice Eample TX https://etherscan.io/tx/0x258c80e4c282fc94ddbec05bf64c602a437a2f26b1d2c14b6d16802ab1de9a11
+    /// @notice Example TX https://etherscan.io/tx/0x258c80e4c282fc94ddbec05bf64c602a437a2f26b1d2c14b6d16802ab1de9a11
     function finalizeWithdrawalTransaction(DecoderCustomTypes.MantleWithdrawalTransaction calldata _tx)
         external
         pure

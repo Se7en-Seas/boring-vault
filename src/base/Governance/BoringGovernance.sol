@@ -18,7 +18,7 @@ contract BoringGovernance is ERC20Votes, Auth, ERC721Holder, ERC1155Holder {
     // ========================================= STATE =========================================
 
     /**
-     * @notice Contract responsbile for implementing `beforeTransfer`.
+     * @notice Contract responsible for implementing `beforeTransfer`.
      */
     BeforeTransferHook public hook;
 

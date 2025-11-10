@@ -153,8 +153,8 @@ contract Pauser is Auth {
     /**
      * @notice The below functions can be marked as publically callable, as the `senderToPausable` mapping
      *         must be updated by an admin in order for the call to succeed. The main advantage of this
-     *         is needing less overhead to explicilty grant a role to pausing bots.
-     *         However if security is of upmost importance, then seperate roles can be created for each function.
+     *         is needing less overhead to explicitly grant a role to pausing bots.
+     *         However if security is of upmost importance, then separate roles can be created for each function.
      */
 
     /**

@@ -41,7 +41,7 @@ abstract contract LidoStandardBridgeDecoderAndSanitizer is BaseDecoderAndSanitiz
         sensitiveArguments = abi.encodePacked(_tx.sender, _tx.target);
     }
 
-    /// @notice Eample TX https://etherscan.io/tx/0x5bb20258a0b151a6acb01f05ea42ee2f51123cba5d51e9be46a5033e675faefe
+    /// @notice Example TX https://etherscan.io/tx/0x5bb20258a0b151a6acb01f05ea42ee2f51123cba5d51e9be46a5033e675faefe
     function finalizeWithdrawalTransaction(DecoderCustomTypes.WithdrawalTransaction calldata _tx)
         external
         pure

@@ -54,7 +54,7 @@ contract CellarMigratorWithSharePriceParity {
      * @param totalAssetsTolerance The tolerance for the change of total assets of the target.
      * @dev If `checkIfCellarOwnsAllShares` is true, the Cellar must own all BoringVault shares.
      * @dev `totalAssetsTolerance` with 4 decimals, must be less than 1e4. There is no explicit check for this,
-     *       but the `minimumTotalAssets` calcualtion will revert from underflow if it is larger than 1e4.
+     *       but the `minimumTotalAssets` calculation will revert from underflow if it is larger than 1e4.
      */
     function completeMigration(bool checkIfCellarOwnsAllShares, uint256 totalAssetsTolerance) external {
         require(msg.sender == migrator, "MIGRATOR");

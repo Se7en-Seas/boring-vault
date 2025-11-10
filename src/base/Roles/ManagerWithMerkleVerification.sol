@@ -24,7 +24,7 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
      * @dev Maps a strategist address to their specific merkle root.
      * @dev Each leaf is composed of the keccak256 hash of abi.encodePacked {decodersAndSanitizer, target, valueIsNonZero, selector, argumentAddress_0, ...., argumentAddress_N}
      *      Where:
-     *             - decodersAndSanitizer is the addres to call to extract packed address arguments from the calldata
+     *             - decodersAndSanitizer is the address to call to extract packed address arguments from the calldata
      *             - target is the address to make the call to
      *             - valueIsNonZero is a bool indicating whether or not the value is non-zero
      *             - selector is the function selector on target
@@ -121,7 +121,7 @@ contract ManagerWithMerkleVerification is Auth, IPausable {
 
     /**
      * @notice Allows strategist to manage the BoringVault.
-     * @dev The strategist must provide a merkle proof for every call that verifiees they are allowed to make that call.
+     * @dev The strategist must provide a merkle proof for every call that verifies they are allowed to make that call.
      * @dev Callable by MANAGER_INTERNAL_ROLE.
      * @dev Callable by STRATEGIST_ROLE.
      * @dev Callable by MICRO_MANAGER_ROLE.
