@@ -63,7 +63,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     /**
      * @notice After deposits, shares are locked to the msg.sender's address
      *         for `shareLockPeriod`.
-     * @dev During this time all trasnfers from msg.sender will revert, and
+     * @dev During this time all transfers from msg.sender will revert, and
      *      deposits are refundable.
      */
     uint64 public shareLockPeriod;
@@ -94,7 +94,7 @@ contract TellerWithMultiAssetSupport is Auth, BeforeTransferHook, ReentrancyGuar
     mapping(address => bool) public toDenyList;
 
     /**
-     * @notice Mapping `opeartor` address to a bool to deny them from calling `transfer` or `transferFrom`.
+     * @notice Mapping `operator` address to a bool to deny them from calling `transfer` or `transferFrom`.
      */
     mapping(address => bool) public operatorDenyList;
 

@@ -20,7 +20,7 @@ The BoringVault architecture is made up of:
 
 ## Arctic Architecture
 
-The Arctic Architecture implements a unique Manger, Teller, and Accountant.
+The Arctic Architecture implements a unique Manager, Teller, and Accountant.
 
 ### ManagerWithMerkleVerification
 

@@ -4,7 +4,7 @@ pragma solidity 0.8.21;
 import {CellarMigrationAdaptor} from "./CellarMigrationAdaptor.sol";
 
 /**
- * This adaptors only job is to use a unique identifer, so that 2 identical positions can be added to the registry.
+ * This adaptors only job is to use a unique identifier, so that 2 identical positions can be added to the registry.
  */
 contract CellarMigrationAdaptor2 is CellarMigrationAdaptor {
     constructor(address _boringVault, address _accountant, address _teller)
