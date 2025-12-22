@@ -44,11 +44,15 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
         supplyAssets[0] = getERC20(sourceChain, "WETH");
         supplyAssets[1] = getERC20(sourceChain, "WSTETH");
         supplyAssets[2] = getERC20(sourceChain, "RETH");
+        ERC20[] memory claimAssets = new ERC20[](3);
+        claimAssets[0] = getERC20(sourceChain, "WETH");
+        claimAssets[1] = getERC20(sourceChain, "WSTETH");
+        claimAssets[2] = getERC20(sourceChain, "RETH");
         ERC20[] memory borrowAssets = new ERC20[](3);
         borrowAssets[0] = getERC20(sourceChain, "WETH");
         borrowAssets[1] = getERC20(sourceChain, "WSTETH");
         borrowAssets[2] = getERC20(sourceChain, "RETH");
-        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
+        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets, claimAssets);
 
         // ========================== Native ==========================
         /**
