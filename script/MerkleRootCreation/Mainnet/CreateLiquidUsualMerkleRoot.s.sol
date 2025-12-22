@@ -14,6 +14,28 @@ import "forge-std/Script.sol";
 contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
+    struct AaveAssets {
+        ERC20[] supplyAssets;
+        ERC20[] claimAssets;
+        ERC20[] borrowAssets;
+    }
+
+    struct UniswapV3Tokens {
+        address[] token0;
+        address[] token1;
+    }
+
+    struct SwapAssets {
+        address[] assets;
+        SwapKind[] kinds;
+    }
+
+    struct CollateralConfig {
+        ERC20[] collateralAssets;
+        ERC20[] feeAssets;
+        ERC20[] claimTokens;
+    }
+
     address public boringVault = 0xeDa663610638E6557c27e2f4e973D3393e844E70;
     address public rawDataDecoderAndSanitizer = 0xA8633d10B828f80383D57a63914Fd23D6F71B157;
     address public managerAddress = 0x5F2Ecb56Ed33c86219840A2F89316285A1D9ee0F;
@@ -43,11 +65,16 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
         supplyAssets[1] = getERC20(sourceChain, "USDT");
         supplyAssets[2] = getERC20(sourceChain, "DAI");
         supplyAssets[3] = getERC20(sourceChain, "sDAI");
+        ERC20[] memory claimAssets = new ERC20[](4);
+        claimAssets[0] = getERC20(sourceChain, "USDC");
+        claimAssets[1] = getERC20(sourceChain, "USDT");
+        claimAssets[2] = getERC20(sourceChain, "DAI");
+        claimAssets[3] = getERC20(sourceChain, "sDAI");
         ERC20[] memory borrowAssets = new ERC20[](3);
         borrowAssets[0] = getERC20(sourceChain, "USDC");
         borrowAssets[1] = getERC20(sourceChain, "USDT");
         borrowAssets[2] = getERC20(sourceChain, "DAI");
-        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
+        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets, claimAssets);
 
         // ========================== MakerDAO ==========================
         /**
@@ -81,59 +108,17 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
         _addPendleMarketLeafs(leafs, getAddress(sourceChain, "pendle_USD0Plus_market_03_26_2025"), true);
 
         // ========================== UniswapV3 ==========================
-        /**
-         * Full position platform for USDC, USDT, DAI, USDe, sUSDe.
-         */
-        address[] memory token0 = new address[](10);
-        token0[0] = getAddress(sourceChain, "USDC");
-        token0[1] = getAddress(sourceChain, "USDC");
-        token0[2] = getAddress(sourceChain, "USDC");
-        token0[3] = getAddress(sourceChain, "USDC");
-        token0[4] = getAddress(sourceChain, "USDT");
-        token0[5] = getAddress(sourceChain, "USDT");
-        token0[6] = getAddress(sourceChain, "USDT");
-        token0[7] = getAddress(sourceChain, "DAI");
-        token0[8] = getAddress(sourceChain, "DAI");
-        token0[9] = getAddress(sourceChain, "USD0");
-
-        address[] memory token1 = new address[](10);
-        token1[0] = getAddress(sourceChain, "USDT");
-        token1[1] = getAddress(sourceChain, "DAI");
-        token1[2] = getAddress(sourceChain, "USD0");
-        token1[3] = getAddress(sourceChain, "USD0_plus");
-        token1[4] = getAddress(sourceChain, "DAI");
-        token1[5] = getAddress(sourceChain, "USD0");
-        token1[6] = getAddress(sourceChain, "USD0_plus");
-        token1[7] = getAddress(sourceChain, "USD0");
-        token1[8] = getAddress(sourceChain, "USD0_plus");
-        token1[9] = getAddress(sourceChain, "USD0_plus");
-
-        _addUniswapV3Leafs(leafs, token0, token1);
+        _addUniswapV3LeafsWithStruct(leafs);
 
         // ========================== Fee Claiming ==========================
-        /**
-         * Claim fees in USDC, DAI, USDT and USDE
-         */
-        ERC20[] memory feeAssets = new ERC20[](5);
-        feeAssets[0] = getERC20(sourceChain, "USDC");
-        feeAssets[1] = getERC20(sourceChain, "DAI");
-        feeAssets[2] = getERC20(sourceChain, "USDT");
-        feeAssets[3] = getERC20(sourceChain, "USD0");
-        feeAssets[4] = getERC20(sourceChain, "USD0_plus");
-        _addLeafsForFeeClaiming(leafs, feeAssets);
+        _addFeeClaimingLeafsWithStruct(leafs);
 
         // ========================== Fluid fToken ==========================
         _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fUSDC"));
         _addFluidFTokenLeafs(leafs, getAddress(sourceChain, "fUSDT"));
 
         // ========================== Compound V3 ==========================
-        ERC20[] memory collateralAssets = new ERC20[](0);
-        _addCompoundV3Leafs(
-            leafs, collateralAssets, getAddress(sourceChain, "cUSDCV3"), getAddress(sourceChain, "cometRewards")
-        );
-        _addCompoundV3Leafs(
-            leafs, collateralAssets, getAddress(sourceChain, "cUSDTV3"), getAddress(sourceChain, "cometRewards")
-        );
+        _addCompoundV3LeafsWithStruct(leafs);
 
         // ========================== 1inch ==========================
         /**
@@ -154,35 +139,7 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
          * Swap PYUSD <-> FRAX
          * Swap PYUSD <-> crvUSD
          */
-        address[] memory assets = new address[](13);
-        SwapKind[] memory kind = new SwapKind[](13);
-        assets[0] = getAddress(sourceChain, "USDC");
-        kind[0] = SwapKind.BuyAndSell;
-        assets[1] = getAddress(sourceChain, "USDT");
-        kind[1] = SwapKind.BuyAndSell;
-        assets[2] = getAddress(sourceChain, "DAI");
-        kind[2] = SwapKind.BuyAndSell;
-        assets[3] = getAddress(sourceChain, "USD0");
-        kind[3] = SwapKind.BuyAndSell;
-        assets[4] = getAddress(sourceChain, "USD0_plus");
-        kind[4] = SwapKind.BuyAndSell;
-        assets[5] = getAddress(sourceChain, "GEAR");
-        kind[5] = SwapKind.Sell;
-        assets[6] = getAddress(sourceChain, "CRV");
-        kind[6] = SwapKind.Sell;
-        assets[7] = getAddress(sourceChain, "CVX");
-        kind[7] = SwapKind.Sell;
-        assets[8] = getAddress(sourceChain, "AURA");
-        kind[8] = SwapKind.Sell;
-        assets[9] = getAddress(sourceChain, "BAL");
-        kind[9] = SwapKind.Sell;
-        assets[10] = getAddress(sourceChain, "INST");
-        kind[10] = SwapKind.Sell;
-        assets[11] = getAddress(sourceChain, "RSR");
-        kind[11] = SwapKind.Sell;
-        assets[12] = getAddress(sourceChain, "PENDLE");
-        kind[12] = SwapKind.Sell;
-        _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
+        _add1InchSwappingLeafsWithStruct(leafs);
 
         // ========================== 1inch Uniswap V3 ==========================
         _addLeafsFor1InchUniswapV3Swapping(leafs, getAddress(sourceChain, "GEAR_USDT_30"));
@@ -209,5 +166,127 @@ contract CreateLiquidUsualMerkleRootScript is Script, MerkleTreeHelper {
         string memory filePath = "./leafs/LiquidUsualStrategistLeafs.json";
 
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
+    }
+
+    function _addAaveV3LeafsWithStruct(ManageLeaf[] memory leafs) internal {
+        AaveAssets memory aaveAssets = AaveAssets({
+            supplyAssets: new ERC20[](4),
+            claimAssets: new ERC20[](4),
+            borrowAssets: new ERC20[](3)
+        });
+
+        aaveAssets.supplyAssets[0] = getERC20(sourceChain, "USDC");
+        aaveAssets.supplyAssets[1] = getERC20(sourceChain, "USDT");
+        aaveAssets.supplyAssets[2] = getERC20(sourceChain, "DAI");
+        aaveAssets.supplyAssets[3] = getERC20(sourceChain, "sDAI");
+
+        aaveAssets.claimAssets[0] = getERC20(sourceChain, "USDC");
+        aaveAssets.claimAssets[1] = getERC20(sourceChain, "USDT");
+        aaveAssets.claimAssets[2] = getERC20(sourceChain, "DAI");
+        aaveAssets.claimAssets[3] = getERC20(sourceChain, "sDAI");
+
+        aaveAssets.borrowAssets[0] = getERC20(sourceChain, "USDC");
+        aaveAssets.borrowAssets[1] = getERC20(sourceChain, "USDT");
+        aaveAssets.borrowAssets[2] = getERC20(sourceChain, "DAI");
+
+        _addAaveV3Leafs(leafs, aaveAssets.supplyAssets, aaveAssets.borrowAssets, aaveAssets.claimAssets);
+    }
+
+    function _addUniswapV3LeafsWithStruct(ManageLeaf[] memory leafs) internal {
+        UniswapV3Tokens memory tokens = UniswapV3Tokens({
+            token0: new address[](10),
+            token1: new address[](10)
+        });
+
+        tokens.token0[0] = getAddress(sourceChain, "USDC");
+        tokens.token0[1] = getAddress(sourceChain, "USDC");
+        tokens.token0[2] = getAddress(sourceChain, "USDC");
+        tokens.token0[3] = getAddress(sourceChain, "USDC");
+        tokens.token0[4] = getAddress(sourceChain, "USDT");
+        tokens.token0[5] = getAddress(sourceChain, "USDT");
+        tokens.token0[6] = getAddress(sourceChain, "USDT");
+        tokens.token0[7] = getAddress(sourceChain, "DAI");
+        tokens.token0[8] = getAddress(sourceChain, "DAI");
+        tokens.token0[9] = getAddress(sourceChain, "USD0");
+
+        tokens.token1[0] = getAddress(sourceChain, "USDT");
+        tokens.token1[1] = getAddress(sourceChain, "DAI");
+        tokens.token1[2] = getAddress(sourceChain, "USD0");
+        tokens.token1[3] = getAddress(sourceChain, "USD0_plus");
+        tokens.token1[4] = getAddress(sourceChain, "DAI");
+        tokens.token1[5] = getAddress(sourceChain, "USD0");
+        tokens.token1[6] = getAddress(sourceChain, "USD0_plus");
+        tokens.token1[7] = getAddress(sourceChain, "USD0");
+        tokens.token1[8] = getAddress(sourceChain, "USD0_plus");
+        tokens.token1[9] = getAddress(sourceChain, "USD0_plus");
+
+        _addUniswapV3Leafs(leafs, tokens.token0, tokens.token1);
+    }
+
+    function _addFeeClaimingLeafsWithStruct(ManageLeaf[] memory leafs) internal {
+        CollateralConfig memory config = CollateralConfig({
+            collateralAssets: new ERC20[](0),
+            feeAssets: new ERC20[](5),
+            claimTokens: new ERC20[](0)
+        });
+
+        config.feeAssets[0] = getERC20(sourceChain, "USDC");
+        config.feeAssets[1] = getERC20(sourceChain, "DAI");
+        config.feeAssets[2] = getERC20(sourceChain, "USDT");
+        config.feeAssets[3] = getERC20(sourceChain, "USD0");
+        config.feeAssets[4] = getERC20(sourceChain, "USD0_plus");
+
+        _addLeafsForFeeClaiming(leafs, config.feeAssets);
+    }
+
+    function _addCompoundV3LeafsWithStruct(ManageLeaf[] memory leafs) internal {
+        CollateralConfig memory config = CollateralConfig({
+            collateralAssets: new ERC20[](0),
+            feeAssets: new ERC20[](0),
+            claimTokens: new ERC20[](0)
+        });
+
+        _addCompoundV3Leafs(
+            leafs, config.collateralAssets, getAddress(sourceChain, "cUSDCV3"), getAddress(sourceChain, "cometRewards")
+        );
+        _addCompoundV3Leafs(
+            leafs, config.collateralAssets, getAddress(sourceChain, "cUSDTV3"), getAddress(sourceChain, "cometRewards")
+        );
+    }
+
+    function _add1InchSwappingLeafsWithStruct(ManageLeaf[] memory leafs) internal {
+        SwapAssets memory swapAssets = SwapAssets({
+            assets: new address[](13),
+            kinds: new SwapKind[](13)
+        });
+
+        swapAssets.assets[0] = getAddress(sourceChain, "USDC");
+        swapAssets.kinds[0] = SwapKind.BuyAndSell;
+        swapAssets.assets[1] = getAddress(sourceChain, "USDT");
+        swapAssets.kinds[1] = SwapKind.BuyAndSell;
+        swapAssets.assets[2] = getAddress(sourceChain, "DAI");
+        swapAssets.kinds[2] = SwapKind.BuyAndSell;
+        swapAssets.assets[3] = getAddress(sourceChain, "USD0");
+        swapAssets.kinds[3] = SwapKind.BuyAndSell;
+        swapAssets.assets[4] = getAddress(sourceChain, "USD0_plus");
+        swapAssets.kinds[4] = SwapKind.BuyAndSell;
+        swapAssets.assets[5] = getAddress(sourceChain, "GEAR");
+        swapAssets.kinds[5] = SwapKind.Sell;
+        swapAssets.assets[6] = getAddress(sourceChain, "CRV");
+        swapAssets.kinds[6] = SwapKind.Sell;
+        swapAssets.assets[7] = getAddress(sourceChain, "CVX");
+        swapAssets.kinds[7] = SwapKind.Sell;
+        swapAssets.assets[8] = getAddress(sourceChain, "AURA");
+        swapAssets.kinds[8] = SwapKind.Sell;
+        swapAssets.assets[9] = getAddress(sourceChain, "BAL");
+        swapAssets.kinds[9] = SwapKind.Sell;
+        swapAssets.assets[10] = getAddress(sourceChain, "INST");
+        swapAssets.kinds[10] = SwapKind.Sell;
+        swapAssets.assets[11] = getAddress(sourceChain, "RSR");
+        swapAssets.kinds[11] = SwapKind.Sell;
+        swapAssets.assets[12] = getAddress(sourceChain, "PENDLE");
+        swapAssets.kinds[12] = SwapKind.Sell;
+
+        _addLeafsFor1InchGeneralSwapping(leafs, swapAssets.assets, swapAssets.kinds);
     }
 }

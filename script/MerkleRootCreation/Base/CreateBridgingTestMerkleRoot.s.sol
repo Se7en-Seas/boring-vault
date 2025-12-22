@@ -15,6 +15,28 @@ import "forge-std/Script.sol";
 contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
     using FixedPointMathLib for uint256;
 
+    struct AaveAssets {
+        ERC20[] supplyAssets;
+        ERC20[] claimAssets;
+        ERC20[] borrowAssets;
+    }
+
+    struct SwapAssets {
+        address[] assets;
+        SwapKind[] kinds;
+    }
+
+    struct BridgeAssets {
+        ERC20[] localTokens;
+        ERC20[] remoteTokens;
+    }
+
+    struct AerodromeTokens {
+        address[] token0;
+        address[] token1;
+        address[] gauges;
+    }
+
     address public boringVault = 0xaA6D4Fb1FF961f8E52334f433974d40484e8be8F;
     address public managerAddress = 0x744d1f71a6d064204b4c59Cf2BDCF9De9C6c3430;
     address public accountantAddress = 0x99c836937305693A5518819ED457B0d3dfE99785;
@@ -42,15 +64,7 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
         ManageLeaf[] memory leafs = new ManageLeaf[](128);
 
         // ========================== Aave V3 ==========================
-        ERC20[] memory supplyAssets = new ERC20[](3);
-        supplyAssets[0] = getERC20(sourceChain, "WETH");
-        supplyAssets[1] = getERC20(sourceChain, "WSTETH");
-        supplyAssets[2] = getERC20(sourceChain, "WEETH");
-        ERC20[] memory borrowAssets = new ERC20[](3);
-        borrowAssets[0] = getERC20(sourceChain, "WETH");
-        borrowAssets[1] = getERC20(sourceChain, "WSTETH");
-        borrowAssets[2] = getERC20(sourceChain, "WEETH");
-        _addAaveV3Leafs(leafs, supplyAssets, borrowAssets);
+        _addAaveV3LeafsWithStruct(leafs);
 
         // ========================== Native ==========================
         /**
@@ -59,22 +73,7 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
         _addNativeLeafs(leafs);
 
         // ========================== Standard Bridge ==========================
-        ERC20[] memory localTokens = new ERC20[](2);
-        localTokens[0] = getERC20(sourceChain, "WETH");
-        localTokens[1] = getERC20(sourceChain, "WSTETH");
-        ERC20[] memory remoteTokens = new ERC20[](2);
-        remoteTokens[0] = getERC20(mainnet, "WETH");
-        remoteTokens[1] = getERC20(mainnet, "WSTETH");
-        _addStandardBridgeLeafs(
-            leafs,
-            mainnet,
-            address(0),
-            address(0),
-            getAddress(sourceChain, "standardBridge"),
-            address(0),
-            localTokens,
-            remoteTokens
-        );
+        _addStandardBridgeLeafsWithStruct(leafs);
 
         // ========================== LayerZero ==========================
         _addLayerZeroLeafs(
@@ -85,44 +84,109 @@ contract CreateBridgingTestMerkleRootScript is Script, MerkleTreeHelper {
         );
 
         // ========================== 1inch ==========================
-        address[] memory assets = new address[](6);
-        SwapKind[] memory kind = new SwapKind[](6);
-        assets[0] = getAddress(sourceChain, "WETH");
-        kind[0] = SwapKind.BuyAndSell;
-        assets[1] = getAddress(sourceChain, "WEETH");
-        kind[1] = SwapKind.BuyAndSell;
-        assets[2] = getAddress(sourceChain, "WSTETH");
-        kind[2] = SwapKind.BuyAndSell;
-        assets[3] = getAddress(sourceChain, "RETH");
-        kind[3] = SwapKind.BuyAndSell;
-        assets[4] = getAddress(sourceChain, "BSDETH");
-        kind[4] = SwapKind.BuyAndSell;
-        assets[5] = getAddress(sourceChain, "AERO");
-        kind[5] = SwapKind.Sell;
-        _addLeafsFor1InchGeneralSwapping(leafs, assets, kind);
+        _add1InchSwappingLeafsWithStruct(leafs);
 
         // ========================== Aerodrome ==========================
-        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", aerodromeDecoderAndSanitizer);
-        address[] memory token0 = new address[](3);
-        token0[0] = getAddress(sourceChain, "WETH");
-        token0[1] = getAddress(sourceChain, "WETH");
-        token0[2] = getAddress(sourceChain, "WETH");
-        address[] memory token1 = new address[](3);
-        token1[0] = getAddress(sourceChain, "WSTETH");
-        token1[1] = getAddress(sourceChain, "CBETH");
-        token1[2] = getAddress(sourceChain, "BSDETH");
-        address[] memory gauges = new address[](3);
-        gauges[0] = getAddress(sourceChain, "aerodrome_Weth_Wsteth_v3_1_gauge");
-        gauges[1] = getAddress(sourceChain, "aerodrome_Cbeth_Weth_v3_1_gauge");
-        gauges[2] = getAddress(sourceChain, "aerodrome_Weth_Bsdeth_v3_1_gauge");
-        _addVelodromeV3Leafs(
-            leafs, token0, token1, getAddress(sourceChain, "aerodromeNonFungiblePositionManager"), gauges
-        );
+        _addAerodromeLeafsWithStruct(leafs);
 
         string memory filePath = "./leafs/Base/BridgingTestStrategistLeafs.json";
 
         bytes32[][] memory manageTree = _generateMerkleTree(leafs);
 
         _generateLeafs(filePath, leafs, manageTree[manageTree.length - 1][0], manageTree);
+    }
+
+    function _addAaveV3LeafsWithStruct(ManageLeaf[] memory leafs) internal {
+        AaveAssets memory aaveAssets = AaveAssets({
+            supplyAssets: new ERC20[](3),
+            claimAssets: new ERC20[](3),
+            borrowAssets: new ERC20[](3)
+        });
+
+        aaveAssets.supplyAssets[0] = getERC20(sourceChain, "WETH");
+        aaveAssets.supplyAssets[1] = getERC20(sourceChain, "WSTETH");
+        aaveAssets.supplyAssets[2] = getERC20(sourceChain, "WEETH");
+
+        aaveAssets.claimAssets[0] = getERC20(sourceChain, "WETH");
+        aaveAssets.claimAssets[1] = getERC20(sourceChain, "WSTETH");
+        aaveAssets.claimAssets[2] = getERC20(sourceChain, "WEETH");
+
+        aaveAssets.borrowAssets[0] = getERC20(sourceChain, "WETH");
+        aaveAssets.borrowAssets[1] = getERC20(sourceChain, "WSTETH");
+        aaveAssets.borrowAssets[2] = getERC20(sourceChain, "WEETH");
+
+        _addAaveV3Leafs(leafs, aaveAssets.supplyAssets, aaveAssets.borrowAssets, aaveAssets.claimAssets);
+    }
+
+    function _addStandardBridgeLeafsWithStruct(ManageLeaf[] memory leafs) internal {
+        BridgeAssets memory bridgeAssets = BridgeAssets({
+            localTokens: new ERC20[](2),
+            remoteTokens: new ERC20[](2)
+        });
+
+        bridgeAssets.localTokens[0] = getERC20(sourceChain, "WETH");
+        bridgeAssets.localTokens[1] = getERC20(sourceChain, "WSTETH");
+
+        bridgeAssets.remoteTokens[0] = getERC20(mainnet, "WETH");
+        bridgeAssets.remoteTokens[1] = getERC20(mainnet, "WSTETH");
+
+        _addStandardBridgeLeafs(
+            leafs,
+            mainnet,
+            address(0),
+            address(0),
+            getAddress(sourceChain, "standardBridge"),
+            address(0),
+            bridgeAssets.localTokens,
+            bridgeAssets.remoteTokens
+        );
+    }
+
+    function _add1InchSwappingLeafsWithStruct(ManageLeaf[] memory leafs) internal {
+        SwapAssets memory swapAssets = SwapAssets({
+            assets: new address[](6),
+            kinds: new SwapKind[](6)
+        });
+
+        swapAssets.assets[0] = getAddress(sourceChain, "WETH");
+        swapAssets.kinds[0] = SwapKind.BuyAndSell;
+        swapAssets.assets[1] = getAddress(sourceChain, "WEETH");
+        swapAssets.kinds[1] = SwapKind.BuyAndSell;
+        swapAssets.assets[2] = getAddress(sourceChain, "WSTETH");
+        swapAssets.kinds[2] = SwapKind.BuyAndSell;
+        swapAssets.assets[3] = getAddress(sourceChain, "RETH");
+        swapAssets.kinds[3] = SwapKind.BuyAndSell;
+        swapAssets.assets[4] = getAddress(sourceChain, "BSDETH");
+        swapAssets.kinds[4] = SwapKind.BuyAndSell;
+        swapAssets.assets[5] = getAddress(sourceChain, "AERO");
+        swapAssets.kinds[5] = SwapKind.Sell;
+
+        _addLeafsFor1InchGeneralSwapping(leafs, swapAssets.assets, swapAssets.kinds);
+    }
+
+    function _addAerodromeLeafsWithStruct(ManageLeaf[] memory leafs) internal {
+        setAddress(true, sourceChain, "rawDataDecoderAndSanitizer", aerodromeDecoderAndSanitizer);
+
+        AerodromeTokens memory aerodromeTokens = AerodromeTokens({
+            token0: new address[](3),
+            token1: new address[](3),
+            gauges: new address[](3)
+        });
+
+        aerodromeTokens.token0[0] = getAddress(sourceChain, "WETH");
+        aerodromeTokens.token0[1] = getAddress(sourceChain, "WETH");
+        aerodromeTokens.token0[2] = getAddress(sourceChain, "WETH");
+
+        aerodromeTokens.token1[0] = getAddress(sourceChain, "WSTETH");
+        aerodromeTokens.token1[1] = getAddress(sourceChain, "CBETH");
+        aerodromeTokens.token1[2] = getAddress(sourceChain, "BSDETH");
+
+        aerodromeTokens.gauges[0] = getAddress(sourceChain, "aerodrome_Weth_Wsteth_v3_1_gauge");
+        aerodromeTokens.gauges[1] = getAddress(sourceChain, "aerodrome_Cbeth_Weth_v3_1_gauge");
+        aerodromeTokens.gauges[2] = getAddress(sourceChain, "aerodrome_Weth_Bsdeth_v3_1_gauge");
+
+        _addVelodromeV3Leafs(
+            leafs, aerodromeTokens.token0, aerodromeTokens.token1, getAddress(sourceChain, "aerodromeNonFungiblePositionManager"), aerodromeTokens.gauges
+        );
     }
 }
